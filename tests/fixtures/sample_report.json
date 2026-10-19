@@ -1,0 +1,692 @@
+{
+  "repo_id": "local:toy_repo",
+  "method": "cleansweep",
+  "policy": "now",
+  "seed": 0,
+  "started_at": "2026-10-19T12:00:00+00:00",
+  "finished_at": "2026-10-19T12:00:00+00:00",
+  "plan": {
+    "repo_id": "local:toy_repo",
+    "created_at": "2026-10-19T12:00:00+00:00",
+    "items": [
+      {
+        "item_id": "e7256e167d",
+        "unit": {
+          "path": "debug_cart.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "debug_cart.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+        "evidence": [
+          "file name matches 'debug*'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "quarantined at /Users/ritik/Documents/Projects/DataMining/CleanSweep/cleansweep/.cleansweep/quarantine/local_toy_repo/20261019T203254568418/debug_cart.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.8,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "2a30f69d9c",
+        "unit": {
+          "path": "reproduce_bug.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "reproduce_bug.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+        "evidence": [
+          "file name matches 'reproduce*'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "quarantined at /Users/ritik/Documents/Projects/DataMining/CleanSweep/cleansweep/.cleansweep/quarantine/local_toy_repo/20261019T203254667999/reproduce_bug.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.8,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ad1ccca381",
+        "unit": {
+          "path": "shopcart/pricing_old.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "shopcart/pricing_old.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+        "evidence": [
+          "file name matches '*_old.py'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "quarantined at /Users/ritik/Documents/Projects/DataMining/CleanSweep/cleansweep/.cleansweep/quarantine/local_toy_repo/20261019T203254762751/shopcart/pricing_old.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.8,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "c8c5c12a31",
+        "unit": {
+          "path": "shopcart/utils.py",
+          "kind": "function",
+          "name": "format_money_v2",
+          "start_line": 15,
+          "end_line": 19
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "safe",
+        "reason": "format_money_v2 is never called anywhere in the project.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph"
+        ],
+        "sources": [
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.7,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "baad19ef2a",
+        "unit": {
+          "path": "shopcart/discounts.py",
+          "kind": "function",
+          "name": "_round_price",
+          "start_line": 4,
+          "end_line": 11
+        },
+        "category": "duplicate",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "_round_price repeats round_price; use the existing function instead.",
+        "evidence": [
+          "identical body to shopcart/utils.py::round_price (similarity 1.00)"
+        ],
+        "sources": [
+          "minhash",
+          "graph"
+        ],
+        "keep_target": "shopcart/utils.py::round_price",
+        "patch": "--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n-\n-\n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n \n \n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\n",
+        "safe_score": 0.6,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "0c1c0f4e23",
+        "unit": {
+          "path": "shopcart/storage.py",
+          "kind": "function",
+          "name": "_safe_round",
+          "start_line": 11,
+          "end_line": 18
+        },
+        "category": "duplicate",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "_safe_round repeats round_price; use the existing function instead.",
+        "evidence": [
+          "near-identical body to shopcart/utils.py::round_price (similarity 0.85)"
+        ],
+        "sources": [
+          "minhash",
+          "graph"
+        ],
+        "keep_target": "shopcart/utils.py::round_price",
+        "patch": "--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\n",
+        "safe_score": 0.6,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ca07b09097",
+        "unit": {
+          "path": "shopcart/cart.py",
+          "kind": "function",
+          "name": "compute_total",
+          "start_line": 7,
+          "end_line": 8
+        },
+        "category": "wrapper",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "compute_total only forwards to pricing.total; call it directly.",
+        "evidence": [
+          "body is only `return pricing.total(...)` with the same arguments",
+          "called once, from shopcart/cart.py::Cart.checkout"
+        ],
+        "sources": [
+          "ast",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": "--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -2,10 +2,6 @@\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n-\n-\n-def compute_total(items):\n-    return pricing.total(items)\n \n \n class Cart:\n@@ -24,7 +20,7 @@\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\n",
+        "safe_score": 0.6,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "48d108323e",
+        "unit": {
+          "path": "shopcart/cart.py",
+          "kind": "import",
+          "name": "os",
+          "start_line": 1,
+          "end_line": 1
+        },
+        "category": "unused_import",
+        "action": "remove_import",
+        "lane": "safe",
+        "reason": "The import of os in shopcart/cart.py is never used.",
+        "evidence": [
+          "ruff F401 at line 1"
+        ],
+        "sources": [
+          "ruff"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.9,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "5e8244a83f",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "import",
+          "name": "sys",
+          "start_line": 1,
+          "end_line": 1
+        },
+        "category": "unused_import",
+        "action": "remove_import",
+        "lane": "safe",
+        "reason": "The import of sys in shopcart/commands.py is never used.",
+        "evidence": [
+          "ruff F401 at line 1"
+        ],
+        "sources": [
+          "ruff"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.9,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "73bf11c5ce",
+        "unit": {
+          "path": "requirements.txt",
+          "kind": "dependency",
+          "name": "requests",
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "unused_dependency",
+        "action": "remove_dependency",
+        "lane": "safe",
+        "reason": "requests is listed as a dependency but never imported.",
+        "evidence": [
+          "deptry DEP002: 'requests' defined as a dependency but not used in the codebase"
+        ],
+        "sources": [
+          "deptry"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.8,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "c7fcf62991",
+        "unit": {
+          "path": "shopcart/pricing.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "format",
+        "action": "format",
+        "lane": "safe",
+        "reason": "shopcart/pricing.py does not follow the standard code format.",
+        "evidence": [
+          "ruff format --check would reformat this file"
+        ],
+        "sources": [
+          "ruff"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.95,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "350bb97300",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_add",
+          "start_line": 7,
+          "end_line": 11
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "cmd_add is never called anywhere in the project.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)"
+        ],
+        "sources": [
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.21,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ebc74f012e",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_export",
+          "start_line": 19,
+          "end_line": 22
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "cmd_export is never called anywhere in the project.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)"
+        ],
+        "sources": [
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.21,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "061d473160",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_load",
+          "start_line": 25,
+          "end_line": 28
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "cmd_load is never called anywhere in the project.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)"
+        ],
+        "sources": [
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.21,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ad149ec43a",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_total",
+          "start_line": 14,
+          "end_line": 16
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "cmd_total is never called anywhere in the project.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)"
+        ],
+        "sources": [
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.21,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "5b73439d48",
+        "unit": {
+          "path": "shopcart/storage.py",
+          "kind": "function",
+          "name": "load_legacy",
+          "start_line": 39,
+          "end_line": 45
+        },
+        "category": "security",
+        "action": "report_only",
+        "lane": "suggest",
+        "reason": "Possible security problem: Use of possibly insecure function - consider using safer ast.literal_eval.",
+        "evidence": [
+          "bandit B307 (MEDIUM) at line 41",
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph"
+        ],
+        "sources": [
+          "bandit",
+          "vulture",
+          "graph"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": 0.0,
+        "llm_confidence": null
+      }
+    ]
+  },
+  "results": [
+    {
+      "item_id": "48d108323e",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2653963565826416
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 7c41ce1..8e2b39b 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -1,4 +1,3 @@\n-import os\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n",
+      "notes": ""
+    },
+    {
+      "item_id": "5e8244a83f",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2653963565826416
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/commands.py b/shopcart/commands.py\nindex fb1f494..86ba806 100644\n--- a/shopcart/commands.py\n+++ b/shopcart/commands.py\n@@ -1,4 +1,3 @@\n-import sys\n \n from shopcart.storage import load_cart, save_cart\n from shopcart.utils import format_money, slugify\n",
+      "notes": ""
+    },
+    {
+      "item_id": "c7fcf62991",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2653963565826416
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/pricing.py b/shopcart/pricing.py\nindex b6ce2b0..30b1c1e 100644\n--- a/shopcart/pricing.py\n+++ b/shopcart/pricing.py\n@@ -1,8 +1,15 @@\n from shopcart.utils import round_price\n-TAX_RATE=0.08\n-def subtotal( items ):\n-    return round_price(sum(item['price']*item['qty'] for item in items))\n-def tax(items, rate = TAX_RATE):\n-    return round_price( subtotal(items)*rate )\n+\n+TAX_RATE = 0.08\n+\n+\n+def subtotal(items):\n+    return round_price(sum(item[\"price\"] * item[\"qty\"] for item in items))\n+\n+\n+def tax(items, rate=TAX_RATE):\n+    return round_price(subtotal(items) * rate)\n+\n+\n def total(items):\n-    return round_price(subtotal(items)+tax(items))\n+    return round_price(subtotal(items) + tax(items))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "e7256e167d",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2677481174468994
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/debug_cart.py b/debug_cart.py\ndeleted file mode 100644\nindex d84458c..0000000\n--- a/debug_cart.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.cart import Cart\n-from shopcart.pricing import subtotal, tax\n-\n-\n-def dump(cart):\n-    for item in cart.items:\n-        print(item)\n-    print(\"subtotal\", subtotal(cart.items), \"tax\", tax(cart.items))\n-\n-\n-if __name__ == \"__main__\":\n-    c = Cart()\n-    c.add(\"book\", 12.5, 2)\n-    dump(c)\n",
+      "notes": ""
+    },
+    {
+      "item_id": "2a30f69d9c",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2677481174468994
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/reproduce_bug.py b/reproduce_bug.py\ndeleted file mode 100644\nindex 6f8fd99..0000000\n--- a/reproduce_bug.py\n+++ /dev/null\n@@ -1,6 +0,0 @@\n-# quick check for the discount rounding issue\n-from shopcart.cart import Cart\n-\n-cart = Cart()\n-cart.add(\"pen\", 1.99, 3)\n-print(cart.checkout(\"SAVE10\"))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "ad1ccca381",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2677481174468994
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/pricing_old.py b/shopcart/pricing_old.py\ndeleted file mode 100644\nindex f4e8cf7..0000000\n--- a/shopcart/pricing_old.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.utils import round_price\n-\n-TAX_RATE = 0.075\n-\n-\n-def subtotal(items):\n-    result = 0\n-    for item in items:\n-        result = result + item[\"price\"] * item[\"qty\"]\n-    return round_price(result)\n-\n-\n-def total(items):\n-    return round_price(subtotal(items) * (1 + TAX_RATE))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "c8c5c12a31",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2677481174468994
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/utils.py b/shopcart/utils.py\nindex bcaacd7..41c386a 100644\n--- a/shopcart/utils.py\n+++ b/shopcart/utils.py\n@@ -12,12 +12,5 @@ def format_money(value):\n     return f\"${round_price(value):.2f}\"\n \n \n-def format_money_v2(value, currency=\"USD\"):\n-    amount = round_price(value)\n-    if currency == \"USD\":\n-        return f\"${amount:,.2f}\"\n-    return f\"{amount:,.2f} {currency}\"\n-\n-\n def slugify(name):\n     return \"-\".join(name.lower().split())\n",
+      "notes": ""
+    },
+    {
+      "item_id": "73bf11c5ce",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.2677481174468994
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/requirements.txt b/requirements.txt\nindex 535409c..e69de29 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1 +0,0 @@\n-requests>=2.31\n",
+      "notes": ""
+    },
+    {
+      "item_id": "baad19ef2a",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.29767417907714844
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/discounts.py b/shopcart/discounts.py\nindex 83f9d65..b4a4d61 100644\n--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n \n \n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n-\n-\n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "0c1c0f4e23",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.29767417907714844
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/storage.py b/shopcart/storage.py\nindex cfded7b..2ded592 100644\n--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@ import json\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\n",
+      "notes": ""
+    },
+    {
+      "item_id": "ca07b09097",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.29767417907714844
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 8e2b39b..74f3484 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -3,10 +3,6 @@ from shopcart import pricing\n from shopcart.discounts import apply_discount\n \n \n-def compute_total(items):\n-    return pricing.total(items)\n-\n-\n class Cart:\n     def __init__(self):\n         self.items = []\n@@ -23,7 +19,7 @@ class Cart:\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\n",
+      "notes": ""
+    },
+    {
+      "item_id": "350bb97300",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "061d473160",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "ad149ec43a",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "5b73439d48",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "ebc74f012e",
+      "status": "rolled_back",
+      "tests": {
+        "ok": false,
+        "passed": 14,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [
+          "tests.test_cli::test_export"
+        ],
+        "duration_s": 0.33034682273864746
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/commands.py b/shopcart/commands.py\nindex fb1f494..73f5328 100644\n--- a/shopcart/commands.py\n+++ b/shopcart/commands.py\n@@ -16,12 +16,6 @@ def cmd_total(cart, args):\n     return format_money(cart.checkout(code))\n \n \n-def cmd_export(cart, args):\n-    path = args[0] if args else f\"{slugify('my cart')}.json\"\n-    save_cart(cart, path)\n-    return f\"saved {len(cart.items)} items to {path}\"\n-\n-\n def cmd_load(cart, args):\n     loaded = load_cart(args[0])\n     cart.items = loaded.items\n",
+      "notes": "forced through the Guard for the sample: new failing tests: ['tests.test_cli::test_export']\n......F........                                                          [100%]\n=================================== FAILURES ===================================\n_________________________________ test_export __________________________________\n\ntmp_path = PosixPath('/private/var/folders/x8/x5dcj9891bj5ykmdnv0m9zkw0000gn/T/pytest-of-ritik/pytest-351/test_export0')\n\n    def test_export(tmp_path):\n        cart = Cart()\n        run(cart, \"add pen 1.0\")\n        msg = run(cart, f\"export {tmp_path / 'c.json'}\")\n>       assert msg.startswith(\"saved 1 items\")\nE       AssertionError: assert False\nE        +  where False = <built-in method startswith of str object at 0x108383410>('saved 1 items')\nE        +    where <built-in method startswith of str object at 0x108383410> = 'unknown command: export'.startswith\n\ntests/test_cli.py:16: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cli.py::test_export - AssertionError: assert False\n1 failed, 14 passed in 0.05s\n"
+    }
+  ],
+  "stats": {
+    "items_total": 16,
+    "items_safe": 11,
+    "items_kept": 11,
+    "items_repaired": 0,
+    "items_rolled_back": 1,
+    "lines_removed": 59,
+    "files_removed": 3,
+    "test_runs": 4,
+    "llm_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "wall_seconds": 3.67,
+    "n_checks": 3,
+    "final_diff": "diff --git a/debug_cart.py b/debug_cart.py\ndeleted file mode 100644\nindex d84458c..0000000\n--- a/debug_cart.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.cart import Cart\n-from shopcart.pricing import subtotal, tax\n-\n-\n-def dump(cart):\n-    for item in cart.items:\n-        print(item)\n-    print(\"subtotal\", subtotal(cart.items), \"tax\", tax(cart.items))\n-\n-\n-if __name__ == \"__main__\":\n-    c = Cart()\n-    c.add(\"book\", 12.5, 2)\n-    dump(c)\ndiff --git a/reproduce_bug.py b/reproduce_bug.py\ndeleted file mode 100644\nindex 6f8fd99..0000000\n--- a/reproduce_bug.py\n+++ /dev/null\n@@ -1,6 +0,0 @@\n-# quick check for the discount rounding issue\n-from shopcart.cart import Cart\n-\n-cart = Cart()\n-cart.add(\"pen\", 1.99, 3)\n-print(cart.checkout(\"SAVE10\"))\ndiff --git a/requirements.txt b/requirements.txt\nindex 535409c..e69de29 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1 +0,0 @@\n-requests>=2.31\ndiff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 7c41ce1..74f3484 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -1,13 +1,8 @@\n-import os\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n \n \n-def compute_total(items):\n-    return pricing.total(items)\n-\n-\n class Cart:\n     def __init__(self):\n         self.items = []\n@@ -24,7 +19,7 @@ class Cart:\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\ndiff --git a/shopcart/commands.py b/shopcart/commands.py\nindex fb1f494..86ba806 100644\n--- a/shopcart/commands.py\n+++ b/shopcart/commands.py\n@@ -1,4 +1,3 @@\n-import sys\n \n from shopcart.storage import load_cart, save_cart\n from shopcart.utils import format_money, slugify\ndiff --git a/shopcart/discounts.py b/shopcart/discounts.py\nindex 83f9d65..b4a4d61 100644\n--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n \n \n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n-\n-\n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\ndiff --git a/shopcart/pricing.py b/shopcart/pricing.py\nindex b6ce2b0..30b1c1e 100644\n--- a/shopcart/pricing.py\n+++ b/shopcart/pricing.py\n@@ -1,8 +1,15 @@\n from shopcart.utils import round_price\n-TAX_RATE=0.08\n-def subtotal( items ):\n-    return round_price(sum(item['price']*item['qty'] for item in items))\n-def tax(items, rate = TAX_RATE):\n-    return round_price( subtotal(items)*rate )\n+\n+TAX_RATE = 0.08\n+\n+\n+def subtotal(items):\n+    return round_price(sum(item[\"price\"] * item[\"qty\"] for item in items))\n+\n+\n+def tax(items, rate=TAX_RATE):\n+    return round_price(subtotal(items) * rate)\n+\n+\n def total(items):\n-    return round_price(subtotal(items)+tax(items))\n+    return round_price(subtotal(items) + tax(items))\ndiff --git a/shopcart/pricing_old.py b/shopcart/pricing_old.py\ndeleted file mode 100644\nindex f4e8cf7..0000000\n--- a/shopcart/pricing_old.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.utils import round_price\n-\n-TAX_RATE = 0.075\n-\n-\n-def subtotal(items):\n-    result = 0\n-    for item in items:\n-        result = result + item[\"price\"] * item[\"qty\"]\n-    return round_price(result)\n-\n-\n-def total(items):\n-    return round_price(subtotal(items) * (1 + TAX_RATE))\ndiff --git a/shopcart/storage.py b/shopcart/storage.py\nindex cfded7b..2ded592 100644\n--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@ import json\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\ndiff --git a/shopcart/utils.py b/shopcart/utils.py\nindex bcaacd7..41c386a 100644\n--- a/shopcart/utils.py\n+++ b/shopcart/utils.py\n@@ -12,12 +12,5 @@ def format_money(value):\n     return f\"${round_price(value):.2f}\"\n \n \n-def format_money_v2(value, currency=\"USD\"):\n-    amount = round_price(value)\n-    if currency == \"USD\":\n-        return f\"${amount:,.2f}\"\n-    return f\"{amount:,.2f} {currency}\"\n-\n-\n def slugify(name):\n     return \"-\".join(name.lower().split())\n"
+  }
+}
