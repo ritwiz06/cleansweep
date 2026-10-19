@@ -1,0 +1,8 @@
+Below is the source code of a Python project. Clean it up without changing how the
+program behaves: remove leftover files and scratch scripts, dead code, duplicated
+helpers, needless wrappers and unused imports.
+
+Return one unified diff (paths starting with a/ and b/) that makes all the changes.
+To delete a whole file, use a diff against /dev/null. Return only the diff.
+
+{code}
