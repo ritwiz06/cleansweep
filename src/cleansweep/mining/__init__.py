@@ -1,0 +1,17 @@
+from cleansweep.core.registry import use_stub
+
+if use_stub("mining"):
+    from .stub import build_taxonomy, find_removal_requests, mine_rules
+else:
+    try:
+        from .comments import find_removal_requests
+        from .rules import mine_rules
+        from .taxonomy import build_taxonomy
+    except ModuleNotFoundError as exc:
+        # Real mining not written yet (DA-06): use the stub until it is.
+        # Remove this fallback once all three modules exist.
+        if not (exc.name or "").startswith("cleansweep.mining."):
+            raise
+        from .stub import build_taxonomy, find_removal_requests, mine_rules
+
+__all__ = ["build_taxonomy", "find_removal_requests", "mine_rules"]
