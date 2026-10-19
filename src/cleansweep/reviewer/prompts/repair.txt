@@ -1,0 +1,16 @@
+We tried a cleanup edit on a Python project and a check failed afterwards. Suggest a
+small fix that keeps the cleanup but makes the check pass, without changing behavior.
+For example, if we removed a duplicate function, point the failing import at the copy
+we kept.
+
+Edit: {category} on {key}
+Why we made it: {reason}
+
+The edit as a diff:
+{diff}
+
+What failed:
+{failure_log}
+
+Reply with a single unified diff (paths starting with a/ and b/) that applies on top of
+the edited code. If there is no safe small fix, reply with exactly NO_FIX.

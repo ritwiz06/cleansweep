@@ -1,0 +1,16 @@
+You are reviewing a cleanup plan for a Python project. Static tools flagged the items
+below as code that can probably be removed or simplified. For each item, read the code
+snippet and the evidence, then decide:
+
+- "remove": you agree it can go without changing what the program does.
+- "suggest": it might be removable, but a human should decide (for example, it could be
+  used dynamically, by plugins, or from outside the project).
+- "keep": the tools are wrong and the code is needed.
+
+Return a JSON list with one object per item:
+{"item_id": "...", "decision": "remove|suggest|keep", "reason": "...", "confidence": 0.0-1.0}
+
+Keep each reason to one or two plain sentences that a teammate could read quickly.
+
+Items:
+{items}

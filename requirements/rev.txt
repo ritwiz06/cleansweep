@@ -1,0 +1,6 @@
+vulture>=2.11
+deptry>=0.20
+bandit>=1.7
+streamlit>=1.45
+plotly>=5.20
+pandas>=2.1
