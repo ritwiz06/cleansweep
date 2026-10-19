@@ -1,0 +1,3 @@
+# Contract files need approval from all four members. Replace the handles below.
+src/cleansweep/core/models.py     @ritwiz06 @TEAMMATE_DATA @TEAMMATE_EXP @TEAMMATE_CORE
+src/cleansweep/core/contracts.py  @ritwiz06 @TEAMMATE_DATA @TEAMMATE_EXP @TEAMMATE_CORE

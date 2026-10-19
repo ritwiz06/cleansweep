@@ -1,0 +1,7 @@
+openai>=1.40
+pyyaml>=6.0
+python-dotenv>=1.0
+pytest>=8.0
+coverage>=7.4
+ruff>=0.6
+tomlkit>=0.12

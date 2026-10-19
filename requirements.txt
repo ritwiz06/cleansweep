@@ -1,0 +1,4 @@
+-r requirements/core.txt
+-r requirements/data.txt
+-r requirements/exp.txt
+-r requirements/rev.txt

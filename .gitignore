@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.egg-info/
+.env
+data/*
+!data/splits/
+results/raw/
+results/models/
+.cleansweep/
+*.parquet
+.pytest_cache/
+.ruff_cache/
+.coverage*
+.DS_Store

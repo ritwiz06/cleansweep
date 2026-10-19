@@ -1,0 +1,19 @@
+core:
+  out_dir: results/raw
+  llm:
+    enabled: auto          # auto = use Voyager only when VOYAGER_API_KEY is set
+    base_url_env: VOYAGER_BASE_URL
+    api_key_env: VOYAGER_API_KEY
+    model_env: VOYAGER_MODEL
+    alt_model_env: VOYAGER_MODEL_ALT
+    cache_path: .cleansweep/llm_cache.sqlite
+    max_retries: 5
+    timeout_s: 120
+  sandbox:
+    work_dir: null         # null = <system temp>/cleansweep/ws
+    quarantine_dir: .cleansweep/quarantine
+    test_timeout_s: 900
+  guard:
+    diff_tests: false      # differential probes arrive with SA-08
+    max_targets: 10
+    repair: true

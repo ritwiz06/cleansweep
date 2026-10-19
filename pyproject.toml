@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cleansweep"
+version = "0.1.0"
+description = "Safe cleanup of agent-written Python code"
+requires-python = ">=3.11"
+
+[project.scripts]
+cleansweep = "cleansweep.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["prompts/*.txt"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["tests/fixtures", "demo"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tests/fixtures", "demo", ".notes", ".cleansweep"]
+markers = [
+    "llm: calls the Voyager API",
+    "docker: needs Docker",
+    "network: downloads data",
+    "slow: takes more than a few seconds",
+]
