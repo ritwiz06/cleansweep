@@ -1,0 +1,77 @@
+"""Public names and parameter names every package must expose (master plan 3.2)."""
+
+INTERFACES: dict[str, dict[str, list[str]]] = {
+    "llm": {
+        "get_client": ["cfg"],
+        "LLMClient.chat": ["messages", "temperature", "seed"],
+        "LLMClient.chat_json": ["messages", "temperature", "seed"],
+        "LLMClient.usage": [],
+        "FakeLLM": ["responses"],
+    },
+    "sandbox": {
+        "open_workspace": ["target", "cfg"],
+        "Workspace.run": ["cmd", "timeout"],
+        "Workspace.run_tests": ["test_paths", "timeout"],
+        "Workspace.coverage_json": ["test_paths"],
+        "Workspace.apply_patch": ["patch"],
+        "Workspace.checkpoint": ["label"],
+        "Workspace.rollback": ["to"],
+        "Workspace.diff": ["since"],
+        "Workspace.fork": [],
+        "Workspace.close": [],
+    },
+    "guard": {
+        "Guard": ["workspace", "llm", "cfg", "repair_fn"],
+        "Guard.check_batch": ["items"],
+        "Guard.results": [],
+        "apply_edit": ["workspace", "item"],
+        "verify": ["before", "after", "touched", "llm", "cfg"],
+    },
+    "workflow": {
+        "run_sweep": ["target", "cfg", "method", "seed"],
+    },
+    "data": {
+        "load_tasks": ["instance_ids"],
+        "load_agent_patches": ["agents"],
+        "load_repos": ["min_agent_prs"],
+        "load_history": ["repo"],
+        "load_removal_labels": [],
+    },
+    "analysis": {
+        "build_graph": ["repo_dir"],
+        "CodeGraph.units": [],
+        "CodeGraph.callers": ["unit_key"],
+        "CodeGraph.callees": ["unit_key"],
+        "CodeGraph.is_reachable": ["unit_key"],
+        "CodeGraph.dynamic_risk": ["unit_key"],
+        "find_duplicates": ["repo_dir", "threshold"],
+        "extract_features": ["repo_dir", "graph", "coverage_json", "history"],
+    },
+    "mining": {
+        "find_removal_requests": ["comments", "llm"],
+        "build_taxonomy": ["requests", "k"],
+        "mine_rules": ["transactions", "min_support"],
+    },
+    "ranking": {
+        "load_ranker": ["path"],
+        "Ranker.score": ["items", "features"],
+    },
+    "scheduler": {
+        "make_batches": ["items", "max_size"],
+        "apply_with_bisection": ["batches", "check_fn"],
+        "should_sweep": ["policy", "state"],
+        "simulate": ["history", "repo_dir", "policy", "cfg"],
+    },
+    "eval": {
+        "tools_only": ["target", "cfg"],
+        "one_shot_llm": ["target", "cfg", "seed"],
+        "run_hidden_checks": ["target", "final_diff", "cfg"],
+        "summarize": ["report", "hidden"],
+    },
+    "reviewer": {
+        "run_detectors": ["repo_dir", "graph"],
+        "judge_items": ["items", "repo_dir", "llm"],
+        "propose_fix": ["item", "failure_log", "repo_dir", "llm"],
+        "build_plan": ["workspace", "graph", "llm", "use_llm"],
+    },
+}
