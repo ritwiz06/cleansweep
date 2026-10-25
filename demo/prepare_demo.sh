@@ -5,14 +5,13 @@
 #   bash demo/prepare_demo.sh --with-feature   # app + feature.patch (the agent's change)
 #   bash demo/prepare_demo.sh [--with-feature] DEST
 #
-# Default DEST is $TMPDIR/cleansweep-demo (the Live sweep page offers it as a target).
+# Default DEST is .cleansweep/demo in the repo (gitignored; the Live sweep page offers it).
 # The answer key and the hidden tests are copied next to the app, so hidden checks and the
 # outcome score work there too. Prints the path of the prepared app.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-TMP="${TMPDIR:-/tmp}"
-DEST="${TMP%/}/cleansweep-demo"
+DEST="$(dirname "$HERE")/.cleansweep/demo"
 WITH_FEATURE=0
 for arg in "$@"; do
   case "$arg" in
