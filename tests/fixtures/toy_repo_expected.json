@@ -1,18 +1,18 @@
 {
   "repo": "toy_repo",
   "items": [
-    {"key": "reproduce_bug.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "debug_cart.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/pricing_old.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/utils.py::format_money_v2", "category": "dead_code", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/discounts.py::_round_price", "category": "duplicate", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/storage.py::_safe_round", "category": "duplicate", "expected_lane": "safe", "expected_guard": "rolled_back", "trap": "near_duplicate", "caught_by": "differential probes (rounds .5 half-up)"},
-    {"key": "shopcart/cart.py::compute_total", "category": "wrapper", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/cart.py::os", "category": "unused_import", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/commands.py::sys", "category": "unused_import", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "requirements.txt::requests", "category": "unused_dependency", "expected_lane": "safe", "expected_guard": "kept"},
-    {"key": "shopcart/commands.py::cmd_export", "category": "dead_code", "expected_lane": "suggest", "expected_guard": "rolled_back", "trap": "getattr", "caught_by": "existing tests (test_cli.py::test_export)"},
-    {"key": "shopcart/storage.py::load_legacy", "category": "security", "expected_lane": "suggest", "expected_guard": "skipped"},
-    {"key": "shopcart/pricing.py", "category": "format", "expected_lane": "safe", "expected_guard": "kept"}
+    {"key": "reproduce_bug.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "debug_cart.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/pricing_old.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/utils.py::format_money_v2", "category": "dead_code", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/discounts.py::_round_price", "category": "duplicate", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/storage.py::_safe_round", "category": "duplicate", "expected_lane": "safe", "expected_guard": "rolled_back", "trap": "near_duplicate", "caught_by": "differential probes (rounds .5 half-up)", "expected_outcome": "not_applied"},
+    {"key": "shopcart/cart.py::compute_total", "category": "wrapper", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/cart.py::os", "category": "unused_import", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/commands.py::sys", "category": "unused_import", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "requirements.txt::requests", "category": "unused_dependency", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "shopcart/commands.py::cmd_export", "category": "dead_code", "expected_lane": "suggest", "expected_guard": "rolled_back", "trap": "getattr", "caught_by": "existing tests (test_cli.py::test_export)", "expected_outcome": "not_applied"},
+    {"key": "shopcart/storage.py::load_legacy", "category": "security", "expected_lane": "suggest", "expected_guard": "skipped", "expected_outcome": "not_applied"},
+    {"key": "shopcart/pricing.py", "category": "format", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"}
   ]
 }
