@@ -122,6 +122,20 @@ def test_unreadable_reply_keeps_items(toy_repo):
     assert judge_items(items, toy_repo, Broken(), mode="gatekeeper")[0].lane == "safe"
 
 
+def test_mode_from_env_overrides_config(monkeypatch, toy_repo):
+    llm = judge_reply(("a", "keep"))
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "off")
+    assert judge_items([make("a")], toy_repo, llm)[0].lane == "safe"
+    assert llm.calls == []
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "Advisory")
+    out = judge_items([make("a")], toy_repo, llm)[0]
+    assert out.lane == "safe" and out.reason.startswith("Judge thinks this is still used:")
+    assert judge_items([make("a")], toy_repo, llm, mode="gatekeeper")[0].lane == "suggest"
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "sometimes")
+    with pytest.raises(ValueError, match="CLEANSWEEP_JUDGE_MODE"):
+        judge_items([make("a")], toy_repo, llm)
+
+
 def test_no_llm_and_bad_mode(toy_repo):
     items = [make("a")]
     assert judge_items(items, toy_repo, None) == items

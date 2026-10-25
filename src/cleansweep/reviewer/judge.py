@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
 from cleansweep.core.models import CleanupItem
 
 PROMPT = (Path(__file__).parent / "prompts" / "judge.txt").read_text()
-MODES = ("gatekeeper", "advisory")
+MODES = ("gatekeeper", "advisory", "off")
+MODE_ENV = "CLEANSWEEP_JUDGE_MODE"
 DECISIONS = ("remove", "suggest", "keep")
 STILL_USED = "Judge thinks this is still used:"
 VULTURE = re.compile(r"vulture: unused \w+ \((\d+)% confidence\)")
@@ -86,6 +88,18 @@ def group_requests(items: list[CleanupItem], batch_size: int) -> list[list[Clean
     return requests
 
 
+def resolve_mode(mode: str | None, cfg: dict) -> str:
+    """Pick the judge mode: explicit argument, then CLEANSWEEP_JUDGE_MODE, then the config."""
+    mode = mode or os.environ.get(MODE_ENV, "").strip().lower() or cfg.get("judge_mode")
+    mode = mode or "gatekeeper"
+    if mode not in MODES:
+        raise ValueError(
+            f"judge mode must be one of {MODES} (from {MODE_ENV} or "
+            f"reviewer.judge_mode), got {mode!r}"
+        )
+    return mode
+
+
 def _apply(item: CleanupItem, row: dict, mode: str) -> None:
     decision = str(row.get("decision", "")).lower()
     if decision not in DECISIONS:
@@ -122,15 +136,16 @@ def judge_items(
 
     gatekeeper: "suggest" and "keep" move an item to the suggest lane.
     advisory: only the reason and confidence are recorded; the Guard decides.
+    off: the judge is skipped.
     """
     if llm is None:
         return items
     from .detectors import _settings
 
     cfg = _settings()
-    mode = mode or cfg.get("judge_mode", "gatekeeper")
-    if mode not in MODES:
-        raise ValueError(f"reviewer.judge_mode must be one of {MODES}, got {mode!r}")
+    mode = resolve_mode(mode, cfg)
+    if mode == "off":
+        return items
     batch_size = batch_size or cfg.get("judge_batch_size", 10)
     context = cfg.get("snippet_context_lines", 10)
 
