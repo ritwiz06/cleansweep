@@ -4,8 +4,8 @@ import pandas as pd
 
 from cleansweep.analysis import build_graph
 from cleansweep.llm import FakeLLM
+from cleansweep.reviewer import build_plan, run_detectors
 from cleansweep.reviewer import overengineering as oe
-from cleansweep.reviewer import run_detectors
 
 KEY = "Look for over-engineering"
 
@@ -107,3 +107,12 @@ def test_switches_turn_the_review_off(toy_repo, monkeypatch):
     assert llm.calls == []
     assert oe.review_overengineering([], toy_repo, graph, None) == []
 
+
+def test_build_plan_adds_over_engineering_items(toy_repo, monkeypatch):
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "off")
+    graph, findings = findings_for_toy(toy_repo)
+    plan = build_plan(toy_repo, graph, FakeLLM({KEY: json.dumps(findings)}), use_llm=True)
+    other = [i for i in plan.items if i.category == "other"]
+    assert [i.unit.key for i in other] == ["shopcart/cart.py::Cart.add"]
+    safe_positions = [n for n, i in enumerate(plan.items) if i.lane == "safe"]
+    assert plan.items.index(other[0]) > max(safe_positions)
