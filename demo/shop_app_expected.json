@@ -1,0 +1,12 @@
+{
+  "repo": "shop_app",
+  "items": [
+    {"key": "scratch_restock.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "bookshelf/inventory_old.py", "category": "leftover_file", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "bookshelf/utils.py::isbn_checksum_ok", "category": "dead_code", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "bookshelf/reports.py::_clean_isbn", "category": "duplicate", "expected_lane": "safe", "expected_guard": "kept", "expected_outcome": "applied"},
+    {"key": "bookshelf/commands.py::cmd_restock", "category": "dead_code", "expected_lane": "suggest", "expected_guard": "rolled_back", "trap": "getattr", "caught_by": "existing tests (test_cli.py::test_restock)", "expected_outcome": "not_applied"},
+    {"key": "bookshelf/orders.py::_round_money", "category": "duplicate", "expected_lane": "safe", "expected_guard": "rolled_back", "trap": "near_duplicate", "caught_by": "differential probes (rounds .5 half-up)", "expected_outcome": "not_applied"},
+    {"key": "bookshelf/storage.py::load_legacy", "category": "security", "expected_lane": "suggest", "expected_guard": "skipped", "expected_outcome": "not_applied"}
+  ]
+}
