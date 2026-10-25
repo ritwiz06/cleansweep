@@ -113,6 +113,27 @@ def test_signals_reach_the_prompt(toy_repo):
     assert "strong evidence for removal" in prompt
 
 
+def test_leftover_files_get_import_and_main_signals(toy_repo):
+    from cleansweep.analysis import build_graph
+
+    graph = build_graph(toy_repo)
+    debug = make("d", "debug_cart.py", "leftover_file")
+    debug.unit = CodeUnit("debug_cart.py", "file")
+    repro = make("r", "reproduce_bug.py", "leftover_file")
+    repro.unit = CodeUnit("reproduce_bug.py", "file")
+    sig = signals(debug, graph, toy_repo)
+    assert "reachable_from_entry_points" not in sig
+    assert sig["imported_by"] == 0
+    assert sig["has_main_block"] is True
+    assert sig["mentioned_in_config"] is False
+    assert signals(repro, graph, toy_repo)["has_main_block"] is False
+    llm = judge_reply()
+    judge_items([debug], toy_repo, llm, graph=graph)
+    prompt = llm.calls[0][-1]["content"]
+    assert '"has_main_block": true' in prompt
+    assert "typical leftover" in prompt
+
+
 def test_unreadable_reply_keeps_items(toy_repo):
     class Broken(FakeLLM):
         def chat_json(self, messages, temperature=0.0, seed=None):

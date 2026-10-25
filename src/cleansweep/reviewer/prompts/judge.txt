@@ -13,6 +13,10 @@ What the signals mean:
   __main__ blocks or scripts. false means no static path uses it.
 - dynamic_risk: the unit may be reached in ways the graph can't see (getattr, string
   lookups, decorators). Treat this as a real reason for caution.
+- imported_by, has_main_block, mentioned_in_config: facts about a leftover file. A
+  standalone script with a __main__ block that nothing imports (imported_by = 0) and no
+  config mentions is a typical leftover (a scratch, debug or reproduce script). Its
+  __main__ block is not a sign that the project uses it.
 - deptry_code, imported_anywhere_in_repo, mentioned_in_config_or_ci: facts about a
   listed dependency. DEP002 means no file in the repo imports the package.
 - duplicate_of, duplicate_similarity, identical_body: the copy we would keep instead.
