@@ -6,7 +6,8 @@ from pathlib import Path
 from cleansweep.core.models import CleanupItem
 
 PROMPT = (Path(__file__).parent / "prompts" / "judge.txt").read_text()
-LANE_FOR = {"remove": "safe", "suggest": "suggest"}
+DECISIONS = ("remove", "suggest", "keep")
+STILL_USED = "Judge thinks this is still used:"
 
 
 def snippet(repo_dir: str, item: CleanupItem, context: int = 10) -> str:
@@ -19,10 +20,31 @@ def snippet(repo_dir: str, item: CleanupItem, context: int = 10) -> str:
     return "\n".join(f"{i:>4} {lines[i - 1]}" for i in range(start, end + 1))
 
 
+def _apply(item: CleanupItem, row: dict) -> None:
+    decision = str(row.get("decision", "")).lower()
+    if decision not in DECISIONS:
+        return
+    reason = str(row.get("reason") or "").strip()
+    if decision == "keep":
+        reason = f"{STILL_USED} {reason}" if reason else STILL_USED.rstrip(":") + "."
+    if reason:
+        item.reason = reason
+    confidence = row.get("confidence")
+    if confidence is not None:
+        item.llm_confidence = float(confidence)
+    item.evidence.append(f"llm judge: {decision} (confidence {confidence})")
+    if "llm" not in item.sources:
+        item.sources.append("llm")
+    if decision == "keep":
+        item.lane, item.action = "suggest", "report_only"
+    elif decision == "suggest":
+        item.lane = "suggest"
+
+
 def judge_items(
     items: list[CleanupItem], repo_dir: str, llm, batch_size: int = 10
 ) -> list[CleanupItem]:
-    """Ask the LLM to confirm, demote or drop each item; return the items that stay."""
+    """Ask the LLM about each item. Every item stays in the plan; "keep" moves it to suggest."""
     if llm is None:
         return items
     decisions: dict[str, dict] = {}
@@ -39,25 +61,14 @@ def judge_items(
             for it in batch
         ]
         prompt = PROMPT.replace("{items}", json.dumps(payload, indent=1))
-        reply = llm.chat_json([{"role": "user", "content": prompt}])
+        try:
+            reply = llm.chat_json([{"role": "user", "content": prompt}])
+        except ValueError:
+            continue  # unreadable answer: these items keep their detector lanes
         for row in reply if isinstance(reply, list) else reply.get("items", []):
             if isinstance(row, dict) and "item_id" in row:
                 decisions[row["item_id"]] = row
-    kept = []
     for item in items:
-        d = decisions.get(item.item_id)
-        if d is None:
-            kept.append(item)
-            continue
-        decision = str(d.get("decision", "")).lower()
-        if decision == "keep":
-            continue
-        if decision in LANE_FOR and item.lane == "safe":
-            item.lane = LANE_FOR[decision]
-        if d.get("reason"):
-            item.reason = str(d["reason"])
-        if d.get("confidence") is not None:
-            item.llm_confidence = float(d["confidence"])
-        item.sources.append("llm")
-        kept.append(item)
-    return kept
+        if item.item_id in decisions:
+            _apply(item, decisions[item.item_id])
+    return items
