@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import time
 from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -63,6 +65,32 @@ class EventLog:
         if self.on_event:
             self.on_event(event)
         return event
+
+
+class _EventHandler(logging.Handler):
+    def __init__(self, log: EventLog):
+        super().__init__(logging.INFO)
+        self.log = log
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.log.emit(
+            "log", logger=record.name, level=record.levelname, message=record.getMessage()
+        )
+
+
+@contextmanager
+def capture_logs(log: EventLog, name: str = "cleansweep"):
+    """Copy INFO+ records from the cleansweep loggers into the run's events (the run log)."""
+    logger = logging.getLogger(name)
+    handler = _EventHandler(log)
+    previous = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(min(previous or logging.WARNING, logging.INFO))
+    try:
+        yield
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous)
 
 
 def read_events(path: str | Path) -> list[dict]:
@@ -331,10 +359,11 @@ def run_live(
             judge_mode=os.environ.get(JUDGE_ENV) or "config",
             model=os.environ.get("VOYAGER_MODEL"),
         )
-        if method in BASELINES:
-            report = _baseline(target, cfg, method, log)
-        else:
-            report = _sweep(target, cfg, method, log)
+        with capture_logs(log):
+            if method in BASELINES:
+                report = _baseline(target, cfg, method, log)
+            else:
+                report = _sweep(target, cfg, method, log)
 
         log.emit("stage_start", stage="hidden")
         since = time.time()
@@ -379,6 +408,7 @@ def fold(events: list[dict]) -> dict:
         "summary": None,
         "report": None,
         "error": None,
+        "logs": [],
         "statuses": {},
         "test_runs": 0,
         "lines_removed": 0,
@@ -423,6 +453,8 @@ def fold(events: list[dict]) -> dict:
             state["test_runs"] = event["test_runs"]
             if event.get("lines_removed") is not None:
                 state["lines_removed"] = event["lines_removed"]
+        elif kind == "log":
+            state["logs"].append(event)
         elif kind == "error":
             state["error"] = event["message"]
     if state["stats"]:

@@ -146,3 +146,18 @@ def test_live_run_on_the_toy_repo(toy_repo, cfg, tmp_path):
     assert len(state["batches"]) == report.stats["n_checks"]
     assert load_json(SweepReport, run_dir / "report.json").stats["items_kept"] == 10
     assert list_runs(tmp_path) == [run_dir]
+
+
+def test_capture_logs_puts_cleansweep_logs_in_the_events(tmp_path):
+    import logging
+
+    from app.live_runner import capture_logs
+
+    log = EventLog(tmp_path / "events.jsonl")
+    with capture_logs(log):
+        logging.getLogger("cleansweep.reviewer.overengineering").info("dropped a finding")
+        logging.getLogger("other").info("not ours")
+    logging.getLogger("cleansweep.reviewer").info("after the run")
+    events = read_events(tmp_path / "events.jsonl")
+    assert [e["message"] for e in events] == ["dropped a finding"]
+    assert fold(events)["logs"][0]["logger"] == "cleansweep.reviewer.overengineering"

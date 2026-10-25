@@ -245,6 +245,9 @@ def show_bottom(state: dict, target_path: str, frame: int) -> None:
             st.subheader("Outcome vs. answer key")
             st.metric("Outcome accuracy", f"{score['hits']}/{score['total']}")
             st.dataframe(score["table"], hide_index=True, width="stretch", key=f"score-{frame}")
+    if state["logs"]:
+        with st.expander(f"Run log ({len(state['logs'])} lines)"):
+            st.code("\n".join(f"{e['level']} {e['logger']}: {e['message']}" for e in state["logs"]))
     st.subheader("Toy repo runs so far")
     compare = compare_reports(ROOT / "results" / "raw" / "toy")
     if compare.empty:
