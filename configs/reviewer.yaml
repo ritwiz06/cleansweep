@@ -10,3 +10,10 @@ snippet_context_lines: 10
 #   advisory:   the judge only adds its reason and confidence; lanes stay as the
 #               detectors set them and the Guard decides (security items stay in suggest)
 judge_mode: gatekeeper
+# Over-engineering review (one extra LLM prompt): reports extra checks, needless abstractions,
+# unused parameters and impossible-case code as report_only items in the suggest lane.
+# Reads agent-written files when the features mark them, else all non-test .py files (capped).
+# CLEANSWEEP_OVERENGINEERING=0 turns it off for one run.
+overengineering: true
+overengineering_max_files: 20
+overengineering_budget_chars: 12000

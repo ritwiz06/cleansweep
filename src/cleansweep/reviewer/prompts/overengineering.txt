@@ -1,0 +1,24 @@
+Look for over-engineering in the Python files below. They are part of a project that a
+coding agent worked on. Report only clear cases of these four kinds:
+
+- "extra_check": a check or validation that repeats one already made, or that every caller
+  already guarantees.
+- "needless_abstraction": a class, layer, wrapper or indirection with a single user that
+  adds nothing.
+- "unused_parameter": a parameter the function never reads.
+- "impossible_case": defensive code for a case that can't happen given how the code is
+  called (for example, a None check on a value that is never None).
+
+Don't report dead code, duplicate functions, unused imports, leftover files or formatting;
+other tools already find those. Don't suggest new features or style changes. If nothing is
+clearly over-engineered, return an empty list.
+
+Return a JSON list with one object per finding:
+{"path": "<file path exactly as given>", "start_line": <int>, "end_line": <int>,
+ "kind": "extra_check|needless_abstraction|unused_parameter|impossible_case",
+ "reason": "<one or two plain sentences a teammate could read quickly>", "confidence": 0.0-1.0}
+
+Each line of code starts with its line number.
+
+Files:
+{files}

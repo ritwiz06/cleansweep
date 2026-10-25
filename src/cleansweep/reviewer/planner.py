@@ -7,6 +7,7 @@ from cleansweep.core.models import CATEGORIES, CleanupPlan
 
 from .detectors import run_detectors
 from .judge import judge_items
+from .overengineering import review_overengineering
 
 
 def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> CleanupPlan:
@@ -17,5 +18,6 @@ def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> Cleanup
     items = run_detectors(repo_dir, graph)
     if use_llm and llm is not None:
         items = judge_items(items, repo_dir, llm, graph=graph)
+        items += review_overengineering(items, repo_dir, graph, llm)
     items.sort(key=lambda i: (i.lane != "safe", CATEGORIES.index(i.category), i.unit.key))
     return CleanupPlan(repo_id, datetime.now(UTC).isoformat(timespec="seconds"), items)
