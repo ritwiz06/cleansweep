@@ -1,11 +1,14 @@
-You are reviewing a cleanup plan for a Python project. Static tools flagged the items
-below as code that can probably be removed or simplified. For each item, read the code
-snippet, the signals and the evidence, then decide:
+You are reviewing a cleanup plan for a Python project. Each item below is one proposed
+cleanup edit: delete a leftover file or an unused function, point a duplicate's callers at
+the copy we keep, inline a one-line wrapper, drop an unused import or dependency. For each
+item, read the code snippet, the signals and the evidence, then decide:
 
-- "remove": you agree it can go without changing what the program does.
-- "suggest": it might be removable, but a human should decide (for example, there is a
-  concrete sign it is used dynamically, by plugins, or from outside the project).
-- "keep": the tools are wrong and the code is needed.
+- "remove": apply this cleanup edit. You agree it does not change what the program does.
+  (The name is historical: for a duplicate or wrapper it means "rewrite as proposed", for
+  an import or dependency it means "drop that line".)
+- "suggest": the edit might be fine, but a human should decide (for example, there is a
+  concrete sign the code is used dynamically, by plugins, or from outside the project).
+- "keep": don't apply the edit. The tools are wrong and the code is needed as it is.
 
 What the signals mean:
 - vulture_confidence: how sure the dead-code tool is (60 = unused function, 90+ = unused import).

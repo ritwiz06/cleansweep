@@ -134,6 +134,14 @@ def test_leftover_files_get_import_and_main_signals(toy_repo):
     assert "typical leftover" in prompt
 
 
+def test_prompt_says_remove_means_apply_the_edit(toy_repo):
+    llm = judge_reply()
+    judge_items([make("a")], toy_repo, llm)
+    prompt = llm.calls[0][-1]["content"]
+    assert '"remove": apply this cleanup edit' in prompt
+    assert "don't apply the edit" in prompt
+
+
 def test_unreadable_reply_keeps_items(toy_repo):
     class Broken(FakeLLM):
         def chat_json(self, messages, temperature=0.0, seed=None):
