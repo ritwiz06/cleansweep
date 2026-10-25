@@ -1,0 +1,7 @@
+| run | kept | test runs | lines removed | visible broken | hidden changed |
+|---|---|---|---|---|---|
+| cleansweep, judge off | 11 | 4 | 59 | 0 | yes |
+| cleansweep, gatekeeper | 10 | 4 | 50 | 0 | no |
+| cleansweep, advisory | 11 | 4 | 59 | 0 | yes |
+| tools_only | 7 | 0 | 38 | 2 | yes |
+| no_batching, gatekeeper | 10 | 11 | 50 | 0 | no |

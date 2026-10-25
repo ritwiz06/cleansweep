@@ -4,3 +4,4 @@ bandit>=1.7
 streamlit>=1.45
 plotly>=5.20
 pandas>=2.1
+matplotlib>=3.8

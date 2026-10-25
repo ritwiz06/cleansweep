@@ -1,0 +1,6 @@
+| recording | target | judge mode | model | kept | test runs | lines removed | hidden changed | outcome |
+|---|---|---|---|---|---|---|---|---|
+| 20261024_toy_advisory | toy repo | advisory | qwen36-35b-a3b | 11 | 4 | 59 | yes | 12/13 |
+| 20261024_toy_gatekeeper | toy repo | gatekeeper | qwen36-35b-a3b | 10 | 4 | 50 | no | 13/13 |
+| 20261025_demo_feature_advisory | demo app + feature | advisory | qwen36-35b-a3b | 6 | 4 | 56 | yes | 6/7 |
+| 20261025_demo_feature_gatekeeper | demo app + feature | gatekeeper | qwen36-35b-a3b | 5 | 4 | 47 | no | 7/7 |
