@@ -173,7 +173,7 @@ def test_untested_or_uncovered_findings_are_kept():
 def test_prompt_shows_test_calls(toy_repo):
     llm = FakeLLM({KEY: "[]"})
     oe.review_overengineering([], toy_repo, build_graph(toy_repo), llm)
-    prompt = llm.calls[0][-1]["content"]
+    prompt = "\n".join(call[-1]["content"] for call in llm.calls)
     assert "Test calls:" in prompt
     assert "round_price: tests/test_pricing.py:" in prompt and "round_price(None)" in prompt
 

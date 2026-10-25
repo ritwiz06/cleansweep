@@ -16,4 +16,4 @@ judge_mode: gatekeeper
 # CLEANSWEEP_OVERENGINEERING=0 turns it off for one run.
 overengineering: true
 overengineering_max_files: 20
-overengineering_budget_chars: 12000
+overengineering_budget_chars: 5000

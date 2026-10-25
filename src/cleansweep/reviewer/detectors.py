@@ -34,7 +34,7 @@ DEFAULTS = {
     "snippet_context_lines": 10,
     "overengineering": True,
     "overengineering_max_files": 20,
-    "overengineering_budget_chars": 12000,
+    "overengineering_budget_chars": 5000,
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 # when two detectors flag the same unit, the first category in this list wins
