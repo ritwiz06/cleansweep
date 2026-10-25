@@ -116,3 +116,95 @@ def test_build_plan_adds_over_engineering_items(toy_repo, monkeypatch):
     assert [i.unit.key for i in other] == ["shopcart/cart.py::Cart.add"]
     safe_positions = [n for n, i in enumerate(plan.items) if i.lane == "safe"]
     assert plan.items.index(other[0]) > max(safe_positions)
+
+
+def round_price_lines(graph):
+    start = graph.unit("shopcart/utils.py::round_price").start_line
+    return start + 2, start + 3  # "if value is None:" and "return 0.0"
+
+
+def test_tested_impossible_findings_are_dropped(toy_ws, caplog):
+    graph = build_graph(toy_ws.path)
+    coverage = oe.load_coverage(toy_ws.coverage_json())
+    check, body = round_price_lines(graph)
+    add = graph.unit("shopcart/cart.py::Cart.add")
+    findings = [
+        {
+            "path": "shopcart/utils.py",
+            "start_line": check,
+            "end_line": body,
+            "kind": "impossible_case",
+            "reason": "The None check can never trigger.",
+        },
+        {
+            "path": "shopcart/cart.py",
+            "start_line": add.start_line + 1,
+            "end_line": add.start_line + 2,
+            "kind": "extra_check",
+            "reason": "Callers never pass zero.",
+        },
+        {
+            "path": "shopcart/cart.py",
+            "start_line": add.start_line + 1,
+            "end_line": add.start_line + 2,
+            "kind": "needless_abstraction",
+            "reason": "This branch is unreachable.",
+        },
+    ]
+    with caplog.at_level("INFO", logger="cleansweep"):
+        kept = oe.drop_tested(findings, coverage)
+    assert [f["kind"] for f in kept] == ["extra_check"]
+    assert f"dropped over-engineering finding shopcart/utils.py:{check}-{body}" in caplog.text
+    assert "test_pricing.test_round_price" in caplog.text
+
+
+def test_untested_or_uncovered_findings_are_kept():
+    finding = {
+        "path": "m.py",
+        "start_line": 3,
+        "end_line": 4,
+        "kind": "impossible_case",
+        "reason": "x",
+    }
+    assert oe.drop_tested([finding], {"m.py": {3: [], 9: ["t.test_a"]}}) == [finding]
+    assert oe.drop_tested([finding], {}) == [finding]
+
+
+def test_prompt_shows_test_calls(toy_repo):
+    llm = FakeLLM({KEY: "[]"})
+    oe.review_overengineering([], toy_repo, build_graph(toy_repo), llm)
+    prompt = "\n".join(call[-1]["content"] for call in llm.calls)
+    assert "Test calls:" in prompt
+    assert "round_price: tests/test_pricing.py:" in prompt and "round_price(None)" in prompt
+
+
+def test_calls_from_tests_keeps_three_per_function():
+    lines = [("tests/t.py", n, f"assert f({n}) == {n}") for n in range(1, 6)]
+    calls = oe.calls_from_tests("def f(x):\n    return x\n\n\ndef g():\n    pass\n", lines)
+    assert len(calls) == 3 and all(c.startswith("  f: tests/t.py:") for c in calls)
+
+
+def test_build_plan_runs_coverage_once_and_drops_tested_claims(toy_ws, monkeypatch):
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "off")
+    graph = build_graph(toy_ws.path)
+    check, body = round_price_lines(graph)
+    finding = {
+        "path": "shopcart/utils.py",
+        "start_line": check,
+        "end_line": body,
+        "kind": "impossible_case",
+        "reason": "The None check can never trigger.",
+    }
+    plan = build_plan(toy_ws, graph, FakeLLM({KEY: json.dumps([finding])}), use_llm=True)
+    assert toy_ws.test_runs == 1
+    assert not [i for i in plan.items if i.category == "other"]
+
+
+def test_a_failed_request_is_logged_and_skipped(toy_repo, caplog):
+    class Down(FakeLLM):
+        def chat_json(self, messages, temperature=0.0, seed=None):
+            raise RuntimeError("524 gateway timeout")
+
+    with caplog.at_level("WARNING", logger="cleansweep"):
+        assert oe.review_overengineering([], toy_repo, build_graph(toy_repo), Down()) == []
+    assert "over-engineering review skipped" in caplog.text and "524" in caplog.text

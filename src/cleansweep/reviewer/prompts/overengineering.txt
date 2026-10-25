@@ -18,7 +18,9 @@ Return a JSON list with one object per finding:
  "kind": "extra_check|needless_abstraction|unused_parameter|impossible_case",
  "reason": "<one or two plain sentences a teammate could read quickly>", "confidence": 0.0-1.0}
 
-Each line of code starts with its line number.
+Each line of code starts with its line number. After a file, "Test calls" lists up to three
+lines from the tests that call each of its functions. Code that a test calls with a value
+is not a case that can't happen.
 
 Files:
 {files}
