@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import ast
+import json
+import logging
 import os
+import re
 from pathlib import Path
 
 from cleansweep.analysis import extract_features
@@ -12,6 +16,13 @@ from .detectors import _settings, _unit_at, item_id
 PROMPT = (Path(__file__).parent / "prompts" / "overengineering.txt").read_text()
 ENV = "CLEANSWEEP_OVERENGINEERING"
 EVIDENCE = "over-engineering review"
+log = logging.getLogger(__name__)
+MAX_TEST_CALLS = 3
+IMPOSSIBLE = re.compile(
+    r"unreachable|can(?:'|no)t happen"
+    r"|never (?:happens?|triggers?|be reached|reached|runs?|executes?)",
+    re.IGNORECASE,
+)
 KINDS = {
     "extra_check": "extra check",
     "needless_abstraction": "needless abstraction",
@@ -56,6 +67,102 @@ def pack(files: list[tuple[str, str]], budget: int) -> list[list[tuple[str, str]
     if current:
         requests.append(current)
     return requests
+
+
+def wanted() -> bool:
+    """True if the review would run (config and env switch), so callers can skip its setup."""
+    return enabled(_settings())
+
+
+def load_coverage(coverage_json: str | None) -> dict[str, dict[int, list[str]]]:
+    """Per file and line, the tests that ran it (from Workspace.coverage_json)."""
+    if not coverage_json or not Path(coverage_json).exists():
+        return {}
+    data = json.loads(Path(coverage_json).read_text(encoding="utf-8"))
+    return {
+        name.replace("\\", "/"): {
+            int(line): [c for c in contexts if c]
+            for line, contexts in info.get("contexts", {}).items()
+        }
+        for name, info in data.get("files", {}).items()
+    }
+
+
+def says_impossible(finding: dict) -> bool:
+    return finding.get("kind") == "impossible_case" or bool(
+        IMPOSSIBLE.search(str(finding.get("reason", "")))
+    )
+
+
+def drop_tested(findings: list, coverage: dict[str, dict[int, list[str]]]) -> list:
+    """Drop "can't happen" findings on lines that a test runs; log each one."""
+    if not coverage:
+        return findings
+    kept = []
+    for f in findings:
+        if isinstance(f, dict) and says_impossible(f):
+            try:
+                start = int(f["start_line"])
+                end = int(f.get("end_line") or start)
+            except (KeyError, TypeError, ValueError):
+                kept.append(f)
+                continue
+            lines = coverage.get(str(f.get("path")), {})
+            hits: dict[str, int] = {}
+            for n in range(start, end + 1):
+                for test in lines.get(n, []):
+                    hits[test] = hits.get(test, 0) + 1
+            if hits:
+                # tests that run more of the flagged lines (e.g. the branch body) come first
+                ranked = sorted(hits, key=lambda t: (-hits[t], t))
+                log.info(
+                    "dropped over-engineering finding %s:%d-%d (%s): %d test(s) run these lines, "
+                    "e.g. %s",
+                    f.get("path"),
+                    start,
+                    end,
+                    str(f.get("reason", ""))[:120],
+                    len(ranked),
+                    ", ".join(ranked[:3]),
+                )
+                continue
+        kept.append(f)
+    return kept
+
+
+def _test_lines(repo_dir: str) -> list[tuple[str, int, str]]:
+    out = []
+    for path in iter_py_files(repo_dir):
+        if is_test_file(path):
+            text = (Path(repo_dir) / path).read_text(encoding="utf-8", errors="replace")
+            out += [(path, n, line.strip()) for n, line in enumerate(text.splitlines(), 1)]
+    return out
+
+
+def _function_names(source: str) -> list[str]:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    names = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            names.append(node.name)
+        elif isinstance(node, ast.ClassDef):
+            names += [
+                n.name for n in node.body if isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef)
+            ]
+    return names
+
+
+def calls_from_tests(source: str, test_lines: list[tuple[str, int, str]]) -> list[str]:
+    """Up to MAX_TEST_CALLS test lines calling each function defined in `source`."""
+    out = []
+    for name in dict.fromkeys(_function_names(source)):
+        call = re.compile(rf"(?<![\w]){re.escape(name)}\(")
+        hits = [f"{p}:{n}: {line}" for p, n, line in test_lines if call.search(line)]
+        out += [f"  {name}: {hit}" for hit in hits[:MAX_TEST_CALLS]]
+    return out
 
 
 def _numbered(repo_dir: str, path: str) -> tuple[str, int]:
@@ -110,9 +217,12 @@ def to_items(
 
 
 def review_overengineering(
-    items: list[CleanupItem], repo_dir: str, graph, llm, features=None
+    items: list[CleanupItem], repo_dir: str, graph, llm, features=None, coverage_json=None
 ) -> list[CleanupItem]:
-    """Ask the LLM for over-engineering; return new suggest-lane, report_only items."""
+    """Ask the LLM for over-engineering; return new suggest-lane, report_only items.
+
+    With coverage, "can't happen" findings on lines that a test runs are dropped.
+    """
     cfg = _settings()
     if llm is None or not enabled(cfg):
         return []
@@ -121,9 +231,14 @@ def review_overengineering(
     leftovers = {i.unit.path for i in items if i.category == "leftover_file"}
     files = select_files(repo_dir, features, leftovers, cfg.get("overengineering_max_files", 20))
     texts, line_counts = [], {}
+    tests = _test_lines(repo_dir)
     for path in files:
         text, count = _numbered(repo_dir, path)
         if count:
+            source = (Path(repo_dir) / path).read_text(encoding="utf-8", errors="replace")
+            calls = calls_from_tests(source, tests)
+            if calls:
+                text += "\nTest calls:\n" + "\n".join(calls)
             texts.append((path, text))
             line_counts[path] = count
     findings: list = []
@@ -131,7 +246,16 @@ def review_overengineering(
         body = "\n\n".join(f"### {path}\n{text}" for path, text in request)
         try:
             reply = llm.chat_json([{"role": "user", "content": PROMPT.replace("{files}", body)}])
-        except ValueError:
-            continue  # unreadable answer: skip this group of files
+        except (
+            Exception
+        ) as exc:  # optional, report-only step: a failed request must not stop the sweep
+            log.warning(
+                "over-engineering review skipped %d file(s): %s: %s",
+                len(request),
+                type(exc).__name__,
+                str(exc).splitlines()[0][:200],
+            )
+            continue
         findings += reply if isinstance(reply, list) else reply.get("findings", [])
+    findings = drop_tested(findings, load_coverage(coverage_json))
     return to_items(findings, graph, line_counts, {i.unit.key for i in items})
