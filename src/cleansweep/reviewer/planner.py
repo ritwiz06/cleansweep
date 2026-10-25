@@ -16,6 +16,6 @@ def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> Cleanup
     graph = graph or build_graph(repo_dir)
     items = run_detectors(repo_dir, graph)
     if use_llm and llm is not None:
-        items = judge_items(items, repo_dir, llm)
+        items = judge_items(items, repo_dir, llm, graph=graph)
     items.sort(key=lambda i: (i.lane != "safe", CATEGORIES.index(i.category), i.unit.key))
     return CleanupPlan(repo_id, datetime.now(UTC).isoformat(timespec="seconds"), items)

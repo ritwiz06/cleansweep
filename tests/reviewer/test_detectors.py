@@ -25,3 +25,14 @@ def test_items_have_evidence_and_stable_ids(toy_repo):
     second = run_detectors(toy_repo)
     assert [i.item_id for i in first] == [i.item_id for i in second]
     assert all(i.evidence and i.reason for i in first)
+
+
+def test_dependency_evidence_mentions_configs(tmp_path):
+    from cleansweep.reviewer.detectors import _dependency_mentions
+
+    (tmp_path / "requirements.txt").write_text("gunicorn\nrequests\n")
+    (tmp_path / "Dockerfile").write_text("CMD gunicorn app:app\n")
+    assert _dependency_mentions(str(tmp_path), "gunicorn", "requirements.txt") == [
+        "gunicorn is mentioned in Dockerfile"
+    ]
+    assert "not mentioned" in _dependency_mentions(str(tmp_path), "requests", "requirements.txt")[0]

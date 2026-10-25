@@ -1,11 +1,32 @@
 You are reviewing a cleanup plan for a Python project. Static tools flagged the items
 below as code that can probably be removed or simplified. For each item, read the code
-snippet and the evidence, then decide:
+snippet, the signals and the evidence, then decide:
 
 - "remove": you agree it can go without changing what the program does.
-- "suggest": it might be removable, but a human should decide (for example, it could be
-  used dynamically, by plugins, or from outside the project).
+- "suggest": it might be removable, but a human should decide (for example, there is a
+  concrete sign it is used dynamically, by plugins, or from outside the project).
 - "keep": the tools are wrong and the code is needed.
+
+What the signals mean:
+- vulture_confidence: how sure the dead-code tool is (60 = unused function, 90+ = unused import).
+- reachable_from_entry_points: whether our call graph reaches the unit from tests,
+  __main__ blocks or scripts. false means no static path uses it.
+- dynamic_risk: the unit may be reached in ways the graph can't see (getattr, string
+  lookups, decorators). Treat this as a real reason for caution.
+- deptry_code, imported_anywhere_in_repo, mentioned_in_config_or_ci: facts about a
+  listed dependency. DEP002 means no file in the repo imports the package.
+- duplicate_of, duplicate_similarity, identical_body: the copy we would keep instead.
+  When identical_body is false, compare the two bodies carefully: small differences
+  (rounding, edge cases, error handling) change behavior.
+
+Rules:
+- An unused dependency with imported_anywhere_in_repo = false and
+  mentioned_in_config_or_ci = false is strong evidence for removal. Do not keep it or
+  suggest it just because some unseen script or pipeline might need it. Only hold it back
+  if the evidence or code shows a concrete use (for example a CLI tool, a plugin entry
+  point, or a mention in a config file).
+- Items from the same file, and items in the same duplicate group, are sent together.
+  Make your decisions consistent across them, and explain any difference.
 
 Return a JSON list with one object per item:
 {"item_id": "...", "decision": "remove|suggest|keep", "reason": "...", "confidence": 0.0-1.0}

@@ -254,11 +254,47 @@ def detect_unused_dependencies(repo_dir: str) -> list[CleanupItem]:
                 "remove_dependency",
                 "safe",
                 f"{r['module']} is listed as a dependency but never imported.",
-                [f"deptry DEP002: {r['error']['message']}"],
+                [
+                    f"deptry DEP002: {r['error']['message']}",
+                    *_dependency_mentions(repo_dir, r["module"], unit.path),
+                ],
                 ["deptry"],
             )
         )
     return items
+
+
+# Files where a package can be used without a Python import (CLI tools, CI steps).
+DEPENDENCY_CONFIGS = [
+    "pyproject.toml",
+    "setup.cfg",
+    "setup.py",
+    "tox.ini",
+    "noxfile.py",
+    "Makefile",
+    "Dockerfile",
+    ".pre-commit-config.yaml",
+]
+
+
+def _dependency_mentions(repo_dir: str, package: str, declared_in: str) -> list[str]:
+    root = Path(repo_dir)
+    candidates = [root / name for name in DEPENDENCY_CONFIGS]
+    candidates += sorted((root / ".github" / "workflows").glob("*.y*ml"))
+    candidates += sorted(root.glob("*.sh"))
+    pattern = re.compile(rf"(?<![\w-]){re.escape(package)}(?![\w-])", re.IGNORECASE)
+    found = []
+    for path in candidates:
+        rel = path.relative_to(root).as_posix()
+        if (
+            rel != declared_in
+            and path.is_file()
+            and pattern.search(path.read_text(errors="replace"))
+        ):
+            found.append(rel)
+    if found:
+        return [f"{package} is mentioned in {', '.join(found)}"]
+    return [f"{package} is not mentioned in any config, CI or script file"]
 
 
 def detect_security(repo_dir: str, graph, min_severity: str) -> list[CleanupItem]:
