@@ -94,38 +94,96 @@ def says_impossible(finding: dict) -> bool:
     )
 
 
-def drop_tested(findings: list, coverage: dict[str, dict[int, list[str]]]) -> list:
-    """Drop "can't happen" findings on lines that a test runs; log each one."""
+def _guard_bodies(tree: ast.Module, start: int, end: int) -> list[set[int]]:
+    """Body lines of each if / try / except / assert guard whose header is in start..end."""
+    bodies = []
+    for node in ast.walk(tree):
+        if not start <= getattr(node, "lineno", 0) <= end:
+            continue
+        if isinstance(node, ast.If):
+            stmts = node.body
+        elif isinstance(node, ast.Try | ast.TryStar):
+            stmts = [s for handler in node.handlers for s in handler.body]
+        elif isinstance(node, ast.ExceptHandler):
+            stmts = node.body
+        elif isinstance(node, ast.Assert):
+            stmts = []  # the failing path has no lines of its own, so coverage can't show it
+        else:
+            continue
+        bodies.append({n for stmt in stmts for n in range(stmt.lineno, stmt.end_lineno + 1)})
+    return bodies
+
+
+def evidence_lines(source: str | None, start: int, end: int) -> set[int]:
+    """Lines whose coverage shows that a flagged "can't happen" case does happen.
+
+    A guard's condition runs on every call, so for if / try / except / assert guards only
+    the guarded block counts. Single-line findings, and findings without a guard, use any line.
+    """
+    every = set(range(start, end + 1))
+    if start == end or source is None:
+        return every
+    try:
+        bodies = _guard_bodies(ast.parse(source), start, end)
+    except SyntaxError:
+        return every
+    return set().union(*bodies) if bodies else every
+
+
+def drop_tested(
+    findings: list, coverage: dict[str, dict[int, list[str]]], repo_dir: str | None = None
+) -> list:
+    """Drop "can't happen" findings whose guarded code a test runs; log each decision."""
     if not coverage:
         return findings
+    sources: dict[str, str | None] = {}
     kept = []
     for f in findings:
-        if isinstance(f, dict) and says_impossible(f):
-            try:
-                start = int(f["start_line"])
-                end = int(f.get("end_line") or start)
-            except (KeyError, TypeError, ValueError):
-                kept.append(f)
-                continue
-            lines = coverage.get(str(f.get("path")), {})
-            hits: dict[str, int] = {}
-            for n in range(start, end + 1):
-                for test in lines.get(n, []):
-                    hits[test] = hits.get(test, 0) + 1
-            if hits:
-                # tests that run more of the flagged lines (e.g. the branch body) come first
-                ranked = sorted(hits, key=lambda t: (-hits[t], t))
-                log.info(
-                    "dropped over-engineering finding %s:%d-%d (%s): %d test(s) run these lines, "
-                    "e.g. %s",
-                    f.get("path"),
-                    start,
-                    end,
-                    str(f.get("reason", ""))[:120],
-                    len(ranked),
-                    ", ".join(ranked[:3]),
-                )
-                continue
+        if not (isinstance(f, dict) and says_impossible(f)):
+            kept.append(f)
+            continue
+        try:
+            start = int(f["start_line"])
+            end = int(f.get("end_line") or start)
+        except (KeyError, TypeError, ValueError):
+            kept.append(f)
+            continue
+        path = str(f.get("path"))
+        if path not in sources:
+            file = Path(repo_dir) / path if repo_dir else None
+            sources[path] = (
+                file.read_text(encoding="utf-8", errors="replace")
+                if file and file.is_file()
+                else None
+            )
+        lines = coverage.get(path, {})
+        hits: dict[str, int] = {}
+        for n in evidence_lines(sources[path], start, end):
+            for test in lines.get(n, []):
+                hits[test] = hits.get(test, 0) + 1
+        reason = str(f.get("reason", ""))[:120]
+        if hits:
+            ranked = sorted(hits, key=lambda t: (-hits[t], t))
+            log.info(
+                "dropped over-engineering finding %s:%d-%d (%s): %d test(s) run the guarded "
+                "code, e.g. %s",
+                path,
+                start,
+                end,
+                reason,
+                len(ranked),
+                ", ".join(ranked[:3]),
+            )
+            continue
+        if any(lines.get(n) for n in range(start, end + 1)):
+            log.info(
+                "kept over-engineering finding %s:%d-%d (%s): tests run the condition but not "
+                "the guarded code",
+                path,
+                start,
+                end,
+                reason,
+            )
         kept.append(f)
     return kept
 
@@ -192,6 +250,13 @@ def to_items(
             path, owner.kind if owner else "file", owner.name if owner else None, start, end
         )
         if unit.key in taken:
+            log.info(
+                "skipped over-engineering finding %s:%d-%d: %s already has a cleanup item",
+                path,
+                start,
+                end,
+                unit.key,
+            )
             continue
         kind = KINDS.get(str(f.get("kind")), "over-engineering")
         if unit.key in items:
@@ -257,5 +322,5 @@ def review_overengineering(
             )
             continue
         findings += reply if isinstance(reply, list) else reply.get("findings", [])
-    findings = drop_tested(findings, load_coverage(coverage_json))
+    findings = drop_tested(findings, load_coverage(coverage_json), repo_dir)
     return to_items(findings, graph, line_counts, {i.unit.key for i in items})
