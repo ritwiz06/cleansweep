@@ -8,7 +8,7 @@ core:
     alt_model_env: VOYAGER_MODEL_ALT
     cache_path: .cleansweep/llm_cache.sqlite
     max_retries: 5
-    timeout_s: 120
+    timeout_s: 600
   sandbox:
     work_dir: null         # null = <system temp>/cleansweep/ws
     quarantine_dir: .cleansweep/quarantine

@@ -72,3 +72,19 @@ def test_chat_json_strips_fences_and_retries():
 
 def test_parse_json_text_with_chatter():
     assert parse_json_text('Sure! [{"x": 1}]') == [{"x": 1}]
+
+
+def test_get_client_uses_config_timeout_and_no_sdk_retries(monkeypatch, tmp_path):
+    import openai
+
+    from cleansweep.core.config import load_config
+    from cleansweep.llm.client import get_client
+
+    seen = {}
+    monkeypatch.setattr(openai, "OpenAI", lambda **kw: seen.update(kw) or object())
+    monkeypatch.setenv("VOYAGER_API_KEY", "test-key")
+    monkeypatch.setenv("VOYAGER_MODEL", "m")
+    cfg = {**load_config()["core"]["llm"], "cache_path": str(tmp_path / "c.sqlite")}
+    get_client(cfg)
+    assert seen["timeout"] == 600
+    assert seen["max_retries"] == 0

@@ -49,13 +49,16 @@ class LLMClient:
         api_key: str | None = None,
         cache_path: str | None = None,
         max_retries: int = 5,
-        timeout_s: float = 120,
+        timeout_s: float = 600,
         openai_client=None,
     ):
         if openai_client is None:
             from openai import OpenAI
 
-            openai_client = OpenAI(base_url=base_url, api_key=api_key, timeout=timeout_s)
+            # our own loop retries; SDK retries would stack on top of it
+            openai_client = OpenAI(
+                base_url=base_url, api_key=api_key, timeout=timeout_s, max_retries=0
+            )
         self._client = openai_client
         self.model = model
         self.max_retries = max_retries
@@ -145,5 +148,5 @@ def get_client(cfg: dict | None = None) -> LLMClient:
         api_key=api_key,
         cache_path=cfg.get("cache_path", ".cleansweep/llm_cache.sqlite"),
         max_retries=cfg.get("max_retries", 5),
-        timeout_s=cfg.get("timeout_s", 120),
+        timeout_s=cfg.get("timeout_s", 600),
     )
