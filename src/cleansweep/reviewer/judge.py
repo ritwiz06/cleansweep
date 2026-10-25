@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -12,6 +13,7 @@ MODES = ("gatekeeper", "advisory", "off")
 MODE_ENV = "CLEANSWEEP_JUDGE_MODE"
 DECISIONS = ("remove", "suggest", "keep")
 STILL_USED = "Judge thinks this is still used:"
+FORMAT_REASON = "Formatting only; the Guard checks the code structure is unchanged."
 VULTURE = re.compile(r"vulture: unused \w+ \((\d+)% confidence\)")
 DEPTRY = re.compile(r"deptry (DEP\d+)")
 SIMILARITY = re.compile(r"similarity ([\d.]+)")
@@ -29,14 +31,51 @@ def snippet(repo_dir: str, item: CleanupItem, context: int = 10) -> str:
     return "\n".join(f"{i:>4} {lines[i - 1]}" for i in range(start, end + 1))
 
 
-def signals(item: CleanupItem, graph=None) -> dict:
+def _has_main_block(repo_dir: str, path: str) -> bool | None:
+    try:
+        tree = ast.parse((Path(repo_dir) / path).read_text(encoding="utf-8", errors="replace"))
+    except (OSError, SyntaxError):
+        return None
+    return any(
+        isinstance(node, ast.If)
+        and "__name__" in (test := ast.unparse(node.test))
+        and "__main__" in test
+        for node in tree.body
+    )
+
+
+def _leftover_signals(item: CleanupItem, graph, repo_dir: str | None, text: str) -> dict:
+    # A leftover script's own __main__ block makes it an "entry point", so reachability says
+    # nothing useful here; who imports it and whether config mentions it does.
+    from cleansweep.analysis.graph import name_in_configs
+
+    out: dict = {}
+    importers = getattr(graph, "imported_by", None)
+    if importers is not None:
+        out["imported_by"] = len(importers.get(item.unit.path, ()))
+    elif "no other file imports it" in text:
+        out["imported_by"] = 0
+    if repo_dir:
+        if (main := _has_main_block(repo_dir, item.unit.path)) is not None:
+            out["has_main_block"] = main
+        out["mentioned_in_config"] = name_in_configs(repo_dir, item.unit.path)
+    elif "not mentioned in project config files" in text:
+        out["mentioned_in_config"] = False
+    return out
+
+
+def signals(item: CleanupItem, graph=None, repo_dir: str | None = None) -> dict:
     """The detector facts behind an item, as named fields the judge can weigh."""
     text = " | ".join(item.evidence)
     out: dict = {}
     if m := VULTURE.search(text):
         out["vulture_confidence"] = int(m.group(1))
-    if graph is not None and item.unit.kind in GRAPH_KINDS:
+    in_graph = graph is not None and item.unit.kind in GRAPH_KINDS
+    if item.category == "leftover_file":
+        out.update(_leftover_signals(item, graph, repo_dir, text))
+    elif in_graph:
         out["reachable_from_entry_points"] = graph.is_reachable(item.unit.key)
+    if in_graph:
         out["dynamic_risk"] = graph.dynamic_risk(item.unit.key)
     elif "dynamic" in text:
         out["dynamic_risk"] = True
@@ -149,14 +188,20 @@ def judge_items(
     batch_size = batch_size or cfg.get("judge_batch_size", 10)
     context = cfg.get("snippet_context_lines", 10)
 
+    # formatting can't change behavior, and the Guard compares the AST anyway
+    for item in items:
+        if item.category == "format":
+            item.reason = FORMAT_REASON
+    to_judge = [it for it in items if it.category != "format"]
+
     decisions: dict[str, dict] = {}
-    for request in group_requests(items, batch_size):
+    for request in group_requests(to_judge, batch_size):
         payload = [
             {
                 "item_id": it.item_id,
                 "category": it.category,
                 "unit": it.unit.key,
-                "signals": signals(it, graph),
+                "signals": signals(it, graph, repo_dir),
                 "evidence": it.evidence,
                 "code": snippet(repo_dir, it, context),
             }
@@ -170,7 +215,7 @@ def judge_items(
         for row in reply if isinstance(reply, list) else reply.get("items", []):
             if isinstance(row, dict) and "item_id" in row:
                 decisions[row["item_id"]] = row
-    for item in items:
+    for item in to_judge:
         if item.item_id in decisions:
             _apply(item, decisions[item.item_id], mode)
     return items
