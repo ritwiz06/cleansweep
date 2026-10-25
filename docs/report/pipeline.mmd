@@ -1,0 +1,27 @@
+%% CleanSweep sweep pipeline as built (main, 2026-10-25). Source for pipeline.png.
+flowchart TD
+    T["Target: local Python project<br/>(toy repo, demo app, any path)"] --> O["open_workspace<br/>temp copy + git 'base' commit"]
+    O --> A["build_graph + extract_features<br/>AST code graph, reachability, duplicates"]
+    A --> D["Reviewer detectors<br/>leftover files, dead code, duplicates, wrappers,<br/>unused imports/deps, security, formatting"]
+    D --> J{"LLM judge<br/>CLEANSWEEP_JUDGE_MODE"}
+    J -- "gatekeeper: suggest/keep → suggest lane" --> P
+    J -- "advisory: reason + confidence only" --> P
+    J -- "off" --> P
+    P["Over-engineering review<br/>coverage run + test calls in prompt;<br/>report-only findings"] --> R["Ranker<br/>category priors → safe_score"]
+    R --> B["make_batches<br/>risk tiers; dynamic items alone"]
+    B --> G["apply_with_bisection(Guard.check_batch)"]
+    subgraph Guard["Guard: one check per batch"]
+        G1["apply edits<br/>(quarantine deleted files)"] --> G2["compile + import smoke test"]
+        G2 --> G3["project tests vs. baseline"]
+        G3 --> G4["AST equal? (format-only batches)"]
+        G4 -- pass --> K["keep (checkpoint)"]
+        G2 -- fail --> X["roll back; one repair try<br/>for single items; split batch in half"]
+        G3 -- fail --> X
+        G4 -- fail --> X
+    end
+    G --> G1
+    K --> S["SweepReport<br/>results + stats + final diff"]
+    X --> S
+    S --> H["run_hidden_checks<br/>&lt;target&gt;_hidden tests the Guard never sees"]
+    H --> M["summarize + answer-key outcome score"]
+    S -. "suggest lane: reported, not applied" .-> M
