@@ -7,6 +7,7 @@ from pathlib import Path
 from cleansweep.core.models import CleanupItem
 
 PROMPT = (Path(__file__).parent / "prompts" / "judge.txt").read_text()
+MODES = ("gatekeeper", "advisory")
 DECISIONS = ("remove", "suggest", "keep")
 STILL_USED = "Judge thinks this is still used:"
 VULTURE = re.compile(r"vulture: unused \w+ \((\d+)% confidence\)")
@@ -85,7 +86,7 @@ def group_requests(items: list[CleanupItem], batch_size: int) -> list[list[Clean
     return requests
 
 
-def _apply(item: CleanupItem, row: dict) -> None:
+def _apply(item: CleanupItem, row: dict, mode: str) -> None:
     decision = str(row.get("decision", "")).lower()
     if decision not in DECISIONS:
         return
@@ -100,22 +101,38 @@ def _apply(item: CleanupItem, row: dict) -> None:
     item.evidence.append(f"llm judge: {decision} (confidence {confidence})")
     if "llm" not in item.sources:
         item.sources.append("llm")
-    if decision == "keep":
+    if mode == "gatekeeper":
+        if decision == "keep":
+            item.lane, item.action = "suggest", "report_only"
+        elif decision == "suggest":
+            item.lane = "suggest"
+    if item.category == "security":
         item.lane, item.action = "suggest", "report_only"
-    elif decision == "suggest":
-        item.lane = "suggest"
 
 
 def judge_items(
     items: list[CleanupItem],
     repo_dir: str,
     llm,
-    batch_size: int = 10,
+    batch_size: int | None = None,
+    mode: str | None = None,
     graph=None,
 ) -> list[CleanupItem]:
-    """Ask the LLM about each item. Every item stays in the plan; "keep" moves it to suggest."""
+    """Ask the LLM about each item. Every item stays in the plan; the mode decides lanes.
+
+    gatekeeper: "suggest" and "keep" move an item to the suggest lane.
+    advisory: only the reason and confidence are recorded; the Guard decides.
+    """
     if llm is None:
         return items
+    from .detectors import _settings
+
+    cfg = _settings()
+    mode = mode or cfg.get("judge_mode", "gatekeeper")
+    if mode not in MODES:
+        raise ValueError(f"reviewer.judge_mode must be one of {MODES}, got {mode!r}")
+    batch_size = batch_size or cfg.get("judge_batch_size", 10)
+    context = cfg.get("snippet_context_lines", 10)
 
     decisions: dict[str, dict] = {}
     for request in group_requests(items, batch_size):
@@ -126,7 +143,7 @@ def judge_items(
                 "unit": it.unit.key,
                 "signals": signals(it, graph),
                 "evidence": it.evidence,
-                "code": snippet(repo_dir, it),
+                "code": snippet(repo_dir, it, context),
             }
             for it in request
         ]
@@ -140,5 +157,5 @@ def judge_items(
                 decisions[row["item_id"]] = row
     for item in items:
         if item.item_id in decisions:
-            _apply(item, decisions[item.item_id])
+            _apply(item, decisions[item.item_id], mode)
     return items

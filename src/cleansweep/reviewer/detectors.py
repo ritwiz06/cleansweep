@@ -29,6 +29,9 @@ DEFAULTS = {
     "vulture_min_confidence": 60,
     "duplicate_threshold": 0.8,
     "security_min_severity": "MEDIUM",
+    "judge_mode": "gatekeeper",
+    "judge_batch_size": 10,
+    "snippet_context_lines": 10,
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 # when two detectors flag the same unit, the first category in this list wins

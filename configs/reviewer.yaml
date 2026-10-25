@@ -5,3 +5,8 @@ duplicate_threshold: 0.8
 security_min_severity: MEDIUM
 judge_batch_size: 10
 snippet_context_lines: 10
+# How much say the LLM judge has over lanes:
+#   gatekeeper: "suggest" and "keep" move items to the suggest lane (they are not applied)
+#   advisory:   the judge only adds its reason and confidence; lanes stay as the
+#               detectors set them and the Guard decides (security items stay in suggest)
+judge_mode: gatekeeper

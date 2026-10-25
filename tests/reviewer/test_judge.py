@@ -1,6 +1,8 @@
 import json
 import re
 
+import pytest
+
 from cleansweep.core.models import CleanupItem, CodeUnit
 from cleansweep.llm import FakeLLM
 from cleansweep.reviewer import judge_items
@@ -42,13 +44,28 @@ def sent_ids(llm):
 def test_keep_moves_item_to_suggest_with_reason(toy_repo):
     items = [make("a"), make("b"), make("c")]
     llm = judge_reply(("a", "remove"), ("b", "suggest"), ("c", "keep"))
-    out = {i.item_id: i for i in judge_items(items, toy_repo, llm)}
+    out = {i.item_id: i for i in judge_items(items, toy_repo, llm, mode="gatekeeper")}
     assert set(out) == {"a", "b", "c"}
     assert out["a"].lane == "safe" and out["a"].llm_confidence == 0.8
     assert out["b"].lane == "suggest" and out["b"].reason == "suggest because"
     assert out["c"].lane == "suggest" and out["c"].action == "report_only"
     assert out["c"].reason == "Judge thinks this is still used: keep because"
     assert "llm judge: keep (confidence 0.8)" in out["c"].evidence
+
+
+def test_advisory_mode_keeps_detector_lanes(toy_repo):
+    items = [
+        make("a"),
+        make("b"),
+        make("c", lane="suggest"),
+        make("s", category="security", lane="suggest"),
+    ]
+    llm = judge_reply(("a", "keep"), ("b", "suggest"), ("c", "remove"), ("s", "remove"))
+    out = {i.item_id: i for i in judge_items(items, toy_repo, llm, mode="advisory")}
+    assert [out[k].lane for k in "abcs"] == ["safe", "safe", "suggest", "suggest"]
+    assert out["a"].action == "delete_unit"
+    assert out["a"].reason.startswith("Judge thinks this is still used:")
+    assert out["s"].action == "report_only" and out["s"].llm_confidence == 0.8
 
 
 def test_same_file_items_share_a_request(toy_repo):
@@ -102,9 +119,11 @@ def test_unreadable_reply_keeps_items(toy_repo):
             raise ValueError("bad json")
 
     items = [make("a")]
-    assert judge_items(items, toy_repo, Broken())[0].lane == "safe"
+    assert judge_items(items, toy_repo, Broken(), mode="gatekeeper")[0].lane == "safe"
 
 
-def test_no_llm(toy_repo):
+def test_no_llm_and_bad_mode(toy_repo):
     items = [make("a")]
     assert judge_items(items, toy_repo, None) == items
+    with pytest.raises(ValueError):
+        judge_items(items, toy_repo, FakeLLM(), mode="strict")
