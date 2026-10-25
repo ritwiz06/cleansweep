@@ -66,14 +66,17 @@ planted problems, including two traps: a command that is only reached through `g
 and a rounding helper that looks like a duplicate but rounds .5 differently. The hidden
 checks in `tests/fixtures/toy_repo_hidden` are never shown to the Guard.
 
-| Method | Edits kept | Test runs | Visible tests broken | Hidden checks changed |
+| Run | Kept | Test runs | Visible broken | Hidden changed |
 |---|---|---|---|---|
-| `cleansweep` (Guard uses tests only for now) | 11 | 4 | 0 | yes (near-duplicate trap) |
-| `tools_only` | 7 | 0 | 2 | yes |
-| `no_batching` | 11 | 12 | 0 | yes |
+| `cleansweep`, judge off (`CLEANSWEEP_JUDGE_MODE=off`) | 11 | 4 | 0 | yes (1 hidden test fails) |
+| `cleansweep`, judge in gatekeeper mode | 10 | 4 | 0 | no |
+| `cleansweep`, judge in advisory mode | 11 | 4 | 0 | yes (1 hidden test fails) |
+| `tools_only` | 7 | 0 | 2 | yes (2 hidden tests fail) |
+| `no_batching`, judge in gatekeeper mode | 10 | 11 | 0 | no |
 
-The near-duplicate trap passes every existing test, so the tests-only Guard keeps it.
-Catching it is the job of the differential probes, which are the next Guard task.
+In gatekeeper mode the LLM judge keeps the near-duplicate trap out of the edits, while
+advisory mode shows that the Guard can't catch it on its own until the differential probes
+are built.
 
 ## Repository layout
 
