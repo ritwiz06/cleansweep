@@ -122,6 +122,25 @@ def test_unreadable_reply_keeps_items(toy_repo):
     assert judge_items(items, toy_repo, Broken(), mode="gatekeeper")[0].lane == "safe"
 
 
+def test_format_items_skip_the_judge(toy_repo):
+    fmt = make("f", "shopcart/pricing.py", "format")
+    fmt.action = "format"
+    items = [fmt, make("a")]
+    llm = judge_reply(("f", "keep"), ("a", "remove"))
+    out = {i.item_id: i for i in judge_items(items, toy_repo, llm, mode="gatekeeper")}
+    assert sent_ids(llm) == [["a"]]
+    assert out["f"].lane == "safe" and out["f"].action == "format"
+    assert out["f"].reason == "Formatting only; the Guard checks the code structure is unchanged."
+    assert out["f"].llm_confidence is None
+
+
+def test_only_format_items_means_no_request(toy_repo):
+    fmt = make("f", "shopcart/pricing.py", "format")
+    llm = judge_reply()
+    judge_items([fmt], toy_repo, llm, mode="gatekeeper")
+    assert llm.calls == []
+
+
 def test_mode_from_env_overrides_config(monkeypatch, toy_repo):
     llm = judge_reply(("a", "keep"))
     monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "off")

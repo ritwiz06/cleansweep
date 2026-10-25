@@ -12,6 +12,7 @@ MODES = ("gatekeeper", "advisory", "off")
 MODE_ENV = "CLEANSWEEP_JUDGE_MODE"
 DECISIONS = ("remove", "suggest", "keep")
 STILL_USED = "Judge thinks this is still used:"
+FORMAT_REASON = "Formatting only; the Guard checks the code structure is unchanged."
 VULTURE = re.compile(r"vulture: unused \w+ \((\d+)% confidence\)")
 DEPTRY = re.compile(r"deptry (DEP\d+)")
 SIMILARITY = re.compile(r"similarity ([\d.]+)")
@@ -149,8 +150,14 @@ def judge_items(
     batch_size = batch_size or cfg.get("judge_batch_size", 10)
     context = cfg.get("snippet_context_lines", 10)
 
+    # formatting can't change behavior, and the Guard compares the AST anyway
+    for item in items:
+        if item.category == "format":
+            item.reason = FORMAT_REASON
+    to_judge = [it for it in items if it.category != "format"]
+
     decisions: dict[str, dict] = {}
-    for request in group_requests(items, batch_size):
+    for request in group_requests(to_judge, batch_size):
         payload = [
             {
                 "item_id": it.item_id,
@@ -170,7 +177,7 @@ def judge_items(
         for row in reply if isinstance(reply, list) else reply.get("items", []):
             if isinstance(row, dict) and "item_id" in row:
                 decisions[row["item_id"]] = row
-    for item in items:
+    for item in to_judge:
         if item.item_id in decisions:
             _apply(item, decisions[item.item_id], mode)
     return items
