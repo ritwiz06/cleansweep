@@ -21,13 +21,14 @@ leftover helper behind (`inventory._print_low_stock`).
 1. `.env` has the Voyager key; `VOYAGER_MODEL=qwen36-35b-a3b`.
 2. Terminal 1: `source .venv/bin/activate && streamlit run app/dashboard.py`, then open
    **Live sweep** in the browser.
-3. Terminal 2: `bash demo/prepare_demo.sh` (prints the app path; keep that terminal there).
-4. Check that Replay lists `20261024_demo_feature_gatekeeper` and `20261024_demo_feature_advisory`.
+3. Terminal 2: `bash demo/prepare_demo.sh`. It builds the app in `.cleansweep/demo/shop_app`
+   (gitignored) and prints that path.
+4. Check that Replay lists `20261025_demo_feature_gatekeeper` and `20261025_demo_feature_advisory`.
 5. OpenCode is connected to Voyager and opened in the prepared app folder.
 
 ## Script
 
-**0:00–0:30 · The app.** In terminal 2: `cd "$TMPDIR/cleansweep-demo/shop_app" && python -m pytest -q`
+**0:00–0:30 · The app.** In terminal 2: `cd .cleansweep/demo/shop_app && python -m pytest -q`
 (11 passed). Open `scratch_restock.py` and `orders.py` for a second: "an agent built this, and it left things behind."
 
 **0:30–1:30 · An agent adds a feature.** Ask OpenCode:
@@ -42,11 +43,12 @@ Run the tests again (12 passed).
 method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it runs:
 - Open → Analyze → Plan: the detectors, then the LLM judge (the stage bar shows a timer).
 - Plan table: green rows are safe edits, orange rows are only reported (the `cmd_*`
-  commands, `eval`, the over-engineering notes).
+  commands and the `eval`). The over-engineering review drops "can't happen" notes on
+  lines the tests run; the **Run log** under the diffs says which ones and why.
 - Guard feed: each card is one check: apply the batch, compile, import, run the tests.
 
 *If the judge is still working at 2:30, or the network is slow:* switch to **Replay**, pick
-`20261024_demo_feature_advisory`, speed 20×, press **Replay**.
+`20261025_demo_feature_advisory`, speed 20×, press **Replay**.
 
 **3:00–3:45 · What it found.**
 - Kept edits (slop meter): the leftover script, the old module, the dead function, the
@@ -56,11 +58,12 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
 - The near-duplicate `_round_money`: in advisory mode the Guard kept it, because every
   test passes, but the hidden check says **behavior changed** (0.125 rounds to 0.12
   instead of 0.13). This is the gap the differential probes close. In gatekeeper mode the
-  judge holds it back (replay `20261024_demo_feature_gatekeeper` to show that).
+  judge holds it back (replay `20261025_demo_feature_gatekeeper` to show that).
 
 **3:45–4:00 · Close** on the results slide (outcome accuracy and the toy/demo tables).
 
 ## After the talk
 
-Delete the prepared copy if you like: `rm -rf "$TMPDIR/cleansweep-demo"`.
-Recording a fresh run without the browser: `python -m app.live_runner --target "$TMPDIR/cleansweep-demo/shop_app" --judge-mode advisory`.
+The prepared copy stays in `.cleansweep/demo/` until the next `prepare_demo.sh`, so Replay keeps
+its outcome score. Recording a fresh run without the browser:
+`python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`.
