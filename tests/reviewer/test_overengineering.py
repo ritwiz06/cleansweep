@@ -152,7 +152,7 @@ def test_tested_impossible_findings_are_dropped(toy_ws, caplog):
         },
     ]
     with caplog.at_level("INFO", logger="cleansweep"):
-        kept = oe.drop_tested(findings, coverage)
+        kept = oe.drop_tested(findings, coverage, toy_ws.path)
     assert [f["kind"] for f in kept] == ["extra_check"]
     assert f"dropped over-engineering finding shopcart/utils.py:{check}-{body}" in caplog.text
     assert "test_pricing.test_round_price" in caplog.text
@@ -208,3 +208,67 @@ def test_a_failed_request_is_logged_and_skipped(toy_repo, caplog):
     with caplog.at_level("WARNING", logger="cleansweep"):
         assert oe.review_overengineering([], toy_repo, build_graph(toy_repo), Down()) == []
     assert "over-engineering review skipped" in caplog.text and "524" in caplog.text
+
+
+def none_check(graph, key):
+    start = graph.unit(key).start_line
+    path = key.split("::")[0]
+    return {
+        "path": path,
+        "start_line": start + 2,
+        "end_line": start + 3,
+        "kind": "impossible_case",
+        "reason": "value is never None.",
+    }
+
+
+def test_condition_covered_but_body_not_keeps_the_finding(toy_ws, caplog):
+    graph = build_graph(toy_ws.path)
+    coverage = oe.load_coverage(toy_ws.coverage_json())
+    finding = none_check(graph, "shopcart/storage.py::_safe_round")
+    lines = coverage["shopcart/storage.py"]
+    assert lines.get(finding["start_line"]) and not lines.get(finding["end_line"])
+    with caplog.at_level("INFO", logger="cleansweep"):
+        assert oe.drop_tested([finding], coverage, toy_ws.path) == [finding]
+    assert "tests run the condition but not the guarded code" in caplog.text
+
+
+def test_body_covered_drops_the_finding(toy_ws):
+    graph = build_graph(toy_ws.path)
+    coverage = oe.load_coverage(toy_ws.coverage_json())
+    finding = none_check(graph, "shopcart/utils.py::round_price")
+    assert oe.drop_tested([finding], coverage, toy_ws.path) == []
+    one_line = {**finding, "end_line": finding["start_line"]}
+    safe_round = none_check(graph, "shopcart/storage.py::_safe_round")
+    single = {**safe_round, "end_line": safe_round["start_line"]}  # only the covered condition
+    assert oe.drop_tested([one_line, single], coverage, toy_ws.path) == []
+
+
+def test_try_except_and_assert_guards(tmp_path):
+    (tmp_path / "m.py").write_text(
+        "def f(x):\n"
+        "    try:\n"
+        "        return int(x)\n"
+        "    except ValueError:\n"
+        "        return 0\n"
+        "    assert x\n"
+        "    return 1\n"
+    )
+    source = (tmp_path / "m.py").read_text()
+    assert oe.evidence_lines(source, 2, 5) == {5}
+    assert oe.evidence_lines(source, 6, 7) == set()
+    caught = {
+        "path": "m.py",
+        "start_line": 2,
+        "end_line": 5,
+        "kind": "impossible_case",
+        "reason": "x is always a valid number.",
+    }
+    asserted = {**caught, "start_line": 6, "end_line": 7}
+    try_only = {"m.py": {2: ["t.test_a"], 3: ["t.test_a"]}}
+    with_except = {"m.py": {2: ["t.test_a"], 4: ["t.test_b"], 5: ["t.test_b"]}}
+    assert oe.drop_tested([caught], try_only, str(tmp_path)) == [caught]
+    assert oe.drop_tested([caught], with_except, str(tmp_path)) == []
+    assert oe.drop_tested(
+        [asserted], {"m.py": {6: ["t.test_a"], 7: ["t.test_a"]}}, str(tmp_path)
+    ) == [asserted]
