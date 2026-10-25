@@ -1,0 +1,51 @@
+diff --git a/bookshelf/commands.py b/bookshelf/commands.py
+index bfc6e82..9227c56 100644
+--- a/bookshelf/commands.py
++++ b/bookshelf/commands.py
+@@ -16,6 +16,12 @@ def cmd_restock(inventory, args):
+     return f"restocked {args[0]} (+{copies})"
+ 
+ 
++def cmd_lowstock(inventory, args):
++    threshold = int(args[0]) if args else 2
++    titles = inventory.low_stock(threshold)
++    return "low stock: " + (", ".join(titles) if titles else "none")
++
++
+ def cmd_report(inventory, args):
+     return stock_report(inventory)
+ 
+diff --git a/bookshelf/inventory.py b/bookshelf/inventory.py
+index 04902d2..a4434ef 100644
+--- a/bookshelf/inventory.py
++++ b/bookshelf/inventory.py
+@@ -25,3 +25,13 @@ class Inventory:
+ 
+     def stock_value(self):
+         return round_money(sum(b["price"] * b["copies"] for b in self.books.values()))
++
++    def low_stock(self, threshold=2):
++        low = [b["title"] for b in self.books.values() if b["copies"] <= threshold]
++        return sorted(low)
++
++
++def _print_low_stock(inventory, threshold=2):
++    # quick check while building the low-stock command
++    for title in inventory.low_stock(threshold):
++        print("LOW:", title)
+diff --git a/tests/test_lowstock.py b/tests/test_lowstock.py
+new file mode 100644
+index 0000000..ca1d81b
+--- /dev/null
++++ b/tests/test_lowstock.py
+@@ -0,0 +1,10 @@
++from bookshelf.cli import run
++from bookshelf.inventory import Inventory
++
++
++def test_lowstock_lists_titles_at_or_below_threshold():
++    inv = Inventory()
++    run(inv, "add 978-0-13-468599-1 Clean_Code 40 1")
++    run(inv, "add 0-201-63361-2 Design_Patterns 50 6")
++    assert run(inv, "lowstock 2") == "low stock: Clean Code"
++    assert run(inv, "lowstock 0") == "low stock: none"

@@ -2,6 +2,7 @@
 
 import itertools
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -60,9 +61,12 @@ st.title("Live sweep")
 
 def target_options() -> dict[str, str]:
     options = {"Toy repo": str(TOY_REPO)}
-    demo = ROOT / "demo"
-    for folder in sorted(p for p in demo.glob("*") if p.is_dir() and any(p.rglob("*.py"))):
-        options[f"Demo: {folder.name}"] = str(folder)
+    prepared = Path(tempfile.gettempdir()) / "cleansweep-demo" / "shop_app"
+    if prepared.is_dir():
+        options["Prepared demo (demo/prepare_demo.sh)"] = str(prepared)
+    for folder in sorted((ROOT / "demo").glob("*")):
+        if folder.is_dir() and not folder.name.endswith("_hidden") and any(folder.rglob("*.py")):
+            options[f"Demo: {folder.name}"] = str(folder)
     options["Other path..."] = ""
     return options
 
