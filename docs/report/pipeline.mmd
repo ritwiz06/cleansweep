@@ -1,4 +1,4 @@
-%% CleanSweep sweep pipeline as built (main, 2026-10-25). Source for pipeline.png.
+%% CleanSweep sweep pipeline as built (2026-10-26, with differential probes). Source for pipeline.png.
 flowchart TD
     T["Target: local Python project<br/>(toy repo, demo app, any path)"] --> O["open_workspace<br/>temp copy + git 'base' commit"]
     O --> A["build_graph + extract_features<br/>AST code graph, reachability, duplicates"]
@@ -14,10 +14,13 @@ flowchart TD
         G1["apply edits<br/>(quarantine deleted files)"] --> G2["compile + import smoke test"]
         G2 --> G3["project tests vs. baseline"]
         G3 --> G4["AST equal? (format-only batches)"]
+        G3 --> G5["differential probes (other batches):<br/>LLM-written calls on changed functions, callers<br/>and removed copies vs. their replacement;<br/>module still imports, no public name lost"]
         G4 -- pass --> K["keep (checkpoint)"]
+        G5 -- same --> K
         G2 -- fail --> X["roll back; one repair try<br/>for single items; split batch in half"]
         G3 -- fail --> X
         G4 -- fail --> X
+        G5 -- differ --> X
     end
     G --> G1
     K --> S["SweepReport<br/>results + stats + final diff"]

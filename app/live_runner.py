@@ -138,21 +138,23 @@ class LoggedLLM:
         self._log = log
         self._n = 0
 
-    def _call(self, fn, messages, temperature, seed):
+    def _call(self, fn, messages, temperature, seed, extra_body):
         self._n += 1
         n = self._n
         self._log.emit("llm_start", n=n)
         start = time.time()
         try:
+            if extra_body:
+                return fn(messages, temperature, seed, extra_body=extra_body)
             return fn(messages, temperature, seed)
         finally:
             self._log.emit("llm_end", n=n, seconds=round(time.time() - start, 1))
 
-    def chat(self, messages, temperature=0.0, seed=None):
-        return self._call(self._llm.chat, messages, temperature, seed)
+    def chat(self, messages, temperature=0.0, seed=None, extra_body=None):
+        return self._call(self._llm.chat, messages, temperature, seed, extra_body)
 
-    def chat_json(self, messages, temperature=0.0, seed=None):
-        return self._call(self._llm.chat_json, messages, temperature, seed)
+    def chat_json(self, messages, temperature=0.0, seed=None, extra_body=None):
+        return self._call(self._llm.chat_json, messages, temperature, seed, extra_body)
 
     def usage(self) -> dict:
         return self._llm.usage()
@@ -183,6 +185,7 @@ def logged_check_fn(guard, ws, log: EventLog) -> Callable[[list], bool]:
         ast_equal = next(
             (r.ast_equal for r in found if r is not None and r.ast_equal is not None), None
         )
+        probes = next((r.diff_check for r in found if r is not None and r.diff_check), None)
         if ok and set(statuses.values()) == {"skipped"}:
             result = "skipped"
         elif ok:
@@ -198,6 +201,7 @@ def logged_check_fn(guard, ws, log: EventLog) -> Callable[[list], bool]:
             statuses=statuses,
             tests=to_dict(tests) if tests is not None else None,
             ast_equal=ast_equal,
+            probes=to_dict(probes) if probes is not None else None,
             test_runs=ws.test_runs,
             lines_removed=lines_removed,
             seconds=round(time.time() - start, 1),
@@ -265,7 +269,8 @@ def _sweep(target: str, cfg: dict, method: str, log: EventLog) -> SweepReport:
         guard_cfg = dict(core.get("guard", {}))
         if method == "guard_tests_only":
             guard_cfg["diff_tests"] = False
-        guard = Guard(ws, llm, guard_cfg, repair_fn=propose_fix if llm is not None else None)
+        repair_fn = propose_fix if llm is not None else None
+        guard = Guard(ws, llm, guard_cfg, repair_fn=repair_fn, graph=graph)
         log.emit("guard_baseline", test_runs=ws.test_runs)
         outcome = apply_with_bisection(batches, logged_check_fn(guard, ws, log))
 

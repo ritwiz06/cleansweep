@@ -88,6 +88,7 @@ def replay_recordings() -> pd.DataFrame:
             {
                 "recording": run_dir.name,
                 "target": "toy repo" if "toy_repo" in str(target) else "demo app + feature",
+                "method": run.get("method", "cleansweep"),
                 "judge mode": run["judge_mode"],
                 "model": run.get("model"),
                 "kept": report.stats["items_kept"] + report.stats["items_repaired"],
@@ -97,6 +98,52 @@ def replay_recordings() -> pd.DataFrame:
                 if (state["hidden"] or {}).get("behavior_changed")
                 else "no",
                 "outcome": f"{score['hits']}/{score['total']}" if score else "",
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+# Part A of S16: the same targets with the Guard's differential probes (2026-10-26).
+PROBE_RUNS = [
+    "20261026_toy_advisory_probes",
+    "20261026_toy_gatekeeper_probes",
+    "20261026_toy_guard_tests_only",
+    "20261026_demo_feature_advisory_probes",
+    "20261026_demo_feature_gatekeeper_probes",
+]
+
+
+def probe_runs() -> pd.DataFrame:
+    """What the probes caught, and what they wrongly blocked, per recorded run."""
+    rows = []
+    for name in PROBE_RUNS:
+        run_dir = RAW / "live" / name
+        if not (run_dir / "report.json").exists():
+            continue
+        state = fold(read_events(run_dir / "events.jsonl"))
+        run, report = state["run"], load_report(run_dir / "report.json")
+        target = Path(run["target"])
+        target = target if target.is_absolute() else ROOT / target
+        score = outcome_score(report, Path(str(target).rstrip("/") + "_expected.json"))
+        expected = {row["unit"]: row["expected"] for _, row in score["table"].iterrows()}
+        units = {i.item_id: i.unit.key for i in report.plan.items}
+        by_probes = [
+            r for r in report.results if r.status == "rolled_back" and r.notes.startswith("probes")
+        ]
+        false_alarms = [r for r in by_probes if expected.get(units[r.item_id]) == "applied"]
+        rows.append(
+            {
+                "target": "toy repo" if "toy_repo" in str(target) else "demo app + feature",
+                "method": run.get("method", "cleansweep"),
+                "judge mode": run["judge_mode"],
+                "kept": report.stats["items_kept"] + report.stats["items_repaired"],
+                "rolled back by probes": len(by_probes),
+                "false alarms": len(false_alarms),
+                "test runs": report.stats["test_runs"],
+                "hidden changed": "yes"
+                if (state["hidden"] or {}).get("behavior_changed")
+                else "no",
+                "outcome": f"{score['hits']}/{score['total']}",
             }
         )
     return pd.DataFrame(rows)
@@ -311,6 +358,7 @@ def main() -> None:
     toy = toy_methods()
     write_table(toy, "toy_methods")
     write_table(replay_recordings(), "replay_recordings")
+    write_table(probe_runs(), "probe_runs")
     runs = judge_runs()
     write_table(judge_summary(runs), "judge_checks")
     write_table(runs, "judge_check_runs")

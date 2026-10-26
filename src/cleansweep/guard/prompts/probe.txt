@@ -1,0 +1,26 @@
+We are removing leftover code from a Python project and need to check that each change
+keeps the program's behavior. Write small test inputs ("probes") for the functions below.
+We run every probe on the code before and after the change and compare the results, so a
+probe only has to call the function. It does not need to know the right answer.
+
+For each target, write one Python module that defines make_cases(). make_cases() returns a
+list of up to 8 (label, fn) pairs. label is a short unique string. fn is a function with no
+arguments that calls the target once and returns what the target returns.
+
+Rules:
+- Import the target inside make_cases(), exactly as its "import" line says.
+- Cover edge cases: numbers that end in 5 at the rounding digit (0.125, 2.675, 1.005),
+  zero, negative numbers, empty strings, lists and dicts, None where the signature allows
+  it, and very large values. Add one or two ordinary inputs too.
+- For a method, build the object in fn with the simplest arguments that work, then call
+  the method.
+- fn must not read or write files, use the network, sleep, read the clock, or use random
+  numbers. If a target can't be called without these, return an empty list for it.
+- Don't catch exceptions in fn and don't print. We record errors ourselves.
+- Use only the standard library and the project's own code.
+
+Reply with JSON only:
+{{"probes": [{{"target": "<target id>", "code": "<python module source>"}}]}}
+
+Targets:
+{targets}

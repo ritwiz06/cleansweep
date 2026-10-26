@@ -199,7 +199,17 @@ def show_guard(state: dict, frame: int) -> None:
                 )
                 if card.get("ast_equal") is not None:
                     checks += f", AST unchanged: {'yes' if card['ast_equal'] else 'no'}"
+                probes = card.get("probes")
+                if probes:
+                    checks += f", probes: {probes['n_cases']} cases " + (
+                        "agree" if probes["same"] else f"{len(probes['mismatches'])} differ"
+                    )
                 st.caption(f"Checks: {checks} · test runs so far: {card.get('test_runs')}")
+                if probes and not probes["same"]:
+                    st.markdown(
+                        "**The probes caught a behavior change:**\n"
+                        + "\n".join(f"- `{m}`" for m in probes["mismatches"][:5])
+                    )
 
 
 def show_bottom(state: dict, target_path: str, frame: int) -> None:

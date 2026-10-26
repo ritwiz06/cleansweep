@@ -161,3 +161,21 @@ def test_capture_logs_puts_cleansweep_logs_in_the_events(tmp_path):
     events = read_events(tmp_path / "events.jsonl")
     assert [e["message"] for e in events] == ["dropped a finding"]
     assert fold(events)["logs"][0]["logger"] == "cleansweep.reviewer.overengineering"
+
+
+def test_probe_outcome_reaches_the_batch_cards(toy_repo, cfg, tmp_path):
+    probe = (
+        "def make_cases():\n"
+        "    from shopcart.storage import _safe_round\n"
+        "    return [('tie', lambda: _safe_round(0.125))]\n"
+    )
+    reply = {"probes": [{"target": "shopcart/storage.py::_safe_round", "code": probe}]}
+    cfg["llm_client"] = FakeLLM({"Target id": json.dumps(reply)})
+    cfg["core"]["guard"]["probe_cache_dir"] = str(tmp_path / "probes")
+    report, run_dir = run_live(toy_repo, cfg, judge_mode="advisory", run_id="p", out_dir=tmp_path)
+    state = fold(read_events(run_dir / "events.jsonl"))
+    caught = [b for b in state["batches"] if b.get("probes") and not b["probes"]["same"]]
+    assert caught and any("_safe_round" in m for m in caught[-1]["probes"]["mismatches"])
+    trap = item_id("shopcart/storage.py::_safe_round", "duplicate")
+    assert state["statuses"][trap] == "rolled_back"
+    assert state["hidden"]["behavior_changed"] is False
