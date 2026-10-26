@@ -163,7 +163,7 @@ DEPENDENCY_FILE = re.compile(r"(^|/)(requirements[^/]*\.txt|pyproject\.toml|setu
 def detect_agent_scratch(repo_dir: str, graph, scope) -> list[CleanupItem]:
     """Files the agent created outside the project (repo root or a new folder) that nothing
     else imports: reproduction scripts, scratch tests, throwaway sample projects."""
-    from cleansweep.analysis.graph import name_in_configs
+    from cleansweep.analysis.graph import module_in_configs
 
     scratch = {f for f in scope.files_added if scope.outside_project(f)}
     # files that existed before the patch and weren't touched by it can't need these new ones
@@ -171,9 +171,7 @@ def detect_agent_scratch(repo_dir: str, graph, scope) -> list[CleanupItem]:
     items = []
     for path in sorted(scratch):
         importers = set(getattr(graph, "imported_by", {}).get(path, ())) & can_import
-        # a root script is named by its stem; a file in a new folder by its dotted module
-        named = path if "/" not in path else path.removesuffix(".py").replace("/", ".") + ".py"
-        if importers or name_in_configs(repo_dir, named):
+        if importers or module_in_configs(repo_dir, path):
             continue
         items.append(
             make_item(
