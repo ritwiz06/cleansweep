@@ -20,6 +20,8 @@ GIT_ID = [
     "commit.gpgsign=false",
     "-c",
     "core.hooksPath=/dev/null",
+    "-c",
+    "gc.auto=0",  # no background repacking in throwaway workspaces
 ]
 
 
