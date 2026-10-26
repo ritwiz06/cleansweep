@@ -149,6 +149,111 @@ def probe_runs() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+T1 = RAW / "swebench_t1"
+T1_METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only", "tools_only"]
+
+
+def _t1_reports(label: str) -> list[dict]:
+    return [json.loads(p.read_text()) for p in sorted(T1.glob(f"*__{label}.json"))]
+
+
+def swebench_tier1() -> pd.DataFrame:
+    """One row per method over the Tier 1 patches (results/raw/swebench_t1/)."""
+    rows = []
+    for label in T1_METHODS:
+        reports = _t1_reports(label)
+        if not reports:
+            continue
+        found: dict[str, int] = {}
+        rolled = {"tests": 0, "probes": 0, "other": 0}
+        for r in reports:
+            for item in r["plan"]["items"]:
+                found[item["category"]] = found.get(item["category"], 0) + 1
+            for res in r["results"]:
+                if res["status"] == "rolled_back":
+                    check = res["notes"].split(" failed:", 1)[0]
+                    rolled[check if check in rolled else "other"] += 1
+        stats = [r["stats"] for r in reports]
+        rows.append(
+            {
+                "method": label,
+                "patches": len(reports),
+                "items found": ", ".join(
+                    f"{k} {v}" for k, v in sorted(found.items(), key=lambda kv: -kv[1])
+                ),
+                "edits applied": sum(
+                    res["status"] in ("kept", "repaired") and bool(res["diff"].strip())
+                    for r in reports
+                    for res in r["results"]
+                ),
+                "files removed": sum(s["files_removed"] for s in stats),
+                "rolled back (tests / probes / other)": (
+                    f"{rolled['tests']} / {rolled['probes']} / {rolled['other']}"
+                ),
+                "lines removed": sum(s["lines_removed"] for s in stats),
+                "test runs": sum(s["test_runs"] for s in stats),
+                "hidden changed": f"{sum(bool(s['hidden'].get('behavior_changed')) for s in stats)}"
+                f"/{len(stats)}",
+                "LLM calls": sum(s["llm_calls"] for s in stats),
+                "min per patch": round(sum(s["minutes"] for s in stats) / len(stats), 1),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def swebench_tier1_patches() -> pd.DataFrame:
+    """One row per Tier 1 patch: what CleanSweep (advisory) found and kept, per method."""
+    splits = json.loads((ROOT / "data" / "splits" / "swebench_tier1.json").read_text())
+    rows = []
+    for entry in splits:
+        row = {
+            "instance": entry["instance_id"],
+            "agent": entry["agent"],
+            "differs from oracle": "yes" if entry["differs_from_oracle"] else "no",
+        }
+        for label in T1_METHODS:
+            path = T1 / f"{entry['instance_id']}__{entry['agent']}__{label}.json"
+            if not path.exists():
+                row[label] = ""
+                continue
+            report = json.loads(path.read_text())
+            applied = sum(
+                res["status"] in ("kept", "repaired") and bool(res["diff"].strip())
+                for res in report["results"]
+            )
+            changed = report["stats"]["hidden"].get("behavior_changed")
+            row[label] = f"{applied} applied" + (", hidden changed" if changed else "")
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def slop_kinds() -> pd.DataFrame:
+    """What the agent patches left behind: every item the Reviewer found (advisory runs)."""
+    kinds: dict[str, dict] = {}
+    for r in _t1_reports("cleansweep-advisory"):
+        patch = r["repo_id"].split(":", 1)[1]
+        for item in r["plan"]["items"]:
+            kind = item["category"]
+            if kind == "leftover_file":
+                agent_made = any("added by the agent patch" in e for e in item["evidence"])
+                kind += " (scratch outside the project)" if agent_made else " (name pattern)"
+            row = kinds.setdefault(
+                kind, {"kind": kind, "items": 0, "patches": set(), "examples": []}
+            )
+            row["items"] += 1
+            row["patches"].add(patch)
+            if len(row["examples"]) < 3:
+                row["examples"].append(
+                    item["unit"]["path"]
+                    + (f"::{item['unit']['name']}" if item["unit"].get("name") else "")
+                )
+    out = [
+        {**row, "patches": len(row["patches"]), "examples": ", ".join(row["examples"])}
+        for row in sorted(kinds.values(), key=lambda r: -r["items"])
+    ]
+    return pd.DataFrame(out, columns=["kind", "items", "patches", "examples"])
+
+
 def _lane_hits(report, key_path: Path) -> tuple[int, int, bool]:
     key = json.loads(key_path.read_text())["items"]
     lanes = {i.unit.key: i.lane for i in report.plan.items}
@@ -359,6 +464,10 @@ def main() -> None:
     write_table(toy, "toy_methods")
     write_table(replay_recordings(), "replay_recordings")
     write_table(probe_runs(), "probe_runs")
+    if T1.exists():
+        write_table(swebench_tier1(), "swebench_tier1")
+        write_table(swebench_tier1_patches(), "swebench_tier1_patches")
+        write_table(slop_kinds(), "swebench_tier1_slop")
     runs = judge_runs()
     write_table(judge_summary(runs), "judge_checks")
     write_table(runs, "judge_check_runs")
