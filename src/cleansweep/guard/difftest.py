@@ -264,7 +264,12 @@ def get_probes(targets: list[Target], llm, cfg: dict) -> tuple[dict[str, str], s
     if llm is None:
         return probes, "no LLM for new probes"
     try:
-        reply = llm.chat_json([{"role": "user", "content": _prompt(missing)}], temperature=0.0)
+        messages = [{"role": "user", "content": _prompt(missing)}]
+        extra = (cfg or {}).get("probe_extra_body")
+        if extra:
+            reply = llm.chat_json(messages, temperature=0.0, extra_body=extra)
+        else:
+            reply = llm.chat_json(messages, temperature=0.0)
     except Exception as exc:  # a failed request leaves these targets unprobed
         log.warning("probe request failed: %s: %s", type(exc).__name__, exc)
         return probes, f"probe request failed: {type(exc).__name__}"

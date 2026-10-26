@@ -138,21 +138,23 @@ class LoggedLLM:
         self._log = log
         self._n = 0
 
-    def _call(self, fn, messages, temperature, seed):
+    def _call(self, fn, messages, temperature, seed, extra_body):
         self._n += 1
         n = self._n
         self._log.emit("llm_start", n=n)
         start = time.time()
         try:
+            if extra_body:
+                return fn(messages, temperature, seed, extra_body=extra_body)
             return fn(messages, temperature, seed)
         finally:
             self._log.emit("llm_end", n=n, seconds=round(time.time() - start, 1))
 
-    def chat(self, messages, temperature=0.0, seed=None):
-        return self._call(self._llm.chat, messages, temperature, seed)
+    def chat(self, messages, temperature=0.0, seed=None, extra_body=None):
+        return self._call(self._llm.chat, messages, temperature, seed, extra_body)
 
-    def chat_json(self, messages, temperature=0.0, seed=None):
-        return self._call(self._llm.chat_json, messages, temperature, seed)
+    def chat_json(self, messages, temperature=0.0, seed=None, extra_body=None):
+        return self._call(self._llm.chat_json, messages, temperature, seed, extra_body)
 
     def usage(self) -> dict:
         return self._llm.usage()
