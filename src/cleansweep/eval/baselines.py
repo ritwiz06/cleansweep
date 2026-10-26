@@ -137,9 +137,9 @@ def _qualname_at(repo_dir: str, path: str, line: int, name: str) -> str:
     return name
 
 
-def _collect_code(repo_dir: str, budget: int = 60000) -> str:
+def _collect_code(repo_dir: str, budget: int = 60000, paths: list[str] | None = None) -> str:
     parts, used = [], 0
-    for path in iter_py_files(repo_dir):
+    for path in paths if paths is not None else iter_py_files(repo_dir):
         text = (Path(repo_dir) / path).read_text(errors="replace")
         block = f"### {path}\n{text}\n"
         if used + len(block) > budget:
@@ -149,13 +149,36 @@ def _collect_code(repo_dir: str, budget: int = 60000) -> str:
     return "".join(parts)
 
 
+def _agent_files(repo_dir: str) -> list[str] | None:
+    """Text files the agent patch created or changed (None without an agent patch commit)."""
+    scope = agent_scope(repo_dir)
+    if scope is None:
+        return None
+    out = []
+    for path in sorted(scope.files):
+        try:
+            (Path(repo_dir) / path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue  # deleted or binary
+        out.append(path)
+    return out
+
+
 def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
-    """Baseline: ask the model once for a cleanup diff and apply it with no checks."""
+    """Baseline: ask the model once for a cleanup diff and apply it with no checks.
+
+    On SWE-bench targets the model sees only the files the agent patch created or changed."""
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     llm = cfg.get("llm_client") or get_client(cfg.get("core", {}).get("llm"))
-    prompt = PROMPT.replace("{code}", _collect_code(ws.path))
-    reply = llm.chat([{"role": "user", "content": prompt}], temperature=0.0, seed=seed)
+    paths = _agent_files(ws.path) if target.startswith("swebench:") else None
+    prompt = PROMPT.replace("{code}", _collect_code(ws.path, paths=paths))
+    messages = [{"role": "user", "content": prompt}]
+    extra = cfg.get("exp", {}).get("one_shot_extra_body")
+    if extra:
+        reply = llm.chat(messages, temperature=0.0, seed=seed, extra_body=extra)
+    else:
+        reply = llm.chat(messages, temperature=0.0, seed=seed)
     m = FENCE.search(reply)
     patch = m.group(1) if m else reply
     item = CleanupItem(
