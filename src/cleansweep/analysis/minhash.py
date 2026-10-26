@@ -84,16 +84,24 @@ def _shingles(tokens: list[str]) -> set[tuple]:
 
 
 def find_duplicates(
-    repo_dir: str, threshold: float = 0.8
+    repo_dir: str, threshold: float = 0.8, only: set[str] | None = None
 ) -> list[tuple[CodeUnit, CodeUnit, float]]:
     """Pairs of functions whose normalized token shingles have Jaccard >= threshold.
 
-    Exact pairwise comparison; the data area will swap in MinHash LSH for big repos.
+    Exact comparison. With `only` (unit keys), each of those functions is compared with every
+    other function (k x n) instead of all pairs, which keeps big repos fast.
     """
     funcs = [(u, src, _shingles(_normalized_tokens(src))) for u, src in _functions(repo_dir)]
+    if only is None:
+        candidates = itertools.combinations(funcs, 2)
+    else:
+        mine = [f for f in funcs if f[0].key in only]
+        candidates = (
+            (a, b) for a in mine for b in funcs if b[0].key not in only or a[0].key < b[0].key
+        )
     pairs = []
-    for (ua, _, sa), (ub, _, sb) in itertools.combinations(funcs, 2):
-        if not sa or not sb:
+    for (ua, _, sa), (ub, _, sb) in candidates:
+        if not sa or not sb or ua.key == ub.key:
             continue
         sim = len(sa & sb) / len(sa | sb)
         if sim >= threshold:

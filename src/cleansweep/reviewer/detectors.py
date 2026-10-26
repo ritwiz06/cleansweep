@@ -119,12 +119,15 @@ def _unit_at(graph, path: str, line: int, name: str | None = None) -> CodeUnit |
     return best
 
 
-def detect_leftovers(repo_dir: str, graph, patterns: list[str]) -> list[CleanupItem]:
+def detect_leftovers(
+    repo_dir: str, graph, patterns: list[str], only: set[str] | None = None
+) -> list[CleanupItem]:
     from cleansweep.analysis.graph import name_in_configs
 
     root = Path(repo_dir)
     items = []
-    for p in sorted(root.rglob("*")):
+    files = sorted(root / f for f in only) if only is not None else sorted(root.rglob("*"))
+    for p in files:
         rel = p.relative_to(root)
         if not p.is_file() or any(part in SKIP_DIRS for part in rel.parts):
             continue
@@ -154,12 +157,52 @@ def detect_leftovers(repo_dir: str, graph, patterns: list[str]) -> list[CleanupI
     return items
 
 
+DEPENDENCY_FILE = re.compile(r"(^|/)(requirements[^/]*\.txt|pyproject\.toml|setup\.(py|cfg))$")
+
+
+def detect_agent_scratch(repo_dir: str, graph, scope) -> list[CleanupItem]:
+    """Files the agent created outside the project (repo root or a new folder) that nothing
+    else imports: reproduction scripts, scratch tests, throwaway sample projects."""
+    from cleansweep.analysis.graph import name_in_configs
+
+    scratch = {f for f in scope.files_added if scope.outside_project(f)}
+    # files that existed before the patch and weren't touched by it can't need these new ones
+    can_import = scope.files - scratch
+    items = []
+    for path in sorted(scratch):
+        importers = set(getattr(graph, "imported_by", {}).get(path, ())) & can_import
+        # a root script is named by its stem; a file in a new folder by its dotted module
+        named = path if "/" not in path else path.removesuffix(".py").replace("/", ".") + ".py"
+        if importers or name_in_configs(repo_dir, named):
+            continue
+        items.append(
+            make_item(
+                CodeUnit(path, "file"),
+                "leftover_file",
+                "delete_file",
+                "safe",
+                f"{path} was created by the agent outside the project's code, and nothing "
+                "in the project imports it.",
+                [
+                    "added by the agent patch at the repo root or in a folder it created",
+                    "no project file imports it",
+                    "not mentioned in project config files",
+                ],
+                ["scope", "graph"],
+            )
+        )
+    return items
+
+
 VULTURE_LINE = re.compile(
     r"^(.+?):(\d+): unused (function|method|class) '([^']+)' \((\d+)% confidence"
 )
 
 
-def detect_dead_code(repo_dir: str, graph, min_conf: int) -> list[CleanupItem]:
+def detect_dead_code(
+    repo_dir: str, graph, min_conf: int, paths: set[str] | None = None
+) -> list[CleanupItem]:
+    # vulture needs the whole project to see every use; `paths` only filters its report
     out = _tool(["vulture", ".", "--min-confidence", str(min_conf)], repo_dir)
     if out is None:
         return []
@@ -170,7 +213,7 @@ def detect_dead_code(repo_dir: str, graph, min_conf: int) -> list[CleanupItem]:
             continue
         path, lineno, kind, name, conf = m.groups()
         path = path.removeprefix("./")
-        if _is_test(path):
+        if _is_test(path) or (paths is not None and path not in paths):
             continue
         unit = _unit_at(graph, path, int(lineno), name)
         if unit is None:
@@ -199,7 +242,9 @@ def detect_dead_code(repo_dir: str, graph, min_conf: int) -> list[CleanupItem]:
     return items
 
 
-def detect_unused_imports(repo_dir: str) -> list[CleanupItem]:
+def detect_unused_imports(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
+    if paths == []:
+        return []
     out = _tool(
         [
             "ruff",
@@ -210,7 +255,7 @@ def detect_unused_imports(repo_dir: str) -> list[CleanupItem]:
             "--output-format",
             "json",
             "--exit-zero",
-            ".",
+            *(paths or ["."]),
         ],
         repo_dir,
     )
@@ -303,14 +348,20 @@ def _dependency_mentions(repo_dir: str, package: str, declared_in: str) -> list[
     return [f"{package} is not mentioned in any config, CI or script file"]
 
 
-def detect_security(repo_dir: str, graph, min_severity: str) -> list[CleanupItem]:
-    out = _tool(["bandit", "-r", ".", "-f", "json", "-q"], repo_dir)
+def detect_security(
+    repo_dir: str, graph, min_severity: str, paths: list[str] | None = None, scope=None
+) -> list[CleanupItem]:
+    if paths == []:
+        return []
+    out = _tool(["bandit", "-r", *(paths or ["."]), "-f", "json", "-q"], repo_dir)
     if out is None or not out[1].strip():
         return []
     items = []
     for r in json.loads(out[1]).get("results", []):
         path = r["filename"].removeprefix("./")
         if _is_test(path) or SEVERITY[r["issue_severity"]] < SEVERITY[min_severity]:
+            continue
+        if scope is not None and not scope.covers_line(path, r["line_number"]):
             continue
         unit = _unit_at(graph, path, r["line_number"]) or CodeUnit(path, "file")
         items.append(
@@ -327,9 +378,20 @@ def detect_security(repo_dir: str, graph, min_severity: str) -> list[CleanupItem
     return items
 
 
-def detect_formatting(repo_dir: str) -> list[CleanupItem]:
+def detect_formatting(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
+    if paths == []:
+        return []
     out = _tool(
-        ["ruff", "format", "--isolated", "--check", "--output-format", "concise", "."], repo_dir
+        [
+            "ruff",
+            "format",
+            "--isolated",
+            "--check",
+            "--output-format",
+            "concise",
+            *(paths or ["."]),
+        ],
+        repo_dir,
     )
     if out is None:
         return []
@@ -400,16 +462,17 @@ def detect_wrappers(repo_dir: str, graph) -> list[CleanupItem]:
     return items
 
 
-def _keeper(graph, units: list[CodeUnit]) -> CodeUnit:
+def _keeper(graph, units: list[CodeUnit], scope=None) -> CodeUnit:
     def rank(u: CodeUnit):
         utils_like = any(w in u.path for w in ("util", "helper", "common"))
-        return (-len(graph.callers(u.key)), not utils_like, u.name.startswith("_"), u.key)
+        mine = scope is not None and scope.covers(u)  # keep existing code over the agent's copy
+        return (mine, -len(graph.callers(u.key)), not utils_like, u.name.startswith("_"), u.key)
 
     return sorted(units, key=rank)[0]
 
 
 def detect_duplicates(
-    repo_dir: str, graph, threshold: float, skip_paths: set[str]
+    repo_dir: str, graph, threshold: float, skip_paths: set[str], scope=None
 ) -> list[CleanupItem]:
     from cleansweep.analysis.minhash import body_text
 
@@ -417,7 +480,9 @@ def detect_duplicates(
 
     pairs = [
         (a, b, s)
-        for a, b, s in find_duplicates(repo_dir, threshold)
+        for a, b, s in find_duplicates(
+            repo_dir, threshold, only=scope.units if scope is not None else None
+        )
         if a.path not in skip_paths and b.path not in skip_paths
     ]
     parent: dict[str, str] = {}
@@ -439,10 +504,10 @@ def detect_duplicates(
 
     items = []
     for members in groups.values():
-        keep = _keeper(graph, members)
+        keep = _keeper(graph, members, scope)
         keep_body = body_text(repo_dir, keep)
         for dup in members:
-            if dup.key == keep.key:
+            if dup.key == keep.key or (scope is not None and not scope.covers(dup)):
                 continue
             sim = best.get((dup.key, keep.key), 0.0)
             exact = body_text(repo_dir, dup) == keep_body
@@ -495,22 +560,41 @@ def merge_items(items: list[CleanupItem]) -> list[CleanupItem]:
     return list(merged.values())
 
 
-def run_detectors(repo_dir: str, graph=None) -> list[CleanupItem]:
-    """Run every static detector and return merged cleanup items."""
+def run_detectors(repo_dir: str, graph=None, scope=None) -> list[CleanupItem]:
+    """Run every static detector and return merged cleanup items.
+
+    With an AgentScope (cleansweep.analysis.scope), only what the agent wrote is reviewed:
+    leftover files among the files it created, formatting of those files, and the other
+    detectors on the units and lines it added or changed.
+    """
     cfg = _settings()
     graph = graph or build_graph(repo_dir)
-    leftovers = detect_leftovers(repo_dir, graph, cfg["leftover_patterns"])
+    agent_py = sorted(f for f in scope.files if f.endswith(".py")) if scope else None
+    new_py = sorted(f for f in scope.files_added if f.endswith(".py")) if scope else None
+    leftovers = detect_leftovers(
+        repo_dir, graph, cfg["leftover_patterns"], only=scope.files_added if scope else None
+    )
+    if scope is not None:
+        named = {i.unit.path for i in leftovers}
+        leftovers += [
+            i for i in detect_agent_scratch(repo_dir, graph, scope) if i.unit.path not in named
+        ]
     deleted = {i.unit.path for i in leftovers}
+    touches_deps = scope is None or any(DEPENDENCY_FILE.search(f) for f in scope.files)
     items = [
         *leftovers,
-        *detect_dead_code(repo_dir, graph, cfg["vulture_min_confidence"]),
-        *detect_unused_imports(repo_dir),
-        *detect_unused_dependencies(repo_dir),
-        *detect_security(repo_dir, graph, cfg["security_min_severity"]),
-        *detect_formatting(repo_dir),
+        *detect_dead_code(
+            repo_dir, graph, cfg["vulture_min_confidence"], set(agent_py) if scope else None
+        ),
+        *detect_unused_imports(repo_dir, agent_py),
+        *(detect_unused_dependencies(repo_dir) if touches_deps else []),
+        *detect_security(repo_dir, graph, cfg["security_min_severity"], agent_py, scope),
+        *detect_formatting(repo_dir, new_py),
         *detect_wrappers(repo_dir, graph),
-        *detect_duplicates(repo_dir, graph, cfg["duplicate_threshold"], deleted),
+        *detect_duplicates(repo_dir, graph, cfg["duplicate_threshold"], deleted, scope),
     ]
+    if scope is not None:
+        items = [i for i in items if scope.covers(i.unit)]
     # edits inside a file we are deleting anyway are noise
     items = [i for i in items if i.category == "leftover_file" or i.unit.path not in deleted]
     return merge_items(items)

@@ -11,6 +11,7 @@ from cleansweep.core.models import FEATURE_COLUMNS, CommitEvent
 
 from .graph import CodeGraph, is_test_file
 from .minhash import find_duplicates
+from .scope import agent_scope
 
 NAME_PATTERNS = {
     r"_old\b|old_": 1.0,
@@ -74,9 +75,14 @@ def extract_features(
     coverage_json: str | None = None,
     history: list[CommitEvent] | None = None,
 ) -> pd.DataFrame:
-    """One row per code unit with FEATURE_COLUMNS; -1 marks values we could not compute."""
+    """One row per code unit with FEATURE_COLUMNS; -1 marks values we could not compute.
+
+    In a repo with an "agent patch" commit, written_by_agent is filled in and duplicate
+    similarity is computed only for the agent's functions (k x n)."""
+    scope = agent_scope(repo_dir, graph)
     dup_sim: dict[str, float] = {}
-    for a, b, sim in find_duplicates(repo_dir, threshold=0.5):
+    only = scope.units if scope is not None else None
+    for a, b, sim in find_duplicates(repo_dir, threshold=0.5, only=only):
         for u in (a, b):
             dup_sim[u.key] = max(dup_sim.get(u.key, 0.0), sim)
     cov = _coverage_index(coverage_json)
@@ -107,6 +113,7 @@ def extract_features(
                 "max_dup_similarity": dup_sim.get(unit.key, 0.0),
                 "dynamic_risk": int(graph.dynamic_risk(unit.key)),
                 "is_test_file": int(is_test_file(unit.path)),
+                "written_by_agent": int(scope.covers(unit)) if scope is not None else -1,
             }
         )
         lines = cov.get(unit.path)

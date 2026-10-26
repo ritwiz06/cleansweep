@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import re
 import tomllib
 from collections import defaultdict, deque
@@ -55,14 +56,14 @@ def is_test_file(path: str) -> bool:
 
 
 def iter_py_files(repo_dir: str | Path) -> list[str]:
+    """Repo-relative paths of .py files, skipping .git, virtualenvs and build folders."""
     root = Path(repo_dir)
-    out = []
-    for p in sorted(root.rglob("*.py")):
-        rel = p.relative_to(root)
-        if any(part in SKIP_DIRS for part in rel.parts[:-1]):
-            continue
-        out.append(rel.as_posix())
-    return out
+    found = []
+    for folder, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)  # prune: never walk .git
+        rel = Path(folder).relative_to(root)
+        found += [(rel / f).as_posix() for f in files if f.endswith(".py")]
+    return sorted(found, key=lambda p: Path(p).parts)  # same order as before
 
 
 def module_name(path: str) -> str:
