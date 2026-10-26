@@ -388,21 +388,44 @@ def _compute_reachable(g: CodeGraph) -> None:
     g._reachable = seen
 
 
+CONFIG_FILES = (
+    "pyproject.toml",
+    "setup.cfg",
+    "setup.py",
+    "tox.ini",
+    "Makefile",
+    "Dockerfile",
+    "noxfile.py",
+    ".pre-commit-config.yaml",
+)
+
+
 def name_in_configs(repo_dir: str, path: str) -> bool:
     """True if a file name is mentioned in config files (setup.cfg, pyproject, Makefile...)."""
     root = Path(repo_dir)
     stem = Path(path).stem
-    for cfg in (
-        "pyproject.toml",
-        "setup.cfg",
-        "setup.py",
-        "tox.ini",
-        "Makefile",
-        "Dockerfile",
-        "noxfile.py",
-        ".pre-commit-config.yaml",
-    ):
+    for cfg in CONFIG_FILES:
         p = root / cfg
         if p.exists() and re.search(rf"\b{re.escape(stem)}\b", p.read_text(errors="replace")):
+            return True
+    return False
+
+
+def import_name(path: str) -> str:
+    """The dotted name a file is imported by (src layout aware), e.g. pkg.sub.mod."""
+    return module_name(path.removeprefix("src/"))
+
+
+def module_in_configs(repo_dir: str, path: str) -> bool:
+    """True if config files name this file by its import name or its path. Stricter than
+    name_in_configs: a bare file name like "admin" or "tests" does not count."""
+    root = Path(repo_dir)
+    names = {import_name(path), path}
+    for cfg in CONFIG_FILES:
+        p = root / cfg
+        if not p.exists():
+            continue
+        text = p.read_text(errors="replace")
+        if any(re.search(rf"(?<![\w.]){re.escape(n)}(?![\w])", text) for n in names):
             return True
     return False
