@@ -8,9 +8,13 @@ else:
     from .local import open_local
 
     def open_workspace(target: str, cfg: dict | None = None) -> Workspace:
-        """Open a workspace for a local path (Docker targets arrive with SA-07)."""
-        if target.startswith(("swebench:", "aidev:")):
-            raise NotImplementedError(f"Docker workspaces are not built yet: {target}")
+        """Open a workspace: a local path or "swebench:<instance_id>:<agent>" (in Docker)."""
+        if target.startswith("swebench:"):
+            from .swebench_docker import open_swebench
+
+            return open_swebench(target, cfg)
+        if target.startswith("aidev:"):
+            raise NotImplementedError(f"AIDev Docker workspaces are not built yet: {target}")
         return open_local(target, cfg)
 
 
