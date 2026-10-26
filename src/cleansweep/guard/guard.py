@@ -7,6 +7,14 @@ from pathlib import Path
 
 from cleansweep.core.models import CleanupItem, CodeUnit, EditResult, RunResult
 
+from .difftest import (
+    get_probes,
+    probe_change,
+    probe_versions,
+    run_harness,
+    select_targets,
+    sys_paths,
+)
 from .edits import apply_edit, changed_py_files
 
 
@@ -44,17 +52,25 @@ def static_checks(ws, since: str) -> tuple[bool, str]:
     return True, ""
 
 
+def _read(path: Path) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
 def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool, dict]:
-    """Compare two workspaces: same test outcomes (and same AST for format-only edits)."""
+    """Compare two workspaces: same test outcomes, same AST for format-only edits, and the same
+    differential-probe results (cfg: diff_tests, graph, items, plus core.guard probe keys)."""
     cfg = cfg or {}
     base = cfg.get("baseline") or before.run_tests(None)
     ok, log = static_checks(after, after.base)
-    info: dict = {"static_ok": ok, "log": log}
+    info: dict = {"static_ok": ok, "log": log, "check": "compile"}
     if not ok:
         return False, info
     result = after.run_tests(None)
     new = _new_failures(base, result)
-    info.update(tests=result, new_failures=new)
+    info.update(tests=result, new_failures=new, check="tests")
     if new or result.errors > base.errors:
         info["log"] = getattr(after, "last_test_output", "")[-4000:]
         return False, info
@@ -63,8 +79,34 @@ def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool
         same = all(
             _ast_dump(Path(before.path) / f) == _ast_dump(Path(after.path) / f) for f in files
         )
-        info["ast_equal"] = same
+        info.update(ast_equal=same, check="ast")
         if not same:
+            return False, info
+        return True, info
+    if cfg.get("diff_tests", True):
+        paths = sorted({u.path for u in touched if u.path.endswith(".py")})
+        changes = {p: (_read(Path(before.path) / p), _read(Path(after.path) / p)) for p in paths}
+        graph = cfg.get("graph")
+        if graph is None:
+            from cleansweep.analysis import build_graph
+
+            graph = build_graph(before.path)
+        targets, checks = select_targets(
+            after.path, changes, cfg.get("items", []), graph, int(cfg.get("max_targets", 10))
+        )
+        probes, _ = get_probes(targets, llm, cfg)
+        outcome = probe_versions(
+            lambda spec, files: run_harness(before, spec, files, cfg),
+            lambda spec, files: run_harness(after, spec, files, cfg),
+            targets,
+            checks,
+            probes,
+            sys_paths(before.path),
+            cfg,
+        )
+        info.update(diff_check=outcome, check="probes")
+        if outcome is not None and not outcome.same:
+            info["log"] = "probes found a behavior change:\n" + "\n".join(outcome.mismatches)
             return False, info
     return True, info
 
@@ -72,21 +114,28 @@ def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool
 class Guard:
     """Applies cleanup edits and keeps only those that leave behavior unchanged."""
 
-    def __init__(self, workspace, llm, cfg: dict, repair_fn=None):
+    def __init__(self, workspace, llm, cfg: dict, repair_fn=None, graph=None):
         self.ws = workspace
         self.llm = llm
         self.cfg = cfg or {}
         self.repair_fn = repair_fn if self.cfg.get("repair", True) else None
+        self.diff_tests = bool(self.cfg.get("diff_tests", True))
+        if self.diff_tests and graph is None:
+            from cleansweep.analysis import build_graph
+
+            graph = build_graph(workspace.path)
+        self.graph = graph
         self.baseline = workspace.run_tests(None)
         self._results: dict[str, EditResult] = {}
 
     def _verify(self, start: str, items: list[CleanupItem]) -> tuple[bool, dict]:
         ok, log = static_checks(self.ws, start)
-        info: dict = {"log": log, "tests": None, "ast_equal": None}
+        info: dict = {"log": log, "tests": None, "ast_equal": None, "diff_check": None}
+        info["check"] = "compile"
         if not ok:
             return False, info
         result = self.ws.run_tests(None)
-        info["tests"] = result
+        info.update(tests=result, check="tests")
         new = _new_failures(self.baseline, result)
         if new or result.errors > self.baseline.errors:
             info["log"] = (
@@ -103,9 +152,18 @@ class Guard:
                     text=True,
                 ).stdout
                 same &= ast.dump(ast.parse(old)) == _ast_dump(Path(self.ws.path) / f)
-            info["ast_equal"] = same
+            info.update(ast_equal=same, check="ast")
             if not same:
                 info["log"] = "formatting changed the AST"
+                return False, info
+            return True, info  # equal ASTs prove the same behavior; no probes needed
+        if self.diff_tests:
+            outcome, note = probe_change(self.ws, start, items, self.graph, self.llm, self.cfg)
+            info.update(diff_check=outcome, probe_note=note, check="probes")
+            if outcome is not None and not outcome.same:
+                info["log"] = "probes found a behavior change:\n" + "\n".join(
+                    outcome.mismatches[:20]
+                )
                 return False, info
         return True, info
 
@@ -145,7 +203,8 @@ class Guard:
                     return True
         self.ws.rollback(start)
         for item in applied:
-            self._record(item, "rolled_back", info, diffs[item.item_id], info["log"][-2000:])
+            notes = f"{info['check']} failed: " + info["log"][-2000:]
+            self._record(item, "rolled_back", info, diffs[item.item_id], notes)
         return False
 
     def _record(
@@ -156,9 +215,9 @@ class Guard:
             status,
             tests=info.get("tests"),
             ast_equal=info.get("ast_equal"),
-            diff_check=None,
+            diff_check=info.get("diff_check"),
             diff=diff,
-            notes=notes,
+            notes=notes or info.get("probe_note", ""),
         )
 
     def results(self) -> list[EditResult]:

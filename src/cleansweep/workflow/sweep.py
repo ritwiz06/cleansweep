@@ -60,7 +60,8 @@ def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0)
     guard_cfg = dict(core.get("guard", {}))
     if method == "guard_tests_only":
         guard_cfg["diff_tests"] = False
-    guard = Guard(ws, llm, guard_cfg, repair_fn=propose_fix if llm is not None else None)
+    repair_fn = propose_fix if llm is not None else None
+    guard = Guard(ws, llm, guard_cfg, repair_fn=repair_fn, graph=graph)
     outcome = apply_with_bisection(make_batches(safe, max_size), guard.check_batch)
 
     results = guard.results()

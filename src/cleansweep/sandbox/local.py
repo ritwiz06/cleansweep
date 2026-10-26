@@ -22,7 +22,14 @@ SKIP = shutil.ignore_patterns(
 
 
 # generated files must never show up in checkpoints or diffs
-WS_EXCLUDE = ["__pycache__/", "*.pyc", ".pytest_cache/", ".coverage*", "_hidden_checks/"]
+WS_EXCLUDE = [
+    "__pycache__/",
+    "*.pyc",
+    ".pytest_cache/",
+    ".coverage*",
+    "_hidden_checks/",
+    "_probes/",
+]
 
 
 def default_work_dir(cfg: dict) -> Path:

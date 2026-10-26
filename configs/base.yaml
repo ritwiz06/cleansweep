@@ -14,6 +14,10 @@ core:
     quarantine_dir: .cleansweep/quarantine
     test_timeout_s: 900
   guard:
-    diff_tests: false      # differential probes arrive with SA-08
-    max_targets: 10
+    diff_tests: true       # differential probes after the tests pass; guard_tests_only turns them off
+    max_targets: 10        # functions probed per batch (removed copies, changed functions, callers)
+    probe_max_cases: 8
+    probe_timeout_s: 300   # one harness run
+    probe_case_timeout_s: 10
+    probe_cache_dir: .cleansweep/probes
     repair: true
