@@ -83,7 +83,7 @@ def test_compare_drops_unstable_cases_and_reports_mismatches():
     run = {"probes": {"t0": {"ok": True, "cases": {"a": "1", "b": "2", "c": "7"}}}}
     rerun = {"probes": {"t0": {"ok": True, "cases": {"a": "1", "b": "3", "c": "7"}}}}
     after = {"probes": {"t0": {"ok": True, "cases": {"a": "1", "b": "9", "c": "8"}}}}
-    out = compare([target], [], (run, rerun), after, {})
+    out = compare([target], [], (run, rerun), after)
     assert (out.same, out.n_cases, out.n_unstable) == (False, 2, 1)
     assert out.mismatches == ["m.py::f [c]: before 7, after 8"]
 
@@ -91,7 +91,7 @@ def test_compare_drops_unstable_cases_and_reports_mismatches():
 def test_compare_module_check_allows_only_deleted_names():
     before = {"modules": {"m": {"ok": True, "names": ["a", "b", "c"]}}}
     after = {"modules": {"m": {"ok": True, "names": ["a"]}}}
-    out = compare([], [ModuleCheck("m", {"b"})], (before, before), after, {})
+    out = compare([], [ModuleCheck("m", {"b"})], (before, before), after)
     assert out.mismatches == ["module m lost public names: c"]
 
 
@@ -186,3 +186,29 @@ def test_verify_runs_probes_on_two_workspaces(toy_ws, tmp_path):
     assert not ok and info["check"] == "probes"
     assert any("[tie]" in m for m in info["diff_check"].mismatches)
     after.close()
+
+
+def test_probe_that_imports_a_removed_name_is_discarded():
+    target = Target("m.py::caller", "m", "caller", "def caller(): ...")
+    ok = {"probes": {"t0": {"ok": True, "cases": {"a": "1"}}}, "modules": {}}
+    failed = {"ok": False, "error": "ImportError: cannot import name '_helper' from 'm'"}
+    out = compare([target], [ModuleCheck("m", {"_helper"})], (ok, ok), {"probes": {"t0": failed}})
+    assert out.same and out.n_cases == 0
+    out = compare([target], [ModuleCheck("m", set())], (ok, ok), {"probes": {"t0": failed}})
+    assert not out.same
+
+
+def test_a_repair_that_undoes_the_edit_is_a_rollback(toy_ws, tmp_path):
+    item = toy_item(toy_ws, "shopcart/storage.py::_safe_round")
+    llm = FakeLLM({"Target id": probe_reply({item.unit.key: ROUNDING_PROBE})})
+
+    def revert(item, log, repo_dir, llm):
+        out = subprocess.run(
+            ["git", "diff", "-R", toy_ws.base], cwd=repo_dir, capture_output=True, text=True
+        )
+        return out.stdout
+
+    guard = Guard(toy_ws, llm, guard_cfg(tmp_path), repair_fn=revert)
+    assert not guard.check_batch([item])
+    result = guard.results()[0]
+    assert result.status == "rolled_back" and "the repair undid the edit" in result.notes

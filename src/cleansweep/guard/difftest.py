@@ -10,6 +10,7 @@ import ast
 import hashlib
 import json
 import logging
+import re
 import shutil
 import subprocess
 import sys
@@ -325,16 +326,20 @@ def _short(text: str, n: int = 100) -> str:
     return text if len(text) <= n else text[:n] + "..."
 
 
+IMPORT_NAME = re.compile(r"cannot import name '(\w+)'")
+
+
 def compare(
     targets: list[Target],
     checks: list[ModuleCheck],
     before: tuple[dict, dict],
     after: dict,
-    after_swapped: dict,
 ) -> DiffOutcome:
-    """Turn harness outputs into a DiffOutcome; cases that differ between the two before-runs
-    are unstable and dropped."""
+    """Turn harness outputs into a DiffOutcome. Cases that differ between the two before-runs
+    are unstable and dropped; so are probes that only fail after the edit because they import
+    a name the edit removes on purpose (the module check covers those names)."""
     b1, b2 = before
+    removed = set().union(*(c.allowed_lost for c in checks)) if checks else set()
     n_cases = n_unstable = 0
     mismatches: list[str] = []
     for i, t in enumerate(targets):
@@ -346,14 +351,17 @@ def compare(
         n_unstable += len(r1["cases"]) - len(stable)
         if not stable:
             continue
-        side = after_swapped if t.swap else after
-        ra = side.get("probes", {}).get(pid)
-        n_cases += len(stable)
+        ra = after.get("probes", {}).get(pid)
         name = t.key + (f" vs {t.swap['source_module']}.{t.swap['source_expr']}" if t.swap else "")
         if not ra or not ra.get("ok"):
-            error = (ra or {}).get("error") or side.get("error") or "no result"
+            error = (ra or {}).get("error") or after.get("error") or "no result"
+            m = IMPORT_NAME.search(error)
+            if m and m.group(1) in removed:
+                continue
+            n_cases += len(stable)
             mismatches.append(f"{name}: probe fails after the edit ({_short(error)})")
             continue
+        n_cases += len(stable)
         for label, value in stable.items():
             got = ra["cases"].get(label, "missing")
             if got != value:
@@ -387,23 +395,23 @@ def probe_versions(
     """Run the probes twice on the before version and once on the after version, then compare.
 
     run_before / run_after take (spec, files) and return the harness output for that version.
+    In the after-run, each removed duplicate or wrapper name is bound to the code that
+    replaces it (after the module check has listed the names), so its probe tests the
+    replacement and other probes that import it still load.
     """
     targets = [t for t in targets if t.key in probes]
     if not targets and not checks:
         return None
     files = {f"t{i}.py": probes[t.key] for i, t in enumerate(targets)}
-    plain = [f"t{i}" for i, t in enumerate(targets) if not t.swap]
-    swapped = [f"t{i}" for i, t in enumerate(targets) if t.swap]
-    modules = [c.module for c in checks]
-    every = {"paths": paths, "probes": plain + swapped, "modules": modules}
-    b1 = run_before(every, files)
-    b2 = run_before(every, files)
-    after = run_after({"paths": paths, "probes": plain, "modules": modules}, files)
-    after_swapped = {}
-    if swapped:
-        swaps = [t.swap for t in targets if t.swap]
-        after_swapped = run_after({"paths": paths, "probes": swapped, "swaps": swaps}, files)
-    return compare(targets, checks, (b1, b2), after, after_swapped)
+    spec = {
+        "paths": paths,
+        "probes": [f"t{i}" for i in range(len(targets))],
+        "modules": [c.module for c in checks],
+    }
+    b1 = run_before(spec, files)
+    b2 = run_before(spec, files)
+    after = run_after({**spec, "swaps": [t.swap for t in targets if t.swap]}, files)
+    return compare(targets, checks, (b1, b2), after)
 
 
 def _git(repo_dir: str, *args: str) -> subprocess.CompletedProcess:
