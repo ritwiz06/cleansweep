@@ -1,1 +1,27 @@
-{}
+# Paths are relative to the repository root.
+swebench:
+  dataset: SWE-bench/SWE-bench_Verified   # new home of princeton-nlp/SWE-bench_Verified
+  split: test
+  cache: data/raw/swebench_verified.parquet
+patchdiff:
+  repo_url: https://github.com/ZJU-CTAG/PatchDiff
+  commit: 0a8ed608f9f19396e1bb3f6f3dd88b0fb88b49d6   # pinned; holds the three agents' patches
+  dir: data/raw/patchdiff
+  results_url: https://zenodo.org/api/records/17074796/files/PatchDiff_0908.7z/content
+  results_sha256: 26366405ba37cb3f8052ddd49e23f62e11925dc4a5512744cf03037d30e9204a
+  results_dir: data/raw/patchdiff_zenodo   # labels and generated tests (the paper's results)
+  index: data/processed/patchdiff_index.json
+  tests_dir: data/processed/patchdiff_tests
+  max_hidden_tests: 10                      # per patch; tests that revealed a difference first
+  agents:                                   # PatchDiff's tool name -> its submission folder (glob)
+    OpenHands: 20241029_OpenHands-CodeAct-*
+    CodeStory: 20241221_codestory_midwit_*
+    LearnByInteract: 20250110_learn_by_interact_*
+splits:
+  dir: data/splits
+  tier1_patches: 10
+  tier2_patches: 60
+  tier3_tasks: 150
+  differs_share: 0.3
+  # small environments and quick test commands first; round-robin over these repos
+  repo_preference: [pytest-dev/pytest, django/django, sympy/sympy, pydata/xarray, sphinx-doc/sphinx]
