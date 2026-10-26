@@ -10,7 +10,7 @@ The demo app is `demo/shop_app`, a small bookstore inventory (`bookshelf` packag
 | Dead function | `bookshelf/utils.py::isbn_checksum_ok` | deleted |
 | Exact duplicate helper | `bookshelf/reports.py::_clean_isbn` | replaced by `utils.normalize_isbn` |
 | getattr-dispatched command | `bookshelf/commands.py::cmd_restock` | kept (suggest lane; tests use it) |
-| Near-duplicate rounding helper | `bookshelf/orders.py::_round_money` | must not change: it rounds .5 up |
+| Near-duplicate rounding helper | `bookshelf/orders.py::_round_money` | rolled back by the Guard's probes: it rounds .5 up |
 | `eval` on input | `bookshelf/storage.py::load_legacy` | reported only |
 
 The feature step (`demo/feature.patch`) adds a `lowstock` command and leaves one new
@@ -23,7 +23,10 @@ leftover helper behind (`inventory._print_low_stock`).
    **Live sweep** in the browser.
 3. Terminal 2: `bash demo/prepare_demo.sh`. It builds the app in `.cleansweep/demo/shop_app`
    (gitignored) and prints that path.
-4. Check that Replay lists `20261025_demo_feature_gatekeeper` and `20261025_demo_feature_advisory`.
+4. Check that Replay lists `20261026_demo_feature_advisory_probes` (the main fallback) and
+   `20261025_demo_feature_advisory` (the same run before the probes existed).
+   Run the live sweep once the day before, so the LLM cache is warm: a cold advisory run with
+   probes took about 8 minutes; a warm one takes seconds.
 5. OpenCode is connected to Voyager and opened in the prepared app folder.
 
 ## Script
@@ -45,20 +48,23 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
 - Plan table: green rows are safe edits, orange rows are only reported (the `cmd_*`
   commands and the `eval`). The over-engineering review drops "can't happen" notes on
   lines the tests run; the **Run log** under the diffs says which ones and why.
-- Guard feed: each card is one check: apply the batch, compile, import, run the tests.
+- Guard feed: each card is one check: apply the batch, compile, import, run the tests, then
+  the differential probes ("probes: N cases agree").
 
 *If the judge is still working at 2:30, or the network is slow:* switch to **Replay**, pick
-`20261025_demo_feature_advisory`, speed 20×, press **Replay**.
+`20261026_demo_feature_advisory_probes`, speed 20×, press **Replay**.
 
 **3:00–3:45 · What it found.**
 - Kept edits (slop meter): the leftover script, the old module, the dead function, the
   exact duplicate, and the helper the agent just left behind. All tests still pass.
 - `cmd_restock` stayed in suggest: it is reached through `getattr`, and deleting it
   would break `test_restock`.
-- The near-duplicate `_round_money`: in advisory mode the Guard kept it, because every
-  test passes, but the hidden check says **behavior changed** (0.125 rounds to 0.12
-  instead of 0.13). This is the gap the differential probes close. In gatekeeper mode the
-  judge holds it back (replay `20261025_demo_feature_gatekeeper` to show that).
+- **The Guard catches it.** The near-duplicate `_round_money` passes every test, so the tests
+  alone would keep it. Point at its card: "The probes caught a behavior change": the probes
+  called `_round_money` and `utils.round_money` on the same inputs, and 0.125 gives 0.13
+  before but 0.12 after. The Guard rolled the edit back, and the hidden check says
+  **behavior unchanged**. For contrast, replay `20261025_demo_feature_advisory` (before the
+  probes): the same edit was kept and the hidden check failed.
 
 **3:45–4:00 · Close** on the results slide (outcome accuracy and the toy/demo tables).
 
