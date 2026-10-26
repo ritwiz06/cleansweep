@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 from cleansweep.analysis.graph import is_test_file, iter_py_files
+from cleansweep.analysis.scope import agent_scope
 from cleansweep.core.models import CleanupItem, CleanupPlan, CodeUnit, EditResult, SweepReport
 from cleansweep.guard import apply_edit
 from cleansweep.llm import get_client
@@ -54,17 +56,30 @@ def _report(
     return SweepReport(ws.repo_id, method, "now", seed, started, _now(), plan, results, stats)
 
 
+def _host(cmd: list[str], cwd: str) -> str:
+    # the tools run on the host copy; a Docker workspace's container doesn't have them
+    proc = subprocess.run([sys.executable, "-m", *cmd], cwd=cwd, capture_output=True, text=True)
+    return proc.stdout + proc.stderr
+
+
 def tools_only(target: str, cfg: dict) -> SweepReport:
-    """Baseline: delete whatever vulture flags and apply ruff fixes, with no checks."""
+    """Baseline: delete whatever vulture flags and apply ruff fixes, with no checks.
+
+    On SWE-bench targets it touches only the agent's code, like CleanSweep's agent scope: new
+    functions vulture flags, unused imports in the agent's files, and formatting of the files
+    the agent created."""
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
-    _, out = ws.run([sys.executable, "-m", "vulture", ".", "--min-confidence", "60"])
+    scope = agent_scope(ws.path) if target.startswith("swebench:") else None
+    out = _host(["vulture", ".", "--min-confidence", "60"], ws.path)
     items, results = [], []
     for line in out.splitlines():
         m = VULTURE_LINE.match(line.strip())
         if not m or is_test_file(m.group(1).removeprefix("./")):
             continue
         path, lineno, kind, name = m.groups()
+        if scope is not None and not scope.covers_line(path.removeprefix("./"), int(lineno)):
+            continue
         unit = CodeUnit(path.removeprefix("./"), "function", name, int(lineno))
         item = CleanupItem(
             f"vulture-{len(items)}",
@@ -84,8 +99,12 @@ def tools_only(target: str, cfg: dict) -> SweepReport:
         status = "kept" if apply_edit(ws, item) else "skipped"
         results.append(EditResult(item.item_id, status, diff=ws.diff(before)))
     before = ws.checkpoint("tools ruff")
-    ws.run([sys.executable, "-m", "ruff", "check", "--isolated", "--select", "F401", "--fix", "."])
-    ws.run([sys.executable, "-m", "ruff", "format", "--isolated", "."])
+    fix_paths = sorted(f for f in scope.files if f.endswith(".py")) if scope else ["."]
+    fmt_paths = sorted(f for f in scope.files_added if f.endswith(".py")) if scope else ["."]
+    if fix_paths:
+        _host(["ruff", "check", "--isolated", "--select", "F401", "--fix", *fix_paths], ws.path)
+    if fmt_paths:
+        _host(["ruff", "format", "--isolated", *fmt_paths], ws.path)
     ruff_item = CleanupItem(
         "ruff-fixes",
         CodeUnit(".", "file"),
