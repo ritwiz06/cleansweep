@@ -229,13 +229,24 @@ def _numbered(repo_dir: str, path: str) -> tuple[str, int]:
 
 
 def to_items(
-    findings: list, graph, line_counts: dict[str, int], taken: set[str]
+    findings: list, graph, line_counts: dict[str, int], existing: dict[str, CleanupItem]
 ) -> list[CleanupItem]:
-    """Turn the model's findings into report-only items, one per code unit."""
+    """Turn the model's findings into report-only items, one per code unit.
+
+    A finding on a unit that already has a cleanup item is attached to that item as
+    evidence instead (lane and action unchanged); only new items are returned.
+    """
     items: dict[str, CleanupItem] = {}
+    seen: set[tuple] = set()
     for f in findings:
         if not isinstance(f, dict) or str(f.get("path")) not in line_counts:
             continue
+        signature = tuple(
+            str(f.get(k)) for k in ("path", "start_line", "end_line", "kind", "reason")
+        )
+        if signature in seen:
+            continue  # the same finding repeated (e.g. across requests)
+        seen.add(signature)
         path = str(f["path"])
         try:
             start = int(f["start_line"])
@@ -249,9 +260,13 @@ def to_items(
         unit = CodeUnit(
             path, owner.kind if owner else "file", owner.name if owner else None, start, end
         )
-        if unit.key in taken:
+        if unit.key in existing:
+            target = existing[unit.key]
+            target.evidence.append(f"{EVIDENCE}: {reason}")
+            if "overengineering" not in target.sources:
+                target.sources.append("overengineering")
             log.info(
-                "skipped over-engineering finding %s:%d-%d: %s already has a cleanup item",
+                "attached over-engineering finding %s:%d-%d to the existing item for %s",
                 path,
                 start,
                 end,
@@ -323,4 +338,4 @@ def review_overengineering(
             continue
         findings += reply if isinstance(reply, list) else reply.get("findings", [])
     findings = drop_tested(findings, load_coverage(coverage_json), repo_dir)
-    return to_items(findings, graph, line_counts, {i.unit.key for i in items})
+    return to_items(findings, graph, line_counts, {i.unit.key: i for i in items})
