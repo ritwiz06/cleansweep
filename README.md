@@ -197,7 +197,7 @@ patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`, `scripts
 
 | Method | Items found | Edits applied | Files removed | Lines removed | Rolled back | Test runs | Hidden changed | Min per patch |
 |---|---|---|---|---|---|---|---|---|
-| `cleansweep`, gatekeeper | 20 leftover files | 12 | 12 | 408 | 0 | 47 | 0/10 | 2.8 |
+| `cleansweep`, gatekeeper | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 2.2 |
 | `cleansweep`, advisory (with probes) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `guard_tests_only` (advisory) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `tools_only` | vulture + ruff | 8 | 0 | 18 | n/a | 30 | 0/10 | 1.2 |
@@ -213,13 +213,15 @@ agent-written code itself the detectors found no dead code, unused imports or du
 - The probes were hardly exercised: 18 of 20 batches only deleted files nothing imports, so there
   was nothing to call (one batch ran 23 cases, all equal). `guard_tests_only` therefore gives the
   same result as advisory here.
-- In gatekeeper mode the judge held back 8 of the 11 Django scratch files because of misleading
-  signals ("imported by" another scratch file, a file name that also appears in Django's config):
-  issue #26.
+- Gatekeeper mode now applies all 20 files. Before the fix for issue #26 it applied 12: the judge
+  held back 8 of the 11 Django scratch files because its signals counted an "import" from another
+  scratch file, a bare file name like `admin` in Django's config, and strings in scratch files as
+  dynamic use. For files the agent created, the signals now count only project code.
 - `tools_only` removes unused imports from the scratch files and reformats them instead of deleting
   them.
 - Cost: 14 live LLM calls (about 23k prompt and 46k completion tokens) for the first method on each
-  patch; the other methods were answered from the cache. The hidden checks add about 0.9 minutes
+  patch, plus 8 for the gatekeeper rerun after #26; the other methods were answered from the
+  cache. The hidden checks add about 0.9 minutes
   per patch. Tables: `docs/report/tables/swebench_tier1*.md`.
 
 ## Repository layout

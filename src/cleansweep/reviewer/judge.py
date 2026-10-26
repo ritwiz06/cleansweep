@@ -64,13 +64,64 @@ def _leftover_signals(item: CleanupItem, graph, repo_dir: str | None, text: str)
     return out
 
 
-def signals(item: CleanupItem, graph=None, repo_dir: str | None = None) -> dict:
-    """The detector facts behind an item, as named fields the judge can weigh."""
+def scratch_context(items: list[CleanupItem], repo_dir: str | None, graph) -> dict | None:
+    """What separates project code from the agent's leftovers, for signals on files the agent
+    created; None when the repo has no agent patch commit."""
+    from cleansweep.analysis.scope import agent_scope
+
+    scope = agent_scope(repo_dir) if repo_dir else None
+    if scope is None:
+        return None
+    scratch = {f for f in scope.files_added if scope.outside_project(f)}
+    leftovers = {i.unit.path for i in items if i.category == "leftover_file"}
+    non_project = scratch | leftovers
+    strings: set[str] = set()
+    if graph is not None and any(p in scope.files_added for p in leftovers):
+        for path, mod in getattr(graph, "modules", {}).items():
+            if path not in non_project and mod.tree is not None:
+                strings.update(
+                    n.value
+                    for n in ast.walk(mod.tree)
+                    if isinstance(n, ast.Constant) and isinstance(n.value, str)
+                )
+    return {
+        "created": set(scope.files_added),
+        # files that existed before the patch and weren't touched can't need a new file
+        "can_import": scope.files - non_project,
+        "project_strings": strings,
+    }
+
+
+def _agent_file_signals(item: CleanupItem, graph, repo_dir: str, ctx: dict) -> dict:
+    # Only project code counts: other leftover or scratch files that import this one, or a
+    # bare file name like "admin" that appears in a config or a string, say nothing.
+    from cleansweep.analysis.graph import import_name, module_in_configs
+
+    path = item.unit.path
+    importers = set(getattr(graph, "imported_by", {}).get(path, ())) & ctx["can_import"]
+    out: dict = {"created_by_agent_patch": True, "imported_by": len(importers)}
+    if (main := _has_main_block(repo_dir, path)) is not None:
+        out["has_main_block"] = main
+    out["mentioned_in_config"] = module_in_configs(repo_dir, path)
+    out["dynamic_risk"] = import_name(path) in ctx["project_strings"]
+    return out
+
+
+def signals(
+    item: CleanupItem, graph=None, repo_dir: str | None = None, context: dict | None = None
+) -> dict:
+    """The detector facts behind an item, as named fields the judge can weigh.
+
+    context (from scratch_context) gives files the agent created signals that count only
+    project code."""
     text = " | ".join(item.evidence)
     out: dict = {}
     if m := VULTURE.search(text):
         out["vulture_confidence"] = int(m.group(1))
     in_graph = graph is not None and item.unit.kind in GRAPH_KINDS
+    if item.category == "leftover_file" and context and item.unit.path in context["created"]:
+        out.update(_agent_file_signals(item, graph, repo_dir, context))
+        return out
     if item.category == "leftover_file":
         out.update(_leftover_signals(item, graph, repo_dir, text))
     elif in_graph:
@@ -194,6 +245,7 @@ def judge_items(
             item.reason = FORMAT_REASON
     to_judge = [it for it in items if it.category != "format"]
 
+    scratch = scratch_context(items, repo_dir, graph)
     decisions: dict[str, dict] = {}
     for request in group_requests(to_judge, batch_size):
         payload = [
@@ -201,7 +253,7 @@ def judge_items(
                 "item_id": it.item_id,
                 "category": it.category,
                 "unit": it.unit.key,
-                "signals": signals(it, graph, repo_dir),
+                "signals": signals(it, graph, repo_dir, scratch),
                 "evidence": it.evidence,
                 "code": snippet(repo_dir, it, context),
             }
