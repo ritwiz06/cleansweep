@@ -135,8 +135,13 @@ def _remove_dependency(ws, item: CleanupItem) -> bool:
 
 
 def _format(ws, item: CleanupItem) -> bool:
-    code, _ = ws.run([sys.executable, "-m", "ruff", "format", "--isolated", item.unit.path])
-    return code == 0
+    # ruff runs on the host copy: a Docker workspace's container doesn't have it
+    proc = subprocess.run(
+        [sys.executable, "-m", "ruff", "format", "--isolated", item.unit.path],
+        cwd=ws.path,
+        capture_output=True,
+    )
+    return proc.returncode == 0
 
 
 def apply_edit(workspace, item: CleanupItem) -> bool:
