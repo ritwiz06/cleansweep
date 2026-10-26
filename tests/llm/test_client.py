@@ -88,3 +88,20 @@ def test_get_client_uses_config_timeout_and_no_sdk_retries(monkeypatch, tmp_path
     get_client(cfg)
     assert seen["timeout"] == 600
     assert seen["max_retries"] == 0
+
+
+def test_extra_body_is_sent_and_kept_apart_in_the_cache(tmp_path):
+    llm, fake = client(["plain", "fast"], tmp_path)
+    msgs = [{"role": "user", "content": "x"}]
+    off = {"chat_template_kwargs": {"enable_thinking": False}}
+    assert llm.chat(msgs) == "plain"
+    assert llm.chat(msgs, extra_body=off) == "fast"
+    assert "extra_body" not in fake.kwargs[0] and fake.kwargs[1]["extra_body"] == off
+    assert llm.chat(msgs, extra_body=off) == "fast" and len(fake.kwargs) == 2
+
+
+def test_client_extra_body_applies_to_every_request():
+    fake = FakeOpenAI(["a"])
+    llm = LLMClient("m", openai_client=fake, extra_body={"x": 1})
+    llm.chat([{"role": "user", "content": "q"}], extra_body={"y": 2})
+    assert fake.kwargs[0]["extra_body"] == {"x": 1, "y": 2}

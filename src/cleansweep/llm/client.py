@@ -51,6 +51,7 @@ class LLMClient:
         max_retries: int = 5,
         timeout_s: float = 600,
         openai_client=None,
+        extra_body: dict | None = None,
     ):
         if openai_client is None:
             from openai import OpenAI
@@ -62,18 +63,26 @@ class LLMClient:
         self._client = openai_client
         self.model = model
         self.max_retries = max_retries
+        self.extra_body = extra_body or None
         self._cache = _Cache(cache_path) if cache_path else None
         self._seed_ok = True
         self._usage = {"llm_calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
 
-    def _key(self, messages: list[dict], temperature: float, seed: int | None) -> str:
-        blob = json.dumps([self.model, messages, temperature, seed], sort_keys=True)
+    def _key(
+        self, messages: list[dict], temperature: float, seed: int | None, extra: dict | None
+    ) -> str:
+        parts = [self.model, messages, temperature, seed] + ([extra] if extra else [])
+        blob = json.dumps(parts, sort_keys=True)
         return hashlib.sha256(blob.encode()).hexdigest()
 
-    def _create(self, messages: list[dict], temperature: float, seed: int | None):
+    def _create(
+        self, messages: list[dict], temperature: float, seed: int | None, extra: dict | None
+    ):
         kwargs = {"model": self.model, "messages": messages, "temperature": temperature}
         if seed is not None and self._seed_ok:
             kwargs["seed"] = seed
+        if extra:
+            kwargs["extra_body"] = extra
         delay = 1.0
         for attempt in range(self.max_retries + 1):
             try:
@@ -91,12 +100,21 @@ class LLMClient:
                 delay = min(delay * 2, 30)
         raise RuntimeError("unreachable")
 
-    def chat(self, messages: list[dict], temperature: float = 0.0, seed: int | None = None) -> str:
-        """Send a chat request and return the reply text (cached on disk)."""
-        key = self._key(messages, temperature, seed)
+    def chat(
+        self,
+        messages: list[dict],
+        temperature: float = 0.0,
+        seed: int | None = None,
+        extra_body: dict | None = None,
+    ) -> str:
+        """Send a chat request and return the reply text (cached on disk).
+
+        extra_body adds provider options to this request, on top of the client's own."""
+        extra = {**(self.extra_body or {}), **(extra_body or {})} or None
+        key = self._key(messages, temperature, seed, extra)
         if self._cache and (hit := self._cache.get(key)) is not None:
             return hit
-        resp = self._create(messages, temperature, seed)
+        resp = self._create(messages, temperature, seed, extra)
         reply = resp.choices[0].message.content or ""
         self._usage["llm_calls"] += 1
         if getattr(resp, "usage", None):
@@ -107,14 +125,18 @@ class LLMClient:
         return reply
 
     def chat_json(
-        self, messages: list[dict], temperature: float = 0.0, seed: int | None = None
+        self,
+        messages: list[dict],
+        temperature: float = 0.0,
+        seed: int | None = None,
+        extra_body: dict | None = None,
     ) -> dict | list:
         """Like chat, but parse the reply as JSON; retry once with a reminder."""
         messages = [
             *messages[:-1],
             {**messages[-1], "content": messages[-1]["content"] + "\n\nReply with JSON only."},
         ]
-        reply = self.chat(messages, temperature, seed)
+        reply = self.chat(messages, temperature, seed, extra_body)
         try:
             return parse_json_text(reply)
         except json.JSONDecodeError:
@@ -123,7 +145,7 @@ class LLMClient:
                 {"role": "assistant", "content": reply},
                 {"role": "user", "content": "That was not valid JSON. Return valid JSON only."},
             ]
-            return parse_json_text(self.chat(retry, temperature, seed))
+            return parse_json_text(self.chat(retry, temperature, seed, extra_body))
 
     def usage(self) -> dict:
         """Calls and token counts so far (cache hits are not counted)."""
@@ -149,4 +171,5 @@ def get_client(cfg: dict | None = None) -> LLMClient:
         cache_path=cfg.get("cache_path", ".cleansweep/llm_cache.sqlite"),
         max_retries=cfg.get("max_retries", 5),
         timeout_s=cfg.get("timeout_s", 600),
+        extra_body=cfg.get("extra_body"),
     )

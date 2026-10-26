@@ -18,12 +18,22 @@ class FakeLLM:
                 return reply
         return None
 
-    def chat(self, messages: list[dict], temperature: float = 0.0, seed: int | None = None) -> str:
+    def chat(
+        self,
+        messages: list[dict],
+        temperature: float = 0.0,
+        seed: int | None = None,
+        extra_body: dict | None = None,
+    ) -> str:
         reply = self._reply(messages)
         return "ok" if reply is None else reply
 
     def chat_json(
-        self, messages: list[dict], temperature: float = 0.0, seed: int | None = None
+        self,
+        messages: list[dict],
+        temperature: float = 0.0,
+        seed: int | None = None,
+        extra_body: dict | None = None,
     ) -> dict | list:
         reply = self._reply(messages)
         return {} if reply is None else parse_json_text(reply)
