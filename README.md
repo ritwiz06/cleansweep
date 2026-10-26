@@ -193,7 +193,8 @@ its prebuilt SWE-bench Docker image (emulated amd64 on an arm64 laptop). On thes
 Reviewer looks only at what the agent's patch wrote (`reviewer.scope`), and so does the
 tools-only baseline. Hidden checks run in a fresh container: the instance's FAIL_TO_PASS and
 PASS_TO_PASS tests plus PatchDiff's generated tests for that patch (1 to 38 stable tests per
-patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`, `scripts/exp_swebench_tier1.py`.
+patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`,
+`scripts/exp_swebench.py --tier data/splits/swebench_tier1.json --out results/raw/swebench_t1`.
 
 | Method | Items found | Edits applied | Files removed | Lines removed | Rolled back | Test runs | Hidden changed | Min per patch |
 |---|---|---|---|---|---|---|---|---|
