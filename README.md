@@ -184,13 +184,51 @@ removed helper and the one that replaces it on the same inputs (0.125 gives 0.13
 0.12 after) and roll the edit back, so the hidden checks don't change. No safe edit was
 blocked. Bisection costs a few extra test runs (9 instead of 4 on the toy repo).
 
+### SWE-bench Tier 1
+
+Ten plausible agent patches from SWE-bench Verified (PatchDiff's three agents, 4 instances:
+`pytest-dev__pytest-10081`, `django__django-11095`, `sympy__sympy-11618` × 3 agents, and
+`pydata__xarray-3151` × 1; 3 of the 10 behave differently from the developer's fix). Each runs in
+its prebuilt SWE-bench Docker image (emulated amd64 on an arm64 laptop). On these targets the
+Reviewer looks only at what the agent's patch wrote (`reviewer.scope`), and so does the
+tools-only baseline. Hidden checks run in a fresh container: the instance's FAIL_TO_PASS and
+PASS_TO_PASS tests plus PatchDiff's generated tests for that patch (1 to 38 stable tests per
+patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`, `scripts/exp_swebench_tier1.py`.
+
+| Method | Items found | Edits applied | Files removed | Lines removed | Rolled back | Test runs | Hidden changed | Min per patch |
+|---|---|---|---|---|---|---|---|---|
+| `cleansweep`, gatekeeper | 20 leftover files | 12 | 12 | 408 | 0 | 47 | 0/10 | 2.8 |
+| `cleansweep`, advisory (with probes) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
+| `guard_tests_only` (advisory) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
+| `tools_only` | vulture + ruff | 8 | 0 | 18 | n/a | 30 | 0/10 | 1.2 |
+
+What the agents left behind: reproduction scripts (`reproduce_error.py`, `reproduce.py`,
+`edge_cases.py`) in 5 of the 10 patches (all four CodeStory patches and one LearnByInteract
+patch), scratch tests at the repo root (3 files in one OpenHands patch), and a whole throwaway
+Django project (`test_app/` plus two root scripts, 11 files in one OpenHands patch). In the
+agent-written code itself the detectors found no dead code, unused imports or duplicates on these
+10 patches. Three patches left nothing to clean.
+
+- No method changed the hidden behavior of any patch; nothing was rolled back.
+- The probes were hardly exercised: 18 of 20 batches only deleted files nothing imports, so there
+  was nothing to call (one batch ran 23 cases, all equal). `guard_tests_only` therefore gives the
+  same result as advisory here.
+- In gatekeeper mode the judge held back 8 of the 11 Django scratch files because of misleading
+  signals ("imported by" another scratch file, a file name that also appears in Django's config):
+  issue #26.
+- `tools_only` removes unused imports from the scratch files and reformats them instead of deleting
+  them.
+- Cost: 14 live LLM calls (about 23k prompt and 46k completion tokens) for the first method on each
+  patch; the other methods were answered from the cache. The hidden checks add about 0.9 minutes
+  per patch. Tables: `docs/report/tables/swebench_tier1*.md`.
+
 ## Repository layout
 
 ```
 src/cleansweep/
   core/        contracts (models.py), config, JSON io, stub switch
   llm/         Voyager client with disk cache, FakeLLM for tests
-  sandbox/     git-backed workspaces (local now; SWE-bench/AIDev Docker next)
+  sandbox/     git-backed workspaces: local folders and SWE-bench Docker images (AIDev next)
   guard/       applies edits, verifies them (tests, AST, differential probes), rolls back failures
   workflow/    run_sweep: open -> analyze -> plan -> rank -> batch -> guard -> report
   analysis/    code graph, duplicate finder, features
@@ -198,7 +236,8 @@ src/cleansweep/
   ranking/     safe-to-remove scores (category priors until the classifier is trained)
   scheduler/   batching with bisection, sweep policies
   eval/        baselines, hidden checks, metrics
-  data/ mining/  dataset loaders and comment mining (stubs for now)
+  data/        SWE-bench Verified and PatchDiff loaders, tier splits (AIDev loaders still stubs)
+  mining/      review-comment mining (stub)
 app/           Streamlit dashboard, Live sweep page, step-by-step live runner
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script
 configs/       base.yaml (core), data.yaml, exp.yaml, reviewer.yaml
