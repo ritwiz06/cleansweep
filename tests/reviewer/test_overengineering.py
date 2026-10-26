@@ -84,7 +84,7 @@ def test_findings_become_report_only_items(toy_repo):
     items = run_detectors(toy_repo, graph)
     llm = FakeLLM({KEY: json.dumps(findings)})
     new = oe.review_overengineering(items, toy_repo, graph, llm)
-    assert len(new) == 1  # dead-code unit skipped, bad path and bad lines dropped, two merged
+    assert len(new) == 1  # dead-code unit attached, bad path and bad lines dropped, two merged
     item = new[0]
     assert item.unit.key == "shopcart/cart.py::Cart.add"
     assert (item.category, item.action, item.lane) == ("other", "report_only", "suggest")
@@ -272,3 +272,37 @@ def test_try_except_and_assert_guards(tmp_path):
     assert oe.drop_tested(
         [asserted], {"m.py": {6: ["t.test_a"], 7: ["t.test_a"]}}, str(tmp_path)
     ) == [asserted]
+
+
+def test_finding_on_an_existing_item_is_attached(toy_repo, caplog):
+    graph = build_graph(toy_repo)
+    items = run_detectors(toy_repo, graph)
+    dup = next(i for i in items if i.unit.key == "shopcart/storage.py::_safe_round")
+    lane, action, evidence = dup.lane, dup.action, list(dup.evidence)
+    start = graph.unit("shopcart/storage.py::_safe_round").start_line
+    add = graph.unit("shopcart/cart.py::Cart.add")
+    findings = [
+        {
+            "path": "shopcart/storage.py",
+            "start_line": start + 2,
+            "end_line": start + 3,
+            "kind": "impossible_case",
+            "reason": "value is never None here.",
+        },
+        {
+            "path": "shopcart/cart.py",
+            "start_line": add.start_line + 1,
+            "end_line": add.start_line + 2,
+            "kind": "extra_check",
+            "reason": "Callers never pass 0.",
+        },
+    ]
+    with caplog.at_level("INFO", logger="cleansweep"):
+        new = oe.review_overengineering(
+            items, toy_repo, graph, FakeLLM({KEY: json.dumps(findings)})
+        )
+    assert [i.unit.key for i in new] == ["shopcart/cart.py::Cart.add"]
+    assert (dup.lane, dup.action) == (lane, action)
+    assert dup.evidence == [*evidence, "over-engineering review: value is never None here."]
+    assert "overengineering" in dup.sources
+    assert "attached over-engineering finding shopcart/storage.py" in caplog.text
