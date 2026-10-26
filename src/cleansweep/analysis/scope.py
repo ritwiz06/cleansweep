@@ -102,8 +102,9 @@ def _changes(repo_dir: str, sha: str) -> tuple[set[str], dict[str, set[int]]]:
     return added, lines
 
 
-def agent_scope(repo_dir: str, graph) -> AgentScope | None:
-    """The agent's files, changed lines and units; None when there is no agent patch commit."""
+def agent_scope(repo_dir: str, graph=None) -> AgentScope | None:
+    """The agent's files, changed lines and units (with a graph); None without an agent patch
+    commit."""
     sha = agent_commit(repo_dir)
     if sha is None:
         return None
@@ -115,7 +116,7 @@ def agent_scope(repo_dir: str, graph) -> AgentScope | None:
         text=True,
     ).stdout
     scope = AgentScope(added, lines, base_dirs=set(tree.split()))
-    for unit in graph.units():
+    for unit in graph.units() if graph is not None else []:
         if unit.path in added:
             scope.units.add(unit.key)
             continue

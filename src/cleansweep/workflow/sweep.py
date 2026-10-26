@@ -47,51 +47,58 @@ def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0)
     core = cfg.get("core", {})
     exp = cfg.get("exp", {})
     ws = open_workspace(target, core.get("sandbox"))
-    llm = cfg.get("llm_client") or make_llm(core)
+    try:
+        llm = cfg.get("llm_client") or make_llm(core)
 
-    graph = build_graph(ws.path)
-    features = extract_features(ws.path, graph)
-    plan = build_plan(ws, graph, llm, use_llm=llm is not None)
-    if method != "no_ranker":
-        load_ranker(exp.get("ranker_path")).score(plan.items, features)
+        graph = build_graph(ws.path)
+        features = extract_features(ws.path, graph)
+        plan = build_plan(ws, graph, llm, use_llm=llm is not None)
+        if method != "no_ranker":
+            load_ranker(exp.get("ranker_path")).score(plan.items, features)
 
-    safe = [i for i in plan.items if i.lane == "safe" and i.action != "report_only"]
-    max_size = 1 if method == "no_batching" else exp.get("batch_max_size", 8)
-    guard_cfg = dict(core.get("guard", {}))
-    if method == "guard_tests_only":
-        guard_cfg["diff_tests"] = False
-    repair_fn = propose_fix if llm is not None else None
-    guard = Guard(ws, llm, guard_cfg, repair_fn=repair_fn, graph=graph)
-    outcome = apply_with_bisection(make_batches(safe, max_size), guard.check_batch)
+        safe = [i for i in plan.items if i.lane == "safe" and i.action != "report_only"]
+        max_size = 1 if method == "no_batching" else exp.get("batch_max_size", 8)
+        guard_cfg = dict(core.get("guard", {}))
+        if method == "guard_tests_only":
+            guard_cfg["diff_tests"] = False
+        repair_fn = propose_fix if llm is not None else None
+        guard = Guard(ws, llm, guard_cfg, repair_fn=repair_fn, graph=graph)
+        outcome = apply_with_bisection(make_batches(safe, max_size), guard.check_batch)
 
-    results = guard.results()
-    results += [
-        EditResult(i.item_id, "skipped", notes="suggest lane: reported, not applied")
-        for i in plan.items
-        if i not in safe
-    ]
-    counts = {s: sum(r.status == s for r in results) for s in ("kept", "repaired", "rolled_back")}
-    diff_stats = ws.diff_stats(ws.base)
-    usage = llm.usage() if llm is not None else {}
-    stats = {
-        "items_total": len(plan.items),
-        "items_safe": len(safe),
-        "items_kept": counts["kept"],
-        "items_repaired": counts["repaired"],
-        "items_rolled_back": counts["rolled_back"],
-        "lines_removed": diff_stats["lines_removed"],
-        "files_removed": diff_stats["files_removed"],
-        "test_runs": ws.test_runs,
-        "llm_calls": usage.get("llm_calls", 0),
-        "prompt_tokens": usage.get("prompt_tokens", 0),
-        "completion_tokens": usage.get("completion_tokens", 0),
-        "wall_seconds": round(time.time() - t0, 2),
-        "n_checks": outcome["n_checks"],
-        "final_diff": ws.diff(ws.base),
-    }
-    report = SweepReport(ws.repo_id, method, "now", seed, started, _now(), plan, results, stats)
-    if cfg.get("run_id"):
-        save_json(report, report_path(core.get("out_dir", "results/raw"), cfg["run_id"], report))
-    if not core.get("sandbox", {}).get("keep_workspace"):
-        ws.close()
-    return report
+        results = guard.results()
+        results += [
+            EditResult(i.item_id, "skipped", notes="suggest lane: reported, not applied")
+            for i in plan.items
+            if i not in safe
+        ]
+        counts = {
+            s: sum(r.status == s for r in results) for s in ("kept", "repaired", "rolled_back")
+        }
+        diff_stats = ws.diff_stats(ws.base)
+        usage = llm.usage() if llm is not None else {}
+        stats = {
+            "items_total": len(plan.items),
+            "items_safe": len(safe),
+            "items_kept": counts["kept"],
+            "items_repaired": counts["repaired"],
+            "items_rolled_back": counts["rolled_back"],
+            "lines_removed": diff_stats["lines_removed"],
+            "files_removed": diff_stats["files_removed"],
+            "test_runs": ws.test_runs,
+            "llm_calls": usage.get("llm_calls", 0),
+            "prompt_tokens": usage.get("prompt_tokens", 0),
+            "completion_tokens": usage.get("completion_tokens", 0),
+            "wall_seconds": round(time.time() - t0, 2),
+            "n_checks": outcome["n_checks"],
+            "final_diff": ws.diff(ws.base),
+        }
+        report = SweepReport(ws.repo_id, method, "now", seed, started, _now(), plan, results, stats)
+        if cfg.get("run_id"):
+            save_json(
+                report, report_path(core.get("out_dir", "results/raw"), cfg["run_id"], report)
+            )
+        return report
+    finally:
+        # also on errors: a SWE-bench workspace holds a Docker container
+        if not core.get("sandbox", {}).get("keep_workspace"):
+            ws.close()

@@ -7,6 +7,7 @@ from cleansweep.analysis.graph import is_test_file, iter_py_files
 from cleansweep.sandbox import open_workspace
 
 HIDDEN_DIR = "_hidden_checks"
+START, END = ">>>>> Start Test Output", ">>>>> End Test Output"
 
 
 def _hidden_source(target: str, cfg: dict) -> Path | None:
@@ -34,8 +35,89 @@ def _outcomes(result) -> dict:
     }
 
 
+def _status(ws, test_paths: list[str] | None) -> dict[str, str]:
+    """Test name -> status for one run, read with the instance's swebench log parser."""
+    ws.run_tests(test_paths)
+    out = getattr(ws, "last_test_output", "")
+    section = out.split(START, 1)[-1].split(END, 1)[0]
+    return ws.parser(section, ws.spec) or ws.parser(out, ws.spec)
+
+
+def _hidden_status(ws, files: list[str]) -> dict[str, str]:
+    """Run the hidden test files together; if that gives no results (one file can stop
+    collection for all), run them one at a time."""
+    if not files:
+        return {}
+    status = _status(ws, files)
+    if status:
+        return status
+    merged: dict[str, str] = {}
+    for f in files:
+        merged.update(_status(ws, [f]))
+    return merged
+
+
+def run_swebench_hidden(target: str, final_diff: str, cfg: dict) -> dict:
+    """Hidden checks for "swebench:<instance>:<agent>": the instance's FAIL_TO_PASS and
+    PASS_TO_PASS tests plus PatchDiff's generated tests for this patch, in a fresh container,
+    before and after the cleanup diff. The sweep's workspace never contains the PatchDiff tests.
+    """
+    from cleansweep.data import load_agent_patches
+    from cleansweep.data.swebench import data_path
+
+    _, instance_id, agent = target.split(":", 2)
+    found = [p for p in load_agent_patches([agent]) if p.instance_id == instance_id]
+    hidden = found[0].hidden_tests if found else []
+    sandbox = {**cfg.get("core", {}).get("sandbox", {}), "flaky_runs": 0}
+    ws = open_workspace(target, sandbox)
+    try:
+        folder = Path(ws.test_files[0]).parent if ws.test_files else Path(".")
+        files = []
+        for k, rel in enumerate(hidden):
+            dest = folder / f"test_cs_hidden_{k}.py"
+            (Path(ws.path) / dest).write_text(data_path(rel).read_text(encoding="utf-8"))
+            files.append(dest.as_posix())
+        named = set(ws.row["FAIL_TO_PASS"]) | set(ws.row["PASS_TO_PASS"])
+        loc_before = _loc(ws.path)
+        visible_before = _status(ws, None)
+        first, second = _hidden_status(ws, files), _hidden_status(ws, files)
+        stable = {t: v for t, v in first.items() if second.get(t) == v}
+        if final_diff.strip() and not ws.apply_patch(final_diff):
+            return {"available": True, "applied": False, "behavior_changed": None}
+        visible_after = _status(ws, None)
+        hidden_after = _hidden_status(ws, files)
+        named_changed = sorted(t for t in named if visible_before.get(t) != visible_after.get(t))
+        hidden_changed = sorted(t for t, v in stable.items() if hidden_after.get(t) != v)
+        failing = ("FAILED", "ERROR")
+        return {
+            "available": True,
+            "applied": True,
+            "behavior_changed": bool(named_changed or hidden_changed),
+            "f2p_p2p_changed": named_changed,
+            "patchdiff_changed": hidden_changed,
+            "patchdiff_files": len(files),
+            "patchdiff_tests": len(stable),
+            "patchdiff_unstable": len(first) - len(stable),
+            "hidden_before": {"failed_ids": sorted(t for t, v in stable.items() if v in failing)},
+            "hidden_after": {
+                "failed_ids": sorted(t for t in stable if hidden_after.get(t) in failing)
+            },
+            "visible_new_failures": sorted(
+                t
+                for t, v in visible_after.items()
+                if v in failing and visible_before.get(t) not in failing
+            ),
+            "loc_before": loc_before,
+            "loc_after": _loc(ws.path),
+        }
+    finally:
+        ws.close()
+
+
 def run_hidden_checks(target: str, final_diff: str, cfg: dict) -> dict:
     """Run checks the Guard never saw, before and after the cleanup diff, and compare."""
+    if target.startswith("swebench:"):
+        return run_swebench_hidden(target, final_diff, cfg)
     src = _hidden_source(target, cfg)
     if src is None:
         return {"available": False}
