@@ -6,3 +6,6 @@ batch_max_size: 8
 scheduler:
   every_n: 5
   adaptive_threshold: 0.02
+one_shot_extra_body:     # one_shot_llm requests: reasoning off, like the Guard's probes
+  chat_template_kwargs:
+    enable_thinking: false
