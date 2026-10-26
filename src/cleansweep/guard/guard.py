@@ -196,8 +196,10 @@ class Guard:
             fix = self.repair_fn(item, info["log"], self.ws.path, self.llm)
             if fix and self.ws.apply_patch(fix):
                 ok2, info2 = self._verify(start, applied)
-                if ok2:
-                    diff = self.ws.diff(start)
+                diff = self.ws.diff(start)
+                if ok2 and not diff.strip():
+                    info["log"] = "the repair undid the edit\n" + info["log"]
+                elif ok2:
                     self.ws.checkpoint("batch repaired")
                     self._record(item, "repaired", info2, diff, "repaired after: " + info["log"])
                     return True
