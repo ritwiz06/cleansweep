@@ -1,0 +1,2612 @@
+[
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3151",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-10466",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-10466",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-10466",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "astropy__astropy-13579",
+  "agent": "CodeStory",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-13579",
+  "agent": "LearnByInteract",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "astropy__astropy-13579",
+  "agent": "OpenHands",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-22719",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-22719",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-22719",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pallets__flask-5014",
+  "agent": "CodeStory",
+  "repo": "pallets/flask",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pallets__flask-5014",
+  "agent": "LearnByInteract",
+  "repo": "pallets/flask",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pallets__flask-5014",
+  "agent": "OpenHands",
+  "repo": "pallets/flask",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "psf__requests-2317",
+  "agent": "CodeStory",
+  "repo": "psf/requests",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "psf__requests-2317",
+  "agent": "LearnByInteract",
+  "repo": "psf/requests",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "psf__requests-2317",
+  "agent": "OpenHands",
+  "repo": "psf/requests",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pylint-dev__pylint-6903",
+  "agent": "CodeStory",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pylint-dev__pylint-6903",
+  "agent": "LearnByInteract",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pylint-dev__pylint-6903",
+  "agent": "OpenHands",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-10844",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-10844",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-10844",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-5809",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-5809",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-5809",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11099",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11099",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11099",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-12096",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-12096",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-12096",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-7454",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-7454",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-7454",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14096",
+  "agent": "CodeStory",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14096",
+  "agent": "LearnByInteract",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14096",
+  "agent": "OpenHands",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-11310",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-11310",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-11310",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-6202",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-6202",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-6202",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11133",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11133",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11133",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-12481",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-12481",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-12481",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-7910",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-7910",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-3305",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3305",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3305",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24026",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24026",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24026",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "psf__requests-5414",
+  "agent": "CodeStory",
+  "repo": "psf/requests",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "psf__requests-5414",
+  "agent": "LearnByInteract",
+  "repo": "psf/requests",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "psf__requests-5414",
+  "agent": "OpenHands",
+  "repo": "psf/requests",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pylint-dev__pylint-7277",
+  "agent": "CodeStory",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pylint-dev__pylint-7277",
+  "agent": "LearnByInteract",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pylint-dev__pylint-7277",
+  "agent": "OpenHands",
+  "repo": "pylint-dev/pylint",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-3677",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3677",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3677",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "astropy__astropy-14309",
+  "agent": "CodeStory",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "astropy__astropy-14309",
+  "agent": "LearnByInteract",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "astropy__astropy-14309",
+  "agent": "OpenHands",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24149",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24149",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24149",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13328",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13328",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13328",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7205",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7205",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7205",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11211",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11211",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11211",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-14976",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-14976",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-14976",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-3993",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3993",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3993",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8269",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8269",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8269",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14995",
+  "agent": "CodeStory",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14995",
+  "agent": "LearnByInteract",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "astropy__astropy-14995",
+  "agent": "OpenHands",
+  "repo": "astropy/astropy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24627",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24627",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24627",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13439",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13439",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13439",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7432",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7432",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7432",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11276",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11276",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11276",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-15017",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-15017",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-15017",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-4075",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-4075",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-4075",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8593",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8593",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8593",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24970",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24970",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-24970",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13779",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13779",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-13779",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7521",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7521",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7521",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11292",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11292",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11292",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-16766",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-16766",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-16766",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-6744",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-6744",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-6744",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8721",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8721",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-8721",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25287",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25287",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25287",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14053",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14053",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14053",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7571",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7571",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pytest-dev__pytest-7571",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11451",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11451",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11451",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-16792",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-16792",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-16792",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-7233",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-7233",
+  "agent": "LearnByInteract",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pydata__xarray-7233",
+  "agent": "OpenHands",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9320",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9320",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9320",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25332",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25332",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-25332",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14087",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14087",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14087",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11532",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11532",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11532",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-17139",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-17139",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-17139",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9367",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9367",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9367",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-26291",
+  "agent": "CodeStory",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-26291",
+  "agent": "LearnByInteract",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "matplotlib__matplotlib-26291",
+  "agent": "OpenHands",
+  "repo": "matplotlib/matplotlib",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14496",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14496",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14496",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11551",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11551",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11551",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-17655",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-17655",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-17655",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9711",
+  "agent": "CodeStory",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9711",
+  "agent": "LearnByInteract",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sphinx-doc__sphinx-9711",
+  "agent": "OpenHands",
+  "repo": "sphinx-doc/sphinx",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14894",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14894",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-14894",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11749",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11749",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11749",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19346",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-19346",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-19346",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-15100",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-15100",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-15100",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11815",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11815",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11815",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19637",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19637",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19637",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-9288",
+  "agent": "CodeStory",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-9288",
+  "agent": "LearnByInteract",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "scikit-learn__scikit-learn-9288",
+  "agent": "OpenHands",
+  "repo": "scikit-learn/scikit-learn",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11880",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11880",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-11880",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-19954",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19954",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-19954",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11999",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11999",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11999",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-20801",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-20801",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-20801",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12050",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12050",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12050",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-22456",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-22456",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-22456",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12155",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12155",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12155",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-22714",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-22714",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-22714",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12209",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12209",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12209",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-22914",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-22914",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-22914",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12304",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12304",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12304",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-23262",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-23262",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-23262",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-12663",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12663",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-12663",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24066",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24066",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24066",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13028",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13028",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13028",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-24443",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-24443",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24443",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13089",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13089",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13089",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-24539",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24539",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24539",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13158",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13158",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13158",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24661",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24661",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-24661",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13279",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13279",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13279",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13343",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13343",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13343",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13363",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13363",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13363",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13401",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13401",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13401",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13410",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13410",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13410",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13417",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13417",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13417",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13516",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13516",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13516",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13569",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13569",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13569",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13590",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13590",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13590",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13658",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13658",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13658",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13741",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13741",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13741",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13786",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13786",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13786",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13809",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13809",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13809",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-13820",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13820",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-13820",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14017",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14017",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14017",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14122",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14122",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14122",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14238",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14238",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14238",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14349",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14349",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14349",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14434",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14434",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14434",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14539",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14539",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14539",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14580",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14580",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14580",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14752",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14752",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14752",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14765",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14765",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14765",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-14787",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14787",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14787",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14855",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14855",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14855",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14915",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14915",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14915",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14999",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14999",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-14999",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15103",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15103",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15103",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15128",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15128",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15128",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15278",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15278",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15278",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15368",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15368",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15368",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15382",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15382",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15382",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15467",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15467",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15467",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15525",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15525",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15525",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15561",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15561",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15561",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15731",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15731",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15731",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15814",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15814",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15814",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15916",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15916",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15916",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-15987",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15987",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-15987",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16100",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16100",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16100",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16116",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16116",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16116",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16136",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16136",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16136",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16145",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16145",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16145",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16255",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16255",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16255",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16333",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16333",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16333",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16493",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16493",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16493",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16527",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16527",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16527",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16595",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16595",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16595",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16661",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16661",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16661",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16662",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16662",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16662",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16801",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16801",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16801",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-16901",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16901",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-16901",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "django__django-9296",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-9296",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-9296",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ }
+]

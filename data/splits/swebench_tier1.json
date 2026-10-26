@@ -1,0 +1,62 @@
+[
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "CodeStory",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "LearnByInteract",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "pytest-dev__pytest-10081",
+  "agent": "OpenHands",
+  "repo": "pytest-dev/pytest",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "CodeStory",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "LearnByInteract",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "django__django-11095",
+  "agent": "OpenHands",
+  "repo": "django/django",
+  "differs_from_oracle": false
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "CodeStory",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "LearnByInteract",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "sympy__sympy-11618",
+  "agent": "OpenHands",
+  "repo": "sympy/sympy",
+  "differs_from_oracle": true
+ },
+ {
+  "instance_id": "pydata__xarray-3151",
+  "agent": "CodeStory",
+  "repo": "pydata/xarray",
+  "differs_from_oracle": false
+ }
+]
