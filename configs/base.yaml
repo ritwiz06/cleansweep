@@ -14,6 +14,8 @@ core:
     work_dir: null         # null = <system temp>/cleansweep/ws
     quarantine_dir: .cleansweep/quarantine
     test_timeout_s: 900
+    flaky_runs: 3          # SWE-bench: baseline runs at open; tests that change status are ignored
+    platform: linux/amd64  # SWE-bench images are x86_64 (emulated on arm64)
   guard:
     diff_tests: true       # differential probes after the tests pass; guard_tests_only turns them off
     max_targets: 10        # functions probed per batch (removed copies, changed functions, callers)

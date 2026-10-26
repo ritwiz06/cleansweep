@@ -1,9 +1,15 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from cleansweep.core.config import load_config
+
+# Git hooks (pre-push) export these, absolute in worktrees. Tests run git in temporary
+# folders, and with them set those commands would write to this repository instead.
+for _var in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX"):
+    os.environ.pop(_var, None)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TOY = FIXTURES / "toy_repo"
