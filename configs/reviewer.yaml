@@ -17,3 +17,4 @@ judge_mode: gatekeeper
 overengineering: true
 overengineering_max_files: 20
 overengineering_budget_chars: 5000
+scope: auto   # agent = only what the agent patch wrote; repo = everything; auto = agent for swebench: targets

@@ -3,11 +3,21 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from cleansweep.analysis import build_graph
+from cleansweep.analysis.scope import agent_scope
 from cleansweep.core.models import CATEGORIES, CleanupPlan
 
-from .detectors import run_detectors
+from .detectors import _settings, run_detectors
 from .judge import judge_items
 from .overengineering import review_overengineering, wanted
+
+
+def review_scope(repo_id: str, repo_dir: str, graph):
+    """reviewer.scope: "agent" reviews only what the agent patch wrote, "repo" everything;
+    "auto" (default) means agent for swebench: targets and repo for local paths."""
+    setting = _settings().get("scope", "auto")
+    if setting == "auto":
+        setting = "agent" if repo_id.startswith("swebench:") else "repo"
+    return agent_scope(repo_dir, graph) if setting == "agent" else None
 
 
 def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> CleanupPlan:
@@ -15,7 +25,7 @@ def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> Cleanup
     repo_dir = getattr(workspace, "path", workspace)
     repo_id = getattr(workspace, "repo_id", f"local:{repo_dir}")
     graph = graph or build_graph(repo_dir)
-    items = run_detectors(repo_dir, graph)
+    items = run_detectors(repo_dir, graph, review_scope(repo_id, repo_dir, graph))
     if use_llm and llm is not None:
         items = judge_items(items, repo_dir, llm, graph=graph)
         if wanted():
