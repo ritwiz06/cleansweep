@@ -1,0 +1,16 @@
+cluster,size,top_terms,examples,silhouette
+7,242,"remove, line, just, suggestion, let, remove line",Updated the fixture skips to remove `allow_module_level=True` so the semantics are explicit for fixture-level `pytest.sk || I think we can get rid of custom component by adding a stream that is used only for partition_router in threads stream i,0.092
+11,45,"need, don need, don, use, need test, just",We don't need this reloading stuff; we just switch up the flags with the `set_attn...` || ```suggestion ```     we don't need the global `_DEBUG_GLOBAL` anymore. Please leverage Python logger.,0.092
+14,43,"code, unused, removed, path, dead code, dead",Avoid code duplication with test_comprehensive.py || The normalization belongs inside `Content.from_function_call()` rather than as a standalone helper. All current and futu,0.092
+12,29,"unnecessary, dict, remove unnecessary, unnecessary comments, remove, set","this comment is unnecessary, please remove. || seems unnecessary? this is always a dict?",0.092
+5,27,"test, remove test, drop, remove, test file, case",let's remove this test file. || Agree with   .    can you remove this test file?,0.092
+2,25,"remove, zone, need create, need creative_ref, need custom, need declare",remove please || remove,0.092
+1,24,"needed, suggestion needed, file needed, think needed, longer, longer needed","We are currently doing `return True` inside `.run()` but we probably should remove that because we call it manually _onl || remove this function, not needed",0.092
+4,20,"remove file, file, remove, let remove, let, plac",Remove this file. || Remove this file.,0.092
+6,19,"delete, delete file, delete test, think, file, py",Move all code of sdk_package.py into sdk_generator.py then delete sdk_package.py || I don't think we need to make these types of tests as it is handled elsewhere. Delete the two here.,0.092
+9,17,"import, remove import, tuple, remove, instead, import use","the `from tempfile import mkdtemp` and `from shutil import rmtree` imports are unnecessary here, since they are done at  || Remove unused import",0.092
+13,12,"try, try catch, catch, remove try, let, let remove",I think this try-catch is redundant. Let's remove it. || let's remove try-catch,0.092
+0,10,"comment, remove comment, remove, redundant comment, redundant, removed redundant",Can remove this comment. || lets remove this comment. Seems redudant.,0.092
+8,9,"inline, comments, inline comments, remove inline, delete inline, delete",Delete all inline comments || delete inline comment,0.092
+3,7,"docstring, remove docstring, remove, need docstring, let, redundant docstring",let's remove this docstring || remove this docstring,0.092
+10,6,"remove assertion, assertion, remove, start_timestamp, comments, sure",can you remove assertion comments? || remove this assertion,0.092

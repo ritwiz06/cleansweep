@@ -25,3 +25,20 @@ splits:
   differs_share: 0.3
   # small environments and quick test commands first; round-robin over these repos
   repo_preference: [pytest-dev/pytest, django/django, sympy/sympy, pydata/xarray, sphinx-doc/sphinx]
+aidev:
+  dir: data/raw/aidev                  # AIDev-pop tables from hao-li/AIDev (repository, pull_request, pr_review_comments, pr_commits)
+  clones: data/raw/aidev/repos         # blobless clones of the candidates
+  min_agent_prs: 10                    # merged agent pull requests per repository
+  max_candidates: 120                  # seeded random sample of the Python repos that qualify
+  seed: 0
+  min_pass_rate: 0.9
+  min_tests: 5
+  max_test_seconds: 600
+  install_timeout_s: 600
+  select_hours: 3
+  workers: 2
+  target_repos: 40                     # stop once this many are kept
+  history_commits: 300
+  history_cache: data/processed/aidev_history
+  labels: data/processed/aidev_labels.parquet
+  slop_cache: data/processed/aidev_slop  # per-commit static slop for the Scheduler replay
