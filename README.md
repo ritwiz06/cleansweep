@@ -225,26 +225,131 @@ agent-written code itself the detectors found no dead code, unused imports or du
   cache. The hidden checks add about 0.9 minutes
   per patch. Tables: `docs/report/tables/swebench_tier1*.md`.
 
+### SWE-bench Tier 2 (running)
+
+60 PatchDiff patches (21 instances from 11 repositories; 18 patches behave differently from the
+developer's fix) × 5 methods, `scripts/exp_swebench.py --tier data/splits/swebench_tier2.json`, in a
+frozen clone of main (started 2026-10-26 15:08). **At the last check 109 of 300 runs were done
+(22 patches).** Numbers below are for those 22 patches and will change.
+
+- `cleansweep` (both judge modes) and `guard_tests_only` applied the same 36 edits on 18 of 22
+  patches, all leftover files the agent created (1,012 lines), with 0 rollbacks. `tools_only`
+  made 23 small edits (unused imports, 1 dead-code item; 24 lines). `one_shot_llm` applied
+  nothing: its diffs don't apply.
+- Hidden behavior changed in 1 run of 109: `sympy__sympy-11618`/CodeStory under
+  `guard_tests_only`. The same two edits were applied under `cleansweep` (advisory and
+  gatekeeper), and there the hidden check saw no change. So this is a flaky PatchDiff test
+  (`test_polygon_perimeter_patch1`) that passed the two-run stability check, not something the
+  probes caught.
+- Minutes per patch (median): gatekeeper 2.0, advisory 1.2, `guard_tests_only` 1.4,
+  `tools_only` 0.7, `one_shot_llm` 1.6. The gatekeeper mean in the table below includes one
+  Django run that took 197 minutes because the laptop slept.
+
+### Main table
+
+Mean per target and 95% bootstrap CI (2,000 resamples). "Answer keys" pools the toy repo and the
+demo app (one target each). `scripts/exp_collect.py` then `scripts/exp_tables.py`; files in
+`results/summary/` (`main_table.md`, `paired_tests.md`, `ablation.md`).
+
+| target set | method | n | lines removed | edits | hidden changed | test runs | minutes |
+|---|---|---|---|---|---|---|---|
+| answer keys | cleansweep, gatekeeper | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 4.5 | 0.1 |
+| answer keys | cleansweep, advisory | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 8.0 | 0.1 |
+| answer keys | `guard_tests_only` | 2 | 57.5 [56.0, 59.0] | 8.5 [6.0, 11.0] | 1.00 [1.00, 1.00] | 4.5 | 0.1 |
+| answer keys | `tools_only` | 2 | 50.5 [38.0, 63.0] | 9.0 [7.0, 11.0] | 1.00 [1.00, 1.00] | 0.0 | 0.0 |
+| answer keys | `one_shot_llm` | 2 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 0.0 | 0.6 |
+| SWE-bench Tier 1 | cleansweep, gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 2.2 |
+| SWE-bench Tier 1 | cleansweep, advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
+| SWE-bench Tier 1 | `guard_tests_only` | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
+| SWE-bench Tier 1 | `tools_only` | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 3.0 | 1.2 |
+| SWE-bench Tier 1 | `one_shot_llm` | 10 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 3.4 |
+| SWE-bench Tier 2 (partial) | cleansweep, gatekeeper | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.00 [0.00, 0.00] | 4.9 | 11.3 |
+| SWE-bench Tier 2 (partial) | cleansweep, advisory | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.00 [0.00, 0.00] | 4.9 | 1.9 |
+| SWE-bench Tier 2 (partial) | `guard_tests_only` | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.05 [0.00, 0.14] | 4.9 | 1.9 |
+| SWE-bench Tier 2 (partial) | `tools_only` | 22 | 1.1 [0.1, 2.3] | 0.9 [0.7, 1.1] | 0.00 [0.00, 0.00] | 3.0 | 1.9 |
+| SWE-bench Tier 2 (partial) | `one_shot_llm` | 21 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 1.8 |
+
+Paired against cleansweep in gatekeeper mode on SWE-bench:
+
+- No method differs on hidden changes (exact McNemar p = 1.0 everywhere).
+- `tools_only` and `one_shot_llm` remove fewer lines (Wilcoxon p = 0.016 on Tier 1; p = 0.0002 and 0.0003 on Tier 2 so far).
+- On the answer keys, the probes and the judge each keep the hidden checks unchanged where `guard_tests_only` and `tools_only` change them (0/2 vs 2/2). On SWE-bench, both modes and `guard_tests_only` apply the same edits.
+
+### Guard strength
+
+How often `verify` (tests, then probes) rejects a change that should be rejected
+(`scripts/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-26).
+
+| Target | Experiment | n | Caught | By tests | Only by probes |
+|---|---|---|---|---|---|
+| toy repo | mutants in package functions | 20 | 20 | 13 | 7 |
+| demo app | mutants in package functions | 20 | 18 | 16 | 2 |
+| SWE-bench Tier 1 | mutants in agent-written functions (≤5 per patch) | 39 | 30 | 30 | 0 |
+| SWE-bench Tier 1 | PatchDiff recall: agent patch vs developer fix (differs) | 3 | 0 | 0 | 0 |
+| all | false alarms on identical copies (probes on touched functions) | 12 | 0 | | |
+
+Mutants use 5 operators: flip a comparison, swap + and -, add 1 to an int constant, swap
+and/or, return None. On the answer keys, the probes catch a third of the mutants that the
+tests miss. On Tier 1 they catch none, because they can't import Django admin modules without
+settings, and the agents' own changes are small. The Guard didn't tell any of the 3 differing
+agent patches apart from the developer's fix: the visible tests pass for both, and the probes
+found no input that separates them.
+
+### AIDev: Scheduler replay, ranker and Reviewer detection
+
+AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
+sample of 120. A repository is kept if it installs in `python:3.11` (network cut before tests)
+and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The committed files
+list 20 (see `results/data_summary/aidev_filter.csv` for the drop reasons). The replay uses
+each repository's last 300 first-parent commits (4,695 in total, 626 from agent PRs) and the
+static detectors, measured at up to 40 commits per repository (`scripts/exp_replay.py`; the
+dashboard's Scheduler page shows the curves).
+
+| Policy | Median slop-debt reduction vs. never sweeping | Sweeps | Test runs (est.) | Resurrection rate (mean) |
+|---|---|---|---|---|
+| after every agent PR | 68.8% | 95 | 314 | 0.19 |
+| every 5 commits | 54.2% | 67 | 237 | 0.15 |
+| daily (UTC, at the day boundary) | 95.2% | 190 | 554 | 0.22 |
+| adaptive (slop > 2% of lines) | 33.9% | 20 | 142 | 0.17 |
+
+Daily sweeps keep slop lowest but cost 1.8× the test runs of sweeping after every agent PR, and
+more of what they remove comes back. The resurrection rate is the share of removed functions,
+classes and imports that still exist at the last commit and are no longer flagged, because a
+later commit started using them.
+
+**Removal requests.**
+- Mining: 6,330 human review comments on .py files → 792 keyword matches → **535 removal requests** confirmed by the LLM. They come from 102 repositories, most often about dead code (224).
+- Taxonomy: 15 clusters. Rules: 64 with lift ≥ 1.2 (`results/data_summary/`).
+- The runnable repositories have almost no human review, so labels come from all repositories with a request: **9,416 units, 262 removal requests, 79 repositories** (static analysis only).
+
+**Ranker.**
+- Calibrated gradient boosting, cross-validated by repository: out-of-fold AUC 0.61, Brier 0.027 (`results/summary/ranker_cv.csv`, `results/figures/ranker_reliability.png`).
+- It predicts which units reviewers ask to remove, not which edits are safe, so the Reviewer keeps its category priors by default (`exp.ranker_path` switches it on).
+
+**Reviewer detection vs. those requests.**
+- Precision 0.024, recall 0.075 (19 of 253 requested units, `results/summary/reviewer_detection.csv`).
+- Reviewers mostly ask to remove lines inside a function (comments, try/except blocks, assertions), which the unit-level detectors don't look for.
+
 ## Repository layout
 
 ```
 src/cleansweep/
   core/        contracts (models.py), config, JSON io, stub switch
   llm/         Voyager client with disk cache, FakeLLM for tests
-  sandbox/     git-backed workspaces: local folders and SWE-bench Docker images (AIDev next)
+  sandbox/     git-backed workspaces: local folders, SWE-bench and AIDev Docker containers
   guard/       applies edits, verifies them (tests, AST, differential probes), rolls back failures
   workflow/    run_sweep: open -> analyze -> plan -> rank -> batch -> guard -> report
   analysis/    code graph, duplicate finder, features
   reviewer/    detectors, duplicate/wrapper rewrites, LLM judge, over-engineering review, repair, planner
-  ranking/     safe-to-remove scores (category priors until the classifier is trained)
-  scheduler/   batching with bisection, sweep policies
-  eval/        baselines, hidden checks, metrics
-  data/        SWE-bench Verified and PatchDiff loaders, tier splits (AIDev loaders still stubs)
-  mining/      review-comment mining (stub)
-app/           Streamlit dashboard, Live sweep page, step-by-step live runner
+  ranking/     safe-to-remove scores (category priors; a classifier trained on AIDev labels)
+  scheduler/   batching with bisection, sweep policies, history replay
+  eval/        baselines, hidden checks, metrics, mutation testing, statistics
+  data/        SWE-bench Verified, PatchDiff and AIDev loaders, tier splits
+  mining/      review-comment mining: removal requests, taxonomy, rules
+app/           Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script
 configs/       base.yaml (core), data.yaml, exp.yaml, reviewer.yaml
-scripts/       check_contracts.py, voyager_ping.py, core_make_samples.py
+scripts/       contract check, data fetch/splits, AIDev selection and mining, experiment runners and tables
 tests/         one folder per package, plus fixtures/ (toy repo, answer key, hidden tests, sample report)
 ```
 
