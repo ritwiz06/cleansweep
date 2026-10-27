@@ -137,3 +137,24 @@ def compare_reports(folder: str | Path) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
+
+
+SUMMARY = Path(__file__).resolve().parents[1] / "results" / "summary"
+
+
+def load_replay(folder: str | Path = SUMMARY) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """The Scheduler replay table and curves (scripts/exp_replay.py), or None if missing."""
+    folder = Path(folder)
+    table, curves = folder / "scheduler_replay.csv", folder / "scheduler_curves.csv"
+    return (
+        pd.read_csv(table) if table.exists() else None,
+        pd.read_csv(curves) if curves.exists() else None,
+    )
+
+
+def policy_summary(replay: pd.DataFrame) -> pd.DataFrame:
+    """Mean per policy over repositories."""
+    cols = ["sweeps", "test_runs_est", "slop_debt_per_commit", "final_slop", "resurrection_rate"]
+    out = replay.groupby("policy", sort=False)[cols].mean().round(3).reset_index()
+    out.insert(1, "repositories", replay.groupby("policy", sort=False).size().values)
+    return out

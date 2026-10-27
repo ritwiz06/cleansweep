@@ -1,0 +1,16 @@
+repos,repo_count,scope,requested,flagged,both,precision,recall
+kept,1,all categories,2,3,0,0.0,0.0
+kept,1,requests: duplicate,2,3,0,0.0,0.0
+kept,1,flagged: duplicate,2,3,0,0.0,0.0
+all labeled,79,all categories,253,802,19,0.024,0.075
+all labeled,79,requests: dead_code,119,802,6,0.007,0.05
+all labeled,79,requests: duplicate,20,802,0,0.0,0.0
+all labeled,79,requests: leftover_file,5,802,0,0.0,0.0
+all labeled,79,requests: other,79,802,9,0.011,0.114
+all labeled,79,requests: unused_import,3,802,0,0.0,0.0
+all labeled,79,requests: wrapper,31,802,4,0.005,0.129
+all labeled,79,flagged: dead_code,253,346,8,0.023,0.032
+all labeled,79,flagged: duplicate,253,297,10,0.034,0.04
+all labeled,79,flagged: leftover_file,253,67,0,0.0,0.0
+all labeled,79,flagged: unused_import,253,89,0,0.0,0.0
+all labeled,79,flagged: wrapper,253,3,1,0.333,0.004

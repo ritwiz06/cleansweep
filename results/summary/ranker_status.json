@@ -1,0 +1,9 @@
+{
+ "trained": true,
+ "rows": 9416,
+ "positives": 262,
+ "repos": 79,
+ "oof_auc": 0.607,
+ "oof_brier": 0.0269,
+ "label_rows": 9416
+}
