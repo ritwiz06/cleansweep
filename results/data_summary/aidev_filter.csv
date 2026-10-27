@@ -1,0 +1,117 @@
+full_name,stars,merged_agent_prs,status,reason,head_sha,clone_url,tests,passed,failed,errors,skipped,pass_rate,test_seconds,install_seconds
+AISquare-Studio/AISquare-Studio-QA,122,16,dropped,install failed,71db4eea23e14f684b5c91c2dbbc9d5145510b48,https://github.com/AISquare-Studio/AISquare-Studio-QA.git,,,,,,,,42
+AlphaGPU/leetgpu-challenges,748,38,dropped,fewer than 5 tests ran,72aded9b659cd32b7a50332cf1bc5f4100fb8965,https://github.com/AlphaGPU/leetgpu-challenges.git,0,0,0,0,0,0.0,0,7
+AndyTheFactory/newspaper4k,1079,11,dropped,pass rate below 90%,b53a81fc01ff54601faaeae68d6b4a6d2f18efcb,https://github.com/AndyTheFactory/newspaper4k.git,230,204,24,2,2,0.887,3,34
+Archmonger/django-dbbackup,1100,22,dropped,fewer than 5 tests ran,85593e001aa9e46967907ab2d227c707569ea8f9,https://github.com/Archmonger/django-dbbackup.git,1,0,0,1,0,0.0,0,8
+567-labs/instructor,12736,91,kept,,6cd771c5254a69f6a6cf9cdf357fb2f9523f0b85,https://github.com/567-labs/instructor.git,4516,4388,117,11,404,0.972,154,22
+Asymmetric-al/core,476,14,dropped,fewer than 5 tests ran,a1375d4651d06f98affe9f5a4cc278edfd29ac30,https://github.com/Asymmetric-al/core.git,1,0,0,1,0,0.0,5,29
+Couchers-org/couchers,514,20,dropped,fewer than 5 tests ran,695b655b3893aea847116b9d12c118900c82547e,https://github.com/Couchers-org/couchers.git,2,0,0,2,0,0.0,1,10
+Blaizzy/mlx-vlm,4249,11,dropped,fewer than 5 tests ran,6d9ba328abbd6129c7461eda86280aa9fbfd9986,https://github.com/Blaizzy/mlx-vlm.git,1,0,0,1,0,0.0,3,64
+CroatianMeteorNetwork/RMS,214,11,dropped,install failed,59b74fcb7a77bd6ed819204b930dd4fdfcfb1c54,https://github.com/CroatianMeteorNetwork/RMS.git,,,,,,,,64
+FangYuan33/easy-code-reader,138,13,kept,,118c8694de53a333bba5e50ee4b4599ec0a9d1b7,https://github.com/FangYuan33/easy-code-reader.git,78,78,0,0,41,1.0,1,12
+Fu-Jie/openwebui-extensions,152,13,kept,,76e9d9901fe3376cd11fb43b734ee568788270cd,https://github.com/Fu-Jie/openwebui-extensions.git,177,169,2,6,0,0.955,1,14
+FutureTense/keymaster,324,15,dropped,install failed,9ed4b24d040c364b5b7d7bf4d94693b884915916,https://github.com/FutureTense/keymaster.git,,,,,,,,8
+DataDog/integrations-core,1106,57,dropped,pass rate below 90%,c7dbc72cac1946294acda77f6491ecd081d9b498,https://github.com/DataDog/integrations-core.git,241,0,0,241,0,0.0,11,33
+JusticeRage/Gepetto,3392,13,dropped,install failed,f98e4c12decf86eae76ece9d6955bb6dfe472190,https://github.com/JusticeRage/Gepetto.git,,,,,,,,22
+Human-Agent-Society/CORAL,240,17,kept,,0123dfb939b35228cf2c1fde224cd0561e727408,https://github.com/Human-Agent-Society/CORAL.git,726,712,14,0,15,0.981,34,48
+LMFDB/lmfdb,283,13,dropped,pass rate below 90%,7d8ce53cf4b1c841e8b7227a31880e27b3d48f74,https://github.com/LMFDB/lmfdb.git,44,0,0,44,0,0.0,2,15
+Olen/homeassistant-plant,739,57,dropped,install failed,958bc178d4110af55304eab6dfbc64b250097694,https://github.com/Olen/homeassistant-plant.git,,,,,,,,8
+PinW/whisper-key-local,128,24,dropped,fewer than 5 tests ran,026542f2ae315fa0ea82edf64292dcf833bde037,https://github.com/PinW/whisper-key-local.git,0,0,0,0,0,0.0,1,23
+PlanExeOrg/PlanExe,365,154,dropped,pass rate below 90%,15b23c11407c26246d0c24af215f7849dfd94583,https://github.com/PlanExeOrg/PlanExe.git,287,243,0,44,15,0.847,3,6
+OpenPipe/ART,9146,33,dropped,install failed,efd1750d5f9990a0976b611b9f765ecee7fccabe,https://github.com/OpenPipe/ART.git,,,,,,,,72
+PrefectHQ/fastmcp,24434,183,dropped,install failed,8514f0ece06c0d6c5ed351c6cef27425519c6381,https://github.com/PrefectHQ/fastmcp.git,,,,,,,,48
+RailtownAI/railtracks,129,40,dropped,install failed,bf01cb83c478c400efd47bc03639be1d3b613030,https://github.com/RailtownAI/railtracks.git,,,,,,,,21
+SAIC-iSmart-API/saic-python-mqtt-gateway,121,24,dropped,install failed,444b370a6b0eba4ed578535ac789d1d06a6b0c88,https://github.com/SAIC-iSmart-API/saic-python-mqtt-gateway.git,,,,,,,,8
+SemiAnalysisAI/InferenceX,770,80,dropped,pass rate below 90%,4624c1735036261c3af035f416ccac3a01abbd31,https://github.com/SemiAnalysisAI/InferenceX.git,405,300,9,96,12,0.741,10,7
+Significant-Gravitas/AutoGPT,183298,173,dropped,pass rate below 90%,e7e9946fffe6b9544ce45aeb59e82baff8003a13,https://github.com/Significant-Gravitas/AutoGPT.git,380,263,66,51,1,0.692,32,32
+THUDM/slime,5233,10,dropped,install failed,18868a79b0b083a093798a94ed0f8cb4f71b9c14,https://github.com/THUDM/slime.git,,,,,,,,255
+Usagi-org/ai-goofish-monitor,10847,26,kept,,77f8d75869acd65f9dba72731b95c7c49ea67bdf,https://github.com/Usagi-org/ai-goofish-monitor.git,128,126,2,0,3,0.984,3,21
+airbytehq/airbyte-agent-connectors,115,22,dropped,fewer than 5 tests ran,967ab0e7da0800c4a1249c6498c293b636a047a0,https://github.com/airbytehq/airbyte-agent-connectors.git,0,0,0,0,0,0.0,2,38
+aspectrr/deer.sh,404,21,dropped,pass rate below 90%,e4f98458be4066648e4e3e1a5440e83a4e18f70f,https://github.com/aspectrr/deer.sh.git,292,0,0,292,0,0.0,7,9
+bgplab/bgplab,101,12,dropped,fewer than 5 tests ran,19bd478800827e786148e7ba88829c181bb70b0d,https://github.com/bgplab/bgplab.git,0,0,0,0,0,0.0,0,12
+PytorchConnectomics/pytorch_connectomics,191,13,kept,,f50e5c63a4c75cf6368ffd517072aac84ae60602,https://github.com/PytorchConnectomics/pytorch_connectomics.git,1680,1668,11,1,208,0.993,388,288
+blacklanternsecurity/red-run,122,72,dropped,pass rate below 90%,c8e44973851eb28fbe5ee63dfbfd58ca85a4b669,https://github.com/blacklanternsecurity/red-run.git,10,0,0,10,0,0.0,1,6
+blackjax-devs/blackjax,1043,14,dropped,install failed,2d6a51c3b0f7b4a221ac7ba218be09b97f1df608,https://github.com/blackjax-devs/blackjax.git,,,,,,,,35
+botingw/rulebook-ai,590,14,dropped,fewer than 5 tests ran,7bc8531cdaaa3b49bf5a6cef82485725a9bcaae9,https://github.com/botingw/rulebook-ai.git,1,0,0,1,0,0.0,0,30
+brentyi/tyro,1014,22,kept,,d0c9877f6a4a6d1a63894799ddb3daa2720cdb9e,https://github.com/brentyi/tyro.git,4904,4904,0,0,284,1.0,374,26
+browser-use/browser-use,86994,97,dropped,fewer than 5 tests ran,2cc71890e65056b67fdb29d98bb407749c15bb08,https://github.com/browser-use/browser-use.git,1,0,0,1,0,0.0,0,22
+cokelaer/bioservices,334,50,dropped,pass rate below 90%,7a18fb044839e0f12c2e6d4a4a42ce9994b4c23f,https://github.com/cokelaer/bioservices.git,867,501,304,62,46,0.578,61,32
+commaai/opendbc,3082,12,kept,,93f6b427020321bc9e73b37f5fea30927cb8bd3a,https://github.com/commaai/opendbc.git,3638,3637,1,0,1413,1.0,47,27
+crestalnetwork/intentkit,6502,28,dropped,install failed,afc8cc44255210db6352f7437e569ed8b88ed5e1,https://github.com/crestalnetwork/intentkit.git,,,,,,,,26
+curvedinf/wove,198,13,kept,,888f60b6eeaba7a89dcf170712484b405721433d,https://github.com/curvedinf/wove.git,211,209,2,0,0,0.991,19,7
+braindecode/braindecode,1191,16,dropped,tests over the time limit,05b764d93b9a50400f523206fbe03d73d0cf5edb,https://github.com/braindecode/braindecode.git,1,0,0,1,0,0.0,1060,196
+commaai/openpilot,60559,11,dropped,open failed: CalledProcessError,14652aacb2975e3836ee6b37e9595edaabd39332,https://github.com/commaai/openpilot.git,,,,,,,,0
+allenai/open-instruct,3684,75,dropped,open failed: CalledProcessError,720c41314c79ebaab22394895e61f4ad8b0f1add,https://github.com/allenai/open-instruct.git,,,,,,,,0
+databricks-solutions/ai-dev-kit,1157,19,dropped,pass rate below 90%,026662a5a27a74f53b1c8006eefb44bef695bac7,https://github.com/databricks-solutions/ai-dev-kit.git,34,14,15,5,0,0.412,1,10
+defog-ai/introspect,347,12,dropped,pass rate below 90%,b77636c679c953c6c3bde23c276e8ba35c93eb14,https://github.com/defog-ai/introspect.git,11,0,0,11,0,0.0,1,9
+davidfowl/tally,1106,14,dropped,pass rate below 90%,2dc309c6aeb61e992cc264cf57c786de74fa63ce,https://github.com/davidfowl/tally.git,877,782,18,77,0,0.892,13,20
+dr5hn/countries-states-cities-database,9426,74,dropped,pass rate below 90%,ece7af165acce9dfbe8ad5724a79544680cf36e7,https://github.com/dr5hn/countries-states-cities-database.git,147,111,32,4,14,0.755,11,17
+duneanalytics/spellbook,1475,61,dropped,install failed,49d15619c3b6d679a69d7b6e2ca3d1022d68ca3d,https://github.com/duneanalytics/spellbook.git,,,,,,,,28
+e2b-dev/E2B,11609,13,dropped,pass rate below 90%,ee355b765ac0e884fbeaa69e4b44f4c7c58ed6b1,https://github.com/e2b-dev/E2B.git,9,0,0,9,0,0.0,1,9
+elementary-data/dbt-data-reliability,501,54,dropped,fewer than 5 tests ran,e3ab23d8c2e3bd7ad455de8bb1d23bf7ee84e675,https://github.com/elementary-data/dbt-data-reliability.git,1,0,0,1,0,0.0,0,11
+eric-tramel/slop-guard,113,40,kept,,7ef2113c52f1b4765287f90ac0741b2051d66fcb,https://github.com/eric-tramel/slop-guard.git,182,182,0,0,0,1.0,2,26
+evan-kolberg/prediction-market-backtesting,451,14,dropped,fewer than 5 tests ran,c76e77af00ef53472a9da8f66dae7fdd2d3e5928,https://github.com/evan-kolberg/prediction-market-backtesting.git,1,0,0,1,0,0.0,0,6
+fabriziosalmi/wildbox,125,10,dropped,fewer than 5 tests ran,054f25d4d41d92ce1b5056288c4b4724a14442ed,https://github.com/fabriziosalmi/wildbox.git,1,0,0,1,0,0.0,0,8
+finite-sample/rmcp,201,10,dropped,install failed,a9e8a2fbf07320305ada026755b5c6babbbcfffa,https://github.com/finite-sample/rmcp.git,,,,,,,,29
+freelawproject/courtlistener,889,34,dropped,install failed,61471d8f037a5c29da3b07f49c66b19111be57ab,https://github.com/freelawproject/courtlistener.git,,,,,,,,29
+genlayerlabs/genlayer-studio,120,17,dropped,pass rate below 90%,c94072951e483510329670aa427fba3fa6944f45,https://github.com/genlayerlabs/genlayer-studio.git,333,257,1,75,1,0.772,4,21
+getsentry/skills,504,13,dropped,fewer than 5 tests ran,d12f250460ffd961f549dbebf7eeb0cf4afd4c2e,https://github.com/getsentry/skills.git,0,0,0,0,0,0.0,0,6
+getzep/zep,4372,25,dropped,install failed,a3a9194d7b2cd9fedec1ee7c96f9413cf7960f22,https://github.com/getzep/zep.git,,,,,,,,18
+goldspanlabs/optopsy,1304,95,dropped,install failed,40bb8b2aa07ef8763caeadf752961faecb494efd,https://github.com/goldspanlabs/optopsy.git,,,,,,,,19
+gotalab/skillport,371,17,kept,,21ab194188cf6886447b4f80c0df60d78e9b0ea9,https://github.com/gotalab/skillport.git,470,470,0,0,0,1.0,12,58
+huggingface/transformers,159161,13,dropped,pass rate below 90%,8979c57d98a0c43ea8278d8a8e93a48e9a3b6ccb,https://github.com/huggingface/transformers.git,1000,0,0,1000,0,0.0,114,90
+infiniflow/ragflow,77692,11,dropped,install failed,f5a7cc5682912080a4960e1696d8a6688b11e7f1,https://github.com/infiniflow/ragflow.git,,,,,,,,36
+inoue0426/awesome-computational-biology,123,19,dropped,fewer than 5 tests ran,4ed7cfef70007058bf9d8998a00dd6499f49e935,https://github.com/inoue0426/awesome-computational-biology.git,0,0,0,0,0,0.0,1,9
+jhacksman/OpenSCAD-MCP-Server,139,11,dropped,pass rate below 90%,b35ade554284a944ee30d12002708a999a63accd,https://github.com/jhacksman/OpenSCAD-MCP-Server.git,61,36,2,23,0,0.59,3,27
+dragon1086/prism-insight,533,91,dropped,tests over the time limit,69a53b7e845f94c23cc8f5957e532aed6f4ad842,https://github.com/dragon1086/prism-insight.git,1,0,0,1,0,0.0,601,117
+kayba-ai/agentic-context-engine,2129,24,dropped,install failed,3a319831785ede6ba4a3a4002756233095c59e17,https://github.com/kayba-ai/agentic-context-engine.git,,,,,,,,41
+kennbroorg/iKy,941,21,dropped,open failed: CalledProcessError,f223ad5114eb05c821531ba34042e23d941db735,https://github.com/kennbroorg/iKy.git,,,,,,,,0
+langchain-ai/langgraph,28912,15,dropped,pass rate below 90%,858891aaa164ebdacf33b8f5e7f88b38b9132211,https://github.com/langchain-ai/langgraph.git,88,0,0,88,0,0.0,3,10
+langgenius/dify-official-plugins,557,30,dropped,pass rate below 90%,db26c0c68afe46d78cd282436427a8d12099d26c,https://github.com/langgenius/dify-official-plugins.git,458,128,89,241,16,0.279,30,52
+keephq/keep,11605,13,dropped,fewer than 5 tests ran,e5cd8698c89071d00635e6f0f544c748ae7c6b60,https://github.com/keephq/keep.git,1,0,0,1,0,0.0,2,178
+mattermost/docs,228,167,dropped,fewer than 5 tests ran,bd09d959514c34e72a33c24663b5946682b656ec,https://github.com/mattermost/docs.git,1,0,0,1,0,0.0,0,20
+mem0ai/mem0,52587,18,dropped,pass rate below 90%,26cdefb46600c0fa5953c4b5ee5003c125539fc4,https://github.com/mem0ai/mem0.git,988,870,24,94,28,0.881,34,55
+mfat/sshpilot,831,558,dropped,install failed,c947f20792afc54e6390d6485e978a65eac44690,https://github.com/mfat/sshpilot.git,,,,,,,,32
+microsoft/agent-lightning,16686,46,dropped,install failed,05c7fe133175653e48c990546a3509e52dc56512,https://github.com/microsoft/agent-lightning.git,,,,,,,,36
+microsoft/autogen,56942,17,dropped,open failed: CalledProcessError,004749e6b7102c8fd317b9b1499ce5807223c278,https://github.com/microsoft/autogen.git,,,,,,,,0
+microsoft/debug-gym,296,15,dropped,install failed,3f72ecc400a11752fc68cf08428225b6ba01a99e,https://github.com/microsoft/debug-gym.git,,,,,,,,172
+microsoft/onnxscript,432,18,dropped,open failed: CalledProcessError,4002c0794184877ca7d5bdff0849b07950deb946,https://github.com/microsoft/onnxscript.git,,,,,,,,1
+marin-community/haliax,217,47,kept,,a5767bcd82479d11a9614f5e3b878c3e12f8cec0,https://github.com/marin-community/haliax.git,342,340,2,0,7,0.994,342,89
+microsoft/presidio,7511,23,dropped,install failed,89c33be81e1947f21098b670748555c9cf002208,https://github.com/microsoft/presidio.git,,,,,,,,25
+microsoft/vscode-isort,104,12,dropped,fewer than 5 tests ran,423a3d6ef2b8413562ab2c0a065e2c491be871ce,https://github.com/microsoft/vscode-isort.git,2,0,0,2,0,0.0,2,16
+neondatabase/appdotbuild-agent,751,41,dropped,install failed,ad1f4203fe89a8e5739b5ce827d2beaa83ca749b,https://github.com/neondatabase/appdotbuild-agent.git,,,,,,,,72
+neuronets/nobrainer,166,14,dropped,install failed,3109460d048bfa60d8c4e056e86deadd47568f68,https://github.com/neuronets/nobrainer.git,,,,,,,,16
+onnx/sklearn-onnx,624,10,dropped,pass rate below 90%,bcf8affce0fcec3bb3fec9f6f52cbd6b94df9abc,https://github.com/onnx/sklearn-onnx.git,150,21,1,128,1,0.14,8,93
+microsoft/simplechat,128,23,dropped,pass rate below 90%,f5bcae7a4b3d3943d7ee717029681d1b84a31090,https://github.com/microsoft/simplechat.git,2979,2057,729,193,309,0.691,199,35
+oyvindwe/connectlife-ha,220,12,dropped,install failed,c6cc21322af9a9661a2c7283f055264e6c69bf08,https://github.com/oyvindwe/connectlife-ha.git,,,,,,,,12
+openagents-org/openagents,3079,16,dropped,pass rate below 90%,8e8156a4dca0e55f9f41650af138ea294cf75978,https://github.com/openagents-org/openagents.git,1394,1027,163,204,22,0.737,408,60
+posit-dev/chatlas,154,11,kept,,104995890e0dd7a98be75dda697ffe7b1e3b05d5,https://github.com/posit-dev/chatlas.git,1284,1260,24,0,50,0.981,361,170
+posit-dev/py-shiny,1702,28,dropped,install failed,8e95d18458090c940a32dcff3aba1882b464d134,https://github.com/posit-dev/py-shiny.git,,,,,,,,103
+pwncollege/dojo,442,20,dropped,fewer than 5 tests ran,8e4836dbd0f3dce78e06b859165134e2b483950a,https://github.com/pwncollege/dojo.git,1,0,0,1,0,0.0,1,10
+pydantic/pydantic-ai,16261,76,dropped,install failed,81c6e053c8070e7a9e5d5efb0018cb3d09b11c48,https://github.com/pydantic/pydantic-ai.git,,,,,,,,112
+pymc-devs/pytensor,604,12,dropped,install failed,b4fd0cca993caba77a6ace05969167618a91993b,https://github.com/pymc-devs/pytensor.git,,,,,,,,26
+pydantic/logfire,4158,29,dropped,install failed,b511701deb25bc9c537a20c0ccd0d3b1e6ae227c,https://github.com/pydantic/logfire.git,,,,,,,,183
+redis/agent-memory-server,220,20,dropped,pass rate below 90%,94192c39e2a4a154f441a5411e3d73c4f54974a6,https://github.com/redis/agent-memory-server.git,14,0,0,14,0,0.0,2,9
+readthedocs/readthedocs.org,8354,44,dropped,fewer than 5 tests ran,5a851c553bc7598b9c5bf3a0e11ba90faa1aec8c,https://github.com/readthedocs/readthedocs.org.git,1,0,0,1,0,0.0,4,83
+rommapp/romm,8550,22,dropped,install failed,08acaa9ea986ef2b2e5e512317d98cf4880035b5,https://github.com/rommapp/romm.git,,,,,,,,30
+roboflow/rf-detr,6225,36,dropped,pass rate below 90%,d7d7e4caa22a32fd628dec1016ed040206dc8db6,https://github.com/roboflow/rf-detr.git,400,260,16,124,250,0.65,44,325
+ryan112358/mbi,114,19,dropped,tests over the time limit,9429881f0f21ef413424f6011b9d6ae20728176d,https://github.com/ryan112358/mbi.git,1,0,0,1,0,0.0,602,81
+shotgun-sh/shotgun,715,254,kept,,4d344d5a46aafc815de441ff670d4131187f33e6,https://github.com/shotgun-sh/shotgun.git,2303,2255,48,0,200,0.979,495,97
+spacetx/starfish,246,16,dropped,tests over the time limit,1fb00cbcd9d7e408fc8106ec8b800642e7fee071,https://github.com/spacetx/starfish.git,1,0,0,1,0,0.0,600,62
+sqlfluff/sqlfluff,9641,53,dropped,tests over the time limit,692629bba783560619e0c041817efbd1d62af809,https://github.com/sqlfluff/sqlfluff.git,1,0,0,1,0,0.0,600,33
+the-momentum/open-wearables,1233,10,dropped,fewer than 5 tests ran,8adbd0ae519dad59391ebf914fb61364df02823e,https://github.com/the-momentum/open-wearables.git,3,0,0,3,0,0.0,1,9
+thomasjjj/Telegram-Snowball-Sampling,120,18,kept,,1787fe57bab718a462686d05c4a4cf38e29e7122,https://github.com/thomasjjj/Telegram-Snowball-Sampling.git,28,27,1,0,0,0.964,4,29
+strawberry-graphql/strawberry,4642,16,kept,,733c13bfd95de2d9b2fa4154bfe0a5484dc87203,https://github.com/strawberry-graphql/strawberry.git,3167,3089,51,27,3349,0.975,149,62
+tradingstrategy-ai/trading-strategy,356,12,dropped,fewer than 5 tests ran,a180a5a682184f4182d614f8624f50ff224c9850,https://github.com/tradingstrategy-ai/trading-strategy.git,1,0,0,1,0,0.0,2,37
+trailofbits/dropkit,101,27,kept,,c87e96d345ffa285b2fc8692c7524c61b8384958,https://github.com/trailofbits/dropkit.git,441,441,0,0,0,1.0,7,37
+trailofbits/skills,4471,61,dropped,pass rate below 90%,196a9073ab10d35bacf111f945e02c00b2c6883a,https://github.com/trailofbits/skills.git,1263,1123,77,63,27,0.889,35,9
+utensils/mcp-nixos,546,11,kept,,2e88096695bef9c41c5fa9157211d52a45d9a913,https://github.com/utensils/mcp-nixos.git,618,577,41,0,14,0.934,272,37
+topoteretes/cognee,15088,35,dropped,tests over the time limit,37f788bd287750e10d7610173e5332b3843f6ebd,https://github.com/topoteretes/cognee.git,1,0,0,1,0,0.0,600,166
+vectorize-io/hindsight,7641,68,dropped,install failed,5a672f0cdb89f4a3b841770cce2036a5b28b799d,https://github.com/vectorize-io/hindsight.git,,,,,,,,24
+vectara/vectara-ingest,197,12,dropped,pass rate below 90%,db462c942ba40720e0ff479334a2a622538b8903,https://github.com/vectara/vectara-ingest.git,281,181,64,36,0,0.644,45,390
+wkentaro/imgviz,262,16,kept,,3e0addd27b0469a125fc50bc92ec4f4820ce5e86,https://github.com/wkentaro/imgviz.git,425,404,16,5,0,0.951,5,39
+xuiltul/animaworks,224,16,dropped,install failed,bcb9823f4449f650f3d9ca40db3d1b695acdcb97,https://github.com/xuiltul/animaworks.git,,,,,,,,22
+vibesurf-ai/VibeSurf,478,11,dropped,pass rate below 90%,cd6e519d507cdd4d63061300bf60fb176e1f57e0,https://github.com/vibesurf-ai/VibeSurf.git,31,1,18,12,0,0.032,10,335
+yusufkaraaslan/Skill_Seekers,12425,13,kept,,5b5d8dfca263fa76e6daae9f292890b311ef36aa,https://github.com/yusufkaraaslan/Skill_Seekers.git,4448,4442,1,5,95,0.999,94,96
+zfit/zfit,202,10,dropped,fewer than 5 tests ran,29941b88c1bb556924fe11ec0468ea41bea8cfd7,https://github.com/zfit/zfit.git,1,0,0,1,0,0.0,1,117
+zauberzeug/nicegui,15633,18,dropped,pass rate below 90%,ede9f12787ca9a588415c699140a358b960a1b4b,https://github.com/zauberzeug/nicegui.git,1215,424,4,787,1,0.349,97,91
