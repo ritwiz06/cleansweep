@@ -1,0 +1,17 @@
+| target set | method | n | lines removed (mean, 95% CI) | edits (mean, 95% CI) | hidden changed (mean, 95% CI) | test runs (mean) | minutes (mean) |
+|---|---|---|---|---|---|---|---|
+| answer keys | cleansweep-gatekeeper | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 4.5 | 0.1 |
+| answer keys | cleansweep-advisory | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 8.0 | 0.1 |
+| answer keys | guard_tests_only | 2 | 57.5 [56.0, 59.0] | 8.5 [6.0, 11.0] | 1.00 [1.00, 1.00] | 4.5 | 0.1 |
+| answer keys | tools_only | 2 | 50.5 [38.0, 63.0] | 9.0 [7.0, 11.0] | 1.00 [1.00, 1.00] | 0.0 | 0.0 |
+| answer keys | one_shot_llm | 2 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 0.0 | 0.6 |
+| swebench_t1 | cleansweep-gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 2.2 |
+| swebench_t1 | cleansweep-advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
+| swebench_t1 | guard_tests_only | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
+| swebench_t1 | tools_only | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 3.0 | 1.2 |
+| swebench_t1 | one_shot_llm | 10 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 3.4 |
+| swebench_t2 | cleansweep-gatekeeper | 6 | 79.7 [8.0, 186.7] | 2.7 [0.3, 6.2] | 0.00 [0.00, 0.00] | 4.8 | 35.3 |
+| swebench_t2 | cleansweep-advisory | 5 | 28.0 [2.8, 62.0] | 1.0 [0.2, 2.0] | 0.00 [0.00, 0.00] | 4.6 | 2.7 |
+| swebench_t2 | guard_tests_only | 5 | 28.0 [2.8, 62.0] | 1.0 [0.2, 2.0] | 0.00 [0.00, 0.00] | 4.6 | 2.7 |
+| swebench_t2 | tools_only | 5 | 2.0 [0.0, 6.0] | 0.8 [0.2, 1.4] | 0.00 [0.00, 0.00] | 3.0 | 4.6 |
+| swebench_t2 | one_shot_llm | 4 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 2.9 |

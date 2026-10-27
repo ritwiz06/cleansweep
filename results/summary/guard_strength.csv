@@ -1,0 +1,8 @@
+target_set,experiment,n,caught,caught_by_tests,caught_by_probes,share_caught,share_by_tests,share_by_probes
+demo,false_alarm,1,0,0,0,0.0,0.0,0.0
+demo,mutation,20,18,16,2,0.9,0.8,0.1
+swebench_t1,false_alarm,10,0,0,0,0.0,0.0,0.0
+swebench_t1,mutation,39,30,30,0,0.769,0.769,0.0
+swebench_t1,patchdiff_recall,3,0,0,0,0.0,0.0,0.0
+toy,false_alarm,1,0,0,0,0.0,0.0,0.0
+toy,mutation,20,20,13,7,1.0,0.65,0.35

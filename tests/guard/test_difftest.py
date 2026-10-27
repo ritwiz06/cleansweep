@@ -212,3 +212,15 @@ def test_a_repair_that_undoes_the_edit_is_a_rollback(toy_ws, tmp_path):
     assert not guard.check_batch([item])
     result = guard.results()[0]
     assert result.status == "rolled_back" and "the repair undid the edit" in result.notes
+
+
+def test_verify_probe_touched_on_identical_copies(toy_ws, tmp_path):
+    item = toy_item(toy_ws, "shopcart/storage.py::_safe_round")
+    same = toy_ws.fork()
+    llm = FakeLLM({"Target id": probe_reply({item.unit.key: ROUNDING_PROBE})})
+    unit = CodeUnit("shopcart/storage.py", "function", "_safe_round")
+    ok, info = verify(toy_ws, same, [unit], llm, guard_cfg(tmp_path, probe_touched=True))
+    assert ok and info["diff_check"].n_cases == 5  # 4 probe cases + 1 module check
+    ok, info = verify(toy_ws, same, [unit], llm, guard_cfg(tmp_path))
+    assert ok and info["diff_check"].n_cases == 1  # nothing changed: only the module check
+    same.close()

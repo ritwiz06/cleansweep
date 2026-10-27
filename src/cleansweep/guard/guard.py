@@ -8,10 +8,14 @@ from pathlib import Path
 from cleansweep.core.models import CleanupItem, CodeUnit, EditResult, RunResult
 
 from .difftest import (
+    Target,
+    defs,
     get_probes,
+    import_name,
     probe_change,
     probe_versions,
     run_harness,
+    segment,
     select_targets,
     sys_paths,
 )
@@ -59,9 +63,22 @@ def _read(path: Path) -> str | None:
         return None
 
 
+def touched_targets(touched: list[CodeUnit], changes: dict, known: set[str]) -> list[Target]:
+    """Probe targets for touched function units, whether or not their code changed."""
+    out = []
+    for unit in touched:
+        before = changes.get(unit.path, (None, None))[0]
+        node = defs(before).get(unit.name or "")
+        module = import_name(unit.path)
+        if unit.kind == "function" and node is not None and module and unit.key not in known:
+            out.append(Target(unit.key, module, unit.name, segment(before, node)))
+    return out
+
+
 def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool, dict]:
     """Compare two workspaces: same test outcomes, same AST for format-only edits, and the same
-    differential-probe results (cfg: diff_tests, graph, items, plus core.guard probe keys)."""
+    differential-probe results (cfg: diff_tests, graph, items, probe_touched, plus the
+    core.guard probe keys)."""
     cfg = cfg or {}
     base = cfg.get("baseline") or before.run_tests(None)
     ok, log = static_checks(after, after.base)
@@ -94,6 +111,8 @@ def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool
         targets, checks = select_targets(
             after.path, changes, cfg.get("items", []), graph, int(cfg.get("max_targets", 10))
         )
+        if cfg.get("probe_touched"):  # also probe touched functions that did not change
+            targets += touched_targets(touched, changes, {t.key for t in targets})
         probes, _ = get_probes(targets, llm, cfg)
         outcome = probe_versions(
             lambda spec, files: run_harness(before, spec, files, cfg),
