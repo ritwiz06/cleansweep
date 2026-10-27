@@ -6,6 +6,8 @@ standard library and no newer syntax.
 
 Usage: python probe_harness.py SPEC.json
 The spec lists probe files, name swaps and modules to list, all relative to the current folder.
+In runner mode a generated test file calls main(spec, root) inside the project's own test run;
+main then puts back what it changed (cwd, sys.path, sockets, the alarm handler).
 """
 
 import importlib
@@ -19,6 +21,7 @@ import sys
 import tempfile
 import types
 
+_TIMER = {"on": False}  # True once the alarm handler is installed
 ADDRESS = re.compile(r" at 0x[0-9a-fA-F]+|0x[0-9a-fA-F]{6,}")
 MAX_LEN = 400
 
@@ -114,7 +117,8 @@ def run_probe(path, max_cases, case_timeout):
         if not callable(fn):
             results[label] = "not callable"
             continue
-        signal.alarm(case_timeout)
+        if _TIMER["on"]:
+            signal.alarm(case_timeout)
         try:
             results[label] = _short(normalize(fn()))
         except CaseTimeout:
@@ -122,24 +126,47 @@ def run_probe(path, max_cases, case_timeout):
         except BaseException as exc:
             results[label] = f"raises {type(exc).__name__}"
         finally:
-            signal.alarm(0)
+            if _TIMER["on"]:
+                signal.alarm(0)
     return {"ok": True, "cases": results}
 
 
 def list_module(name):
     try:
         module = importlib.import_module(name)
+        found = vars(module)
+        names = sorted(n for n in found if not n.startswith("_"))
+        # type(), not isinstance(): lazy objects (Django's settings) set themselves up on isinstance
+        modules = [n for n in names if issubclass(type(found[n]), types.ModuleType)]
     except BaseException as exc:
         return {"ok": False, "error": _error(exc)}
-    names = sorted(n for n in vars(module) if not n.startswith("_"))
-    modules = [n for n in names if isinstance(getattr(module, n), types.ModuleType)]
     return {"ok": True, "names": names, "modules": modules}
 
 
-def main(spec_path):
+def main(spec_path, root=None):
+    saved = (
+        os.getcwd(),
+        list(sys.path),
+        socket.socket.connect,
+        socket.create_connection,
+        signal.getsignal(signal.SIGALRM),
+    )
+    try:
+        _run(spec_path, root or os.getcwd())
+    finally:
+        cwd, path, connect, create, handler = saved
+        os.chdir(cwd)
+        sys.path[:] = path
+        socket.socket.connect = connect
+        socket.create_connection = create
+        if _TIMER["on"]:
+            signal.signal(signal.SIGALRM, handler)
+            _TIMER["on"] = False
+
+
+def _run(spec_path, root):
     with open(spec_path) as f:
         spec = json.load(f)
-    root = os.getcwd()
     for extra in reversed(spec.get("paths", ["."])):
         sys.path.insert(0, os.path.join(root, extra))
     out_path = os.path.join(root, spec["out"])
@@ -147,7 +174,11 @@ def main(spec_path):
     os.environ["PYTHONHASHSEED"] = "0"
     socket.socket.connect = _no_network
     socket.create_connection = _no_network
-    signal.signal(signal.SIGALRM, _alarm)
+    try:
+        signal.signal(signal.SIGALRM, _alarm)
+        _TIMER["on"] = True
+    except ValueError:  # not the main thread: cases run without a timeout
+        pass
     os.chdir(tempfile.mkdtemp(prefix="cs_probe_"))  # stray file writes land outside the repo
 
     out = {"modules": {}, "probes": {}, "swaps": []}

@@ -113,6 +113,19 @@ class Workspace:
             self.last_test_output = out
             return result
 
+    probe_runner = False  # probes run as a script here unless core.guard.probe_mode says runner
+
+    def probe_test_dir(self) -> str | None:
+        """Folder where a generated probe test file is collected by the test command."""
+        return "tests" if (Path(self.path) / "tests").is_dir() else "."
+
+    def run_probe_test(
+        self, rel_path: str, timeout: int = 900, with_directives: bool = True
+    ) -> tuple[int, str]:
+        """Run the project's test command on a generated probe test file (pytest here)."""
+        cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", rel_path]
+        return self.run(cmd, timeout=timeout)
+
     def coverage_json(self, test_paths: list[str] | None = None) -> str | None:
         """Run the tests under coverage with per-test contexts; return the JSON path."""
         out_dir = Path(tempfile.mkdtemp(prefix="cs_cov_"))

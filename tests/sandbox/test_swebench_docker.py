@@ -144,3 +144,34 @@ def test_probe_harness_runs_inside_the_container(sandbox_cfg):
         assert out["modules"]["_pytest.unittest"]["ok"]
     finally:
         ws.close()
+
+
+@pytest.mark.docker
+@needs_docker
+def test_runner_mode_probes_import_django_admin(sandbox_cfg):
+    from cleansweep.guard.difftest import run_harness
+    from cleansweep.sandbox import open_workspace
+
+    target = next(t for t in _tier1_targets(4) if ":django__" in t)
+    ws = open_workspace(target, {**sandbox_cfg, "flaky_runs": 0})
+    try:
+        probe = (
+            "def make_cases():\n"
+            "    from django.contrib.admin.options import ModelAdmin\n"
+            "    from django.contrib.auth.models import User\n"
+            "    return [\n"
+            "        ('admin', lambda: ModelAdmin.__name__),\n"
+            "        ('model', lambda: User._meta.label),\n"
+            "    ]\n"
+        )
+        spec = {"paths": ["."], "probes": ["t0"], "modules": ["django.contrib.admin.options"]}
+        direct = run_harness(ws, spec, {"t0.py": probe}, {}, "direct")
+        assert not direct["probes"]["t0"]["ok"]  # no settings outside the test run
+        runner = run_harness(ws, spec, {"t0.py": probe}, {}, "runner")
+        assert runner["probes"]["t0"] == {
+            "ok": True,
+            "cases": {"admin": "'ModelAdmin'", "model": "'auth.User'"},
+        }
+        assert runner["modules"]["django.contrib.admin.options"]["ok"]
+    finally:
+        ws.close()

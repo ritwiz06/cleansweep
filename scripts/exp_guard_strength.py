@@ -2,6 +2,7 @@
 
     python scripts/exp_guard_strength.py --local tests/fixtures/toy_repo \\
         .cleansweep/demo/shop_app --tier data/splits/swebench_tier1.json [--tier ...] [--resume]
+        [--probe-mode direct|runner] [--experiments mutation recall false_alarm]
 
 - Mutation score: mutate functions one at a time (toy/demo: up to 20 package functions per
   target; SWE-bench: up to 5 per patch, among functions the agent patch wrote or changed in
@@ -10,8 +11,11 @@
 - PatchDiff recall: for patches with differs_from_oracle, verify(agent patch, oracle patch).
 - False alarms: verify on two identical copies, probing the touched functions anyway.
 
-One JSON of records per target in results/raw/guard_strength/, and a summary in
-results/summary/guard_strength.csv.
+Probes run in core.guard.probe_mode (auto: runner on SWE-bench, direct on local folders) unless
+--probe-mode says otherwise. One JSON of records per target and probe mode in
+results/raw/guard_strength/ (`<set>__<target>__<mode>.json`; a later run with other
+--experiments adds its records to the same file), and a summary by target set, experiment and
+probe mode in results/summary/guard_strength.csv.
 """
 
 from __future__ import annotations
@@ -36,6 +40,7 @@ from cleansweep.sandbox.swebench_docker import drop_files, patch_files
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "results" / "raw" / "guard_strength"
 SUMMARY = ROOT / "results" / "summary" / "guard_strength.csv"
+EXPERIMENTS = ("mutation", "recall", "false_alarm")
 
 
 def _check(ok: bool, info: dict) -> str | None:
@@ -63,6 +68,7 @@ def run_mutants(before, after, units, cfg, llm, limit, seed=0) -> list[dict]:
                 "caught": not ok,
                 "check": _check(ok, info),
                 "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
+                "probe_mode": info.get("probe_mode"),
                 "seconds": round(time.time() - t0, 1),
             }
         )
@@ -78,6 +84,7 @@ def false_alarm(before, after, units, cfg, llm) -> dict:
         "caught": not ok,  # here "caught" means a false alarm
         "check": _check(ok, info),
         "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
+        "probe_mode": info.get("probe_mode"),
         "seconds": round(time.time() - t0, 1),
     }
 
@@ -96,7 +103,7 @@ def guard_cfg(base: dict, before, graph) -> dict:
     return {**base, "baseline": before.run_tests(None), "graph": graph, "items": []}
 
 
-def local_target(path: str, cfg: dict, llm, limit: int) -> list[dict]:
+def local_target(path: str, cfg: dict, llm, limit: int, experiments=EXPERIMENTS) -> list[dict]:
     sandbox = cfg["core"]["sandbox"]
     before = open_workspace(path, sandbox)
     after = before.fork()
@@ -105,15 +112,18 @@ def local_target(path: str, cfg: dict, llm, limit: int) -> list[dict]:
         graph = build_graph(before.path)
         gcfg = guard_cfg(cfg["core"]["guard"], before, graph)
         units = package_functions(before.path, graph)
-        records = run_mutants(before, after, units, gcfg, llm, limit)
-        records.append(false_alarm(before, same, units, gcfg, llm))
+        records = []
+        if "mutation" in experiments:
+            records += run_mutants(before, after, units, gcfg, llm, limit)
+        if "false_alarm" in experiments:
+            records.append(false_alarm(before, same, units, gcfg, llm))
         return records
     finally:
         for ws in (before, after, same):
             ws.close()
 
 
-def swebench_target(entry: dict, cfg: dict, llm, limit: int) -> list[dict]:
+def swebench_target(entry: dict, cfg: dict, llm, limit: int, experiments=EXPERIMENTS) -> list[dict]:
     target = f"swebench:{entry['instance_id']}:{entry['agent']}"
     sandbox = cfg["core"]["sandbox"]
     before = open_workspace(target, sandbox)
@@ -134,10 +144,12 @@ def swebench_target(entry: dict, cfg: dict, llm, limit: int) -> list[dict]:
             ),
             key=lambda u: u.key,
         )
-        records = run_mutants(before, after, units, gcfg, llm, limit)
-        if entry.get("differs_from_oracle"):
+        records = []
+        if "mutation" in experiments:
+            records += run_mutants(before, after, units, gcfg, llm, limit)
+        if "recall" in experiments and entry.get("differs_from_oracle"):
             records.append(patchdiff_recall(before, after, gcfg, llm))
-        if units:
+        if "false_alarm" in experiments and units:
             records.append(false_alarm(before, after, units, gcfg, llm))
         return records
     finally:
@@ -166,16 +178,25 @@ def patchdiff_recall(before, after, cfg: dict, llm) -> dict:
         "caught": not ok,
         "check": _check(ok, info) if applied else "oracle did not apply",
         "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
+        "probe_mode": info.get("probe_mode"),
         "seconds": round(time.time() - t0, 1),
     }
+
+
+def _has(records: list[dict], experiment: str, job) -> bool:
+    """Whether a target's records already cover an experiment (for --resume)."""
+    name = "patchdiff_recall" if experiment == "recall" else experiment
+    if experiment == "recall" and not (isinstance(job, dict) and job.get("differs_from_oracle")):
+        return True  # nothing to measure
+    return any(r["experiment"] == name for r in records)
 
 
 def summarize(rows: list[dict]) -> list[dict]:
     groups: dict[tuple, list[dict]] = {}
     for r in rows:
-        groups.setdefault((r["target_set"], r["experiment"]), []).append(r)
+        groups.setdefault((r["target_set"], r["experiment"], r["probe_mode"]), []).append(r)
     out = []
-    for (target_set, experiment), recs in sorted(groups.items()):
+    for (target_set, experiment, mode), recs in sorted(groups.items()):
         n = len(recs)
         by_tests = sum(r["check"] in ("compile", "tests") for r in recs if r["caught"])
         by_probes = sum(r["check"] == "probes" for r in recs if r["caught"])
@@ -184,6 +205,7 @@ def summarize(rows: list[dict]) -> list[dict]:
             {
                 "target_set": target_set,
                 "experiment": experiment,
+                "probe_mode": mode,
                 "n": n,
                 "caught": caught,
                 "caught_by_tests": by_tests,
@@ -200,8 +222,9 @@ def write_summary() -> None:
     rows = []
     for path in sorted(RAW.glob("*.json")):
         data = json.loads(path.read_text())
+        mode = data.get("probe_mode", "direct")
         rows += [
-            {**r, "target_set": data["target_set"], "target": data["target"]}
+            {**r, "target_set": data["target_set"], "target": data["target"], "probe_mode": mode}
             for r in data["records"]
         ]
     import csv
@@ -221,6 +244,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--per-local", type=int, default=20)
     parser.add_argument("--per-patch", type=int, default=5)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--probe-mode", choices=["direct", "runner"])
+    parser.add_argument("--experiments", nargs="+", choices=EXPERIMENTS, default=list(EXPERIMENTS))
     args = parser.parse_args(argv)
     cfg = load_config()
     llm = get_client(cfg["core"]["llm"])
@@ -234,21 +259,29 @@ def main(argv: list[str] | None = None) -> int:
             target, target_set = job, "toy" if "toy_repo" in job else "demo"
         else:
             target, target_set = f"{job['instance_id']}__{job['agent']}", kind
-        out = RAW / f"{target_set}__{Path(target).name}.json"
-        if out.exists() and args.resume:
+        # what core.guard.probe_mode "auto" picks: runner in containers, direct on local folders
+        mode = args.probe_mode or ("direct" if kind == "local" else "runner")
+        out = RAW / f"{target_set}__{Path(target).name}__{mode}.json"
+        old = json.loads(out.read_text())["records"] if out.exists() else []
+        wanted = [e for e in args.experiments if not (args.resume and _has(old, e, job))]
+        if not wanted:
             continue
+        run_cfg = {**cfg, "core": {**cfg["core"], "guard": {**cfg["core"]["guard"]}}}
+        run_cfg["core"]["guard"]["probe_mode"] = mode
         t0 = time.time()
         try:
             if kind == "local":
-                records = local_target(target, cfg, llm, args.per_local)
+                records = local_target(target, run_cfg, llm, args.per_local, wanted)
             else:
-                records = swebench_target(job, cfg, llm, args.per_patch)
+                records = swebench_target(job, run_cfg, llm, args.per_patch, wanted)
         except Exception as exc:  # record and move on
             print(f"error {target}: {type(exc).__name__}: {exc}", flush=True)
             continue
-        out.write_text(
-            json.dumps({"target_set": target_set, "target": target, "records": records}, indent=1)
-        )
+        names = {"recall": "patchdiff_recall"}
+        replaced = {names.get(e, e) for e in wanted}
+        records = [r for r in old if r["experiment"] not in replaced] + records
+        data = {"target_set": target_set, "target": target, "probe_mode": mode, "records": records}
+        out.write_text(json.dumps(data, indent=1))
         caught = sum(r["caught"] for r in records)
         print(
             f"{target_set} {target}: {len(records)} checks, {caught} caught or alarms, "

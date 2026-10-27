@@ -18,6 +18,9 @@ core:
     platform: linux/amd64  # SWE-bench images are x86_64 (emulated on arm64)
   guard:
     diff_tests: true       # differential probes after the tests pass; guard_tests_only turns them off
+    probe_mode: auto       # direct (harness as a script) | runner (inside the project's test command) | auto: runner for swebench/aidev, direct for local folders
+    probe_runner_directives: true  # runner mode on SWE-bench: run the instance's own test files too, so the setup matches
+    probe_runner_timeout_s: 900
     max_targets: 10        # functions probed per batch (removed copies, changed functions, callers)
     probe_max_cases: 8
     probe_timeout_s: 300   # one harness run

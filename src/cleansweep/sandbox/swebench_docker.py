@@ -133,6 +133,7 @@ class SwebenchWorkspace(Workspace):
     """A local mirror of /testbed whose commands run inside the instance's container."""
 
     python = "python"  # the container's interpreter (the testbed conda env)
+    probe_runner = True
 
     def __init__(self, path, repo_id: str, cfg: dict, container: str, row: dict, head: str):
         super().__init__(path, repo_id, cfg)
@@ -234,6 +235,26 @@ class SwebenchWorkspace(Workspace):
             editable = []
         if any(p.get("editable_project_location") == TESTBED for p in editable):
             self.setup = [line for line in self.setup if not INSTALL.search(line)]
+
+    def probe_test_dir(self) -> str | None:
+        """The folder of the instance's first test file: its test command collects files there
+        with the same setup (Django test app, conftest.py files on the way)."""
+        return str(Path(self.test_files[0]).parent) if self.test_files else None
+
+    def run_probe_test(
+        self, rel_path: str, timeout: int = 900, with_directives: bool = True
+    ) -> tuple[int, str]:
+        """The instance's test command on the generated file (plus its own directives, so the
+        test setup is the one its tests get). The file is git-excluded, so it is copied in."""
+        self.sync()
+        _docker(["cp", str(Path(self.path) / rel_path), f"{self.container}:{TESTBED}/{rel_path}"])
+        paths = [*self.test_files, rel_path] if with_directives else [rel_path]
+        command = command_for(self.command, self.test_files, paths)
+        script = "\n".join([*self.setup, command])
+        try:
+            return self._exec(script, timeout)
+        finally:
+            self._exec(f"rm -f {shlex.quote(rel_path)}", 60)
 
     def coverage_json(self, test_paths: list[str] | None = None) -> str | None:
         return None  # not collected inside containers
