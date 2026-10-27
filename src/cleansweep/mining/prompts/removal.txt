@@ -1,0 +1,17 @@
+Below are code review comments that reviewers left on pull requests written by coding agents.
+For each comment, decide whether the reviewer asks the author to REMOVE code: delete a file,
+function, class, import, dependency, debug output, leftover or duplicated code, or an
+unnecessary wrapper or check. Asking to change, rename, fix or add code is not a removal
+request. A question like "is this still needed?" counts only if it clearly suggests removing.
+
+For each comment give:
+- "id": the comment id, as given
+- "removal": true or false
+- "category": for removals, one of leftover_file, dead_code, duplicate, wrapper,
+  unused_import, unused_dependency, other; otherwise null
+- "target": for removals, a few words naming what should go; otherwise null
+
+Reply with JSON only: {{"comments": [{{"id": ..., "removal": ..., "category": ..., "target": ...}}]}}
+
+Comments:
+{comments}

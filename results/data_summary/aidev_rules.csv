@@ -1,0 +1,65 @@
+antecedents,consequents,support,confidence,lift
+"category=leftover_file, pr merged","agent=Copilot, file is a test",0.03925233644859813,0.5,2.14
+"agent=Copilot, file is a test","category=leftover_file, pr merged",0.03925233644859813,0.16799999999999998,2.1399999999999997
+file is a test,"agent=Copilot, category=leftover_file, pr merged",0.03925233644859813,0.11602209944751381,2.002316877561932
+"agent=Copilot, category=leftover_file, pr merged",file is a test,0.03925233644859813,0.6774193548387096,2.0023168775619316
+"agent=Copilot, file is a test, pr merged",category=leftover_file,0.03925233644859813,0.19811320754716982,1.892688679245283
+category=leftover_file,"agent=Copilot, file is a test, pr merged",0.03925233644859813,0.37499999999999994,1.8926886792452828
+"agent=Copilot, file is a test",category=leftover_file,0.044859813084112146,0.19199999999999998,1.8342857142857139
+category=leftover_file,"agent=Copilot, file is a test",0.044859813084112146,0.4285714285714285,1.8342857142857139
+"category=leftover_file, pr merged",file is a test,0.048598130841121495,0.6190476190476191,1.8297816364114707
+file is a test,"category=leftover_file, pr merged",0.048598130841121495,0.143646408839779,1.8297816364114707
+"category=dead_code, pr merged","agent=OpenAI_Codex, file is a test",0.020560747663551402,0.06043956043956043,1.7963980463980462
+"agent=OpenAI_Codex, file is a test","category=dead_code, pr merged",0.020560747663551402,0.611111111111111,1.796398046398046
+"agent=Copilot, category=leftover_file","file is a test, pr merged",0.03925233644859813,0.5121951219512195,1.7793791574279378
+"file is a test, pr merged","agent=Copilot, category=leftover_file",0.03925233644859813,0.13636363636363635,1.7793791574279376
+"agent=OpenAI_Codex, pr merged","category=dead_code, file is a test",0.020560747663551402,0.22,1.7567164179104477
+"category=dead_code, file is a test","agent=OpenAI_Codex, pr merged",0.020560747663551402,0.16417910447761194,1.7567164179104477
+category=leftover_file,file is a test,0.0616822429906542,0.5892857142857142,1.7418113654301497
+file is a test,category=leftover_file,0.0616822429906542,0.18232044198895025,1.7418113654301497
+"agent=Copilot, category=leftover_file",file is a test,0.044859813084112146,0.5853658536585366,1.7302250370570003
+file is a test,"agent=Copilot, category=leftover_file",0.044859813084112146,0.13259668508287292,1.7302250370570003
+"file is a test, pr merged",category=leftover_file,0.048598130841121495,0.16883116883116883,1.6129406307977736
+category=leftover_file,"file is a test, pr merged",0.048598130841121495,0.46428571428571425,1.6129406307977734
+"agent=OpenAI_Codex, file is a test",category=dead_code,0.022429906542056073,0.6666666666666666,1.5922619047619047
+category=dead_code,"agent=OpenAI_Codex, file is a test",0.022429906542056073,0.05357142857142856,1.5922619047619044
+"category=dead_code, file is a test, pr merged",agent=OpenAI_Codex,0.020560747663551402,0.18965517241379312,1.5853987068965518
+agent=OpenAI_Codex,"category=dead_code, file is a test, pr merged",0.020560747663551402,0.171875,1.5853987068965518
+"agent=OpenAI_Codex, file is a test, pr merged",category=dead_code,0.020560747663551402,0.6470588235294118,1.5454306722689075
+category=dead_code,"agent=OpenAI_Codex, file is a test, pr merged",0.020560747663551402,0.049107142857142856,1.5454306722689075
+"category=dead_code, file is a test",agent=OpenAI_Codex,0.022429906542056073,0.1791044776119403,1.4972014925373134
+agent=OpenAI_Codex,"category=dead_code, file is a test",0.022429906542056073,0.18749999999999997,1.4972014925373132
+"category=unused_import, pr merged",agent=Copilot,0.028037383177570093,0.8823529411764706,1.43048128342246
+agent=Copilot,"category=unused_import, pr merged",0.028037383177570093,0.045454545454545456,1.43048128342246
+agent=OpenAI_Codex,category=dead_code,0.06728971962616823,0.5625,1.343470982142857
+category=dead_code,agent=OpenAI_Codex,0.06728971962616823,0.1607142857142857,1.343470982142857
+"agent=OpenAI_Codex, pr merged",category=dead_code,0.052336448598130844,0.56,1.3375000000000001
+category=dead_code,"agent=OpenAI_Codex, pr merged",0.052336448598130844,0.125,1.3375000000000001
+"agent=Copilot, category=other",file is a test,0.08037383177570094,0.443298969072165,1.3103035826166203
+file is a test,"agent=Copilot, category=other",0.08037383177570094,0.23756906077348067,1.31030358261662
+"category=leftover_file, file is a test, pr merged",agent=Copilot,0.03925233644859813,0.8076923076923077,1.3094405594405596
+agent=Copilot,"category=leftover_file, file is a test, pr merged",0.03925233644859813,0.06363636363636364,1.3094405594405596
+"category=dead_code, pr merged",agent=OpenAI_Codex,0.052336448598130844,0.15384615384615385,1.2860576923076923
+agent=OpenAI_Codex,"category=dead_code, pr merged",0.052336448598130844,0.4375,1.2860576923076923
+"category=duplicate, pr merged",file is a test,0.024299065420560748,0.43333333333333335,1.2808471454880295
+file is a test,"category=duplicate, pr merged",0.024299065420560748,0.0718232044198895,1.2808471454880295
+"agent=Copilot, pr merged",category=unused_import,0.028037383177570093,0.054945054945054944,1.2780697563306258
+category=unused_import,"agent=Copilot, pr merged",0.028037383177570093,0.6521739130434783,1.2780697563306258
+"agent=Copilot, category=other, pr merged",file is a test,0.06355140186915888,0.42500000000000004,1.2562154696132597
+file is a test,"agent=Copilot, category=other, pr merged",0.06355140186915888,0.1878453038674033,1.2562154696132597
+"file is a test, pr merged",category=duplicate,0.024299065420560748,0.08441558441558442,1.2545093795093796
+category=duplicate,"file is a test, pr merged",0.024299065420560748,0.3611111111111111,1.2545093795093794
+"agent=Google_Jules, pr merged",category=dead_code,0.020560747663551402,0.5238095238095238,1.251062925170068
+category=dead_code,"agent=Google_Jules, pr merged",0.020560747663551402,0.049107142857142856,1.251062925170068
+"category=leftover_file, file is a test","agent=Copilot, pr merged",0.03925233644859813,0.6363636363636364,1.247086247086247
+"agent=Copilot, pr merged","category=leftover_file, file is a test",0.03925233644859813,0.07692307692307691,1.247086247086247
+"agent=Copilot, category=unused_import",pr merged,0.028037383177570093,1.0,1.2327188940092166
+pr merged,"agent=Copilot, category=unused_import",0.028037383177570093,0.03456221198156682,1.2327188940092166
+"category=duplicate, file is a test",pr merged,0.024299065420560748,1.0,1.2327188940092166
+pr merged,"category=duplicate, file is a test",0.024299065420560748,0.029953917050691246,1.2327188940092166
+"category=other, file is a test",agent=Copilot,0.08037383177570094,0.7543859649122807,1.2230196703880916
+agent=Copilot,"category=other, file is a test",0.08037383177570094,0.1303030303030303,1.2230196703880916
+"agent=Copilot, file is a test",category=other,0.08037383177570094,0.34400000000000003,1.2188079470198676
+category=other,"agent=Copilot, file is a test",0.08037383177570094,0.2847682119205298,1.2188079470198676
+"agent=Copilot, category=other","file is a test, pr merged",0.06355140186915888,0.35051546391752575,1.2176998259472485
+"file is a test, pr merged","agent=Copilot, category=other",0.06355140186915888,0.22077922077922077,1.2176998259472485

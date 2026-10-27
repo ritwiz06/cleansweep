@@ -74,14 +74,18 @@ def extract_features(
     graph: CodeGraph,
     coverage_json: str | None = None,
     history: list[CommitEvent] | None = None,
+    units: set[str] | None = None,
 ) -> pd.DataFrame:
     """One row per code unit with FEATURE_COLUMNS; -1 marks values we could not compute.
 
     In a repo with an "agent patch" commit, written_by_agent is filled in and duplicate
-    similarity is computed only for the agent's functions (k x n)."""
+    similarity is computed only for the agent's functions (k x n). With `units`, only those
+    unit keys get rows, and duplicate similarity is computed for them (k x n)."""
     scope = agent_scope(repo_dir, graph)
     dup_sim: dict[str, float] = {}
     only = scope.units if scope is not None else None
+    if units is not None:  # rows (and k x n duplicates) for these unit keys only
+        only = set(units)
     for a, b, sim in find_duplicates(repo_dir, threshold=0.5, only=only):
         for u in (a, b):
             dup_sim[u.key] = max(dup_sim.get(u.key, 0.0), sim)
@@ -89,6 +93,8 @@ def extract_features(
     rows = {}
     for unit in graph.units():
         if unit.kind not in ("file", "function", "class"):
+            continue
+        if units is not None and unit.key not in units:
             continue
         mod = graph.modules.get(unit.path)
         node = mod.defs.get(unit.name) if (mod and unit.name) else None
