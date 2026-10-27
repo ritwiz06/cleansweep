@@ -4,7 +4,7 @@
 | swebench_t1 | guard_tests_only | 10 | 0 | 0 | 1.0 | 0.0 | 1.0 |
 | swebench_t1 | tools_only | 10 | 0 | 0 | 1.0 | 0.0 | 0.0156 |
 | swebench_t1 | one_shot_llm | 10 | 0 | 0 | 1.0 | 0.0 | 0.0156 |
-| swebench_t2 | cleansweep-advisory | 5 | 0 | 0 | 1.0 | 0.0 | 1.0 |
-| swebench_t2 | guard_tests_only | 5 | 0 | 0 | 1.0 | 0.0 | 1.0 |
-| swebench_t2 | tools_only | 5 | 0 | 0 | 1.0 | 0.0 | 0.25 |
-| swebench_t2 | one_shot_llm | 4 | 0 | 0 | 1.0 | 0.0 | 0.5 |
+| swebench_t2 | cleansweep-advisory | 22 | 0 | 0 | 1.0 | 0.0 | 1.0 |
+| swebench_t2 | guard_tests_only | 22 | 1 | 0 | 1.0 | 0.0 | 1.0 |
+| swebench_t2 | tools_only | 22 | 0 | 0 | 1.0 | 1.0 | 0.0002 |
+| swebench_t2 | one_shot_llm | 21 | 0 | 0 | 1.0 | 0.0 | 0.0003 |
