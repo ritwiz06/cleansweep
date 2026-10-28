@@ -2,6 +2,10 @@
 
 The LLM only writes inputs. Our harness (probe_harness.py) runs them and records results, so a
 probe never decides what is correct; it only shows whether the two versions agree.
+
+Two ways to run the harness: "direct" runs it as a script with the project folder on sys.path;
+"runner" writes a generated test file where the project's own test command collects it and runs
+that command, so the probes see the project's test setup (Django settings, conftest.py).
 """
 
 from __future__ import annotations
@@ -10,6 +14,7 @@ import ast
 import hashlib
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -28,8 +33,47 @@ PROMPT = (Path(__file__).parent / "prompts" / "probe.txt").read_text()
 HARNESS = Path(__file__).parent / "probe_harness.py"
 PROBE_DIR = "_probes"  # git-excluded inside workspaces
 SOURCE_LINES = 60
+RUNNER_PREFIX = "test_cs_probe_"  # git-excluded inside workspaces
+RUNNER_NOTE = (
+    "These probes run inside the project's own test run, so its test setup is in place: "
+    "settings are configured (for example Django settings), conftest.py files have been "
+    "loaded, and the test database exists. Code that needs this setup can be called. Don't "
+    "write to the database or change settings.\n\n"
+)
+RUNNER_TEST = '''"""Differential probes for a cleanup check (generated; removed after the run)."""
+import importlib.util
+import os
+import unittest
+
+_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), {up!r}))
+_DONE = []
+
+
+def _run_probes():
+    if _DONE:  # collected both as a function and as a TestCase: run once
+        return
+    _DONE.append(True)
+    spec = importlib.util.spec_from_file_location(
+        "cs_probe_harness_{run_id}", os.path.join(_ROOT, {harness!r})
+    )
+    harness = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(harness)
+    harness.main(os.path.join(_ROOT, {spec_file!r}), _ROOT)
+
+
+def test_cs_probes():
+    _run_probes()
+
+
+class CsProbeTest(unittest.TestCase):
+    def test_cs_probes(self):
+        _run_probes()
+'''
 DEFAULTS = {
     "max_targets": 10,
+    "probe_mode": "auto",
+    "probe_runner_directives": True,
+    "probe_runner_timeout_s": 900,
     "probe_timeout_s": 300,
     "probe_case_timeout_s": 10,
     "probe_max_cases": 8,
@@ -51,7 +95,12 @@ class Target:
 
     @property
     def cache_key(self) -> str:
-        text = f"{PROMPT_VERSION}\n{self.key}\n{self.source}"
+        return self.key_for("direct")
+
+    def key_for(self, mode: str) -> str:
+        """Cache key of this target's probe; runner-mode probes get their own prompt."""
+        version = PROMPT_VERSION if mode == "direct" else f"{PROMPT_VERSION}-{mode}"
+        text = f"{version}\n{self.key}\n{self.source}"
         return hashlib.sha256(text.encode()).hexdigest()[:20]
 
 
@@ -63,6 +112,29 @@ class ModuleCheck:
 
 def _setting(cfg: dict, key: str):
     return (cfg or {}).get(key, DEFAULTS[key])
+
+
+def probe_mode(ws, cfg: dict) -> str:
+    """ "direct" or "runner" for this workspace. auto: runner where the workspace runs a
+    project's own test command in a container (SWE-bench, AIDev), direct for local folders."""
+    mode = _setting(cfg, "probe_mode")
+    if mode == "auto":
+        mode = "runner" if getattr(ws, "probe_runner", False) else "direct"
+    test_dir = getattr(ws, "probe_test_dir", None)
+    if mode == "runner" and (test_dir is None or test_dir() is None):
+        return "direct"
+    return mode
+
+
+def runner_test(run_dir: str, test_rel: str) -> str:
+    """Source of the generated test file that runs the harness inside the test command."""
+    up = os.path.relpath(".", os.path.dirname(test_rel) or ".")
+    return RUNNER_TEST.format(
+        up=up,
+        run_id=Path(run_dir).name,
+        harness=f"{run_dir}/harness.py",
+        spec_file=f"{run_dir}/spec.json",
+    )
 
 
 def import_name(path: str) -> str | None:
@@ -223,7 +295,7 @@ def _read(repo_dir: str, path: str) -> str | None:
         return None
 
 
-def _prompt(targets: list[Target]) -> str:
+def _prompt(targets: list[Target], mode: str = "direct") -> str:
     blocks = []
     for t in targets:
         lines = t.source.splitlines()
@@ -236,7 +308,10 @@ def _prompt(targets: list[Target]) -> str:
         blocks.append(
             f"### Target id: {t.key}\nimport: {t.import_line}\nkind: {kind}\n```python\n{code}\n```"
         )
-    return PROMPT.format(targets="\n\n".join(blocks))
+    text = PROMPT.format(targets="\n\n".join(blocks))
+    if mode == "runner":
+        text = text.replace("Reply with JSON only:", RUNNER_NOTE + "Reply with JSON only:", 1)
+    return text
 
 
 def _valid_probe(code: str) -> bool:
@@ -249,13 +324,15 @@ def _valid_probe(code: str) -> bool:
     return True
 
 
-def get_probes(targets: list[Target], llm, cfg: dict) -> tuple[dict[str, str], str]:
+def get_probes(
+    targets: list[Target], llm, cfg: dict, mode: str = "direct"
+) -> tuple[dict[str, str], str]:
     """Probe code per target key: from the cache, else from one LLM request for all the rest."""
     cache = Path(_setting(cfg, "probe_cache_dir"))
     probes: dict[str, str] = {}
     missing = []
     for t in targets:
-        path = cache / f"{t.cache_key}.py"
+        path = cache / f"{t.key_for(mode)}.py"
         if path.exists():
             probes[t.key] = path.read_text(encoding="utf-8")
         else:
@@ -265,7 +342,7 @@ def get_probes(targets: list[Target], llm, cfg: dict) -> tuple[dict[str, str], s
     if llm is None:
         return probes, "no LLM for new probes"
     try:
-        messages = [{"role": "user", "content": _prompt(missing)}]
+        messages = [{"role": "user", "content": _prompt(missing, mode)}]
         extra = (cfg or {}).get("probe_extra_body")
         if extra:
             reply = llm.chat_json(messages, temperature=0.0, extra_body=extra)
@@ -283,16 +360,19 @@ def get_probes(targets: list[Target], llm, cfg: dict) -> tuple[dict[str, str], s
         target, code = by_key.get(str(entry.get("target"))), entry.get("code")
         if target is None or not isinstance(code, str) or not _valid_probe(code):
             continue
-        (cache / f"{target.cache_key}.py").write_text(code, encoding="utf-8")
+        (cache / f"{target.key_for(mode)}.py").write_text(code, encoding="utf-8")
         probes[target.key] = code
     return probes, ""
 
 
-def run_harness(ws, spec: dict, files: dict[str, str], cfg: dict) -> dict:
-    """Write probe files and a spec under _probes/ in the workspace, run the harness, read JSON."""
-    run_dir = Path(PROBE_DIR) / uuid.uuid4().hex[:12]
+def run_harness(ws, spec: dict, files: dict[str, str], cfg: dict, mode: str = "direct") -> dict:
+    """Write probe files and a spec under _probes/ in the workspace, run the harness (as a script,
+    or in runner mode through a generated test file and the project's test command), read JSON."""
+    run_id = uuid.uuid4().hex[:12]
+    run_dir = Path(PROBE_DIR) / run_id
     folder = Path(ws.path) / run_dir
     folder.mkdir(parents=True)
+    test_file = None
     try:
         shutil.copy(HARNESS, folder / "harness.py")
         for name, code in files.items():
@@ -305,21 +385,36 @@ def run_harness(ws, spec: dict, files: dict[str, str], cfg: dict) -> dict:
             "case_timeout": _setting(cfg, "probe_case_timeout_s"),
         }
         (folder / "spec.json").write_text(json.dumps(spec), encoding="utf-8")
-        if hasattr(ws, "sync"):
-            ws.sync()
-        python = getattr(ws, "python", sys.executable)
-        code, out = ws.run(
-            [python, str(run_dir / "harness.py"), str(run_dir / "spec.json")],
-            timeout=int(_setting(cfg, "probe_timeout_s")),
-        )
+        if mode == "runner":
+            test_rel = (Path(ws.probe_test_dir()) / f"{RUNNER_PREFIX}{run_id}.py").as_posix()
+            test_file = Path(ws.path) / test_rel
+            test_file.write_text(runner_test(run_dir.as_posix(), test_rel), encoding="utf-8")
+            if hasattr(ws, "sync"):
+                ws.sync()
+            code, out = ws.run_probe_test(
+                test_rel,
+                timeout=int(_setting(cfg, "probe_runner_timeout_s")),
+                with_directives=bool(_setting(cfg, "probe_runner_directives")),
+            )
+        else:
+            if hasattr(ws, "sync"):
+                ws.sync()
+            python = getattr(ws, "python", sys.executable)
+            code, out = ws.run(
+                [python, str(run_dir / "harness.py"), str(run_dir / "spec.json")],
+                timeout=int(_setting(cfg, "probe_timeout_s")),
+            )
         if hasattr(ws, "fetch"):
             ws.fetch(str(run_dir / "out.json"))
         result_path = folder / "out.json"
         if not result_path.exists():
-            return {"error": f"harness exit {code}: {out[-500:]}"}
+            what = "probe test run" if mode == "runner" else "harness"
+            return {"error": f"{what} exit {code}: {out[-500:]}"}
         return json.loads(result_path.read_text(encoding="utf-8"))
     finally:
         shutil.rmtree(folder, ignore_errors=True)
+        if test_file is not None:
+            test_file.unlink(missing_ok=True)
 
 
 def _short(text: str, n: int = 100) -> str:
@@ -455,13 +550,14 @@ def probe_change(ws, start: str, items: list[CleanupItem], graph, llm, cfg: dict
         ", ".join(t.key + (" (vs its kept copy)" if t.swap else "") for t in targets),
         len(checks),
     )
-    probes, note = get_probes(targets, llm, cfg)
+    mode = probe_mode(ws, cfg)
+    probes, note = get_probes(targets, llm, cfg, mode)
     after_sha = ws.checkpoint("probe: after")
 
     def at(commit: str):
         def run(spec: dict, files: dict[str, str]) -> dict:
             ws.rollback(commit)
-            return run_harness(ws, spec, files, cfg)
+            return run_harness(ws, spec, files, cfg, mode)
 
         return run
 
@@ -472,7 +568,8 @@ def probe_change(ws, start: str, items: list[CleanupItem], graph, llm, cfg: dict
     finally:
         ws.rollback(after_sha)
     n_probed = sum(t.key in probes for t in targets)
-    note = f"{n_probed}/{len(targets)} targets probed, {len(checks)} module checks" + (
-        f"; {note}" if note else ""
+    note = (
+        f"{n_probed}/{len(targets)} targets probed, {len(checks)} module checks ({mode} mode)"
+        + (f"; {note}" if note else "")
     )
     return outcome, note

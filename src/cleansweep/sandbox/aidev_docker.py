@@ -67,6 +67,7 @@ class AidevWorkspace(Workspace):
     """A git workspace whose commands run in a network-less python:3.11 container."""
 
     python = "python"
+    probe_runner = True
 
     def __init__(self, path, repo_id: str, cfg: dict, container: str):
         super().__init__(path, repo_id, cfg)
@@ -115,6 +116,20 @@ class AidevWorkspace(Workspace):
         if code not in (0, 1, 5) and result.ok:
             result.ok, result.errors = False, result.errors + 1
         return result
+
+    def probe_test_dir(self) -> str | None:
+        for name in ("tests", "test"):
+            if (Path(self.path) / name).is_dir():
+                return name
+        return "."
+
+    def run_probe_test(
+        self, rel_path: str, timeout: int = 900, with_directives: bool = True
+    ) -> tuple[int, str]:
+        """pytest on the generated file only (conftest.py files on its path load); a whole
+        AIDev suite can take minutes, so its tests are not added."""
+        cmd = ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", rel_path]
+        return self._exec(shlex.join(cmd), timeout)
 
     def coverage_json(self, test_paths: list[str] | None = None) -> str | None:
         return None  # not collected for AIDev repositories

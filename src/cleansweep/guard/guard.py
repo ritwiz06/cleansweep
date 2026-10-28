@@ -13,6 +13,7 @@ from .difftest import (
     get_probes,
     import_name,
     probe_change,
+    probe_mode,
     probe_versions,
     run_harness,
     segment,
@@ -113,17 +114,18 @@ def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool
         )
         if cfg.get("probe_touched"):  # also probe touched functions that did not change
             targets += touched_targets(touched, changes, {t.key for t in targets})
-        probes, _ = get_probes(targets, llm, cfg)
+        mode = probe_mode(after, cfg)
+        probes, _ = get_probes(targets, llm, cfg, mode)
         outcome = probe_versions(
-            lambda spec, files: run_harness(before, spec, files, cfg),
-            lambda spec, files: run_harness(after, spec, files, cfg),
+            lambda spec, files: run_harness(before, spec, files, cfg, mode),
+            lambda spec, files: run_harness(after, spec, files, cfg, mode),
             targets,
             checks,
             probes,
             sys_paths(before.path),
             cfg,
         )
-        info.update(diff_check=outcome, check="probes")
+        info.update(diff_check=outcome, check="probes", probe_mode=mode)
         if outcome is not None and not outcome.same:
             info["log"] = "probes found a behavior change:\n" + "\n".join(outcome.mismatches)
             return False, info

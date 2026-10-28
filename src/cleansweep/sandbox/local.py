@@ -29,6 +29,7 @@ WS_EXCLUDE = [
     ".coverage*",
     "_hidden_checks/",
     "_probes/",
+    "test_cs_probe_*.py",
 ]
 
 

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import sys
@@ -224,3 +225,117 @@ def test_verify_probe_touched_on_identical_copies(toy_ws, tmp_path):
     ok, info = verify(toy_ws, same, [unit], llm, guard_cfg(tmp_path))
     assert ok and info["diff_check"].n_cases == 1  # nothing changed: only the module check
     same.close()
+
+
+# A project whose code only works with its test setup: conftest.py "configures settings".
+SETUP_REPO = {
+    "pkg/__init__.py": "",
+    "pkg/settings.py": "CONFIGURED = False\n",
+    "pkg/core.py": (
+        "from pkg import settings\n\n\n"
+        "def scale(x):\n"
+        "    if not settings.CONFIGURED:\n"
+        "        raise RuntimeError('settings are not configured')\n"
+        "    return x * 2\n"
+    ),
+    "tests/conftest.py": "from pkg import settings\n\nsettings.CONFIGURED = True\n",
+    "tests/test_core.py": (
+        "from pkg.core import scale\n\n\ndef test_scale():\n    assert scale(2) == 4\n"
+    ),
+}
+SCALE_PROBE = (
+    "def make_cases():\n"
+    "    from pkg.core import scale\n"
+    "    return [('two', lambda: scale(2)), ('zero', lambda: scale(0))]\n"
+)
+
+
+def setup_ws(tmp_path):
+    src = tmp_path / "setup_repo"
+    for rel, text in SETUP_REPO.items():
+        (src / rel).parent.mkdir(parents=True, exist_ok=True)
+        (src / rel).write_text(text)
+    return open_workspace(str(src), {"work_dir": str(tmp_path / "ws")})
+
+
+def test_runner_mode_runs_probes_inside_the_test_setup(tmp_path):
+    from cleansweep.guard.difftest import run_harness
+
+    ws = setup_ws(tmp_path)
+    spec = {"paths": ["."], "probes": ["t0"], "modules": ["pkg.core"]}
+    direct = run_harness(ws, spec, {"t0.py": SCALE_PROBE}, {}, "direct")
+    assert direct["probes"]["t0"]["cases"] == {
+        "two": "raises RuntimeError",
+        "zero": "raises RuntimeError",
+    }
+    runner = run_harness(ws, spec, {"t0.py": SCALE_PROBE}, {}, "runner")
+    assert runner["probes"]["t0"] == {"ok": True, "cases": {"two": "4", "zero": "0"}}
+    assert runner["modules"]["pkg.core"]["ok"]
+    # the generated test file and the probe folder are gone, and git never saw them
+    assert not list(Path(ws.path).rglob("test_cs_probe_*.py"))
+    assert not (Path(ws.path) / "_probes").exists() or not any(
+        (Path(ws.path) / "_probes").iterdir()
+    )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ws.path, capture_output=True, text=True
+    )
+    assert status.stdout == ""
+    ws.close()
+
+
+def test_runner_test_file_finds_the_harness_from_its_folder(tmp_path):
+    from cleansweep.guard.difftest import runner_test
+
+    code = runner_test("_probes/abc123", "tests/unit/test_cs_probe_abc123.py")
+    assert "os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..')" in code
+    assert "'_probes/abc123/harness.py'" in code and "'_probes/abc123/spec.json'" in code
+    compile(code, "<generated>", "exec")
+    assert "'.'" in runner_test("_probes/x", "test_cs_probe_x.py")
+
+
+def test_verify_in_runner_mode_catches_what_direct_mode_discards(tmp_path):
+    before = setup_ws(tmp_path)
+    after = before.fork()
+    core = Path(after.path) / "pkg" / "core.py"
+    core.write_text(core.read_text().replace("return x * 2", "return x * 2 if x else 1"))
+    unit = CodeUnit("pkg/core.py", "function", "scale")
+    llm = FakeLLM({"Target id": probe_reply({unit.key: SCALE_PROBE})})
+    ok, info = verify(before, after, [unit], llm, guard_cfg(tmp_path, probe_mode="direct"))
+    assert ok and info["probe_mode"] == "direct"  # the tests pass; the probes can't run
+    ok, info = verify(before, after, [unit], llm, guard_cfg(tmp_path, probe_mode="runner"))
+    assert not ok and info["check"] == "probes" and info["probe_mode"] == "runner"
+    assert any("[zero]" in m for m in info["diff_check"].mismatches)
+    before.close()
+    after.close()
+
+
+def test_probe_mode_auto_and_cache_keys(tmp_path):
+    from cleansweep.guard.difftest import PROMPT_VERSION, RUNNER_NOTE, _prompt, probe_mode
+
+    ws = setup_ws(tmp_path)
+    assert probe_mode(ws, {}) == "direct"
+    assert probe_mode(ws, {"probe_mode": "runner"}) == "runner"
+    ws.probe_runner = True  # what SWE-bench and AIDev workspaces say
+    assert probe_mode(ws, {}) == "runner"
+    assert probe_mode(ws, {"probe_mode": "direct"}) == "direct"
+    ws.close()
+    target = Target("pkg/core.py::scale", "pkg.core", "scale", "def scale(x): ...")
+    old = hashlib.sha256(f"{PROMPT_VERSION}\n{target.key}\n{target.source}".encode()).hexdigest()
+    assert target.cache_key == target.key_for("direct") == old[:20]  # direct caches stay valid
+    assert target.key_for("runner") != target.cache_key
+    assert RUNNER_NOTE in _prompt([target], "runner") and RUNNER_NOTE not in _prompt([target])
+
+
+def test_harness_main_puts_back_what_it_changed(tmp_path):
+    import os
+    import socket
+
+    from cleansweep.guard import probe_harness
+
+    (tmp_path / "p.py").write_text("def make_cases():\n    return [('one', lambda: 1)]\n")
+    spec = {"paths": ["."], "out": "out.json", "probes": [{"id": "t0", "file": "p.py"}]}
+    (tmp_path / "spec.json").write_text(json.dumps(spec))
+    cwd, path, connect = os.getcwd(), list(sys.path), socket.socket.connect
+    probe_harness.main(str(tmp_path / "spec.json"), str(tmp_path))
+    assert json.loads((tmp_path / "out.json").read_text())["probes"]["t0"]["cases"] == {"one": "1"}
+    assert (os.getcwd(), sys.path, socket.socket.connect) == (cwd, path, connect)

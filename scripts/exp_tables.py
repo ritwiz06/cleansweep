@@ -219,10 +219,16 @@ def figure_guard_strength() -> None:
     rows = [r for r in csv.DictReader(path.open()) if r["experiment"] == "mutation"]
     if not rows:
         return
-    names = [r["target_set"] for r in rows]
+    rows.sort(key=lambda r: (r["target_set"], r.get("probe_mode", "")))
+    names = [
+        f"{r['target_set']} ({r['probe_mode']})" if r.get("probe_mode") else r["target_set"]
+        for r in rows
+    ]
     tests = [float(r["share_by_tests"]) for r in rows]
     probes = [float(r["share_by_probes"]) for r in rows]
-    fig, axes = plt.subplots(1, 2, figsize=(6.8, 2.4), facecolor=SURFACE, sharey=True)
+    fig, axes = plt.subplots(
+        1, 2, figsize=(7.4, 0.5 + 0.35 * len(rows)), facecolor=SURFACE, sharey=True
+    )
     for ax, vals, title in (
         (axes[0], tests, "caught by the tests"),
         (axes[1], probes, "caught only by the probes"),
