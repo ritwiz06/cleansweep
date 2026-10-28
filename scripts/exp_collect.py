@@ -10,7 +10,8 @@ LOCAL_RUNS (2026-10-26 on); SWE-bench rows from the runners' report files. Tier 
 come from the rerun folder when it exists, and runs that failed in the first Tier 2 run are
 filled in from the rerun folder. hidden_flaky marks a hidden change that another method's
 identical edits on the same target did not repeat. An AIDev run without second-model hidden
-tests has no hidden outcome (empty, not 0).
+tests, or whose diff did not apply in the hidden-check workspace, has no hidden outcome (empty,
+not 0).
 """
 
 from __future__ import annotations
@@ -144,7 +145,7 @@ def swebench_rows(folder: Path, target_set: str) -> list[dict]:
             "files_removed": stats["files_removed"],
             "test_runs": stats["test_runs"],
             "hidden_changed": int(bool(hidden.get("behavior_changed")))
-            if hidden.get("available", True)
+            if hidden.get("available", True) and hidden.get("applied") is not False
             else "",
             "llm_calls": stats["llm_calls"],
             "minutes": stats["minutes"],
