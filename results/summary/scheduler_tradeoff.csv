@@ -1,0 +1,5 @@
+policy,repos,repo_set,debt_reduction_mean,debt_reduction_lo,debt_reduction_hi,test_runs_mean,test_runs_lo,test_runs_hi,sweeps_mean,resurrection_rate_mean
+every_pr,20,20 of 21 runnable AIDev repos (1 excluded),0.606,0.444,0.754,15.7,9.4,23.4,4.75,0.19
+every_n,20,20 of 21 runnable AIDev repos (1 excluded),0.472,0.312,0.624,11.8,5.7,19.8,3.35,0.153
+daily,20,20 of 21 runnable AIDev repos (1 excluded),0.871,0.789,0.939,27.7,18.9,38.6,9.5,0.223
+adaptive,20,20 of 21 runnable AIDev repos (1 excluded),0.389,0.227,0.552,7.1,3.1,12.4,1.0,0.169

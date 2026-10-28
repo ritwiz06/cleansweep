@@ -38,6 +38,7 @@ aidev:
   select_hours: 3
   workers: 2
   target_repos: 40                     # stop once this many are kept
+  excluded_runnable: 1                 # runnable repos left out of committed files (name rejected by the commit hook; DECISIONS)
   history_commits: 300
   history_cache: data/processed/aidev_history
   labels: data/processed/aidev_labels.parquet
