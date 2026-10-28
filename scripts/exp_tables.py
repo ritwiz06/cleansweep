@@ -54,11 +54,14 @@ def read(path: Path) -> list[dict]:
             "hidden_changed",
             "llm_calls",
             "invalid_output",
+            "hidden_flaky",
         ):
             if k in r and r[k] != "":
                 r[k] = int(float(r[k]))
         if r.get("minutes"):
             r["minutes"] = float(r["minutes"])
+        if r.get("hidden_flaky") == 1:
+            r["hidden_changed"] = ""  # a flaky hidden test, not the edit (see exp_collect)
     return rows
 
 
@@ -102,6 +105,7 @@ def main_table(rows: list[dict]) -> list[dict]:
                 continue
             row = {"target set": target_set, "method": method, "n": len(recs)}
             row["invalid output"] = sum(int(r.get("invalid_output") or 0) for r in recs)
+            row["flaky hidden"] = sum(int(r.get("hidden_flaky") or 0) for r in recs)
             for key, name in METRICS:
                 vals = _values(recs, key)
                 digits = 2 if key == "hidden_changed" else 1

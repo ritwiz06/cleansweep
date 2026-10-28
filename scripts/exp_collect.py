@@ -1,15 +1,20 @@
 """Merge the toy, demo, SWE-bench Tier 1 and Tier 2 runs into results/summary/main_results.csv.
 
     python scripts/exp_collect.py [--t2 ../cleansweep-runs/results/raw/swebench_t2]
+        [--t2-oneshot ...swebench_t2_oneshot] [--t2-rerun ...swebench_t2_rerun]
 
 One row per (target, method). Toy and demo rows come from the recorded live runs listed in
-LOCAL_RUNS (probes era, 2026-10-26); SWE-bench rows from the runners' report files.
+LOCAL_RUNS (2026-10-26 on); SWE-bench rows from the runners' report files. Tier 2 one-shot rows
+come from the rerun folder when it exists, and runs that failed in the first Tier 2 run are
+filled in from the rerun folder. hidden_flaky marks a hidden change that another method's
+identical edits on the same target did not repeat.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -41,8 +46,27 @@ FIELDS = [
     "outcome_hits",
     "outcome_total",
     "invalid_output",
+    "hidden_flaky",
 ]
 OUTCOMES = ("edits_applied", "lines_removed", "files_removed", "hidden_changed")
+
+
+def _digest(diff: str) -> str:
+    return hashlib.sha256(diff.encode()).hexdigest()[:16]
+
+
+def mark_flaky(rows: list[dict]) -> list[dict]:
+    """A hidden change is flaky when another method made the same edits (same final diff) on
+    the same target and its hidden checks did not change: the test, not the edit, flipped."""
+    unchanged = {
+        (r["target_set"], r["_group"], r["_diff"]) for r in rows if r["hidden_changed"] == 0
+    }
+    out = []
+    for r in rows:
+        key = (r["target_set"], r["_group"], r["_diff"])
+        flaky = int(r["hidden_changed"] == 1 and key in unchanged)
+        out.append({k: v for k, v in r.items() if not k.startswith("_")} | {"hidden_flaky": flaky})
+    return out
 
 
 def _invalid(row: dict, stats: dict) -> dict:
@@ -92,6 +116,8 @@ def local_rows() -> list[dict]:
             "outcome_hits": score["hits"] if score else "",
             "outcome_total": score["total"] if score else "",
             "invalid_output": 0,
+            "_group": target_set,
+            "_diff": _digest(stats.get("final_diff", "")),
         }
         rows.append(_invalid(row, stats))
     return rows
@@ -117,6 +143,8 @@ def swebench_rows(folder: Path, target_set: str) -> list[dict]:
             "outcome_hits": "",
             "outcome_total": "",
             "invalid_output": 0,
+            "_group": f"{instance}__{agent}",
+            "_diff": _digest(stats.get("final_diff", "")),
         }
         rows.append(_invalid(row, stats))
     return rows
@@ -133,6 +161,11 @@ def main(argv: list[str] | None = None) -> int:
         default=str(ROOT.parent / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_oneshot"),
         help="one_shot_llm reruns on Tier 2; preferred over the first run's one_shot_llm rows",
     )
+    parser.add_argument(
+        "--t2-rerun",
+        default=str(ROOT.parent / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_rerun"),
+        help="Tier 2 runs that failed in the first run (fixed code); fill in missing rows only",
+    )
     args = parser.parse_args(argv)
     rows = local_rows() + swebench_rows(Path(args.t1), "swebench_t1")
     t2 = swebench_rows(Path(args.t2), "swebench_t2") if Path(args.t2).exists() else []
@@ -141,7 +174,11 @@ def main(argv: list[str] | None = None) -> int:
         redone = {r["target"] for r in rerun if r["method"] == "one_shot_llm"}
         t2 = [r for r in t2 if not (r["method"] == "one_shot_llm" and r["target"] in redone)]
         t2 += [r for r in rerun if r["method"] == "one_shot_llm"]
-    rows += t2
+    if Path(args.t2_rerun).exists():
+        have = {(r["target"], r["method"]) for r in t2}
+        extra = swebench_rows(Path(args.t2_rerun), "swebench_t2")
+        t2 += [r for r in extra if (r["target"], r["method"]) not in have]
+    rows = mark_flaky(rows + t2)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
