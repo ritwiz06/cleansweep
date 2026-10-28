@@ -202,6 +202,7 @@ patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`,
 | `cleansweep`, advisory (with probes) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `guard_tests_only` (advisory) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `tools_only` | vulture + ruff | 8 | 0 | 18 | n/a | 30 | 0/10 | 1.2 |
+| `one_shot_llm` | 17 files the model changed | 17 | 10 | 302 | n/a | 30 | **3/10** | 2.3 |
 
 What the agents left behind: reproduction scripts (`reproduce_error.py`, `reproduce.py`,
 `edge_cases.py`) in 5 of the 10 patches (all four CodeStory patches and one LearnByInteract
@@ -220,6 +221,9 @@ agent-written code itself the detectors found no dead code, unused imports or du
   dynamic use. For files the agent created, the signals now count only project code.
 - `tools_only` removes unused imports from the scratch files and reformats them instead of deleting
   them.
+- `one_shot_llm` (one request, the model returns whole files as JSON, nothing checked) deletes
+  most scratch files too. It also rewrites `sympy/geometry/point.py` in all three sympy patches and
+  changes their hidden behavior. Before S18 it asked for a diff, which never applied.
 - Cost: 14 live LLM calls (about 23k prompt and 46k completion tokens) for the first method on each
   patch, plus 8 for the gatekeeper rerun after #26; the other methods were answered from the
   cache. The hidden checks add about 0.9 minutes
@@ -295,40 +299,53 @@ settings, and the agents' own changes are small. The Guard didn't tell any of th
 agent patches apart from the developer's fix: the visible tests pass for both, and the probes
 found no input that separates them.
 
-### AIDev: Scheduler replay, ranker and Reviewer detection
+### AIDev: Scheduler replay, removal requests, ranker
 
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
 sample of 120. A repository is kept if it installs in `python:3.11` (network cut before tests)
-and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The committed files
-list 20 (see `results/data_summary/aidev_filter.csv` for the drop reasons). The replay uses
-each repository's last 300 first-parent commits (4,695 in total, 626 from agent PRs) and the
-static detectors, measured at up to 40 commits per repository (`scripts/exp_replay.py`; the
-dashboard's Scheduler page shows the curves).
+and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The tables below use
+**20 of 21 runnable repos (1 excluded)**: the repository's commit hook rejects that one's name,
+so it stays out of the committed files until the team decides otherwise
+(`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
+total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository
+(`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
-| Policy | Median slop-debt reduction vs. never sweeping | Sweeps | Test runs (est.) | Resurrection rate (mean) |
+**Scheduler trade-off** (20 of 21 runnable repos, 1 excluded; mean and 95% bootstrap CI across
+repositories; `scripts/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
+
+| Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |
 |---|---|---|---|---|
-| after every agent PR | 68.8% | 95 | 314 | 0.19 |
-| every 5 commits | 54.2% | 67 | 237 | 0.15 |
-| daily (UTC, at the day boundary) | 95.2% | 190 | 554 | 0.22 |
-| adaptive (slop > 2% of lines) | 33.9% | 20 | 142 | 0.17 |
+| after every agent PR | 61% [44, 75] | 15.7 [9.4, 23.4] | 4.8 | 0.19 |
+| every 5 commits | 47% [31, 62] | 11.8 [5.7, 19.8] | 3.4 | 0.15 |
+| daily (UTC, at the day boundary) | 87% [79, 94] | 27.7 [18.9, 38.6] | 9.5 | 0.22 |
+| adaptive (slop > 2% of lines) | 39% [23, 55] | 7.1 [3.1, 12.4] | 1.0 | 0.17 |
 
-Daily sweeps keep slop lowest but cost 1.8× the test runs of sweeping after every agent PR, and
-more of what they remove comes back. The resurrection rate is the share of removed functions,
-classes and imports that still exist at the last commit and are no longer flagged, because a
-later commit started using them.
+Daily sweeps keep slop lowest but cost about 1.8× the test runs of sweeping after every agent PR,
+and more of what they remove comes back. Sweeping after every agent PR sits in the middle on
+both. The resurrection rate is the share of removed functions, classes and imports that still
+exist at the last commit and are no longer flagged, because a later commit started using them.
 
 **Removal requests.**
 - Mining: 6,330 human review comments on .py files → 792 keyword matches → **535 removal requests** confirmed by the LLM. They come from 102 repositories, most often about dead code (224).
 - Taxonomy: 15 clusters. Rules: 64 with lift ≥ 1.2 (`results/data_summary/`).
 - The runnable repositories have almost no human review, so labels come from all repositories with a request: **9,416 units, 262 removal requests, 79 repositories** (static analysis only).
 
-**Ranker.**
-- Calibrated gradient boosting, cross-validated by repository: out-of-fold AUC 0.61, Brier 0.027 (`results/summary/ranker_cv.csv`, `results/figures/ranker_reliability.png`).
-- It predicts which units reviewers ask to remove, not which edits are safe, so the Reviewer keeps its category priors by default (`exp.ranker_path` switches it on).
+**Reviewer detection vs. those requests** (`results/summary/reviewer_detection.csv`,
+`results/data_summary/detection_by_category.csv`):
+- Overall: precision 0.024, recall 0.075 (19 of 253 requested units are flagged by some detector).
+- By kind of request, the detectors almost never flag a requested unit under its own category: dead code 1 of 119, wrappers 0 of 31, duplicates 0 of 20, leftover files 0 of 5, unused imports 0 of 3.
+- When they do flag one, it is mostly under another category: requested dead code is flagged as a duplicate 5 times and as dead code once.
+- The largest cluster of requests ("remove, line, just, suggestion", 242 requests) is about lines inside functions (comments, try/except blocks, assertions). The unit-level detectors don't look at those: recall 0.025.
 
-**Reviewer detection vs. those requests.**
-- Precision 0.024, recall 0.075 (19 of 253 requested units, `results/summary/reviewer_detection.csv`).
-- Reviewers mostly ask to remove lines inside a function (comments, try/except blocks, assertions), which the unit-level detectors don't look for.
+**Ranker: a negative result** (`results/summary/ranker_report.md`).
+- Calibrated gradient boosting, cross-validated by repository, on the 9,416 labeled units.
+- Out-of-fold scores: AUC 0.607; average precision 0.047 against a base rate of 0.028; Brier 0.0269 against 0.0271 for always predicting the base rate.
+- Unit size (`loc`) carries most of the signal: the request rate rises from 0.9% for the smallest quarter of units to 5.5% for the largest. That is about where reviewers look.
+- It doesn't measure safety:
+  - the label is "a reviewer asked to remove this", not "removing it keeps behavior";
+  - unreviewed units are not "must keep";
+  - its scores (median 0.026, at most 0.20) never reach the Reviewer's 0.6 batching threshold.
+- So the Reviewer keeps its category priors.
 
 ## Repository layout
 
