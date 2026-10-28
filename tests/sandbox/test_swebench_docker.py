@@ -175,3 +175,24 @@ def test_runner_mode_probes_import_django_admin(sandbox_cfg):
         assert runner["modules"]["django.contrib.admin.options"]["ok"]
     finally:
         ws.close()
+
+
+@pytest.mark.docker
+@needs_docker
+def test_patches_that_need_fuzz_and_crlf_files_open_and_sync(sandbox_cfg):
+    from cleansweep.sandbox import open_workspace
+
+    # the PatchDiff patch applies only with `patch --fuzz` in the container
+    ws = open_workspace("swebench:sympy__sympy-12096:OpenHands", {**sandbox_cfg, "flaky_runs": 0})
+    ws.close()
+    # the agent created CRLF files; deleting them must still reach the container
+    ws = open_workspace(
+        "swebench:sphinx-doc__sphinx-7910:LearnByInteract", {**sandbox_cfg, "flaky_runs": 0}
+    )
+    try:
+        shutil.rmtree(Path(ws.path) / "test_docs")
+        ws.sync()
+        code, out = ws._exec("find test_docs -type f | wc -l", 60)
+        assert code == 0 and out.strip().splitlines()[-1] == "0"
+    finally:
+        ws.close()

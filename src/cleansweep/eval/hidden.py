@@ -80,8 +80,10 @@ def run_swebench_hidden(target: str, final_diff: str, cfg: dict) -> dict:
         named = set(ws.row["FAIL_TO_PASS"]) | set(ws.row["PASS_TO_PASS"])
         loc_before = _loc(ws.path)
         visible_before = _status(ws, None)
-        first, second = _hidden_status(ws, files), _hidden_status(ws, files)
-        stable = {t: v for t, v in first.items() if second.get(t) == v}
+        # a PatchDiff test counts only if it gives the same result on every run before the diff
+        runs = max(2, int(cfg.get("exp", {}).get("hidden_stability_runs", 3)))
+        first, *others = [_hidden_status(ws, files) for _ in range(runs)]
+        stable = {t: v for t, v in first.items() if all(o.get(t) == v for o in others)}
         if final_diff.strip() and not ws.apply_patch(final_diff):
             return {"available": True, "applied": False, "behavior_changed": None}
         visible_after = _status(ws, None)
