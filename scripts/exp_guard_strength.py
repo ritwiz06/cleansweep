@@ -47,6 +47,11 @@ def _check(ok: bool, info: dict) -> str | None:
     return None if ok else info.get("check", "other")
 
 
+def _mismatches(info: dict) -> list[str]:
+    """The first probe mismatches, to see what a probe catch was about."""
+    return list(getattr(info.get("diff_check"), "mismatches", None) or [])[:3]
+
+
 def run_mutants(before, after, units, cfg, llm, limit, seed=0) -> list[dict]:
     pool = []
     for unit in units:
@@ -69,6 +74,7 @@ def run_mutants(before, after, units, cfg, llm, limit, seed=0) -> list[dict]:
                 "check": _check(ok, info),
                 "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
                 "probe_mode": info.get("probe_mode"),
+                "mismatches": _mismatches(info),
                 "seconds": round(time.time() - t0, 1),
             }
         )
@@ -85,6 +91,7 @@ def false_alarm(before, after, units, cfg, llm) -> dict:
         "check": _check(ok, info),
         "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
         "probe_mode": info.get("probe_mode"),
+        "mismatches": _mismatches(info),
         "seconds": round(time.time() - t0, 1),
     }
 
@@ -179,6 +186,7 @@ def patchdiff_recall(before, after, cfg: dict, llm) -> dict:
         "check": _check(ok, info) if applied else "oracle did not apply",
         "probe_cases": getattr(info.get("diff_check"), "n_cases", None),
         "probe_mode": info.get("probe_mode"),
+        "mismatches": _mismatches(info),
         "seconds": round(time.time() - t0, 1),
     }
 
