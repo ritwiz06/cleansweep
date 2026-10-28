@@ -28,3 +28,14 @@ def test_every_method_maps_to_a_sweep_method():
     runner = load_runner()
     assert set(runner.METHODS) >= {"one_shot_llm", "tools_only", "guard_tests_only"}
     assert all(method in METHODS for method, _ in runner.METHODS.values())
+
+
+def test_targets_for_swebench_and_aidev_entries():
+    runner = load_runner()
+    swe = [{"instance_id": "a__b-1", "agent": "agent_a"}]
+    assert runner.targets(swe) == [("swebench:a__b-1:agent_a", "a__b-1__agent_a")]
+    aidev = [
+        {"full_name": "o/slow", "head_sha": "s1", "test_seconds": 90},
+        {"full_name": "o/fast", "head_sha": "s2", "test_seconds": "3"},
+    ]
+    assert runner.targets(aidev) == [("aidev:o/fast@s2", "o__fast"), ("aidev:o/slow@s1", "o__slow")]

@@ -1,11 +1,15 @@
-"""Run SWE-bench patches with several methods, then the hidden checks, one after another.
+"""Run SWE-bench patches or AIDev repositories with several methods, then the hidden checks.
 
     python scripts/exp_swebench.py --tier data/splits/swebench_tier2.json \\
         --out results/raw/swebench_t2 [--methods cleansweep-gatekeeper tools_only ...] [--resume]
+    python scripts/exp_swebench.py --tier data/splits/aidev_repos.json \\
+        --out results/raw/aidev_sweeps
 
-Saves one SweepReport per run to <out>/<instance>__<agent>__<method>.json (hidden-check results
-and timing under stats["hidden"] and stats["minutes"]) and appends to <out>/log.txt. A failed
-run is logged with its traceback in <out>/errors/ and retried by the next --resume.
+Saves one SweepReport per run to <out>/<instance>__<agent>__<method>.json, or for AIDev
+<owner>__<name>__<method>.json (hidden-check results and timing under stats["hidden"] and
+stats["minutes"]), and appends to <out>/log.txt. AIDev repositories run at their head sha, the
+fastest test suite first. A failed run is logged with its traceback in <out>/errors/ and retried
+by the next --resume.
 """
 
 from __future__ import annotations
@@ -68,6 +72,21 @@ def run_one(target: str, label: str, cfg: dict, path: Path) -> dict:
     return report.stats
 
 
+def targets(entries: list[dict]) -> list[tuple[str, str]]:
+    """(target, report name prefix) for SWE-bench split entries or AIDev repository entries."""
+    out = []
+    if entries and "full_name" in entries[0]:
+        for e in sorted(entries, key=lambda e: (int(e.get("test_seconds") or 0), e["full_name"])):
+            out.append(
+                (f"aidev:{e['full_name']}@{e['head_sha']}", e["full_name"].replace("/", "__"))
+            )
+        return out
+    return [
+        (f"swebench:{e['instance_id']}:{e['agent']}", f"{e['instance_id']}__{e['agent']}")
+        for e in entries
+    ]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -84,12 +103,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     log = Log(out / "log.txt")
     cfg = load_config()
-    patches = json.loads(Path(args.tier).read_text())
-    log(f"start: {len(patches)} patches x {len(args.methods)} methods from {args.tier}")
-    for entry in patches:
-        target = f"swebench:{entry['instance_id']}:{entry['agent']}"
+    jobs = targets(json.loads(Path(args.tier).read_text()))
+    log(f"start: {len(jobs)} targets x {len(args.methods)} methods from {args.tier}")
+    for target, prefix in jobs:
         for label in args.methods:
-            path = out / f"{entry['instance_id']}__{entry['agent']}__{label}.json"
+            path = out / f"{prefix}__{label}.json"
             if path.exists():
                 continue
             log(f"run {target} {label}")

@@ -6,7 +6,10 @@ batch_max_size: 8
 scheduler:
   every_n: 5
   adaptive_threshold: 0.02
-hidden_stability_runs: 3  # SWE-bench hidden checks: runs of the PatchDiff tests before the diff; unstable tests are dropped
+hidden_stability_runs: 3  # hidden checks: runs of the PatchDiff / second-model tests before the diff; unstable tests are dropped
+hidden_alt_max_files: 6        # AIDev hidden checks: second-model test files per target (files with the most public functions)
+hidden_alt_budget_chars: 12000 # source shown per test request; a longer file shows only its public functions
+hidden_alt_cache: .cleansweep/hidden_tests  # generated once per target, reused by every method
 one_shot_extra_body:     # one_shot_llm requests: reasoning off, like the Guard's probes
   chat_template_kwargs:
     enable_thinking: false

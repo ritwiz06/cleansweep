@@ -52,6 +52,18 @@ def parse_junit(xml_path: str | Path, duration_s: float = 0.0) -> RunResult:
     return result
 
 
+def junit_statuses(xml_path: str | Path) -> dict[str, str]:
+    """Test id -> passed / failed / error / skipped, from a pytest JUnit XML file."""
+    out = {}
+    for case in ET.parse(xml_path).getroot().iter("testcase"):
+        tags = {child.tag for child in case}
+        status = next((s for s in ("failure", "error", "skipped") if s in tags), "passed")
+        out[f"{case.get('classname', '')}::{case.get('name', '')}"] = status.replace(
+            "failure", "failed"
+        )
+    return out
+
+
 class Workspace:
     """A scratch git repo holding the code under cleanup. Every edit can be rolled back."""
 
@@ -60,6 +72,7 @@ class Workspace:
         self.repo_id = repo_id
         self.cfg = cfg or {}
         self.test_runs = 0
+        self.last_statuses: dict[str, str] = {}  # test id -> status, from the last run_tests
         self.base = self._git("rev-parse", "HEAD").strip()
         qdir = Path(self.cfg.get("quarantine_dir") or ".cleansweep/quarantine")
         self.quarantine_dir = str(qdir.resolve() / repo_id.replace("/", "_").replace(":", "_"))
@@ -100,6 +113,7 @@ class Workspace:
             ]
             start = time.time()
             code, out = self.run(cmd, timeout=timeout)
+            self.last_statuses = {}
             if not xml.exists():
                 return RunResult(
                     ok=False,
@@ -108,6 +122,7 @@ class Workspace:
                     duration_s=time.time() - start,
                 )
             result = parse_junit(xml, time.time() - start)
+            self.last_statuses = junit_statuses(xml)
             if code not in (0, 1, 5) and result.ok:
                 result.ok, result.errors = False, result.errors + 1
             self.last_test_output = out

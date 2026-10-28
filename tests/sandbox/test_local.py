@@ -40,3 +40,23 @@ def test_coverage_json_has_contexts(toy_ws):
     data = json.loads(Path(path).read_text())
     contexts = data["files"]["shopcart/cart.py"]["contexts"]
     assert any("test_add_and_count" in c for ctx in contexts.values() for c in ctx)
+
+
+def test_junit_statuses_and_last_statuses(toy_ws, tmp_path):
+    from cleansweep.sandbox.workspace import junit_statuses
+
+    xml = tmp_path / "junit.xml"
+    xml.write_text(
+        '<testsuite><testcase classname="t" name="a"/>'
+        '<testcase classname="t" name="b"><failure/></testcase>'
+        '<testcase classname="t" name="c"><error/></testcase>'
+        '<testcase classname="t" name="d"><skipped/></testcase></testsuite>'
+    )
+    assert junit_statuses(xml) == {
+        "t::a": "passed",
+        "t::b": "failed",
+        "t::c": "error",
+        "t::d": "skipped",
+    }
+    toy_ws.run_tests(None)
+    assert toy_ws.last_statuses and set(toy_ws.last_statuses.values()) <= {"passed", "skipped"}
