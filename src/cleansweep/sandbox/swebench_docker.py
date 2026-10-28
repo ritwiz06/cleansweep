@@ -180,10 +180,28 @@ class SwebenchWorkspace(Workspace):
             Path(f.name).unlink(missing_ok=True)
             code, out = self._exec("git apply --binary /tmp/cs_sync.diff", 300)
             if code != 0:
-                raise RuntimeError(f"container sync failed: {out[-500:]}")
+                # e.g. CRLF files the mirror's git normalized: copy the files over instead
+                self._copy_changes(out)
         if probes.exists():
             _docker(["cp", str(probes), f"{self.container}:{TESTBED}/"], check=True)
         self._synced = key
+
+    def _copy_changes(self, apply_error: str) -> None:
+        """Make the container's files match the mirror's changes file by file."""
+        self._git("add", "-A")
+        status = self._git("diff", "--cached", "--name-status", "--no-renames", self.base)
+        self._git("reset", "-q")
+        for line in status.splitlines():
+            state, path = line.split("\t", 1)
+            target = f"{self.container}:{TESTBED}/{path}"
+            if state == "D":
+                code, out = self._exec(f"rm -f {shlex.quote(path)}", 60)
+            else:
+                self._exec(f"mkdir -p {shlex.quote(str(Path(path).parent))}", 60)
+                proc = _docker(["cp", str(Path(self.path) / path), target])
+                code, out = proc.returncode, proc.stderr
+            if code != 0:
+                raise RuntimeError(f"container sync failed: {apply_error[-300:]} / {out[-200:]}")
 
     def fetch(self, rel_path: str) -> None:
         """Copy a file the container wrote under /testbed back into the mirror."""
@@ -320,7 +338,7 @@ def open_swebench(target: str, cfg: dict | None = None) -> SwebenchWorkspace:
         raise RuntimeError(f"could not start {row['image']}: {proc.stderr.strip()[-300:]}")
     try:
         _apply_in_container(name, row["test_patch"], "test_patch")
-        _commit_in_container(name, "base")
+        base_in_container = _commit_in_container(name, "base")
         dest = default_work_dir(cfg) / name
         dest.mkdir(parents=True)
         tar = subprocess.Popen(
@@ -336,7 +354,17 @@ def open_swebench(target: str, cfg: dict | None = None) -> SwebenchWorkspace:
         _apply_in_container(name, agent_patch, "agent_patch")
         head = _commit_in_container(name, "agent patch")
         ws = SwebenchWorkspace(dest, target, cfg, name, row, head)
-        if not ws.apply_patch(agent_patch):
+        # the container may have needed `patch --fuzz`; give the mirror the exact result
+        applied = _docker(
+            [
+                "exec",
+                name,
+                "bash",
+                "-c",
+                f"cd {TESTBED} && git diff --binary {base_in_container} HEAD",
+            ]
+        )
+        if applied.returncode != 0 or not ws.apply_patch(applied.stdout):
             raise RuntimeError("the agent patch does not apply to the mirror")
         _git(dest, "add", "-A")
         _git(dest, "commit", "-q", "--no-verify", "-m", "agent patch")
