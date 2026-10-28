@@ -12,11 +12,11 @@ from .overengineering import review_overengineering, wanted
 
 
 def review_scope(repo_id: str, repo_dir: str, graph):
-    """reviewer.scope: "agent" reviews only what the agent patch wrote, "repo" everything;
-    "auto" (default) means agent for swebench: targets and repo for local paths."""
+    """reviewer.scope: "agent" reviews only what the agent wrote, "repo" everything; "auto"
+    (default) means agent for swebench: and aidev: targets and repo for local paths."""
     setting = _settings().get("scope", "auto")
     if setting == "auto":
-        setting = "agent" if repo_id.startswith("swebench:") else "repo"
+        setting = "agent" if repo_id.startswith(("swebench:", "aidev:")) else "repo"
     return agent_scope(repo_dir, graph) if setting == "agent" else None
 
 

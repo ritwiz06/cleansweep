@@ -18,6 +18,7 @@ from cleansweep.sandbox import open_workspace
 
 VULTURE_LINE = re.compile(r"^(.+?):(\d+): unused (function|method|class) '([^']+)'")
 PROMPT = (Path(__file__).parent / "prompts" / "one_shot.txt").read_text()
+AGENT_TARGETS = ("swebench:", "aidev:")  # targets whose agent scope limits the baselines
 
 
 def _now() -> str:
@@ -66,13 +67,13 @@ def _host(cmd: list[str], cwd: str) -> str:
 def tools_only(target: str, cfg: dict) -> SweepReport:
     """Baseline: delete whatever vulture flags and apply ruff fixes, with no checks.
 
-    On SWE-bench targets it touches only the agent's code, like CleanSweep's agent scope: new
-    functions vulture flags, unused imports in the agent's files, and formatting of the files
-    the agent created."""
+    On SWE-bench and AIDev targets it touches only the agent's code, like CleanSweep's agent
+    scope: new functions vulture flags, unused imports in the agent's files, and formatting of
+    the files the agent created."""
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     try:
-        scope = agent_scope(ws.path) if target.startswith("swebench:") else None
+        scope = agent_scope(ws.path) if target.startswith(AGENT_TARGETS) else None
         out = _host(["vulture", ".", "--min-confidence", "60"], ws.path)
         items, results = [], []
         for line in out.splitlines():
@@ -229,15 +230,15 @@ def _agent_files(repo_dir: str) -> list[str] | None:
 def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
     """Baseline: ask the model once for cleaned-up files (JSON) and apply them with no checks.
 
-    The model sees all .py files within a budget, or on SWE-bench only the files the agent patch
-    created or changed. It replies {"delete": [paths], "files": {path: full new content}}; our
+    The model sees all .py files within a budget, or on SWE-bench and AIDev only the files the
+    agent created or changed. It replies {"delete": [paths], "files": {path: full new content}}; our
     code makes those changes. A reply that doesn't parse or names files it wasn't shown is
     recorded as invalid output (stats["invalid_output"] = 1), not as zero edits."""
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     try:
         llm = cfg.get("llm_client") or get_client(cfg.get("core", {}).get("llm"))
-        paths = _agent_files(ws.path) if target.startswith("swebench:") else None
+        paths = _agent_files(ws.path) if target.startswith(AGENT_TARGETS) else None
         code, shown = _collect_code(ws.path, paths=paths)
         messages = [{"role": "user", "content": PROMPT.replace("{code}", code)}]
         extra = cfg.get("exp", {}).get("one_shot_extra_body")

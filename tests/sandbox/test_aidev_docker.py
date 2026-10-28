@@ -51,3 +51,27 @@ def test_aidev_workspace_installs_tests_offline_and_rolls_back(tmp_path, sandbox
         assert ws.run_tests(None).ok
     finally:
         ws.close()
+
+
+@pytest.mark.docker
+@needs_docker
+def test_aidev_workspace_stores_the_agent_scope(sandbox_cfg):
+    import json
+    from pathlib import Path
+
+    from cleansweep.analysis import build_graph
+    from cleansweep.analysis.scope import agent_scope
+    from cleansweep.sandbox import open_workspace
+    from cleansweep.sandbox.aidev_docker import clone_dir
+
+    split = Path(__file__).resolve().parents[2] / "data" / "splits" / "aidev_repos.json"
+    repo = min(json.loads(split.read_text()), key=lambda e: int(e["test_seconds"]))
+    if not (clone_dir({}, repo["full_name"]) / ".git").exists():
+        pytest.skip("AIDev clones not downloaded")
+    ws = open_workspace(f"aidev:{repo['full_name']}@{repo['head_sha']}", sandbox_cfg)
+    try:
+        scope = agent_scope(ws.path, build_graph(ws.path))
+        assert scope is not None and scope.files and scope.units
+        assert not scope.outside_project(sorted(scope.files_added or scope.files)[0])
+    finally:
+        ws.close()

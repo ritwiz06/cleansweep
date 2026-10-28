@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+import ast
+import json
+import logging
+import re
 import shutil
 from pathlib import Path
 
-from cleansweep.analysis.graph import is_test_file, iter_py_files
+from cleansweep.analysis.graph import import_name, is_test_file, iter_py_files
 from cleansweep.sandbox import open_workspace
+
+log = logging.getLogger(__name__)
 
 HIDDEN_DIR = "_hidden_checks"
 START, END = ">>>>> Start Test Output", ">>>>> End Test Output"
+ALT_PROMPT = (Path(__file__).parent / "prompts" / "hidden_tests.txt").read_text()
+CODE_BLOCK = re.compile(r"```(?:python)?\n(.*?)```", re.DOTALL)
+NOT_TESTED = {"setup.py", "conftest.py"}
 
 
 def _hidden_source(target: str, cfg: dict) -> Path | None:
@@ -116,10 +125,137 @@ def run_swebench_hidden(target: str, final_diff: str, cfg: dict) -> dict:
         ws.close()
 
 
+def _public_functions(repo_dir: str, graph, scope) -> dict[str, list]:
+    """Public functions and public methods of public classes, per file, in the agent's non-test
+    files (in every file when there is no agent scope)."""
+    found: dict[str, list] = {}
+    for u in graph.units():
+        parts = (u.name or "_").split(".")
+        if u.kind != "function" or len(parts) > 2 or any(p.startswith("_") for p in parts):
+            continue
+        if is_test_file(u.path) or Path(u.path).name in NOT_TESTED or HIDDEN_DIR in u.path:
+            continue
+        if scope is None or u.path in scope.files:
+            found.setdefault(u.path, []).append(u)
+    return found
+
+
+def generate_alt_tests(repo_dir: str, graph, scope, llm, max_files: int, budget: int) -> dict:
+    """One second-model test file per source file, for the files with the most public
+    functions: {test file name: (source path, test code)}. A reply that isn't valid Python or
+    has no test function is skipped."""
+    found = _public_functions(repo_dir, graph, scope)
+    out = {}
+    for k, path in enumerate(sorted(found, key=lambda p: (-len(found[p]), p))[:max_files]):
+        lines = (Path(repo_dir) / path).read_text(encoding="utf-8", errors="replace").splitlines()
+        code = "\n".join(lines)
+        if len(code) > budget:  # only the public functions, as many as fit
+            parts = ["\n".join(lines[u.start_line - 1 : u.end_line]) for u in found[path]]
+            code = "\n\n".join(parts)[:budget]
+        module = import_name(path)
+        prompt = ALT_PROMPT.replace("{module}", module).replace("{path}", path)
+        try:
+            reply = llm.chat([{"role": "user", "content": prompt.replace("{code}", code)}])
+        except Exception as exc:  # a failed request leaves this file untested
+            log.warning("hidden test request failed for %s: %s", path, exc)
+            continue
+        m = CODE_BLOCK.search(reply)
+        body = m.group(1) if m else reply
+        try:
+            tree = ast.parse(body)
+        except SyntaxError:
+            log.warning("hidden tests for %s are not valid Python; skipped", path)
+            continue
+        tests = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))]
+        if not any(n.name.lower().startswith("test") for n in tests):
+            log.warning("no test functions in the reply for %s; skipped", path)
+            continue
+        out[f"test_cs_alt_{k}.py"] = (path, body)
+    return out
+
+
+def write_alt_tests(ws, target: str, cfg: dict, llm=None) -> list[str]:
+    """Second-model tests for the target, written once into the cache (exp.hidden_alt_cache)
+    and then copied into the workspace's _hidden_checks/ folder, which git ignores. Every
+    method's hidden check on a target uses the same tests."""
+    from cleansweep.analysis import build_graph
+    from cleansweep.analysis.scope import agent_scope
+    from cleansweep.llm import get_client
+
+    exp = cfg.get("exp", {})
+    name = re.sub(r"[^A-Za-z0-9_.@-]", "_", target)
+    cache = Path(exp.get("hidden_alt_cache", ".cleansweep/hidden_tests")) / name
+    if not cache.is_dir():
+        llm = llm or get_client({**cfg.get("core", {}).get("llm", {}), "alt": True})
+        graph = build_graph(ws.path)
+        tests = generate_alt_tests(
+            ws.path,
+            graph,
+            agent_scope(ws.path, graph),
+            llm,
+            int(exp.get("hidden_alt_max_files", 6)),
+            int(exp.get("hidden_alt_budget_chars", 12000)),
+        )
+        cache.mkdir(parents=True)
+        for file, (_, body) in tests.items():
+            (cache / file).write_text(body, encoding="utf-8")
+        sources = {file: path for file, (path, _) in tests.items()}
+        meta = {"model": getattr(llm, "model", None), "sources": sources}
+        (cache / "meta.json").write_text(json.dumps(meta, indent=1))
+    dest = Path(ws.path) / HIDDEN_DIR
+    dest.mkdir(exist_ok=True)
+    files = sorted(cache.glob("test_cs_alt_*.py"))
+    for f in files:
+        shutil.copy(f, dest / f.name)
+    return [f"{HIDDEN_DIR}/{f.name}" for f in files]
+
+
+def _statuses(ws, files: list[str]) -> dict[str, str]:
+    ws.run_tests(files)
+    return dict(ws.last_statuses)
+
+
+def run_alt_hidden(target: str, final_diff: str, cfg: dict, llm=None) -> dict:
+    """Hidden checks from a second model (EA-04): pytest tests that the ALT model writes for the
+    public functions in the agent's files, run in a fresh workspace before and after the
+    cleanup diff. A test counts only if it gives the same result on every one of
+    exp.hidden_stability_runs runs before the diff. The tests are written only here, after the
+    sweep, so the Guard never sees them."""
+    ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
+    try:
+        files = write_alt_tests(ws, target, cfg, llm)
+        if not files:
+            return {"available": False, "reason": "no second-model tests"}
+        runs = max(2, int(cfg.get("exp", {}).get("hidden_stability_runs", 3)))
+        first, *others = [_statuses(ws, files) for _ in range(runs)]
+        stable = {t: v for t, v in first.items() if all(o.get(t) == v for o in others)}
+        if final_diff.strip() and not ws.apply_patch(final_diff):
+            return {"available": True, "applied": False, "behavior_changed": None}
+        after = _statuses(ws, files)
+        changed = sorted(t for t, v in stable.items() if after.get(t) != v)
+        failing = ("failed", "error")
+        return {
+            "available": True,
+            "applied": True,
+            "behavior_changed": bool(changed),
+            "alt_changed": changed,
+            "alt_files": len(files),
+            "alt_tests": len(stable),
+            "alt_unstable": len(first) - len(stable),
+            "alt_passing": sum(v == "passed" for v in stable.values()),
+            "hidden_before": {"failed_ids": sorted(t for t, v in stable.items() if v in failing)},
+            "hidden_after": {"failed_ids": sorted(t for t in stable if after.get(t) in failing)},
+        }
+    finally:
+        ws.close()
+
+
 def run_hidden_checks(target: str, final_diff: str, cfg: dict) -> dict:
     """Run checks the Guard never saw, before and after the cleanup diff, and compare."""
     if target.startswith("swebench:"):
         return run_swebench_hidden(target, final_diff, cfg)
+    if target.startswith("aidev:"):
+        return run_alt_hidden(target, final_diff, cfg)
     src = _hidden_source(target, cfg)
     if src is None:
         return {"available": False}

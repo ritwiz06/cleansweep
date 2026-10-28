@@ -9,6 +9,7 @@ own code runs (tests, imports, probes). Static tools on the host only parse file
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shlex
 import shutil
@@ -21,7 +22,7 @@ from pathlib import Path
 from cleansweep.core.models import RunResult
 
 from .local import WS_EXCLUDE, default_work_dir
-from .workspace import GIT_ID, Workspace, parse_junit
+from .workspace import GIT_ID, Workspace, junit_statuses, parse_junit
 
 IMAGE = "python:3.11"
 MOUNT = "/repo"
@@ -103,6 +104,7 @@ class AidevWorkspace(Workspace):
         start = time.time()
         code, out = self._exec(shlex.join([*cmd, *(test_paths or [])]), timeout)
         self.last_test_output = out
+        self.last_statuses = {}
         with tempfile.TemporaryDirectory() as tmp:
             local = Path(tmp) / "junit.xml"
             _docker(["cp", f"{self.container}:{xml}", str(local)])
@@ -113,6 +115,7 @@ class AidevWorkspace(Workspace):
                     ok=False, errors=1, failed_ids=[failed], duration_s=time.time() - start
                 )
             result = parse_junit(local, time.time() - start)
+            self.last_statuses = junit_statuses(local)
         if code not in (0, 1, 5) and result.ok:
             result.ok, result.errors = False, result.errors + 1
         return result
@@ -140,6 +143,23 @@ class AidevWorkspace(Workspace):
     def close(self) -> None:
         _docker(["rm", "-f", self.container])
         shutil.rmtree(self.path, ignore_errors=True)
+
+
+def write_scope(dest: Path, clone: str, full_name: str, sha: str) -> bool:
+    """Store what agent pull requests wrote (blame on the clone's history) in dest/.git, where
+    analysis.scope.agent_scope finds it. False when the repository has no cached history."""
+    from cleansweep.analysis.scope import SCOPE_FILE, blame_scope
+    from cleansweep.data.aidev import agent_history
+
+    try:
+        shas, start = agent_history(full_name, sha)
+    except (OSError, KeyError, ValueError):
+        return False
+    if not shas:
+        return False
+    scope = blame_scope(clone, sha, shas, start)
+    (dest / ".git" / SCOPE_FILE).write_text(json.dumps(scope))
+    return True
 
 
 def clone_dir(cfg: dict, full_name: str) -> Path:
@@ -175,6 +195,8 @@ def open_aidev(target: str, cfg: dict | None = None) -> AidevWorkspace:
     subprocess.run(
         ["git", *GIT_ID, "commit", "-q", "--no-verify", "-m", "base"], cwd=dest, check=True
     )
+    if cfg.get("agent_scope", True):
+        write_scope(dest, str(clone), full_name, sha or "HEAD")
     run = ["run", "-d", "--name", name, "-v", f"{dest}:{MOUNT}", "-w", MOUNT]
     proc = _docker([*run, cfg.get("aidev_image", IMAGE), "sleep", "infinity"], timeout=300)
     if proc.returncode != 0:

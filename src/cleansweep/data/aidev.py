@@ -141,6 +141,16 @@ def load_history(repo: RepoRef) -> list[CommitEvent]:
     return events
 
 
+def agent_history(name: str, head_sha: str | None = None) -> tuple[set[str], str | None]:
+    """For "owner/name": the first-parent commits that came from agent pull requests, and the
+    oldest commit of the history. Reads only load_history's cache (none: no agent commits)."""
+    cache = data_path(_cfg()["history_cache"]) / f"{name.replace('/', '__')}.json"
+    if not cache.exists():
+        return set(), None
+    events = load_history(RepoRef(repo_id=f"aidev:{name}", url="", head_sha=head_sha))
+    return {e.sha for e in events if e.is_agent}, (events[0].sha if events else None)
+
+
 def load_removal_labels() -> pd.DataFrame:
     """Labeled units from mined review comments (scripts/data_aidev_mine.py), kept repos only."""
     path = data_path(_cfg()["labels"])

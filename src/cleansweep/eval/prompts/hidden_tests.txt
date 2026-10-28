@@ -1,0 +1,18 @@
+Write pytest tests that pin down how the functions below behave today, so that a later
+change to their behavior makes a test fail.
+
+Rules:
+- Import each function from its module, exactly as given (for example
+  `from {module} import name`). Never copy, redefine or mock the functions under test.
+- Call each function with a few ordinary and edge-case inputs and assert on what it returns
+  or raises. Use only values you can build from the code shown.
+- No network, no sleeping, no randomness without a fixed seed. Write files only under the
+  `tmp_path` fixture.
+- Skip a function you can't call safely (it needs a server, credentials or hardware).
+- Keep it short: at most 3 tests per function.
+
+Reply with one Python code block containing the whole test file, and nothing else.
+
+Module `{module}` (file `{path}`):
+
+{code}
