@@ -31,6 +31,15 @@ METHOD_ORDER = [
     "one_shot_llm",
 ]
 SET_ORDER = ["answer keys", "swebench_t1", "swebench_t2", "aidev"]
+# scatter marks: the three CleanSweep variants share a colour and differ by shape (a scatter
+# keeps colours apart only up to three)
+MARKS = {
+    "cleansweep-gatekeeper": ("CleanSweep, gatekeeper", "#2a78d6", "o"),
+    "cleansweep-advisory": ("CleanSweep, advisory", "#2a78d6", "s"),
+    "guard_tests_only": ("tests-only Guard", "#2a78d6", "^"),
+    "tools_only": ("tools only", "#eb6834", "D"),
+    "one_shot_llm": ("one-shot LLM", "#1baf7a", "v"),
+}
 METRICS = [
     ("lines_removed", "lines removed"),
     ("edits_applied", "edits"),
@@ -230,48 +239,56 @@ def figure_lines_removed(rows: list[dict]) -> None:
 
 def figure_safety_vs_yield(rows: list[dict]) -> None:
     """Per method: lines removed per target against the share of targets whose hidden checks
-    changed, both with 95% CIs. Methods that land on the same point share a label."""
+    changed, both with 95% CIs. The AIDev panel uses a symlog x axis, since one-shot deletes
+    whole files there."""
     by = groups(rows)
     sets = [s for s in SET_ORDER[1:] if any((s, m) in by for m in METHOD_ORDER)]
     if not sets:
         return
     fig, axes = plt.subplots(
-        1, len(sets), figsize=(3.6 * len(sets), 3.0), facecolor=SURFACE, sharey=True
+        1, len(sets), figsize=(3.4 * len(sets), 3.0), facecolor=SURFACE, sharey=True
     )
     axes = axes if len(sets) > 1 else [axes]
     for ax, target_set in zip(axes, sets, strict=True):
-        points: dict[tuple, list[str]] = {}
         for m in (m for m in METHOD_ORDER if (target_set, m) in by):
             x = bootstrap_ci(_values(by[(target_set, m)], "lines_removed") or [0])
             y = bootstrap_ci(_values(by[(target_set, m)], "hidden_changed") or [0])
-            points.setdefault((x, y), []).append(m.removeprefix("cleansweep-"))
-        for (x, y), names in points.items():
+            label, colour, marker = MARKS[m]
             ax.errorbar(
                 x[0],
                 y[0],
                 xerr=[[x[0] - x[1]], [x[2] - x[0]]],
                 yerr=[[y[0] - y[1]], [y[2] - y[0]]],
-                fmt="o",
-                color=BAR,
-                ecolor=INK_2,
+                fmt=marker,
+                color=colour,
+                ecolor=colour,
                 elinewidth=1,
+                alpha=0.9,
                 markersize=6,
-            )
-            ax.annotate(
-                ", ".join(names),
-                (x[0], y[0]),
-                xytext=(6, 6),
-                textcoords="offset points",
-                fontsize=7,
-                color=INK,
+                markeredgecolor=SURFACE,
+                markeredgewidth=1,
+                label=label,
             )
         n = len(by[(target_set, next(m for m in METHOD_ORDER if (target_set, m) in by))])
         _style(ax, f"{target_set} (n={n})")
         ax.grid(axis="y", color=GRID, linewidth=0.6)
+        if target_set == "aidev":
+            ax.set_xscale("symlog", linthresh=10)
+            ax.set_xlim(left=-1)
         ax.set_xlabel("lines removed per target (mean, 95% CI)", fontsize=8, color=INK_2)
     axes[0].set_ylabel("share with hidden behavior changed", fontsize=8, color=INK_2)
     axes[0].set_ylim(-0.05, 1.0)
-    fig.tight_layout()
+    handles, labels = axes[-1].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        ncol=len(labels),
+        fontsize=7,
+        frameon=False,
+        labelcolor=INK,
+    )
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     FIGURES.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIGURES / "safety_vs_yield.png", dpi=200)
     plt.close(fig)
