@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "exp_swebench.py"
@@ -39,3 +40,25 @@ def test_targets_for_swebench_and_aidev_entries():
         {"full_name": "o/fast", "head_sha": "s2", "test_seconds": "3"},
     ]
     assert runner.targets(aidev) == [("aidev:o/fast@s2", "o__fast"), ("aidev:o/slow@s1", "o__slow")]
+
+
+def test_hidden_only_reruns_reports_whose_diff_did_not_apply(tmp_path, monkeypatch):
+    runner = load_runner()
+    calls = []
+
+    def fake_hidden(target, diff, cfg):
+        calls.append((target, diff))
+        return {"available": True, "applied": True, "behavior_changed": False}
+
+    monkeypatch.setattr(runner, "run_hidden_checks", fake_hidden)
+    stuck = tmp_path / "o__fast__tools_only.json"
+    stuck.write_text(json.dumps({"stats": {"final_diff": "d", "hidden": {"applied": False}}}))
+    ran = tmp_path / "o__fast__one_shot_llm.json"
+    ran.write_text(json.dumps({"stats": {"final_diff": "e", "hidden": {"applied": True}}}))
+    tier = tmp_path / "tier.json"
+    tier.write_text(json.dumps([{"full_name": "o/fast", "head_sha": "s2", "test_seconds": 3}]))
+    assert runner.main(["--tier", str(tier), "--out", str(tmp_path), "--hidden-only"]) == 0
+    assert calls == [("aidev:o/fast@s2", "d")]
+    hidden = json.loads(stuck.read_text())["stats"]["hidden"]
+    assert hidden["applied"] is True and hidden["rerun"] is True
+    assert json.loads(ran.read_text())["stats"]["hidden"] == {"applied": True}

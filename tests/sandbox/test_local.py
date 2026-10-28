@@ -35,6 +35,13 @@ def test_diff_stats_counts_deleted_files(toy_ws):
     assert stats["files_removed"] == 1 and stats["lines_removed"] == 14
 
 
+def test_install_files_stay_out_of_the_diff(toy_ws):
+    info = Path(toy_ws.path) / "shopcart.egg-info"
+    info.mkdir()
+    (info / "PKG-INFO").write_text("Name: shopcart\n")
+    assert toy_ws.diff(toy_ws.base) == ""
+
+
 def test_coverage_json_has_contexts(toy_ws):
     path = toy_ws.coverage_json()
     data = json.loads(Path(path).read_text())
