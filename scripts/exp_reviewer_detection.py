@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from cleansweep.core.config import load_config
 from cleansweep.data import load_removal_labels
 from cleansweep.data.swebench import data_path
 
@@ -31,6 +32,14 @@ def score(requested: set, flagged: set) -> dict:
         "precision": round(hit / len(flagged), 3) if flagged else "",
         "recall": round(hit / len(requested), 3) if requested else "",
     }
+
+
+def kept_label(kept: int) -> str:
+    """ "kept: 20 of 21 runnable repos (1 excluded)" when runnable repos were left out."""
+    excluded = int(load_config()["data"]["aidev"].get("excluded_runnable", 0))
+    if not excluded:
+        return f"kept: {kept} runnable repos"
+    return f"kept: {kept} of {kept + excluded} runnable repos ({excluded} excluded)"
 
 
 def _rows(repos: str, labels: pd.DataFrame, flagged: pd.DataFrame) -> list[dict]:
@@ -76,7 +85,7 @@ def main() -> int:
     }
     rows = []
     for repos, in_set in (
-        ("kept", lambda df: df.repo_id.isin(kept)),
+        (kept_label(len(kept)), lambda df: df.repo_id.isin(kept)),
         ("all labeled", lambda df: df.repo_id == df.repo_id),
     ):
         rows += _rows(repos, labels[in_set(labels)], flagged[in_set(flagged)])
