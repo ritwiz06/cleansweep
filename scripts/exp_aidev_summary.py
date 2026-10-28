@@ -27,7 +27,6 @@ METHODS = [
     "tools_only",
     "one_shot_llm",
 ]
-FILE_LEVEL = {"leftover_file"}
 CHECKS = ("compile", "tests", "ast", "probes")
 
 
@@ -65,8 +64,11 @@ def summarize(reports: list[dict]) -> tuple[list[dict], list[dict]]:
             result = status.get(item["item_id"], {})
             if _applied(result):
                 c["applied"] += 1
-                level = "files" if item["category"] in FILE_LEVEL else "code"
+                level = "files" if item.get("action") == "delete_file" else "code"
                 totals[f"applied_{level}"] += 1
+            elif "could not be applied" in (result.get("notes") or ""):
+                c["not_applicable"] += 1
+                totals["could_not_apply"] += 1
             elif result.get("status") == "rolled_back":
                 c["rolled_back"] += 1
                 totals[f"rolled_back_{rollback_check(result)}"] += 1
@@ -78,6 +80,7 @@ def summarize(reports: list[dict]) -> tuple[list[dict], list[dict]]:
             "safe_lane": c["lane_safe"],
             "applied": c["applied"],
             "rolled_back": c["rolled_back"],
+            "could_not_apply": c["not_applicable"],
         }
         for (m, cat), c in sorted(
             by_cat.items(), key=lambda kv: (METHODS.index(kv[0][0]), kv[0][1])
@@ -144,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         "files_removed",
         "lines_removed",
         *[f"rolled_back_{c}" for c in CHECKS],
+        "could_not_apply",
         "hidden_checked",
         "hidden_changed",
         "llm_retries",
@@ -154,14 +158,25 @@ def main(argv: list[str] | None = None) -> int:
         "",
         f"{len(reports)} reports on {repos} of the 20 runnable repos used (1 excluded), at their "
         "head sha. Agent scope: lines and files that agent pull requests wrote (first-parent "
-        "blame). Applied code = applied items that are not whole files.",
+        "blame). Applied files = deleted files; applied code = every other applied edit. "
+        "Could not apply = the edit tool could not make the change (e.g. a dependency listed "
+        "in pyproject.toml).",
         "",
         *_table(method_rows, method_cols),
         "",
         "## Items by category",
         "",
         *_table(
-            cat_rows, ["method", "category", "proposed", "safe_lane", "applied", "rolled_back"]
+            cat_rows,
+            [
+                "method",
+                "category",
+                "proposed",
+                "safe_lane",
+                "applied",
+                "rolled_back",
+                "could_not_apply",
+            ],
         ),
         "",
         "## Second-model hidden tests (glm-5-3), per repository",
