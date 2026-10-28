@@ -285,6 +285,9 @@ another method's identical edits did not repeat; they are left out of the hidden
 | SWE-bench Tier 2 | `tools_only` | 57 | 0.9 [0.4, 1.6] | 0.9 [0.8, 1.1] | 0.00 [0.00, 0.00] | 0 | 3.0 | 1.5 |
 | SWE-bench Tier 2 | `one_shot_llm` | 57 | 30.1 [21.0, 41.0] | 1.7 [1.4, 2.0] | **0.16 [0.07, 0.26]** | 0 | 3.0 | 1.9 |
 
+`results/figures/safety_vs_yield.png` plots lines removed against the hidden-change rate per
+method, with 95% CIs.
+
 Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 - **Hidden changes:**
   - only `one_shot_llm` differs: 9 vs. 0 on Tier 2 (exact McNemar p = 0.0039) and 3 vs. 0 on Tier 1 (p = 0.25);
@@ -295,6 +298,47 @@ Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 - **Ablations (`ablation.md`):**
   - On the answer keys, the probes and the judge each keep the hidden checks unchanged where `guard_tests_only` and `tools_only` change them (0/2 vs. 2/2).
   - On SWE-bench, both modes and `guard_tests_only` apply the same edits. Those are almost all leftover files nothing imports, so there is little for probes to check.
+
+### Why one-shot breaks things
+
+`scripts/exp_oneshot_breakages.py` (`results/summary/oneshot_breakages.{csv,md}`) applies each
+one-shot diff that changed hidden behavior in its workspace (Docker, no LLM) and classifies what
+broke. There are 12 such runs, 3 on Tier 1 and 9 on Tier 2; the Tier 1 patches are also in
+Tier 2 and got the same diffs, so 9 are distinct.
+
+| What broke | Runs | Instances |
+|---|---|---|
+| the rewritten source file no longer parses (a stray `"` after the last line) | 10 | sympy-11618 × 3 (Tier 1 and 2), sphinx-7454 × 3, scikit-learn-10844 |
+| an import the module still uses was removed (`import sys` in `django/http/response.py`) | 2 | django-11133 × 2 |
+| a deleted file that code or tests use | 0 | |
+
+- The stray quote comes from the model: its JSON reply ends the file's content with an escaped
+  `\"`, and our code writes the content as given.
+- Edit types over all Tier 2 patches:
+  - one-shot edited source files on 37 of 57 patches (224 changed lines) and deleted 58 files
+    (1,666 lines);
+  - CleanSweep (gatekeeper) edited no source and deleted 78 leftover files (2,130 lines).
+
+### The Guard as a filter on one-shot edits
+
+`scripts/exp_guard_on_oneshot.py` (`results/summary/guard_on_oneshot.{csv,md}`) runs
+`verify(agent patch, agent patch + one-shot diff)` with the tests and then runner-mode probes,
+on every patch where one-shot applied edits. It ran in a frozen clone at 2ad7387 on
+2026-10-27, 23:54 to 00:40.
+
+| Set | Runs with edits | Breaking runs blocked | by compile | by tests | only by probes | Non-breaking runs blocked |
+|---|---|---|---|---|---|---|
+| Tier 1 | 8 | **3/3** | 3 | 0 | 0 | 0/5 |
+| Tier 2 | 49 | **9/9** | 7 | 2 | 0 | 3/40 |
+
+- The Guard would have stopped all 12 breaking one-shot runs. The compile check caught the
+  stray quotes; Django's own tests caught the removed import (`test_headers_type`,
+  `test_long_line`).
+- The 3 non-breaking blocks are all `pylint-6903`. The probes' module check saw that
+  `pylint.lint.run` lost the public name `UNUSED_PARAM_SENTINEL`. The model replaced the
+  sentinel default of `do_exit` with `None`, so an explicit `do_exit=None` now behaves
+  differently. That is a real change, but one the hidden tests don't exercise; we count it as
+  a false alarm by our definition.
 
 ### Guard strength
 

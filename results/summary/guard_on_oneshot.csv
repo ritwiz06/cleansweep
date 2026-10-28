@@ -1,0 +1,58 @@
+target_set,target,edits_applied,hidden_changed,applied,blocked,check,probe_cases,probe_mode,new_failures,mismatches,seconds
+swebench_t1,pytest-dev__pytest-10081__CodeStory,2,0,True,False,,1,runner,,,21.7
+swebench_t1,pytest-dev__pytest-10081__LearnByInteract,1,0,True,False,,1,runner,,,20.9
+swebench_t1,pytest-dev__pytest-10081__OpenHands,4,0,True,False,,1,runner,,,21.1
+swebench_t1,django__django-11095__OpenHands,2,0,True,False,,,runner,,,43.6
+swebench_t1,sympy__sympy-11618__CodeStory,3,1,True,True,compile,,,,,21.0
+swebench_t1,sympy__sympy-11618__LearnByInteract,2,1,True,True,compile,,,,,22.3
+swebench_t1,sympy__sympy-11618__OpenHands,1,1,True,True,compile,,,,,20.7
+swebench_t1,pydata__xarray-3151__CodeStory,2,0,True,False,,1,runner,,,36.0
+swebench_t2,pytest-dev__pytest-10081__CodeStory,2,0,True,False,,1,runner,,,21.7
+swebench_t2,pytest-dev__pytest-10081__LearnByInteract,1,0,True,False,,1,runner,,,20.9
+swebench_t2,pytest-dev__pytest-10081__OpenHands,4,0,True,False,,1,runner,,,21.1
+swebench_t2,django__django-11095__OpenHands,2,0,True,False,,,runner,,,43.6
+swebench_t2,sympy__sympy-11618__CodeStory,3,1,True,True,compile,,,,,21.0
+swebench_t2,sympy__sympy-11618__LearnByInteract,2,1,True,True,compile,,,,,22.3
+swebench_t2,sympy__sympy-11618__OpenHands,1,1,True,True,compile,,,,,20.7
+swebench_t2,pydata__xarray-3151__CodeStory,2,0,True,False,,1,runner,,,36.0
+swebench_t2,sphinx-doc__sphinx-10466__CodeStory,2,0,True,False,,4,runner,,,29.1
+swebench_t2,sphinx-doc__sphinx-10466__LearnByInteract,2,0,True,False,,1,runner,,,26.9
+swebench_t2,sphinx-doc__sphinx-10466__OpenHands,2,0,True,False,,1,runner,,,26.6
+swebench_t2,astropy__astropy-13579__CodeStory,2,0,True,False,,29,runner,,,48.3
+swebench_t2,astropy__astropy-13579__LearnByInteract,1,0,True,False,,17,runner,,,28.2
+swebench_t2,astropy__astropy-13579__OpenHands,3,0,True,False,,21,runner,,,28.8
+swebench_t2,matplotlib__matplotlib-22719__CodeStory,3,0,True,False,,24,runner,,,74.9
+swebench_t2,matplotlib__matplotlib-22719__LearnByInteract,3,0,True,False,,24,runner,,,43.4
+swebench_t2,matplotlib__matplotlib-22719__OpenHands,3,0,True,False,,24,runner,,,46.9
+swebench_t2,pallets__flask-5014__CodeStory,1,0,True,False,,,runner,,,4.3
+swebench_t2,pallets__flask-5014__LearnByInteract,1,0,True,False,,,runner,,,3.4
+swebench_t2,pallets__flask-5014__OpenHands,2,0,True,False,,,runner,,,3.4
+swebench_t2,pylint-dev__pylint-6903__CodeStory,2,0,True,True,probes,9,runner,,module pylint.lint.run lost public names: UNUSED_PARAM_SENTINEL,103.7
+swebench_t2,pylint-dev__pylint-6903__LearnByInteract,3,0,True,True,probes,9,runner,,module pylint.lint.run lost public names: UNUSED_PARAM_SENTINEL,65.2
+swebench_t2,pylint-dev__pylint-6903__OpenHands,2,0,True,True,probes,9,runner,,module pylint.lint.run lost public names: UNUSED_PARAM_SENTINEL,63.6
+swebench_t2,scikit-learn__scikit-learn-10844__CodeStory,2,0,True,False,,31,runner,,,95.0
+swebench_t2,scikit-learn__scikit-learn-10844__LearnByInteract,1,1,True,True,compile,,,,,9.7
+swebench_t2,scikit-learn__scikit-learn-10844__OpenHands,2,0,True,False,,31,runner,,,28.9
+swebench_t2,pytest-dev__pytest-5809__CodeStory,2,0,True,False,,6,runner,,,18.5
+swebench_t2,pytest-dev__pytest-5809__LearnByInteract,2,0,True,False,,9,runner,,,18.1
+swebench_t2,pytest-dev__pytest-5809__OpenHands,2,0,True,False,,9,runner,,,18.3
+swebench_t2,django__django-11099__CodeStory,1,0,True,False,,,runner,,,44.4
+swebench_t2,django__django-11099__LearnByInteract,1,0,True,False,,,runner,,,46.7
+swebench_t2,django__django-11099__OpenHands,2,0,True,False,,,runner,,,45.7
+swebench_t2,sympy__sympy-12096__CodeStory,1,0,True,False,,,runner,,,22.5
+swebench_t2,sympy__sympy-12096__LearnByInteract,1,0,True,False,,,runner,,,24.3
+swebench_t2,sphinx-doc__sphinx-7454__CodeStory,2,1,True,True,compile,,,,,5.7
+swebench_t2,sphinx-doc__sphinx-7454__LearnByInteract,1,1,True,True,compile,,,,,9.1
+swebench_t2,sphinx-doc__sphinx-7454__OpenHands,1,1,True,True,compile,,,,,6.0
+swebench_t2,astropy__astropy-14096__LearnByInteract,1,0,True,False,,,runner,,,19.7
+swebench_t2,astropy__astropy-14096__OpenHands,1,0,True,False,,,runner,,,22.9
+swebench_t2,scikit-learn__scikit-learn-11310__LearnByInteract,1,0,True,False,,,runner,,,20.6
+swebench_t2,pytest-dev__pytest-6202__CodeStory,2,0,True,False,,19,runner,,,166.9
+swebench_t2,pytest-dev__pytest-6202__LearnByInteract,2,0,True,False,,19,runner,,,23.6
+swebench_t2,pytest-dev__pytest-6202__OpenHands,3,0,True,False,,19,runner,,,23.3
+swebench_t2,django__django-11133__CodeStory,2,0,True,False,,1,runner,,,58.0
+swebench_t2,django__django-11133__LearnByInteract,2,1,True,True,tests,,,test_headers_type; test_headers_type (httpwrappers.tests.HttpResponseTests); test_long_line; test_long_line (httpwrappers.tests.HttpResponseTests),,43.8
+swebench_t2,django__django-11133__OpenHands,1,1,True,True,tests,,,test_headers_type; test_headers_type (httpwrappers.tests.HttpResponseTests); test_long_line; test_long_line (httpwrappers.tests.HttpResponseTests),,43.6
+swebench_t2,sympy__sympy-12481__LearnByInteract,1,0,True,False,,,runner,,,20.6
+swebench_t2,sphinx-doc__sphinx-7910__CodeStory,2,0,True,False,,37,runner,,,52.2
+swebench_t2,sphinx-doc__sphinx-7910__LearnByInteract,7,0,True,False,,1,runner,,,21.3

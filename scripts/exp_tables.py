@@ -30,7 +30,7 @@ METHOD_ORDER = [
     "tools_only",
     "one_shot_llm",
 ]
-SET_ORDER = ["answer keys", "swebench_t1", "swebench_t2"]
+SET_ORDER = ["answer keys", "swebench_t1", "swebench_t2", "aidev"]
 METRICS = [
     ("lines_removed", "lines removed"),
     ("edits_applied", "edits"),
@@ -228,6 +228,55 @@ def figure_lines_removed(rows: list[dict]) -> None:
     plt.close(fig)
 
 
+def figure_safety_vs_yield(rows: list[dict]) -> None:
+    """Per method: lines removed per target against the share of targets whose hidden checks
+    changed, both with 95% CIs. Methods that land on the same point share a label."""
+    by = groups(rows)
+    sets = [s for s in SET_ORDER[1:] if any((s, m) in by for m in METHOD_ORDER)]
+    if not sets:
+        return
+    fig, axes = plt.subplots(
+        1, len(sets), figsize=(3.6 * len(sets), 3.0), facecolor=SURFACE, sharey=True
+    )
+    axes = axes if len(sets) > 1 else [axes]
+    for ax, target_set in zip(axes, sets, strict=True):
+        points: dict[tuple, list[str]] = {}
+        for m in (m for m in METHOD_ORDER if (target_set, m) in by):
+            x = bootstrap_ci(_values(by[(target_set, m)], "lines_removed") or [0])
+            y = bootstrap_ci(_values(by[(target_set, m)], "hidden_changed") or [0])
+            points.setdefault((x, y), []).append(m.removeprefix("cleansweep-"))
+        for (x, y), names in points.items():
+            ax.errorbar(
+                x[0],
+                y[0],
+                xerr=[[x[0] - x[1]], [x[2] - x[0]]],
+                yerr=[[y[0] - y[1]], [y[2] - y[0]]],
+                fmt="o",
+                color=BAR,
+                ecolor=INK_2,
+                elinewidth=1,
+                markersize=6,
+            )
+            ax.annotate(
+                ", ".join(names),
+                (x[0], y[0]),
+                xytext=(6, 6),
+                textcoords="offset points",
+                fontsize=7,
+                color=INK,
+            )
+        n = len(by[(target_set, next(m for m in METHOD_ORDER if (target_set, m) in by))])
+        _style(ax, f"{target_set} (n={n})")
+        ax.grid(axis="y", color=GRID, linewidth=0.6)
+        ax.set_xlabel("lines removed per target (mean, 95% CI)", fontsize=8, color=INK_2)
+    axes[0].set_ylabel("share with hidden behavior changed", fontsize=8, color=INK_2)
+    axes[0].set_ylim(-0.05, 1.0)
+    fig.tight_layout()
+    FIGURES.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIGURES / "safety_vs_yield.png", dpi=200)
+    plt.close(fig)
+
+
 def figure_guard_strength() -> None:
     path = SUMMARY / "guard_strength.csv"
     if not path.exists():
@@ -273,6 +322,7 @@ def main() -> int:
     write("paired_tests", paired_tests(rows))
     write("ablation", ablation(rows))
     figure_lines_removed(rows)
+    figure_safety_vs_yield(rows)
     figure_guard_strength()
     for name in ("main_table", "paired_tests", "ablation"):
         print((SUMMARY / f"{name}.md").read_text() if (SUMMARY / f"{name}.md").exists() else "")
