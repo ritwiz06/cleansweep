@@ -133,8 +133,9 @@ def paired_tests(rows: list[dict]) -> list[dict]:
             ]
             if not pairs:
                 continue
-            b = sum(m["hidden_changed"] and not g["hidden_changed"] for g, m in pairs)
-            c = sum(g["hidden_changed"] and not m["hidden_changed"] for g, m in pairs)
+            # flaky hidden changes ("" after read) count as unchanged
+            b = sum(bool(m["hidden_changed"]) and not g["hidden_changed"] for g, m in pairs)
+            c = sum(bool(g["hidden_changed"]) and not m["hidden_changed"] for g, m in pairs)
             stat, p = wilcoxon(
                 [g["lines_removed"] for g, _ in pairs], [m["lines_removed"] for _, m in pairs]
             )

@@ -6,6 +6,6 @@
 | swebench_t1 | differential probes | cleansweep-advisory | guard_tests_only | 0/10 vs 0/10 | 570 vs 570 | 48 vs 48 |
 | swebench_t1 | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/10 vs 0/10 | 570 vs 570 | 48 vs 48 |
 | swebench_t1 | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/10 vs 0/10 | 570 vs 18 | 48 vs 30 |
-| swebench_t2 | differential probes | cleansweep-advisory | guard_tests_only | 0/54 vs 1/55 | 1963 vs 1986 | 263 vs 268 |
-| swebench_t2 | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 1/52 vs 0/54 | 1851 vs 1963 | 253 vs 263 |
-| swebench_t2 | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/54 vs 0/56 | 1963 vs 54 | 263 vs 168 |
+| swebench_t2 | differential probes | cleansweep-advisory | guard_tests_only | 0/57 vs 0/56 | 2130 vs 2130 | 275 vs 275 |
+| swebench_t2 | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/57 vs 0/57 | 2130 vs 2130 | 275 vs 275 |
+| swebench_t2 | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/57 vs 0/57 | 2130 vs 54 | 275 vs 171 |

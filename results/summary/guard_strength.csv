@@ -7,7 +7,9 @@ swebench_t1,mutation,direct,39,30,30,0,0.769,0.769,0.0
 swebench_t1,mutation,runner,39,36,30,6,0.923,0.769,0.154
 swebench_t1,patchdiff_recall,direct,3,0,0,0,0.0,0.0,0.0
 swebench_t1,patchdiff_recall,runner,3,0,0,0,0.0,0.0,0.0
+swebench_t2,false_alarm,runner,44,0,0,0,0.0,0.0,0.0
+swebench_t2,mutation,runner,189,135,130,5,0.714,0.688,0.026
 swebench_t2,patchdiff_recall,direct,14,4,0,4,0.286,0.0,0.286
-swebench_t2,patchdiff_recall,runner,14,3,0,3,0.214,0.0,0.214
+swebench_t2,patchdiff_recall,runner,15,3,0,3,0.2,0.0,0.2
 toy,false_alarm,direct,1,0,0,0,0.0,0.0,0.0
 toy,mutation,direct,20,20,13,7,1.0,0.65,0.35
