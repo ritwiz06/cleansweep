@@ -7,7 +7,7 @@ core:
     model_env: VOYAGER_MODEL
     alt_model_env: VOYAGER_MODEL_ALT
     cache_path: .cleansweep/llm_cache.sqlite
-    max_retries: 5
+    max_retries: 2          # retries for 429, 5xx (incl. 524) and dropped connections; timeouts are not retried
     timeout_s: 600
     extra_body: null       # provider options for every request (probes add their own)
   sandbox:

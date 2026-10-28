@@ -83,3 +83,31 @@ def test_collect_code_skips_a_file_that_does_not_fit(tmp_path):
     (tmp_path / "small.py").write_text("y = 2\n")
     code, shown = _collect_code(str(tmp_path), budget=1000, paths=["big.py", "small.py"])
     assert shown == ["small.py"] and "### big.py" not in code
+
+
+def test_one_shot_run_stats_record_llm_retries(toy_repo, cfg, monkeypatch):
+    from types import SimpleNamespace
+
+    from cleansweep.llm.client import LLMClient
+
+    class Gateway:
+        """First answer is a 524 page, then a valid empty cleanup."""
+
+        def __init__(self):
+            self.n = 0
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
+
+        def create(self, **kwargs):
+            self.n += 1
+            if self.n == 1:
+                err = Exception("<title>524: A timeout occurred</title>")
+                err.status_code = 524
+                raise err
+            message = SimpleNamespace(content='{"delete": [], "files": {}}')
+            return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=None)
+
+    monkeypatch.setattr("cleansweep.llm.client.time.sleep", lambda s: None)
+    cfg["llm_client"] = LLMClient("m", openai_client=Gateway())
+    report = one_shot_llm(toy_repo, cfg, seed=0)
+    assert report.stats["llm_retries"] == 1 and report.stats["llm_failures"] == 0
+    assert report.stats["llm_events"][0]["status"] == 524
