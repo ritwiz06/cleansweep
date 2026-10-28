@@ -4,7 +4,7 @@ import re
 import pytest
 
 from cleansweep.core.models import CleanupItem, CodeUnit
-from cleansweep.llm import FakeLLM
+from cleansweep.llm import FakeLLM, LLMError
 from cleansweep.reviewer import judge_items
 from cleansweep.reviewer.judge import group_requests, signals
 
@@ -66,6 +66,17 @@ def test_advisory_mode_keeps_detector_lanes(toy_repo):
     assert out["a"].action == "delete_unit"
     assert out["a"].reason.startswith("Judge thinks this is still used:")
     assert out["s"].action == "report_only" and out["s"].llm_confidence == 0.8
+
+
+def test_failed_request_keeps_detector_lanes(toy_repo):
+    class TimesOut:
+        def chat_json(self, messages, **kwargs):
+            raise LLMError("APITimeoutError: Request timed out.")
+
+    items = [make("a"), make("b", lane="suggest")]
+    out = {i.item_id: i for i in judge_items(items, toy_repo, TimesOut(), mode="gatekeeper")}
+    assert [out[k].lane for k in "ab"] == ["safe", "suggest"]
+    assert out["a"].llm_confidence is None
 
 
 def test_same_file_items_share_a_request(toy_repo):

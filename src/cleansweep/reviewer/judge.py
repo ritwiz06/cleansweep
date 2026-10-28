@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from cleansweep.core.models import CleanupItem
+from cleansweep.llm import LLMError
 
 PROMPT = (Path(__file__).parent / "prompts" / "judge.txt").read_text()
 MODES = ("gatekeeper", "advisory", "off")
@@ -262,8 +263,8 @@ def judge_items(
         prompt = PROMPT.replace("{items}", json.dumps(payload, indent=1))
         try:
             reply = llm.chat_json([{"role": "user", "content": prompt}])
-        except ValueError:
-            continue  # unreadable answer: these items keep their detector lanes
+        except (ValueError, LLMError):
+            continue  # unreadable answer or failed request: these items keep their detector lanes
         for row in reply if isinstance(reply, list) else reply.get("items", []):
             if isinstance(row, dict) and "item_id" in row:
                 decisions[row["item_id"]] = row
