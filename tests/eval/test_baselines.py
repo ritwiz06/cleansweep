@@ -74,3 +74,12 @@ def test_one_shot_sees_only_agent_files(agent_repo):
     code, shown = _collect_code(agent_repo, paths=files)
     assert "### pkg/core.py" in code and "### tests/test_core.py" not in code
     assert shown == files
+
+
+def test_collect_code_skips_a_file_that_does_not_fit(tmp_path):
+    from cleansweep.eval.baselines import _collect_code
+
+    (tmp_path / "big.py").write_text("x = 1\n" * 2000)
+    (tmp_path / "small.py").write_text("y = 2\n")
+    code, shown = _collect_code(str(tmp_path), budget=1000, paths=["big.py", "small.py"])
+    assert shown == ["small.py"] and "### big.py" not in code

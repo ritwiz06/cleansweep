@@ -145,13 +145,15 @@ def _qualname_at(repo_dir: str, path: str, line: int, name: str) -> str:
 def _collect_code(
     repo_dir: str, budget: int = 60000, paths: list[str] | None = None
 ) -> tuple[str, list[str]]:
-    """The files to show the model, as "### path" blocks within budget, and their paths."""
+    """The files to show the model, as "### path" blocks within budget, and their paths. A file
+    that doesn't fit is skipped whole (the model must return whole files), and later ones that
+    fit are still shown."""
     parts, shown, used = [], [], 0
     for path in paths if paths is not None else iter_py_files(repo_dir):
         text = (Path(repo_dir) / path).read_text(errors="replace")
         block = f"### {path}\n{text}\n"
         if used + len(block) > budget:
-            break
+            continue
         parts.append(block)
         shown.append(path)
         used += len(block)
@@ -264,6 +266,9 @@ def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
         report = _report(ws, "one_shot_llm", seed, started, t0, items, results, llm.usage())
         report.stats["invalid_output"] = int(cleanup is None)
         report.stats["files_shown"] = len(shown)
+        report.stats["files_not_shown"] = len(
+            paths if paths is not None else iter_py_files(ws.path)
+        ) - len(shown)
         return report
     finally:
         ws.close()  # also on errors: a SWE-bench workspace holds a container
