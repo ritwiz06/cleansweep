@@ -39,4 +39,11 @@ class FakeLLM:
         return {} if reply is None else parse_json_text(reply)
 
     def usage(self) -> dict:
-        return {"llm_calls": len(self.calls), "prompt_tokens": 0, "completion_tokens": 0}
+        return {
+            "llm_calls": len(self.calls),
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "llm_retries": 0,
+            "llm_failures": 0,
+            "llm_events": [],
+        }
