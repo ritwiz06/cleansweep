@@ -93,6 +93,7 @@ def run_swebench_hidden(target: str, final_diff: str, cfg: dict) -> dict:
         runs = max(2, int(cfg.get("exp", {}).get("hidden_stability_runs", 3)))
         first, *others = [_hidden_status(ws, files) for _ in range(runs)]
         stable = {t: v for t, v in first.items() if all(o.get(t) == v for o in others)}
+        final_diff = without_install_files(final_diff)
         if final_diff.strip() and not ws.apply_patch(final_diff):
             return {"available": True, "applied": False, "behavior_changed": None}
         visible_after = _status(ws, None)
@@ -208,6 +209,13 @@ def write_alt_tests(ws, target: str, cfg: dict, llm=None) -> list[str]:
     for f in files:
         shutil.copy(f, dest / f.name)
     return [f"{HIDDEN_DIR}/{f.name}" for f in files]
+
+
+def without_install_files(diff: str) -> str:
+    """The diff without files an install writes (*.egg-info), which a fresh workspace's own
+    install writes again, so the diff would not apply there."""
+    parts = re.split(r"(?m)^(?=diff --git )", diff)
+    return "".join(p for p in parts if ".egg-info/" not in p.split("\n", 1)[0])
 
 
 def _statuses(ws, files: list[str]) -> dict[str, str]:

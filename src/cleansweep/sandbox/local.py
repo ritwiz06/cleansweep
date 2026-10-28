@@ -27,6 +27,7 @@ WS_EXCLUDE = [
     "*.pyc",
     ".pytest_cache/",
     ".coverage*",
+    "*.egg-info/",  # written by an editable install inside the workspace
     "_hidden_checks/",
     "_probes/",
     "test_cs_probe_*.py",
