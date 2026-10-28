@@ -1,13 +1,16 @@
-"""Merge the toy, demo, SWE-bench Tier 1 and Tier 2 runs into results/summary/main_results.csv.
+"""Merge the toy, demo, SWE-bench Tier 1 and Tier 2 and AIDev runs into
+results/summary/main_results.csv.
 
     python scripts/exp_collect.py [--t2 ../cleansweep-runs/results/raw/swebench_t2]
         [--t2-oneshot ...swebench_t2_oneshot] [--t2-rerun ...swebench_t2_rerun]
+        [--aidev ../cleansweep-runs-3/results/raw/aidev_sweeps]
 
 One row per (target, method). Toy and demo rows come from the recorded live runs listed in
 LOCAL_RUNS (2026-10-26 on); SWE-bench rows from the runners' report files. Tier 2 one-shot rows
 come from the rerun folder when it exists, and runs that failed in the first Tier 2 run are
 filled in from the rerun folder. hidden_flaky marks a hidden change that another method's
-identical edits on the same target did not repeat.
+identical edits on the same target did not repeat. An AIDev run without second-model hidden
+tests has no hidden outcome (empty, not 0).
 """
 
 from __future__ import annotations
@@ -124,11 +127,14 @@ def local_rows() -> list[dict]:
 
 
 def swebench_rows(folder: Path, target_set: str) -> list[dict]:
+    """One row per report <a>__<b>__<method>.json: SWE-bench <instance>__<agent>, or AIDev
+    <owner>__<name>."""
     rows = []
     for path in sorted(folder.glob("*__*__*.json")):
         instance, agent, method = path.stem.rsplit("__", 2)
         data = json.loads(path.read_text())
         stats = data["stats"]
+        hidden = stats.get("hidden") or {}
         row = {
             "target_set": target_set,
             "target": f"{instance}__{agent}",
@@ -137,7 +143,9 @@ def swebench_rows(folder: Path, target_set: str) -> list[dict]:
             "lines_removed": stats["lines_removed"],
             "files_removed": stats["files_removed"],
             "test_runs": stats["test_runs"],
-            "hidden_changed": int(bool(stats["hidden"].get("behavior_changed"))),
+            "hidden_changed": int(bool(hidden.get("behavior_changed")))
+            if hidden.get("available", True)
+            else "",
             "llm_calls": stats["llm_calls"],
             "minutes": stats["minutes"],
             "outcome_hits": "",
@@ -167,6 +175,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Tier 2 runs that failed in the first run (fixed code); fill in missing rows only",
     )
     parser.add_argument(
+        "--aidev",
+        default=str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
+        help="AIDev sweeps (exp_swebench.py on data/splits/aidev_repos.json)",
+    )
+    parser.add_argument(
         "--exclude",
         nargs="*",
         default=["psf__requests-2317"],
@@ -185,7 +198,8 @@ def main(argv: list[str] | None = None) -> int:
         extra = swebench_rows(Path(args.t2_rerun), "swebench_t2")
         t2 += [r for r in extra if (r["target"], r["method"]) not in have]
     t2 = [r for r in t2 if not any(r["target"].startswith(x + "__") for x in args.exclude)]
-    rows = mark_flaky(rows + t2)
+    aidev = swebench_rows(Path(args.aidev), "aidev") if Path(args.aidev).exists() else []
+    rows = mark_flaky(rows + t2 + aidev)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
