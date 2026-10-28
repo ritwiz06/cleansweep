@@ -102,6 +102,12 @@ inputs. Each changed module must still import and keep its public names. Any dif
 the batch back, and a failing batch is split in half until the bad edit is found. Probes are
 cached by the source of the function they call, so a rerun asks the LLM nothing new.
 
+Probes run in one of two modes (`core.guard.probe_mode`).
+- `direct`: the harness runs as a script with the project folder on the path.
+- `runner`: the probes go into a generated test file next to the project's own tests, and the project's test command runs it. On SWE-bench that is the instance's own command and setup, for example Django's `runtests.py` with its settings; on AIDev it is pytest with the `conftest.py` files.
+
+The default, `auto`, uses runner mode in containers (SWE-bench, AIDev) and direct mode for local folders. Without the test setup, Django modules can't even be imported.
+
 Settings are under `core.guard` in `configs/base.yaml` (`diff_tests`, `max_targets` and the
 `probe_*` keys). The `guard_tests_only` method turns the probes off.
 
@@ -202,6 +208,7 @@ patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`,
 | `cleansweep`, advisory (with probes) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `guard_tests_only` (advisory) | 20 leftover files | 20 | 20 | 570 | 0 | 48 | 0/10 | 1.8 |
 | `tools_only` | vulture + ruff | 8 | 0 | 18 | n/a | 30 | 0/10 | 1.2 |
+| `one_shot_llm` | 17 files the model changed | 17 | 10 | 302 | n/a | 30 | **3/10** | 2.3 |
 
 What the agents left behind: reproduction scripts (`reproduce_error.py`, `reproduce.py`,
 `edge_cases.py`) in 5 of the 10 patches (all four CodeStory patches and one LearnByInteract
@@ -220,115 +227,165 @@ agent-written code itself the detectors found no dead code, unused imports or du
   dynamic use. For files the agent created, the signals now count only project code.
 - `tools_only` removes unused imports from the scratch files and reformats them instead of deleting
   them.
+- `one_shot_llm` (one request, the model returns whole files as JSON, nothing checked) deletes
+  most scratch files too. It also rewrites `sympy/geometry/point.py` in all three sympy patches and
+  changes their hidden behavior. Before S18 it asked for a diff, which never applied.
 - Cost: 14 live LLM calls (about 23k prompt and 46k completion tokens) for the first method on each
   patch, plus 8 for the gatekeeper rerun after #26; the other methods were answered from the
   cache. The hidden checks add about 0.9 minutes
   per patch. Tables: `docs/report/tables/swebench_tier1*.md`.
 
-### SWE-bench Tier 2 (running)
+### SWE-bench Tier 2
 
-60 PatchDiff patches (21 instances from 11 repositories; 18 patches behave differently from the
-developer's fix) × 5 methods, `scripts/exp_swebench.py --tier data/splits/swebench_tier2.json`, in a
-frozen clone of main (started 2026-10-26 15:08). **At the last check 109 of 300 runs were done
-(22 patches).** Numbers below are for those 22 patches and will change.
+**57 PatchDiff patches × 5 methods** (`scripts/exp_swebench.py --tier data/splits/swebench_tier2.json`
+in a frozen clone of main, 2026-10-26 15:08 to 2026-10-27 21:39 with the reruns). Tier 2 has 60 patches, from 21
+instances in 11 repositories. The three `psf__requests-2317` patches were stopped and left out:
+`requests`' own tests call httpbin.org live, so each patch took 2.5–3.5 hours.
 
-- `cleansweep` (both judge modes) and `guard_tests_only` applied the same 36 edits on 18 of 22
-  patches, all leftover files the agent created (1,012 lines), with 0 rollbacks. `tools_only`
-  made 23 small edits (unused imports, 1 dead-code item; 24 lines). `one_shot_llm` applied
-  nothing: its diffs don't apply.
-- Hidden behavior changed in 1 run of 109: `sympy__sympy-11618`/CodeStory under
-  `guard_tests_only`. The same two edits were applied under `cleansweep` (advisory and
-  gatekeeper), and there the hidden check saw no change. So this is a flaky PatchDiff test
-  (`test_polygon_perimeter_patch1`) that passed the two-run stability check, not something the
-  probes caught.
-- Minutes per patch (median): gatekeeper 2.0, advisory 1.2, `guard_tests_only` 1.4,
-  `tools_only` 0.7, `one_shot_llm` 1.6. The gatekeeper mean in the table below includes one
-  Django run that took 197 minutes because the laptop slept.
+- **First run:** 53 patches finished completely.
+- **Four patches failed there and were rerun with the fixes from #39**, in a second frozen clone at 83e3b00:
+  - three OpenHands patches applied in the container only with `patch --fuzz`;
+  - one LearnByInteract patch created CRLF files that the container sync couldn't delete.
+  - Their rows come from that newer code (runner-mode probes, 3 stability runs for hidden tests).
+- **The `one_shot_llm` rows are the rerun of the fixed baseline** (JSON files instead of a diff) in the second clone, for all 57 patches.
+
+What happened:
+- **CleanSweep, both judge modes, and `guard_tests_only`** applied the same edits on every patch: 78 edits and 2,130 lines in total, all of them leftover files the agent created (13 more items stayed in the suggest lane). There were 0 rollbacks, and hidden behavior changed on **0 of 57**.
+  - One hidden change under `guard_tests_only` (`sympy-11618`/CodeStory) is marked flaky. The same two edits under both cleansweep modes changed nothing, so the PatchDiff test flipped, not the code.
+- **`one_shot_llm`:**
+  - It removes about as many lines as CleanSweep (30.1 vs. 37.4 per patch; Wilcoxon p = 0.70) with 0 invalid replies.
+  - It **changes hidden behavior on 9 of 57 patches** (16%, 95% CI 7–26%; exact McNemar p = 0.0039 against gatekeeper).
+  - The model rewrites the agent's changed source files, and nothing checks the result.
+- **`tools_only`** removes 0.9 lines per patch (unused imports) and changes nothing hidden.
+- **Minutes per patch:** mean gatekeeper 8.2, which includes one Django run that took 197 minutes while the laptop slept; advisory 3.6, `guard_tests_only` 2.1, `tools_only` 1.5, `one_shot_llm` 1.9.
 
 ### Main table
 
 Mean per target and 95% bootstrap CI (2,000 resamples). "Answer keys" pools the toy repo and the
-demo app (one target each). `scripts/exp_collect.py` then `scripts/exp_tables.py`; files in
-`results/summary/` (`main_table.md`, `paired_tests.md`, `ablation.md`).
+demo app (one target each). Invalid output = one-shot replies that couldn't be applied: they are
+left out of the means and counted apart (there were none). Flaky hidden = hidden changes that
+another method's identical edits did not repeat; they are left out of the hidden-changed mean.
+`scripts/exp_collect.py` then `scripts/exp_tables.py`; files in `results/summary/`.
 
-| target set | method | n | lines removed | edits | hidden changed | test runs | minutes |
-|---|---|---|---|---|---|---|---|
-| answer keys | cleansweep, gatekeeper | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 4.5 | 0.1 |
-| answer keys | cleansweep, advisory | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 8.0 | 0.1 |
-| answer keys | `guard_tests_only` | 2 | 57.5 [56.0, 59.0] | 8.5 [6.0, 11.0] | 1.00 [1.00, 1.00] | 4.5 | 0.1 |
-| answer keys | `tools_only` | 2 | 50.5 [38.0, 63.0] | 9.0 [7.0, 11.0] | 1.00 [1.00, 1.00] | 0.0 | 0.0 |
-| answer keys | `one_shot_llm` | 2 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 0.0 | 0.6 |
-| SWE-bench Tier 1 | cleansweep, gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 2.2 |
-| SWE-bench Tier 1 | cleansweep, advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
-| SWE-bench Tier 1 | `guard_tests_only` | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 4.8 | 1.8 |
-| SWE-bench Tier 1 | `tools_only` | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 3.0 | 1.2 |
-| SWE-bench Tier 1 | `one_shot_llm` | 10 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 3.4 |
-| SWE-bench Tier 2 (partial) | cleansweep, gatekeeper | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.00 [0.00, 0.00] | 4.9 | 11.3 |
-| SWE-bench Tier 2 (partial) | cleansweep, advisory | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.00 [0.00, 0.00] | 4.9 | 1.9 |
-| SWE-bench Tier 2 (partial) | `guard_tests_only` | 22 | 46.0 [24.0, 79.6] | 1.6 [1.0, 2.7] | 0.05 [0.00, 0.14] | 4.9 | 1.9 |
-| SWE-bench Tier 2 (partial) | `tools_only` | 22 | 1.1 [0.1, 2.3] | 0.9 [0.7, 1.1] | 0.00 [0.00, 0.00] | 3.0 | 1.9 |
-| SWE-bench Tier 2 (partial) | `one_shot_llm` | 21 | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0.00 [0.00, 0.00] | 3.0 | 1.8 |
+| target set | method | n | lines removed | edits | hidden changed | flaky hidden | test runs | minutes |
+|---|---|---|---|---|---|---|---|---|
+| answer keys | cleansweep, gatekeeper | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 0 | 4.5 | 0.1 |
+| answer keys | cleansweep, advisory | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 0 | 8.0 | 0.1 |
+| answer keys | `guard_tests_only` | 2 | 57.5 [56.0, 59.0] | 8.5 [6.0, 11.0] | 1.00 [1.00, 1.00] | 0 | 4.5 | 0.1 |
+| answer keys | `tools_only` | 2 | 50.5 [38.0, 63.0] | 9.0 [7.0, 11.0] | 1.00 [1.00, 1.00] | 0 | 0.0 | 0.0 |
+| answer keys | `one_shot_llm` | 2 | 47.0 [47.0, 47.0] | 6.5 [5.0, 8.0] | 0.00 [0.00, 0.00] | 0 | 0.0 | 0.4 |
+| SWE-bench Tier 1 | cleansweep, gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 2.2 |
+| SWE-bench Tier 1 | cleansweep, advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.8 |
+| SWE-bench Tier 1 | `guard_tests_only` | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.8 |
+| SWE-bench Tier 1 | `tools_only` | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 0 | 3.0 | 1.2 |
+| SWE-bench Tier 1 | `one_shot_llm` | 10 | 30.2 [8.4, 62.3] | 1.7 [0.9, 2.4] | 0.30 [0.00, 0.60] | 0 | 3.0 | 2.3 |
+| SWE-bench Tier 2 | cleansweep, gatekeeper | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 8.2 |
+| SWE-bench Tier 2 | cleansweep, advisory | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 3.6 |
+| SWE-bench Tier 2 | `guard_tests_only` | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 1 | 4.8 | 2.1 |
+| SWE-bench Tier 2 | `tools_only` | 57 | 0.9 [0.4, 1.6] | 0.9 [0.8, 1.1] | 0.00 [0.00, 0.00] | 0 | 3.0 | 1.5 |
+| SWE-bench Tier 2 | `one_shot_llm` | 57 | 30.1 [21.0, 41.0] | 1.7 [1.4, 2.0] | **0.16 [0.07, 0.26]** | 0 | 3.0 | 1.9 |
 
-Paired against cleansweep in gatekeeper mode on SWE-bench:
-
-- No method differs on hidden changes (exact McNemar p = 1.0 everywhere).
-- `tools_only` and `one_shot_llm` remove fewer lines (Wilcoxon p = 0.016 on Tier 1; p = 0.0002 and 0.0003 on Tier 2 so far).
-- On the answer keys, the probes and the judge each keep the hidden checks unchanged where `guard_tests_only` and `tools_only` change them (0/2 vs 2/2). On SWE-bench, both modes and `guard_tests_only` apply the same edits.
+Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
+- **Hidden changes:**
+  - only `one_shot_llm` differs: 9 vs. 0 on Tier 2 (exact McNemar p = 0.0039) and 3 vs. 0 on Tier 1 (p = 0.25);
+  - advisory, `guard_tests_only` and `tools_only`: p = 1.0.
+- **Lines removed:**
+  - `tools_only` removes fewer (Wilcoxon p = 0.016 on Tier 1, p < 0.001 on Tier 2);
+  - `one_shot_llm` is not significantly different (p = 0.50 and 0.70).
+- **Ablations (`ablation.md`):**
+  - On the answer keys, the probes and the judge each keep the hidden checks unchanged where `guard_tests_only` and `tools_only` change them (0/2 vs. 2/2).
+  - On SWE-bench, both modes and `guard_tests_only` apply the same edits. Those are almost all leftover files nothing imports, so there is little for probes to check.
 
 ### Guard strength
 
 How often `verify` (tests, then probes) rejects a change that should be rejected
-(`scripts/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-26).
+(`scripts/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-27), with the
+probes in direct and in runner mode (see the Guard section above).
 
-| Target | Experiment | n | Caught | By tests | Only by probes |
-|---|---|---|---|---|---|
-| toy repo | mutants in package functions | 20 | 20 | 13 | 7 |
-| demo app | mutants in package functions | 20 | 18 | 16 | 2 |
-| SWE-bench Tier 1 | mutants in agent-written functions (≤5 per patch) | 39 | 30 | 30 | 0 |
-| SWE-bench Tier 1 | PatchDiff recall: agent patch vs developer fix (differs) | 3 | 0 | 0 | 0 |
-| all | false alarms on identical copies (probes on touched functions) | 12 | 0 | | |
+| Target | Experiment | n | Direct: caught (tests / only probes) | Runner: caught (tests / only probes) |
+|---|---|---|---|---|
+| toy repo | mutants in package functions | 20 | 20 (13 / 7) | |
+| demo app | mutants in package functions | 20 | 18 (16 / 2) | |
+| SWE-bench Tier 1 | mutants in agent-written functions (≤5 per patch) | 39 | 30 (30 / 0) | **36 (30 / 6)** |
+| SWE-bench Tier 1 | PatchDiff recall: agent patch vs. developer fix (differs) | 3 | 0 | 0 |
+| SWE-bench Tier 2 beyond Tier 1 | mutants in agent-written functions | 189 | | 135 (130 / 5) |
+| SWE-bench Tier 2 beyond Tier 1 | PatchDiff recall | 14 / 15 | 4 (0 / 4) | 3 (0 / 3) |
+| toy repo and demo app | false alarms on identical copies | 2 | 0 | |
+| SWE-bench Tier 1 | false alarms on identical copies | 10 | 0 | 0 |
+| SWE-bench Tier 2 beyond Tier 1 | false alarms on identical copies | 44 | | 0 |
 
 Mutants use 5 operators: flip a comparison, swap + and -, add 1 to an int constant, swap
-and/or, return None. On the answer keys, the probes catch a third of the mutants that the
-tests miss. On Tier 1 they catch none, because they can't import Django admin modules without
-settings, and the agents' own changes are small. The Guard didn't tell any of the 3 differing
-agent patches apart from the developer's fix: the visible tests pass for both, and the probes
-found no input that separates them.
+and/or, return None.
+- **Runner mode gives the probes the project's setup.** On Tier 1 it catches the 6 Django
+  `ModelAdmin.get_inline_instances` mutants that direct probes couldn't import without settings
+  (36 of 39 instead of 30). The 3 survivors are the same `Point.distance` add/sub swap in the three
+  sympy patches.
+- **Tier 2 (47 patches beyond Tier 1, runner only):** the tests catch 130 of 189 mutants and the
+  probes 5 more (astropy `SkyCoord.__getattr__` × 3, sphinx `_parse_annotation` and napoleon
+  `_skip_member`). Most survivors are in sympy-12096 (13) and pylint-6903 (12). The 3
+  django-11099 patches only change a class attribute, so there is nothing to mutate or probe.
+- **PatchDiff recall:** every catch is a real difference.
+  - `sphinx-10466` × 3: the agent removes duplicate locations, the developer's fix doesn't.
+  - `flask-5014`/CodeStory: the agent rejects a whitespace-only blueprint name. Caught in direct
+    mode only; the runner probes came from a separate request with no whitespace case.
+  - The other differing patches pass the visible tests on both sides, and the probes found no
+    input that separates them.
+  - Runner mode also checked `sympy-12096`/OpenHands, which finished after the direct run (15 vs.
+    14 patches).
+- **False alarms:** none in either mode, including 44 Tier 2 patches.
+- **Cost:** runner probes run the instance's test files too, about 4–5 minutes per Django patch
+  instead of 2–3.
+- **Lost probes:** in `pytest-5809`/OpenHands one probe request timed out, and in
+  `sphinx-7910`/LearnByInteract the model's reply was malformed JSON four times. Those checks ran
+  with 1–2 probe cases instead of about 9.
 
-### AIDev: Scheduler replay, ranker and Reviewer detection
+### AIDev: Scheduler replay, removal requests, ranker
 
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
 sample of 120. A repository is kept if it installs in `python:3.11` (network cut before tests)
-and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The committed files
-list 20 (see `results/data_summary/aidev_filter.csv` for the drop reasons). The replay uses
-each repository's last 300 first-parent commits (4,695 in total, 626 from agent PRs) and the
-static detectors, measured at up to 40 commits per repository (`scripts/exp_replay.py`; the
-dashboard's Scheduler page shows the curves).
+and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The tables below use
+**20 of 21 runnable repos (1 excluded)**: the repository's commit hook rejects that one's name,
+so it stays out of the committed files until the team decides otherwise
+(`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
+total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository
+(`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
-| Policy | Median slop-debt reduction vs. never sweeping | Sweeps | Test runs (est.) | Resurrection rate (mean) |
+**Scheduler trade-off** (20 of 21 runnable repos, 1 excluded; mean and 95% bootstrap CI across
+repositories; `scripts/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
+
+| Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |
 |---|---|---|---|---|
-| after every agent PR | 68.8% | 95 | 314 | 0.19 |
-| every 5 commits | 54.2% | 67 | 237 | 0.15 |
-| daily (UTC, at the day boundary) | 95.2% | 190 | 554 | 0.22 |
-| adaptive (slop > 2% of lines) | 33.9% | 20 | 142 | 0.17 |
+| after every agent PR | 61% [44, 75] | 15.7 [9.4, 23.4] | 4.8 | 0.19 |
+| every 5 commits | 47% [31, 62] | 11.8 [5.7, 19.8] | 3.4 | 0.15 |
+| daily (UTC, at the day boundary) | 87% [79, 94] | 27.7 [18.9, 38.6] | 9.5 | 0.22 |
+| adaptive (slop > 2% of lines) | 39% [23, 55] | 7.1 [3.1, 12.4] | 1.0 | 0.17 |
 
-Daily sweeps keep slop lowest but cost 1.8× the test runs of sweeping after every agent PR, and
-more of what they remove comes back. The resurrection rate is the share of removed functions,
-classes and imports that still exist at the last commit and are no longer flagged, because a
-later commit started using them.
+Daily sweeps keep slop lowest but cost about 1.8× the test runs of sweeping after every agent PR,
+and more of what they remove comes back. Sweeping after every agent PR sits in the middle on
+both. The resurrection rate is the share of removed functions, classes and imports that still
+exist at the last commit and are no longer flagged, because a later commit started using them.
 
 **Removal requests.**
 - Mining: 6,330 human review comments on .py files → 792 keyword matches → **535 removal requests** confirmed by the LLM. They come from 102 repositories, most often about dead code (224).
 - Taxonomy: 15 clusters. Rules: 64 with lift ≥ 1.2 (`results/data_summary/`).
 - The runnable repositories have almost no human review, so labels come from all repositories with a request: **9,416 units, 262 removal requests, 79 repositories** (static analysis only).
 
-**Ranker.**
-- Calibrated gradient boosting, cross-validated by repository: out-of-fold AUC 0.61, Brier 0.027 (`results/summary/ranker_cv.csv`, `results/figures/ranker_reliability.png`).
-- It predicts which units reviewers ask to remove, not which edits are safe, so the Reviewer keeps its category priors by default (`exp.ranker_path` switches it on).
+**Reviewer detection vs. those requests** (`results/summary/reviewer_detection.csv`,
+`results/data_summary/detection_by_category.csv`):
+- Overall: precision 0.024, recall 0.075 (19 of 253 requested units are flagged by some detector).
+- By kind of request, the detectors almost never flag a requested unit under its own category: dead code 1 of 119, wrappers 0 of 31, duplicates 0 of 20, leftover files 0 of 5, unused imports 0 of 3.
+- When they do flag one, it is mostly under another category: requested dead code is flagged as a duplicate 5 times and as dead code once.
+- The largest cluster of requests ("remove, line, just, suggestion", 242 requests) is about lines inside functions (comments, try/except blocks, assertions). The unit-level detectors don't look at those: recall 0.025.
 
-**Reviewer detection vs. those requests.**
-- Precision 0.024, recall 0.075 (19 of 253 requested units, `results/summary/reviewer_detection.csv`).
-- Reviewers mostly ask to remove lines inside a function (comments, try/except blocks, assertions), which the unit-level detectors don't look for.
+**Ranker: a negative result** (`results/summary/ranker_report.md`).
+- Calibrated gradient boosting, cross-validated by repository, on the 9,416 labeled units.
+- Out-of-fold scores: AUC 0.607; average precision 0.047 against a base rate of 0.028; Brier 0.0269 against 0.0271 for always predicting the base rate.
+- Unit size (`loc`) carries most of the signal: the request rate rises from 0.9% for the smallest quarter of units to 5.5% for the largest. That is about where reviewers look.
+- It doesn't measure safety:
+  - the label is "a reviewer asked to remove this", not "removing it keeps behavior";
+  - unreviewed units are not "must keep";
+  - its scores (median 0.026, at most 0.20) never reach the Reviewer's 0.6 batching threshold.
+- So the Reviewer keeps its category priors.
 
 ## Repository layout
 

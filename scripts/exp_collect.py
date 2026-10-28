@@ -166,6 +166,12 @@ def main(argv: list[str] | None = None) -> int:
         default=str(ROOT.parent / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_rerun"),
         help="Tier 2 runs that failed in the first run (fixed code); fill in missing rows only",
     )
+    parser.add_argument(
+        "--exclude",
+        nargs="*",
+        default=["psf__requests-2317"],
+        help="SWE-bench instances left out (requests' tests need live network; DECISIONS)",
+    )
     args = parser.parse_args(argv)
     rows = local_rows() + swebench_rows(Path(args.t1), "swebench_t1")
     t2 = swebench_rows(Path(args.t2), "swebench_t2") if Path(args.t2).exists() else []
@@ -178,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         have = {(r["target"], r["method"]) for r in t2}
         extra = swebench_rows(Path(args.t2_rerun), "swebench_t2")
         t2 += [r for r in extra if (r["target"], r["method"]) not in have]
+    t2 = [r for r in t2 if not any(r["target"].startswith(x + "__") for x in args.exclude)]
     rows = mark_flaky(rows + t2)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
