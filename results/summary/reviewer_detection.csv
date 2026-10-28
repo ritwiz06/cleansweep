@@ -1,7 +1,7 @@
 repos,repo_count,scope,requested,flagged,both,precision,recall
-kept,1,all categories,2,3,0,0.0,0.0
-kept,1,requests: duplicate,2,3,0,0.0,0.0
-kept,1,flagged: duplicate,2,3,0,0.0,0.0
+kept: 20 of 21 runnable repos (1 excluded),1,all categories,2,3,0,0.0,0.0
+kept: 20 of 21 runnable repos (1 excluded),1,requests: duplicate,2,3,0,0.0,0.0
+kept: 20 of 21 runnable repos (1 excluded),1,flagged: duplicate,2,3,0,0.0,0.0
 all labeled,79,all categories,253,802,19,0.024,0.075
 all labeled,79,requests: dead_code,119,802,6,0.007,0.05
 all labeled,79,requests: duplicate,20,802,0,0.0,0.0
