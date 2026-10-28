@@ -1,0 +1,4 @@
+tier,patches,instances,repositories,differ
+tier1,10,4,4,3
+tier2,60,21,11,18
+tier3,435,146,11,152
