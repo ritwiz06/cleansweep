@@ -53,6 +53,7 @@ def read(path: Path) -> list[dict]:
             "test_runs",
             "hidden_changed",
             "llm_calls",
+            "invalid_output",
         ):
             if k in r and r[k] != "":
                 r[k] = int(float(r[k]))
@@ -86,6 +87,11 @@ def groups(rows: list[dict]) -> dict[tuple[str, str], list[dict]]:
     return out
 
 
+def _values(recs: list[dict], key: str) -> list:
+    """A metric over the runs that have it (invalid one-shot replies have no outcomes)."""
+    return [r[key] for r in recs if r.get(key, "") != ""]
+
+
 def main_table(rows: list[dict]) -> list[dict]:
     out = []
     by = groups(rows)
@@ -95,10 +101,11 @@ def main_table(rows: list[dict]) -> list[dict]:
             if not recs:
                 continue
             row = {"target set": target_set, "method": method, "n": len(recs)}
+            row["invalid output"] = sum(int(r.get("invalid_output") or 0) for r in recs)
             for key, name in METRICS:
-                vals = [r[key] for r in recs]
+                vals = _values(recs, key)
                 digits = 2 if key == "hidden_changed" else 1
-                row[f"{name} (mean, 95% CI)"] = fmt(*bootstrap_ci(vals), digits)
+                row[f"{name} (mean, 95% CI)"] = fmt(*bootstrap_ci(vals), digits) if vals else "n/a"
             row["test runs (mean)"] = round(sum(r["test_runs"] for r in recs) / len(recs), 1)
             row["minutes (mean)"] = round(sum(r["minutes"] for r in recs) / len(recs), 1)
             out.append(row)
@@ -118,6 +125,7 @@ def paired_tests(rows: list[dict]) -> list[dict]:
                 (index[(target_set, t, REFERENCE)], index[(target_set, t, method)])
                 for t in targets
                 if (target_set, t, method) in index
+                and index[(target_set, t, method)]["lines_removed"] != ""
             ]
             if not pairs:
                 continue
@@ -163,11 +171,12 @@ def ablation(rows: list[dict]) -> list[dict]:
                     "with": with_it,
                     "without": without,
                     "hidden changed with / without": (
-                        f"{sum(r['hidden_changed'] for r in a)}/{len(a)} vs "
-                        f"{sum(r['hidden_changed'] for r in b)}/{len(b)}"
+                        f"{sum(_values(a, 'hidden_changed'))}/{len(_values(a, 'hidden_changed'))}"
+                        f" vs {sum(_values(b, 'hidden_changed'))}/"
+                        f"{len(_values(b, 'hidden_changed'))}"
                     ),
-                    "lines removed with / without": f"{sum(r['lines_removed'] for r in a)} vs "
-                    f"{sum(r['lines_removed'] for r in b)}",
+                    "lines removed with / without": f"{sum(_values(a, 'lines_removed'))} vs "
+                    f"{sum(_values(b, 'lines_removed'))}",
                     "test runs with / without": f"{sum(r['test_runs'] for r in a)} vs "
                     f"{sum(r['test_runs'] for r in b)}",
                 }
@@ -194,7 +203,9 @@ def figure_lines_removed(rows: list[dict]) -> None:
     axes = axes if len(sets) > 1 else [axes]
     for ax, target_set in zip(axes, sets, strict=True):
         methods = [m for m in METHOD_ORDER if (target_set, m) in by]
-        stats = [bootstrap_ci([r["lines_removed"] for r in by[(target_set, m)]]) for m in methods]
+        stats = [
+            bootstrap_ci(_values(by[(target_set, m)], "lines_removed") or [0]) for m in methods
+        ]
         means = [s[0] for s in stats]
         errs = [[s[0] - s[1] for s in stats], [s[2] - s[0] for s in stats]]
         y = range(len(methods))

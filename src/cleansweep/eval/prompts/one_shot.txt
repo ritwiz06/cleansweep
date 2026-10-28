@@ -2,7 +2,13 @@ Below is the source code of a Python project. Clean it up without changing how t
 program behaves: remove leftover files and scratch scripts, dead code, duplicated
 helpers, needless wrappers and unused imports.
 
-Return one unified diff (paths starting with a/ and b/) that makes all the changes.
-To delete a whole file, use a diff against /dev/null. Return only the diff.
+Reply with JSON only, in this form:
+{"delete": ["<path of a file to delete>"], "files": {"<path of a file you change>": "<its full new content>"}}
+
+- "delete" lists the files to delete entirely.
+- "files" maps each file you change to its complete new content (the whole file, not a diff).
+  Leave out the files you don't change.
+- Use only the paths shown below after "### ".
+- If nothing needs cleaning, reply {"delete": [], "files": {}}.
 
 {code}

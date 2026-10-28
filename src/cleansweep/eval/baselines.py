@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -12,10 +13,10 @@ from cleansweep.analysis.scope import agent_scope
 from cleansweep.core.models import CleanupItem, CleanupPlan, CodeUnit, EditResult, SweepReport
 from cleansweep.guard import apply_edit
 from cleansweep.llm import get_client
+from cleansweep.llm.client import parse_json_text
 from cleansweep.sandbox import open_workspace
 
 VULTURE_LINE = re.compile(r"^(.+?):(\d+): unused (function|method|class) '([^']+)'")
-FENCE = re.compile(r"```(?:diff|patch)?\n(.*?)```", re.S)
 PROMPT = (Path(__file__).parent / "prompts" / "one_shot.txt").read_text()
 
 
@@ -141,16 +142,71 @@ def _qualname_at(repo_dir: str, path: str, line: int, name: str) -> str:
     return name
 
 
-def _collect_code(repo_dir: str, budget: int = 60000, paths: list[str] | None = None) -> str:
-    parts, used = [], 0
+def _collect_code(
+    repo_dir: str, budget: int = 60000, paths: list[str] | None = None
+) -> tuple[str, list[str]]:
+    """The files to show the model, as "### path" blocks within budget, and their paths."""
+    parts, shown, used = [], [], 0
     for path in paths if paths is not None else iter_py_files(repo_dir):
         text = (Path(repo_dir) / path).read_text(errors="replace")
         block = f"### {path}\n{text}\n"
         if used + len(block) > budget:
             break
         parts.append(block)
+        shown.append(path)
         used += len(block)
-    return "".join(parts)
+    return "".join(parts), shown
+
+
+def parse_cleanup(reply: str, shown: list[str]) -> tuple[dict | None, str]:
+    """The model's {"delete": [paths], "files": {path: content}} reply, checked against the files
+    it was shown. Returns (None, reason) for a malformed reply."""
+    try:
+        data = parse_json_text(reply)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return None, f"not JSON ({type(exc).__name__})"
+    if not isinstance(data, dict) or not ({"delete", "files"} & set(data)):
+        return None, "no 'delete' or 'files' key"
+    delete, files = data.get("delete") or [], data.get("files") or {}
+    if not isinstance(delete, list) or not all(isinstance(p, str) for p in delete):
+        return None, "'delete' is not a list of paths"
+    if not isinstance(files, dict) or not all(isinstance(v, str) for v in files.values()):
+        return None, "'files' is not a map from path to file content"
+    unknown = sorted((set(delete) | set(files)) - set(shown))
+    if unknown:
+        return None, "paths it was not shown: " + ", ".join(unknown[:5])
+    if set(delete) & set(files):
+        return None, "a path is both deleted and rewritten"
+    return {"delete": sorted(set(delete)), "files": files}, ""
+
+
+def apply_cleanup(ws, cleanup: dict) -> tuple[list[CleanupItem], list[EditResult]]:
+    """Delete and rewrite the files one at a time; one kept item per changed file."""
+    items, results = [], []
+    for path in [*cleanup["delete"], *sorted(cleanup["files"])]:
+        file = Path(ws.path) / path
+        deleting = path in cleanup["delete"]
+        if not deleting and file.read_text(errors="replace") == cleanup["files"][path]:
+            continue  # unchanged
+        prev = ws.checkpoint(f"one-shot before {path}")
+        if deleting:
+            file.unlink(missing_ok=True)
+        else:
+            file.write_text(cleanup["files"][path], encoding="utf-8")
+        item = CleanupItem(
+            f"one-shot-{len(items)}",
+            CodeUnit(path, "file"),
+            "other",
+            "delete_file" if deleting else "apply_patch",
+            "safe",
+            "one-shot cleanup from the model: " + ("delete the file" if deleting else "rewrite"),
+            [],
+            ["llm"],
+        )
+        item.patch = ws.diff(prev)
+        items.append(item)
+        results.append(EditResult(item.item_id, "kept", diff=item.patch))
+    return items, results
 
 
 def _agent_files(repo_dir: str) -> list[str] | None:
@@ -169,42 +225,45 @@ def _agent_files(repo_dir: str) -> list[str] | None:
 
 
 def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
-    """Baseline: ask the model once for a cleanup diff and apply it with no checks.
+    """Baseline: ask the model once for cleaned-up files (JSON) and apply them with no checks.
 
-    On SWE-bench targets the model sees only the files the agent patch created or changed."""
+    The model sees all .py files within a budget, or on SWE-bench only the files the agent patch
+    created or changed. It replies {"delete": [paths], "files": {path: full new content}}; our
+    code makes those changes. A reply that doesn't parse or names files it wasn't shown is
+    recorded as invalid output (stats["invalid_output"] = 1), not as zero edits."""
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     try:
         llm = cfg.get("llm_client") or get_client(cfg.get("core", {}).get("llm"))
         paths = _agent_files(ws.path) if target.startswith("swebench:") else None
-        prompt = PROMPT.replace("{code}", _collect_code(ws.path, paths=paths))
-        messages = [{"role": "user", "content": prompt}]
+        code, shown = _collect_code(ws.path, paths=paths)
+        messages = [{"role": "user", "content": PROMPT.replace("{code}", code)}]
         extra = cfg.get("exp", {}).get("one_shot_extra_body")
         if extra:
             reply = llm.chat(messages, temperature=0.0, seed=seed, extra_body=extra)
         else:
             reply = llm.chat(messages, temperature=0.0, seed=seed)
-        m = FENCE.search(reply)
-        patch = m.group(1) if m else reply
-        item = CleanupItem(
-            "one-shot",
-            CodeUnit(".", "file"),
-            "other",
-            "apply_patch",
-            "safe",
-            "one-shot cleanup diff from the model",
-            [],
-            ["llm"],
-            patch=patch,
-        )
-        applied = ws.apply_patch(patch)
-        result = EditResult(
-            item.item_id,
-            "kept" if applied else "skipped",
-            diff=ws.diff(ws.base),
-            notes="" if applied else "diff did not apply",
-        )
-        report = _report(ws, "one_shot_llm", seed, started, t0, [item], [result], llm.usage())
+        cleanup, reason = parse_cleanup(reply, shown)
+        if cleanup is None:
+            item = CleanupItem(
+                "one-shot",
+                CodeUnit(".", "file"),
+                "other",
+                "apply_patch",
+                "safe",
+                "one-shot cleanup from the model",
+                [reply[:500]],
+                ["llm"],
+            )
+            items, results = (
+                [item],
+                [EditResult("one-shot", "skipped", notes=f"invalid_output: {reason}")],
+            )
+        else:
+            items, results = apply_cleanup(ws, cleanup)
+        report = _report(ws, "one_shot_llm", seed, started, t0, items, results, llm.usage())
+        report.stats["invalid_output"] = int(cleanup is None)
+        report.stats["files_shown"] = len(shown)
         return report
     finally:
         ws.close()  # also on errors: a SWE-bench workspace holds a container
