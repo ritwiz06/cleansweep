@@ -150,7 +150,13 @@ def probe_runs() -> pd.DataFrame:
 
 
 T1 = RAW / "swebench_t1"
-T1_METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only", "tools_only"]
+T1_METHODS = [
+    "cleansweep-gatekeeper",
+    "cleansweep-advisory",
+    "guard_tests_only",
+    "tools_only",
+    "one_shot_llm",
+]
 
 
 def _t1_reports(label: str) -> list[dict]:
@@ -196,6 +202,7 @@ def swebench_tier1() -> pd.DataFrame:
                 f"/{len(stats)}",
                 "LLM calls": sum(s["llm_calls"] for s in stats),
                 "min per patch": round(sum(s["minutes"] for s in stats) / len(stats), 1),
+                "invalid output": sum(int(s.get("invalid_output", 0)) for s in stats),
             }
         )
     return pd.DataFrame(rows)

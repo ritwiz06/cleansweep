@@ -1,5 +1,6 @@
-method,patches,items found,edits applied,files removed,rolled back (tests / probes / other),lines removed,test runs,hidden changed,LLM calls,min per patch
-cleansweep-gatekeeper,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,8,2.2
-cleansweep-advisory,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,0,1.8
-guard_tests_only,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,0,1.8
-tools_only,10,"unused_import 10, dead_code 2",8,0,0 / 0 / 0,18,30,0/10,0,1.2
+method,patches,items found,edits applied,files removed,rolled back (tests / probes / other),lines removed,test runs,hidden changed,LLM calls,min per patch,invalid output
+cleansweep-gatekeeper,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,8,2.2,0
+cleansweep-advisory,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,0,1.8,0
+guard_tests_only,10,leftover_file 20,20,20,0 / 0 / 0,570,48,0/10,0,1.8,0
+tools_only,10,"unused_import 10, dead_code 2",8,0,0 / 0 / 0,18,30,0/10,0,1.2,0
+one_shot_llm,10,other 17,17,10,0 / 0 / 0,302,30,3/10,9,2.3,0
