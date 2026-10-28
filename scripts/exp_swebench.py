@@ -2,6 +2,7 @@
 
     python scripts/exp_swebench.py --tier data/splits/swebench_tier2.json \\
         --out results/raw/swebench_t2 [--methods cleansweep-gatekeeper tools_only ...] [--resume]
+        [--hidden-only]
     python scripts/exp_swebench.py --tier data/splits/aidev_repos.json \\
         --out results/raw/aidev_sweeps
 
@@ -9,7 +10,8 @@ Saves one SweepReport per run to <out>/<instance>__<agent>__<method>.json, or fo
 <owner>__<name>__<method>.json (hidden-check results and timing under stats["hidden"] and
 stats["minutes"]), and appends to <out>/log.txt. AIDev repositories run at their head sha, the
 fastest test suite first. A failed run is logged with its traceback in <out>/errors/ and retried
-by the next --resume.
+by the next --resume. --hidden-only reruns just the hidden checks of saved reports whose final
+diff did not apply.
 """
 
 from __future__ import annotations
@@ -72,6 +74,18 @@ def run_one(target: str, label: str, cfg: dict, path: Path) -> dict:
     return report.stats
 
 
+def rerun_hidden(target: str, cfg: dict, path: Path) -> dict | None:
+    """Rerun the hidden checks of a saved report whose final diff did not apply; the sweep is
+    not rerun. None if the report's hidden checks already ran."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (data["stats"].get("hidden") or {}).get("applied") is not False:
+        return None
+    hidden = {**run_hidden_checks(target, data["stats"].get("final_diff", ""), cfg), "rerun": True}
+    data["stats"]["hidden"] = hidden
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return hidden
+
+
 def targets(entries: list[dict]) -> list[tuple[str, str]]:
     """(target, report name prefix) for SWE-bench split entries or AIDev repository entries."""
     out = []
@@ -95,10 +109,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", required=True, help="output folder, e.g. results/raw/swebench_t2")
     parser.add_argument("--methods", nargs="+", choices=list(METHODS), default=list(METHODS))
     parser.add_argument("--resume", action="store_true", help="skip runs whose report exists")
+    parser.add_argument(
+        "--hidden-only",
+        action="store_true",
+        help="only rerun the hidden checks of saved reports whose final diff did not apply",
+    )
     args = parser.parse_args(argv)
     out = Path(args.out)
     done = sorted(out.glob("*__*__*.json")) if out.exists() else []
-    if done and not args.resume:
+    if done and not (args.resume or args.hidden_only):
         print(f"{out} already has {len(done)} reports; pass --resume to continue", file=sys.stderr)
         return 2
     log = Log(out / "log.txt")
@@ -108,6 +127,14 @@ def main(argv: list[str] | None = None) -> int:
     for target, prefix in jobs:
         for label in args.methods:
             path = out / f"{prefix}__{label}.json"
+            if args.hidden_only:
+                hidden = rerun_hidden(target, cfg, path) if path.exists() else None
+                if hidden is not None:
+                    log(
+                        f"hidden {target} {label}: applied {hidden.get('applied')}, "
+                        f"changed {hidden.get('behavior_changed')}"
+                    )
+                continue
             if path.exists():
                 continue
             log(f"run {target} {label}")

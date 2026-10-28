@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from cleansweep.eval.hidden import HIDDEN_DIR, run_alt_hidden, write_alt_tests
+from cleansweep.eval.hidden import (
+    HIDDEN_DIR,
+    run_alt_hidden,
+    without_install_files,
+    write_alt_tests,
+)
 from cleansweep.llm import FakeLLM
 from cleansweep.sandbox import open_workspace
 from cleansweep.sandbox.workspace import Workspace
@@ -59,6 +64,20 @@ def test_alt_hidden_checks_see_a_behavior_change(toy_repo, cfg, tmp_path):
     changed = run_alt_hidden(toy_repo, slugify_diff(toy_repo, cfg["core"]["sandbox"]), cfg, llm)
     assert changed["behavior_changed"] is True
     assert any("test_slugify" in t for t in changed["alt_changed"])
+
+
+def test_install_files_are_left_out_of_the_diff():
+    code = (
+        "diff --git a/pkg/a.py b/pkg/a.py\n--- a/pkg/a.py\n+++ b/pkg/a.py\n@@ -1 +0,0 @@\n-x = 1\n"
+    )
+    info = (
+        "diff --git a/src/UNKNOWN.egg-info/PKG-INFO b/src/UNKNOWN.egg-info/PKG-INFO\n"
+        "new file mode 100644\n--- /dev/null\n+++ b/src/UNKNOWN.egg-info/PKG-INFO\n"
+        "@@ -0,0 +1 @@\n+Name: UNKNOWN\n"
+    )
+    assert without_install_files(info + code) == code
+    assert without_install_files(code + info) == code
+    assert without_install_files("") == ""
 
 
 def test_guard_never_sees_the_alt_tests(toy_repo, cfg, tmp_path, monkeypatch):
