@@ -1,0 +1,22 @@
+level,cluster,top_terms,mapped_category,requests,requested_units,flagged_units,both,precision,recall,recall_any_detector,flagged_as
+cluster,0,"comment, remove comment, remove, redundant comment, redundant, removed redundant",other,10,6,0,0,,0.0,0.0,
+cluster,1,"needed, suggestion needed, file needed, think needed, longer, longer needed",dead_code,24,11,9,0,0.0,0.0,0.0,
+cluster,2,"remove, zone, need create, need creative_ref, need custom, need declare",other,25,14,0,0,,0.0,0.143,"duplicate 1, dead_code 1"
+cluster,3,"docstring, remove docstring, remove, need docstring, let, redundant docstring",other,7,6,0,0,,0.0,0.0,
+cluster,4,"remove file, file, remove, let remove, let, plac",leftover_file,20,2,3,0,0.0,0.0,0.5,dead_code 1
+cluster,5,"test, remove test, drop, remove, test file, case",dead_code,27,12,0,0,,0.0,0.0,
+cluster,6,"delete, delete file, delete test, think, file, py",dead_code,19,9,1,0,0.0,0.0,0.111,duplicate 1
+cluster,7,"remove, line, just, suggestion, let, remove line",dead_code,242,122,261,3,0.011,0.025,0.066,"duplicate 4, dead_code 3, wrapper 1"
+cluster,8,"inline, comments, inline comments, remove inline, delete inline, delete",other,9,5,0,0,,0.0,0.2,dead_code 1
+cluster,9,"import, remove import, tuple, remove, instead, import use",unused_import,17,1,18,0,0.0,0.0,0.0,
+cluster,10,"remove assertion, assertion, remove, start_timestamp, comments, sure",other,6,3,0,0,,0.0,0.0,
+cluster,11,"need, don need, don, use, need test, just",dead_code,45,24,51,1,0.02,0.042,0.125,"duplicate 2, dead_code 1"
+cluster,12,"unnecessary, dict, remove unnecessary, unnecessary comments, remove, set",dead_code,29,15,8,1,0.125,0.067,0.133,"duplicate 1, dead_code 1"
+cluster,13,"try, try catch, catch, remove try, let, let remove",wrapper,12,7,0,0,,0.0,0.0,
+cluster,14,"code, unused, removed, path, dead code, dead",dead_code,43,20,5,0,0.0,0.0,0.05,duplicate 1
+category,,,unused_import,23,3,89,0,0.0,0.0,0.0,
+category,,,dead_code,224,119,346,1,0.003,0.008,0.05,"duplicate 5, dead_code 1"
+category,,,duplicate,36,20,297,0,0.0,0.0,0.0,
+category,,,leftover_file,56,5,67,0,0.0,0.0,0.0,
+category,,,wrapper,44,31,3,0,0.0,0.0,0.129,"dead_code 3, duplicate 1"
+category,,,other,152,79,0,0,,0.0,0.114,"dead_code 4, duplicate 4, wrapper 1"
