@@ -102,6 +102,12 @@ inputs. Each changed module must still import and keep its public names. Any dif
 the batch back, and a failing batch is split in half until the bad edit is found. Probes are
 cached by the source of the function they call, so a rerun asks the LLM nothing new.
 
+Probes run in one of two modes (`core.guard.probe_mode`).
+- `direct`: the harness runs as a script with the project folder on the path.
+- `runner`: the probes go into a generated test file next to the project's own tests, and the project's test command runs it. On SWE-bench that is the instance's own command and setup, for example Django's `runtests.py` with its settings; on AIDev it is pytest with the `conftest.py` files.
+
+The default, `auto`, uses runner mode in containers (SWE-bench, AIDev) and direct mode for local folders. Without the test setup, Django modules can't even be imported.
+
 Settings are under `core.guard` in `configs/base.yaml` (`diff_tests`, `max_targets` and the
 `probe_*` keys). The `guard_tests_only` method turns the probes off.
 
