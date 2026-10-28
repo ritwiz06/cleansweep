@@ -8,7 +8,8 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from app.loaders import load_replay, policy_summary  # noqa: E402
+from app.loaders import load_csv, load_replay, policy_summary, repos_label  # noqa: E402
+from cleansweep.core.config import load_config  # noqa: E402
 
 POLICY_COLOR, NONE_COLOR = "#2a78d6", "#eb6834"
 
@@ -24,8 +25,21 @@ st.caption(
     "first-parent commits. Slop debt = open slop items summed over commits; a sweep removes all "
     "open slop. Resurrection = removed code that a later commit started using."
 )
-st.subheader(f"Policies over {replay.repo.nunique()} repositories (means)")
+excluded = int(load_config()["data"]["aidev"].get("excluded_runnable", 0))
+st.subheader(f"Policies over {repos_label(replay.repo.nunique(), excluded)} (means)")
 st.dataframe(policy_summary(replay), hide_index=True, width="stretch")
+
+tradeoff = load_csv("scheduler_tradeoff.csv")
+if tradeoff is not None:
+    st.subheader("Trade-off: test runs vs. slop-debt reduction")
+    st.caption(
+        "Per repository, reduction = 1 - slop debt / slop debt when never sweeping; means and "
+        "95% bootstrap CIs across repositories."
+    )
+    st.dataframe(tradeoff.drop(columns=["repo_set"], errors="ignore"), hide_index=True)
+    figure = ROOT / "results" / "figures" / "scheduler_tradeoff.png"
+    if figure.exists():
+        st.image(str(figure), width=640)
 
 repos = sorted(replay.repo.unique())
 repo = st.sidebar.selectbox("Repository", repos)

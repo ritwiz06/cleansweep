@@ -1,0 +1,9 @@
+dataset,group,count
+SWE-bench Verified,tasks,500
+PatchDiff,plausible patches,876
+PatchDiff,label: not shown to differ,463
+PatchDiff,label: differs,260
+PatchDiff,label: untested,153
+PatchDiff,agent: CodeStory,310
+PatchDiff,agent: LearnByInteract,301
+PatchDiff,agent: OpenHands,265
