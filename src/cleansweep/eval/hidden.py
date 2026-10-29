@@ -237,6 +237,7 @@ def run_alt_hidden(target: str, final_diff: str, cfg: dict, llm=None) -> dict:
         runs = max(2, int(cfg.get("exp", {}).get("hidden_stability_runs", 3)))
         first, *others = [_statuses(ws, files) for _ in range(runs)]
         stable = {t: v for t, v in first.items() if all(o.get(t) == v for o in others)}
+        final_diff = without_install_files(final_diff)
         if final_diff.strip() and not ws.apply_patch(final_diff):
             return {"available": True, "applied": False, "behavior_changed": None}
         after = _statuses(ws, files)
