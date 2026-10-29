@@ -32,16 +32,20 @@ METHOD_ORDER = [
     "guard_tests_only",
     "tools_only",
     "one_shot_llm",
+    "one_shot_compile",
+    "one_shot_retry",
 ]
 SET_ORDER = ["answer keys", "swebench_t1", "swebench_t2", "aidev"]
-# scatter marks: the three CleanSweep variants share a colour and differ by shape (a scatter
-# keeps colours apart only up to three)
+# scatter marks: the three CleanSweep variants share a colour and differ by shape, and so do the
+# three one-shot variants (a scatter keeps colours apart only up to three)
 MARKS = {
     "cleansweep-gatekeeper": ("CleanSweep, gatekeeper", "#2a78d6", "o"),
     "cleansweep-advisory": ("CleanSweep, advisory", "#2a78d6", "s"),
     "guard_tests_only": ("tests-only Guard", "#2a78d6", "^"),
     "tools_only": ("tools only", "#eb6834", "D"),
     "one_shot_llm": ("one-shot LLM", "#1baf7a", "v"),
+    "one_shot_compile": ("one-shot + compile check", "#1baf7a", "<"),
+    "one_shot_retry": ("one-shot + retry", "#1baf7a", ">"),
 }
 METRICS = [
     ("lines_removed", "lines removed"),

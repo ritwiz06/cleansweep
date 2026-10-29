@@ -111,3 +111,39 @@ def test_one_shot_run_stats_record_llm_retries(toy_repo, cfg, monkeypatch):
     report = one_shot_llm(toy_repo, cfg, seed=0)
     assert report.stats["llm_retries"] == 1 and report.stats["llm_failures"] == 0
     assert report.stats["llm_events"][0]["status"] == 524
+
+
+def test_parse_cleanup_keeps_file_content_verbatim():
+    from cleansweep.eval.baselines import parse_cleanup
+
+    # a reply that escapes a quote before the closing one: the file really ends with a quote
+    reply = '{"delete": [], "files": {"a.py": "x = 1\\n\\""}}'
+    cleanup, _ = parse_cleanup(reply, ["a.py"])
+    assert cleanup["files"]["a.py"] == 'x = 1\n"'
+
+
+def test_one_shot_retry_sends_the_compile_error_back(toy_repo, cfg):
+    from cleansweep.eval import one_shot_retry
+
+    utils = (Path(toy_repo) / "shopcart" / "utils.py").read_text()
+    broken = {"delete": [], "files": {"shopcart/utils.py": utils + '"'}}
+    fixed = {"delete": [], "files": {"shopcart/utils.py": utils + "# tidy\n"}}
+    llm = FakeLLM({"Clean it up": json.dumps(broken), "do not compile": json.dumps(fixed)})
+    cfg["llm_client"] = llm
+    report = one_shot_retry(toy_repo, cfg, seed=0)
+    assert report.method == "one_shot_retry"
+    assert report.stats["compile_failed"] == 1 and report.stats["compile_failed_after"] == 0
+    assert "shopcart/utils.py" in llm.calls[1][-1]["content"]  # the error names the file
+    assert llm.calls[1][1] == {"role": "assistant", "content": json.dumps(broken)}
+    assert "+# tidy" in report.stats["final_diff"] and '+"' not in report.stats["final_diff"]
+    assert [r.status for r in report.results] == ["kept"]
+
+
+def test_one_shot_retry_keeps_a_reply_that_compiles(toy_repo, cfg):
+    from cleansweep.eval import one_shot_retry
+
+    reply = {"delete": ["debug_cart.py"], "files": {}}
+    cfg["llm_client"] = llm = FakeLLM({"Clean it up": json.dumps(reply)})
+    report = one_shot_retry(toy_repo, cfg, seed=0)
+    assert report.stats["compile_failed"] == 0 and len(llm.calls) == 1
+    assert report.stats["files_removed"] == 1
