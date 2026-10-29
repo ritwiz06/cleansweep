@@ -383,6 +383,54 @@ and/or, return None.
   `sphinx-7910`/LearnByInteract the model's reply was malformed JSON four times. Those checks ran
   with 1–2 probe cases instead of about 9.
 
+### AIDev sweeps
+
+The five methods on the AIDev repositories at their head sha (`exp_swebench.py` on
+`data/splits/aidev_repos.json`; `exp_collect.py`, `exp_tables.py`, `exp_aidev_summary.py`;
+`results/summary/main_table.md` and `aidev_sweeps.md`). Hidden checks are pytest tests that a
+second model (glm-5-3) writes for the public functions in up to six agent files, once per
+repository, kept if stable over 3 runs.
+
+- **17 of the 20 repositories.** opendbc and pytorch_connectomics have no agent commit in the
+  300-commit history the scope comes from, so their sweeps covered the whole repository (up to
+  292 edits, 268 of them formatting); they are listed apart in `aidev_sweeps.md`. shotgun's runs
+  are still going. Fu-Jie/openwebui-extensions got no usable hidden tests, so hidden rates are
+  out of 16.
+- **The agent scope** covers a median 8% of a repository's Python lines (0.6% to 78%;
+  `results/data_summary/aidev_scope.csv`, `scripts/data_aidev_scope.py`).
+- **Lines removed leaves out formatting and unused imports.** A `ruff format` edit can add more
+  lines than it removes; the gatekeeper's 109 format edits added 1,407 lines net, so its final
+  diffs remove only 3.6 lines per repository against 33.2 from its other edits.
+- **Integrity:** no test-run timeout or out-of-memory kill; no run's first test run took over
+  twice the repository's selection-time test time (0 overload-suspect runs); 0 flaky hidden
+  changes. Six grid runs failed on the repair timeout (fixed in #47): the two in scoped repos
+  (wove and Skill_Seekers `guard_tests_only`) were rerun, and the other four are in the two
+  dropped repos.
+
+| method | lines removed (excl. format/imports) | edits | format edits | hidden changed | rolled back: tests / probes | McNemar p | Wilcoxon p |
+|---|---|---|---|---|---|---|---|
+| cleansweep, gatekeeper | 33.2 [5.4, 80.4] | 9.1 [3.2, 16.5] | 6.4 | 0.19 [0.00, 0.38] | 2 / 0 | | |
+| cleansweep, advisory | 40.9 [10.1, 89.6] | 9.6 [3.5, 17.1] | 6.4 | 0.19 [0.00, 0.38] | 6 / 6 | 1.0 | 0.11 |
+| `guard_tests_only` | 41.9 [10.2, 93.4] | 9.7 [3.8, 17.8] | 6.4 | 0.19 [0.00, 0.38] | 6 / (no probes) | 1.0 | 0.07 |
+| `tools_only` | 42.6 [9.9, 83.4] | 3.1 [1.2, 5.6] | (1 ruff edit) | 0.25 [0.06, 0.50] | | 1.0 | 0.31 |
+| `one_shot_llm` | **325.9 [131.7, 543.6]** | 4.1 [2.1, 6.5] | 0 | 0.13 [0.00, 0.33] | | 1.0 | **0.002** |
+
+- **CleanSweep edits code here, not only files.** Advisory applied 31 dead-code removals, 3
+  duplicate merges and 18 unused dependencies, besides 109 format edits, 1 unused import and 1
+  leftover file.
+- **The probes rolled back 6 edits the tests passed**, all near-duplicates in Skill_Seekers
+  (five MCP workflow tools and `_get_progress_dir`) that behave differently from the function
+  they would be merged into. In gatekeeper mode the judge moved 50 more items to the suggest lane
+  before any edit. Without probes, `guard_tests_only` kept 2 of the 6 (`list_workflows`,
+  `_get_progress_dir`; the other 4 could not be applied after them), and neither the
+  project's tests nor the hidden tests noticed.
+- **Hidden changes.** CleanSweep (either mode) changed hidden behavior on skillport,
+  Telegram-Snowball-Sampling and Skill_Seekers. In every case the changed tests call functions
+  the cleanup deleted as dead code: nothing in the project, its tests included, calls them.
+  `tools_only` changed the same three and slop-guard. `one_shot_llm` changed slop-guard (deleted
+  benchmark scripts) and Usagi, where it deleted `src/config.py`, which the remaining modules
+  import: the only change in code that stayed. One one-shot reply (Telegram) did not parse.
+
 ### AIDev: Scheduler replay, removal requests, ranker
 
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded

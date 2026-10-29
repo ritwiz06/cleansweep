@@ -8,6 +8,6 @@ swebench_t1,Guard and Reviewer vs tools,cleansweep-advisory,tools_only,0/10 vs 0
 swebench_t2,differential probes,cleansweep-advisory,guard_tests_only,0/57 vs 0/56,2130 vs 2130,275 vs 275
 swebench_t2,judge as gatekeeper,cleansweep-gatekeeper,cleansweep-advisory,0/57 vs 0/57,2130 vs 2130,275 vs 275
 swebench_t2,Guard and Reviewer vs tools,cleansweep-advisory,tools_only,0/57 vs 0/57,2130 vs 54,275 vs 171
-aidev,differential probes,cleansweep-advisory,guard_tests_only,3/16 vs 4/16,695 vs 2170,79 vs 162
+aidev,differential probes,cleansweep-advisory,guard_tests_only,3/16 vs 3/16,695 vs 713,79 vs 71
 aidev,judge as gatekeeper,cleansweep-gatekeeper,cleansweep-advisory,3/16 vs 3/16,565 vs 695,56 vs 79
 aidev,Guard and Reviewer vs tools,cleansweep-advisory,tools_only,3/16 vs 4/16,695 vs 725,79 vs 0

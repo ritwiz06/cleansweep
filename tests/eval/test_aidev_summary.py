@@ -163,3 +163,14 @@ def test_load_takes_each_run_from_the_first_folder_and_sets_excluded_repos_apart
     assert [r["_repo"] for r in excluded] == ["o/x"]
     one_shot = next(r for r in reports if r["_method"] == "one_shot_llm")
     assert one_shot["_tests"].name == "aidev_o_r@abc"
+
+
+def test_repos_count_only_with_a_run_for_every_method():
+    summary = load()
+    reports = [
+        {"_repo": "o/r", "_method": "tools_only"},
+        {"_repo": "o/r", "_method": "one_shot_llm"},
+        {"_repo": "o/s", "_method": "tools_only"},
+    ]
+    complete, running = summary.complete_runs(reports)
+    assert [r["_repo"] for r in complete] == ["o/r", "o/r"] and running == ["o/s"]

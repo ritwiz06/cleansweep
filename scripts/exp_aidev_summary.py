@@ -13,9 +13,9 @@ tests, and the cause of each hidden change: a changed hidden test that imports o
 function or class the cleanup deleted, or tests a file it deleted, counts as "deleted code", any
 other as "behavior". Format and unused-import edits are counted on their own, and
 lines_removed_code is the net lines the other applied edits remove (formatting can add more
-lines than it removes). Repos in --exclude (no agent scope) are summarized in a section of their
-own and left out of the rest. Hidden-change rates with CIs per method are in main_table.md
-(exp_collect.py, exp_tables.py).
+lines than it removes). Repos in --exclude (no agent scope) are summarized in a section of
+their own and left out of the rest, and so are repos without a run for every method yet.
+Hidden-change rates with CIs per method are in main_table.md (exp_collect.py, exp_tables.py).
 """
 
 from __future__ import annotations
@@ -285,6 +285,15 @@ def load(folders: list[Path], exclude: list[str]) -> tuple[list[dict], list[dict
     return reports, excluded
 
 
+def complete_runs(reports: list[dict]) -> tuple[list[dict], list[str]]:
+    """(reports of the repos with a run for every method, the other repos)."""
+    runs = Counter(r["_repo"] for r in reports)
+    full = max(runs.values(), default=0)
+    return [r for r in reports if runs[r["_repo"]] == full], sorted(
+        repo for repo, n in runs.items() if n < full
+    )
+
+
 def _table(rows: list[dict], cols: list[str]) -> list[str]:
     lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
     return lines + ["| " + " | ".join(str(r.get(c, 0)) for c in cols) + " |" for r in rows]
@@ -297,9 +306,7 @@ def main(argv: list[str] | None = None) -> int:
         nargs="+",
         default=[
             str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
-            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
         ],
         help="the grid folder, then the rerun folders (first folder wins per repo and method)",
     )
@@ -311,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     reports, excluded = load([Path(f) for f in args.runs], args.exclude)
+    reports, running = complete_runs(reports)
     cat_rows, method_rows = summarize(reports)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.with_suffix(".csv").open("w", newline="") as f:
@@ -342,8 +350,9 @@ def main(argv: list[str] | None = None) -> int:
         "",
         f"{len(reports)} reports on {repos} of the 20 runnable repos used (1 excluded), at their "
         f"head sha; {len({r['_repo'] for r in excluded})} repos without an agent scope are "
-        "summarized at the end. Agent scope: lines and files that agent pull requests wrote "
-        "(first-parent blame). Applied files = deleted files; applied code = every other "
+        f"summarized at the end; not yet complete: {', '.join(running) or 'none'}. Agent scope: "
+        "lines and files that agent pull requests wrote (first-parent blame). Applied files = "
+        "deleted files; applied code = every other "
         "applied edit, of which applied_format and applied_import are format and unused-import "
         "edits; lines_removed_code = net lines removed by the other applied edits (per run, at "
         "least 0). Could not apply = the edit tool could not make the change (e.g. a "

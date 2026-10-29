@@ -62,3 +62,15 @@ def test_hidden_only_reruns_reports_whose_diff_did_not_apply(tmp_path, monkeypat
     hidden = json.loads(stuck.read_text())["stats"]["hidden"]
     assert hidden["applied"] is True and hidden["rerun"] is True
     assert json.loads(ran.read_text())["stats"]["hidden"] == {"applied": True}
+
+
+def test_aidev_runs_stop_without_the_cached_history(tmp_path, monkeypatch, capsys):
+    runner = load_runner()
+    tier = tmp_path / "tier.json"
+    tier.write_text(json.dumps([{"full_name": "o/fast", "head_sha": "s2", "test_seconds": 3}]))
+    monkeypatch.setattr(runner, "agent_history", lambda name, sha=None: (set(), None))
+    assert runner.main(["--tier", str(tier), "--out", str(tmp_path / "out")]) == 2
+    assert "o/fast" in capsys.readouterr().err
+    # a cached history without agent commits still runs (no scope, by the data)
+    monkeypatch.setattr(runner, "agent_history", lambda name, sha=None: (set(), "c0"))
+    assert runner.missing_history(runner.targets(json.loads(tier.read_text()))) == []

@@ -11,7 +11,9 @@ Saves one SweepReport per run to <out>/<instance>__<agent>__<method>.json, or fo
 stats["minutes"]), and appends to <out>/log.txt. AIDev repositories run at their head sha, the
 fastest test suite first. A failed run is logged with its traceback in <out>/errors/ and retried
 by the next --resume. --hidden-only reruns just the hidden checks of saved reports whose final
-diff did not apply.
+diff did not apply. An AIDev run needs the repository's cached history
+(data/processed/aidev_history) for its agent scope; without it the detectors would see the whole
+repository, so the runner stops before the first run.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from pathlib import Path
 
 from cleansweep.core.config import load_config
 from cleansweep.core.io import save_json
+from cleansweep.data.aidev import agent_history
 from cleansweep.eval import run_hidden_checks
 from cleansweep.workflow import run_sweep
 
@@ -86,6 +89,12 @@ def rerun_hidden(target: str, cfg: dict, path: Path) -> dict | None:
     return hidden
 
 
+def missing_history(jobs: list[tuple[str, str]]) -> list[str]:
+    """AIDev repositories in jobs without a cached history (no agent scope possible)."""
+    names = [t.removeprefix("aidev:").partition("@")[0] for t, _ in jobs if t.startswith("aidev:")]
+    return [n for n in names if agent_history(n)[1] is None]
+
+
 def targets(entries: list[dict]) -> list[tuple[str, str]]:
     """(target, report name prefix) for SWE-bench split entries or AIDev repository entries."""
     out = []
@@ -123,6 +132,10 @@ def main(argv: list[str] | None = None) -> int:
     log = Log(out / "log.txt")
     cfg = load_config()
     jobs = targets(json.loads(Path(args.tier).read_text()))
+    missing = [] if args.hidden_only else missing_history(jobs)
+    if missing:
+        print(f"no cached history for {', '.join(missing)}: link data/processed", file=sys.stderr)
+        return 2
     log(f"start: {len(jobs)} targets x {len(args.methods)} methods from {args.tier}")
     for target, prefix in jobs:
         for label in args.methods:

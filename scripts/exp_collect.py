@@ -11,7 +11,8 @@ come from the rerun folder when it exists, and runs that failed in the first Tie
 filled in from the rerun folder. hidden_flaky marks a hidden change that another method's
 identical edits on the same target did not repeat. An AIDev run without second-model hidden
 tests, or whose diff did not apply in the hidden-check workspace, has no hidden outcome (empty,
-not 0). AIDev runs that failed in the grid are filled in from the rerun folders.
+not 0). AIDev runs that failed in the grid are filled in from the rerun folders, and a repo
+counts only once every method's run is in.
 
 Format and unused-import edits are counted on their own, and lines_removed_code is the net lines
 the other applied edits remove (from each edit's own diff): reformatting can add more lines than
@@ -28,6 +29,7 @@ import hashlib
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -223,7 +225,8 @@ def aidev_baselines() -> dict[str, float]:
 
 
 def aidev_rows(folder: Path, reruns: list[Path], exclude: list[str]) -> list[dict]:
-    """AIDev rows from the grid folder; runs missing there come from the rerun folders."""
+    """AIDev rows from the grid folder; runs missing there come from the rerun folders. A repo
+    counts only once it has a run for every method (a rerun can still be going)."""
     baselines = aidev_baselines()
     rows = swebench_rows(folder, "aidev", baselines) if folder.exists() else []
     for extra in (f for f in reruns if f.exists()):
@@ -233,7 +236,9 @@ def aidev_rows(folder: Path, reruns: list[Path], exclude: list[str]) -> list[dic
             for r in swebench_rows(extra, "aidev", baselines)
             if (r["target"], r["method"]) not in have
         ]
-    return [r for r in rows if r["target"] not in exclude]
+    rows = [r for r in rows if r["target"] not in exclude]
+    runs = Counter(r["target"] for r in rows)
+    return [r for r in rows if runs[r["target"]] == max(runs.values())]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -260,12 +265,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--aidev-rerun",
         nargs="*",
-        default=[
-            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
-        ],
-        help="AIDev runs that failed in the grid, rerun on fixed code; fill in missing rows only",
+        default=[str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped")],
+        help="AIDev runs missing from the grid, rerun with the agent scope; fill in missing rows",
     )
     parser.add_argument(
         "--aidev-exclude",
