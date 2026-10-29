@@ -97,7 +97,7 @@ def aidev_funnel() -> list[dict]:
         {
             "stage": "in committed files",
             "count": in_files,
-            "note": f"{excluded} excluded: name rejected by the commit hook" if excluded else "",
+            "note": f"{excluded} left out of the released data files" if excluded else "",
         },
     ]
     for reason, n in Counter(r["reason"] for r in rows if r["status"] != "kept").most_common():

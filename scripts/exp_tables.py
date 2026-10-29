@@ -13,6 +13,7 @@ removed by edits other than format and unused imports) in the paired tests, abla
 from __future__ import annotations
 
 import csv
+import statistics
 from pathlib import Path
 
 import matplotlib
@@ -149,6 +150,8 @@ def main_table(rows: list[dict]) -> list[dict]:
                 row[f"{name} (mean)"] = round(sum(vals) / len(vals), 1) if vals else "n/a"
             row["test runs (mean)"] = round(sum(r["test_runs"] for r in recs) / len(recs), 1)
             row["minutes (mean)"] = round(sum(r["minutes"] for r in recs) / len(recs), 1)
+            # a run left over a laptop sleep inflates the mean (one Tier 2 run took 197 minutes)
+            row["minutes (median)"] = round(statistics.median(r["minutes"] for r in recs), 1)
             out.append(row)
     return out
 

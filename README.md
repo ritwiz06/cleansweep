@@ -257,7 +257,8 @@ What happened:
   - It **changes hidden behavior on 9 of 57 patches** (16%, 95% CI 7–26%; exact McNemar p = 0.0039 against gatekeeper).
   - The model rewrites the agent's changed source files, and nothing checks the result.
 - **`tools_only`** removes 0.9 lines per patch (unused imports) and changes nothing hidden.
-- **Minutes per patch:** mean gatekeeper 8.2, which includes one Django run that took 197 minutes while the laptop slept; advisory 3.6, `guard_tests_only` 2.1, `tools_only` 1.5, `one_shot_llm` 1.9.
+- **`one_shot_compile`** (the same diff, discarded when a rewritten file doesn't compile; no extra LLM call) changes hidden behavior on **2 of 57** (McNemar p = 0.5) and removes 27.8 lines per patch (Wilcoxon p = 0.087).
+- **Minutes per patch (median):** gatekeeper 2.2, advisory 1.3, `guard_tests_only` 1.4, `tools_only` 0.8, `one_shot_llm` 1.4. Medians, because one Django gatekeeper run took 197 minutes while the laptop slept (mean 8.2).
 
 ### Main table
 
@@ -436,13 +437,12 @@ repository, kept if stable over 3 runs.
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
 sample of 120. A repository is kept if it installs in `python:3.11` (network cut before tests)
 and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The tables below use
-**20 of 21 runnable repos (1 excluded)**: the repository's commit hook rejects that one's name,
-so it stays out of the committed files until the team decides otherwise
-(`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
+**20 of 21 runnable repos** (one is left out of our released data files;
+`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
 total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository
 (`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
-**Scheduler trade-off** (20 of 21 runnable repos, 1 excluded; mean and 95% bootstrap CI across
+**Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
 repositories; `scripts/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
 
 | Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |
