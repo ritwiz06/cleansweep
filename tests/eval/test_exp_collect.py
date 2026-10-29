@@ -91,7 +91,9 @@ def _report(folder, name, lines):
     (folder / f"{name}.json").write_text(json.dumps(report))
 
 
-def test_aidev_reruns_fill_only_the_missing_runs_and_excluded_repos_drop(tmp_path, monkeypatch):
+def test_aidev_reruns_fill_missing_runs_and_excluded_or_incomplete_repos_drop(
+    tmp_path, monkeypatch
+):
     collect = load_collect()
     monkeypatch.setattr(collect, "AIDEV_SPLIT", tmp_path / "missing.json")
     grid, rerun = tmp_path / "grid", tmp_path / "rerun"
@@ -99,6 +101,7 @@ def test_aidev_reruns_fill_only_the_missing_runs_and_excluded_repos_drop(tmp_pat
     _report(grid, "o__x__tools_only", 1)
     _report(rerun, "o__r__tools_only", 9)  # already in the grid
     _report(rerun, "o__r__one_shot_llm", 7)  # failed in the grid
+    _report(rerun, "o__y__tools_only", 3)  # its other run is still going
     rows = collect.aidev_rows(grid, [rerun, tmp_path / "none"], ["o__x"])
     assert {(r["method"], r["lines_removed"]) for r in rows} == {
         ("tools_only", 5),
