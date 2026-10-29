@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from cleansweep.analysis.graph import is_test_file, iter_py_files
-from cleansweep.analysis.scope import agent_scope
+from cleansweep.analysis.scope import agent_scope, scope_stats
 from cleansweep.core.models import CleanupItem, CleanupPlan, CodeUnit, EditResult, SweepReport
 from cleansweep.guard import apply_edit
 from cleansweep.llm import get_client
@@ -124,6 +124,7 @@ def tools_only(target: str, cfg: dict) -> SweepReport:
         items.append(ruff_item)
         results.append(EditResult(ruff_item.item_id, "kept", diff=ws.diff(before)))
         report = _report(ws, "tools_only", 0, started, t0, items, results)
+        report.stats["scope"] = scope_stats(ws.path, scope, target.startswith(AGENT_TARGETS))
         return report
     finally:
         ws.close()  # also on errors: a SWE-bench workspace holds a container
@@ -316,6 +317,8 @@ def _one_shot(target: str, cfg: dict, seed: int, retry: bool) -> SweepReport:
         report.stats["files_not_shown"] = len(
             paths if paths is not None else iter_py_files(ws.path)
         ) - len(shown)
+        agent = target.startswith(AGENT_TARGETS)
+        report.stats["scope"] = scope_stats(ws.path, agent_scope(ws.path) if agent else None, agent)
         if retry:
             report.stats.update(compile_failed=failed, compile_failed_after=after)
         return report

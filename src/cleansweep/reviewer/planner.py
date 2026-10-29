@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from cleansweep.analysis import build_graph
-from cleansweep.analysis.scope import agent_scope
+from cleansweep.analysis.scope import agent_scope, scope_stats
 from cleansweep.core.models import CATEGORIES, CleanupPlan
 
 from .detectors import _settings, keep_public_api, run_detectors
@@ -11,13 +11,24 @@ from .judge import judge_items
 from .overengineering import review_overengineering, wanted
 
 
-def review_scope(repo_id: str, repo_dir: str, graph):
-    """reviewer.scope: "agent" reviews only what the agent wrote, "repo" everything; "auto"
-    (default) means agent for swebench: and aidev: targets and repo for local paths."""
+def _scope_setting(repo_id: str) -> str:
     setting = _settings().get("scope", "auto")
     if setting == "auto":
         setting = "agent" if repo_id.startswith(("swebench:", "aidev:")) else "repo"
-    return agent_scope(repo_dir, graph) if setting == "agent" else None
+    return setting
+
+
+def review_scope(repo_id: str, repo_dir: str, graph):
+    """reviewer.scope: "agent" reviews only what the agent wrote, "repo" everything; "auto"
+    (default) means agent for swebench: and aidev: targets and repo for local paths."""
+    return agent_scope(repo_dir, graph) if _scope_setting(repo_id) == "agent" else None
+
+
+def scope_report(repo_id: str, repo_dir: str, graph) -> dict:
+    """What the Reviewer looked at, for the sweep report (analysis.scope.scope_stats): a missing
+    agent scope shows as kind "missing" instead of silently reviewing the whole repository."""
+    wanted = _scope_setting(repo_id) == "agent"
+    return scope_stats(repo_dir, review_scope(repo_id, repo_dir, graph), wanted)
 
 
 def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> CleanupPlan:

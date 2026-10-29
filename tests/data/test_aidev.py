@@ -64,3 +64,34 @@ def test_history_marks_agent_pull_requests(tmp_path, monkeypatch):
     assert [e.is_agent for e in events] == [False, True, False]
     assert events[1].agent == "agent_a" and events[1].files == ["f1.py"]
     assert (tmp_path / "cache" / "o__n.json").exists()
+
+
+def test_extend_history_reaches_back_to_the_oldest_agent_commit(tmp_path, monkeypatch):
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+    repo = tmp_path / "o__n"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    for i, msg in enumerate(["start", "add parser (#7)", "fix", "more", "last"]):
+        (repo / f"f{i}.py").write_text("x = 1\n")
+        subprocess.run([*git, "add", "-A"], cwd=repo, check=True)
+        subprocess.run([*git, "commit", "-q", "-m", msg], cwd=repo, check=True)
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True
+    ).stdout.strip()
+    cfg = {
+        "history_commits": 2,  # the short history has no agent commit
+        "history_cache": str(tmp_path / "cache"),
+        "scope_history_cache": str(tmp_path / "scope_cache"),
+        "clones": str(tmp_path),
+    }
+    monkeypatch.setattr(aidev, "_agent_prs", lambda name: ({7: "agent_a"}, {}))
+    monkeypatch.setattr(aidev, "_cfg", lambda: cfg)
+    aidev.load_history(RepoRef("aidev:o/n", "u", str(repo), head_sha=head))
+    assert aidev.agent_history("o/n")[0] == set()
+    assert aidev.extend_history("o/n", head, max_commits=10) == 4  # back to "add parser (#7)"
+    shas, start = aidev.agent_history("o/n")
+    assert len(shas) == 1 and start == shas.pop()
+    # the replay's history is untouched
+    assert len(aidev.load_history(RepoRef("aidev:o/n", "u", str(repo)))) == 2
+    monkeypatch.setattr(aidev, "_agent_prs", lambda name: ({}, {}))
+    assert aidev.extend_history("o/n", head, max_commits=10) == 0

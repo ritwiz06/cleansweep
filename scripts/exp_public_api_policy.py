@@ -47,6 +47,7 @@ METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
 FOLDERS = [
     ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps",
     ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped",
+    ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window",
 ]
 FIELDS = [
     "target",
@@ -148,7 +149,7 @@ def rerun_hidden(rep: dict, target_id: str, diff: str, cfg: dict) -> dict:
 
 def score(run: bool) -> list[dict]:
     rows = as_run()
-    reports, _ = load(FOLDERS, [])
+    reports, _ = load([f for f in FOLDERS if f.exists()], [])
     by = {(r["_repo"].replace("/", "__"), r["_method"]): r for r in reports}
     heads = {
         e["full_name"].replace("/", "__"): e["head_sha"]

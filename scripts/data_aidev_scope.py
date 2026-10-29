@@ -1,17 +1,26 @@
 """Share of each runnable AIDev repository's Python lines that the agent scope covers.
 
-python scripts/data_aidev_scope.py
+python scripts/data_aidev_scope.py [--extend owner/name ...] [--max-commits 3000]
+    [--backfill FOLDER ...]
 
 Reads data/splits/aidev_repos.json and each repository's clone (scripts/data_aidev_select.py)
 at its head sha. The agent scope is what agent pull requests wrote, by first-parent blame
 (cleansweep.analysis.scope.blame_scope): the files they created that still exist, and the lines
 they wrote in the other files. A repository without an agent commit in its recorded history has
-no scope, and the detectors then run on the whole repository. Writes
-results/data_summary/aidev_scope.csv.
+no scope, and the detectors then run on the whole repository. --extend first caches a longer
+first-parent history for those repositories (cleansweep.data.aidev.extend_history: back to the
+oldest agent commit within --max-commits), which only the agent scope reads. Writes
+results/data_summary/aidev_scope.csv, with the history window each scope comes from.
+
+--backfill adds the "scope used" record (stats["scope"]) to AIDev sweep reports written before
+sweeps recorded it. The scope is rebuilt from the same history and checked against the report's
+plan: if any item lies outside the agent's files, the run did not use the scope and is marked
+"missing". Reports that have the record are left alone.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import subprocess
@@ -19,7 +28,8 @@ from pathlib import Path
 
 from cleansweep.analysis.scope import blame_scope
 from cleansweep.core.config import load_config
-from cleansweep.data.aidev import agent_history
+from cleansweep.data.aidev import agent_history, extend_history
+from cleansweep.data.swebench import data_path
 from cleansweep.sandbox.aidev_docker import clone_dir
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,10 +65,76 @@ def scope_share(py_lines: dict[str, int], scope: dict) -> dict:
     }
 
 
-def main() -> int:
+def items_outside(plan_items: list[dict], scope: dict) -> int:
+    """Plan items whose file is not one the agent created or wrote lines in (the whole-repo
+    ruff item of tools_only, path ".", doesn't count)."""
+    files = set(scope["files_added"]) | set(scope["lines"])
+    return sum(i["unit"]["path"] not in files for i in plan_items if i["unit"]["path"] != ".")
+
+
+def backfill(folders: list[Path], cfg: dict, repos: dict[str, str]) -> int:
+    """Write stats["scope"] into the AIDev reports in folders that lack it; returns how many."""
+    done, scopes = 0, {}
+    for folder in folders:
+        for path in sorted(folder.glob("*__*__*.json")):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            owner, name, _ = path.stem.rsplit("__", 2)
+            full = f"{owner}/{name}"
+            if "scope" in data["stats"] or full not in repos:
+                continue
+            if full not in scopes:
+                clone, sha = clone_dir(cfg, full), repos[full]
+                shas, start = agent_history(full, sha)
+                scope = blame_scope(str(clone), sha, shas, start) if shas else None
+                scopes[full] = (scope, python_lines(clone, sha))
+            scope, py_lines = scopes[full]
+            outside = items_outside(data["plan"]["items"], scope) if scope else None
+            if scope is None or outside:
+                record = {"kind": "missing", "items_outside": outside}
+            else:
+                share = scope_share(py_lines, scope)
+                record = {
+                    "kind": "agent_blame",
+                    "files": len(set(scope["files_added"]) | set(scope["lines"])),
+                    "agent_py_lines": share["agent_file_lines"] + share["agent_changed_lines"],
+                    "py_lines": share["py_lines"],
+                    "share": share["share"],
+                    "items_outside": 0,
+                }
+            data["stats"]["scope"] = {**record, "backfilled": True}
+            path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            done += 1
+    return done
+
+
+def history_window(cfg: dict, name: str) -> int:
+    """Commits in the history the scope comes from: the longer scope history if cached, else the
+    300-commit one (0 without either)."""
+    key = f"{name.replace('/', '__')}.json"
+    for folder in (cfg.get("scope_history_cache"), cfg["history_cache"]):
+        if folder and (data_path(folder) / key).exists():
+            return len(json.loads((data_path(folder) / key).read_text()))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--extend", nargs="*", default=[], help="repos to give a longer history")
+    parser.add_argument("--max-commits", type=int, default=3000)
+    parser.add_argument("--backfill", nargs="*", default=[], help="report folders to backfill")
+    args = parser.parse_args(argv)
     cfg = {**load_config()["data"]["aidev"], **load_config()["core"]["sandbox"]}
+    repos = json.loads(SPLIT.read_text(encoding="utf-8"))
+    heads = {r["full_name"]: r["head_sha"] for r in repos}
+    for name in args.extend:
+        window = extend_history(name, heads[name], args.max_commits)
+        print(f"{name}: scope history {window or 'not extended (no agent commit)'}", flush=True)
+    if args.backfill:
+        n = backfill([Path(f) for f in args.backfill], cfg, heads)
+        print(f"scope record added to {n} reports")
+        return 0
     rows = []
-    for repo in json.loads(SPLIT.read_text(encoding="utf-8")):
+    for repo in repos:
         name, sha = repo["full_name"], repo["head_sha"]
         clone = clone_dir(cfg, name)
         shas, start = agent_history(name, sha)
@@ -68,6 +144,7 @@ def main() -> int:
         row = {
             "repo": name,
             "agent_commits": len(shas),
+            "window_commits": history_window(cfg, name),
             **scope_share(python_lines(clone, sha), scope),
         }
         print(f"{name}: share {row['share']} ({row['agent_commits']} agent commits)", flush=True)

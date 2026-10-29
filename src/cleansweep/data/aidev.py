@@ -93,25 +93,10 @@ def _agent_prs(name: str) -> tuple[dict[int, str], dict[str, int]]:
     return by_number, {s: ids[p] for s, p in zip(shas.sha, shas.pr_id, strict=True)}
 
 
-def load_history(repo: RepoRef) -> list[CommitEvent]:
-    """The last history_commits first-parent commits, oldest first, marked with the agent pull
+def _events(clone: str, head: str, n: int, name: str) -> list[CommitEvent]:
+    """The last n first-parent commits up to head, newest first, marked with the agent pull
     request they came from (by commit sha or a "(#N)" / "Merge pull request #N" reference)."""
-    cfg = _cfg()
-    name = repo.repo_id.removeprefix("aidev:")
-    cache = data_path(cfg["history_cache"]) / f"{name.replace('/', '__')}.json"
-    if cache.exists():
-        return [CommitEvent(**e) for e in json.loads(cache.read_text())]
-    clone = repo.local_path or str(data_path(cfg["clones"]) / name.replace("/", "__"))
-    head = repo.head_sha or "HEAD"
-    log = _git(
-        clone,
-        "log",
-        "--first-parent",
-        "-n",
-        str(cfg["history_commits"]),
-        "--format=%H%x1f%cI%x1f%B%x1e",
-        head,
-    )
+    log = _git(clone, "log", "--first-parent", "-n", str(n), "--format=%H%x1f%cI%x1f%B%x1e", head)
     by_number, by_sha = _agent_prs(name)
     events = []
     for record in log.split("\x1e"):
@@ -135,16 +120,55 @@ def load_history(repo: RepoRef) -> list[CommitEvent]:
                 files=files,
             )
         )
+    return events
+
+
+def load_history(repo: RepoRef) -> list[CommitEvent]:
+    """The last history_commits first-parent commits, oldest first, marked with the agent pull
+    request they came from (by commit sha or a "(#N)" / "Merge pull request #N" reference)."""
+    cfg = _cfg()
+    name = repo.repo_id.removeprefix("aidev:")
+    cache = data_path(cfg["history_cache"]) / f"{name.replace('/', '__')}.json"
+    if cache.exists():
+        return [CommitEvent(**e) for e in json.loads(cache.read_text())]
+    clone = repo.local_path or str(data_path(cfg["clones"]) / name.replace("/", "__"))
+    events = _events(clone, repo.head_sha or "HEAD", int(cfg["history_commits"]), name)
     events.reverse()
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps([e.__dict__ for e in events]))
     return events
 
 
+def extend_history(name: str, head_sha: str, max_commits: int = 3000) -> int:
+    """For "owner/name": the first-parent history from head_sha back to its oldest agent commit
+    within max_commits, cached (oldest first) in scope_history_cache, where agent_history reads it
+    before the 300-commit history. Only the agent scope uses it; the Scheduler replay keeps
+    load_history. Returns the window in commits (0, and nothing cached, without an agent commit)."""
+    cfg = _cfg()
+    clone = str(data_path(cfg["clones"]) / name.replace("/", "__"))
+    events = _events(clone, head_sha, max_commits, name)
+    agent = [i for i, e in enumerate(events) if e.is_agent]
+    if not agent:
+        return 0
+    window = events[: agent[-1] + 1]
+    window.reverse()
+    cache = data_path(cfg["scope_history_cache"]) / f"{name.replace('/', '__')}.json"
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps([e.__dict__ for e in window]))
+    return len(window)
+
+
 def agent_history(name: str, head_sha: str | None = None) -> tuple[set[str], str | None]:
     """For "owner/name": the first-parent commits that came from agent pull requests, and the
-    oldest commit of the history. Reads only load_history's cache (none: no agent commits)."""
-    cache = data_path(_cfg()["history_cache"]) / f"{name.replace('/', '__')}.json"
+    oldest commit of the history: the longer scope history (extend_history) if there is one, else
+    load_history's cache (none: no agent commits)."""
+    cfg = _cfg()
+    key = f"{name.replace('/', '__')}.json"
+    longer = data_path(cfg.get("scope_history_cache", "data/processed/aidev_scope_history")) / key
+    if longer.exists():
+        events = [CommitEvent(**e) for e in json.loads(longer.read_text())]
+        return {e.sha for e in events if e.is_agent}, (events[0].sha if events else None)
+    cache = data_path(cfg["history_cache"]) / key
     if not cache.exists():
         return set(), None
     events = load_history(RepoRef(repo_id=f"aidev:{name}", url="", head_sha=head_sha))
