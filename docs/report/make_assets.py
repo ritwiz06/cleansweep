@@ -454,6 +454,38 @@ def chart_judge_models(runs: pd.DataFrame) -> None:
     plt.close(fig)
 
 
+OPEN_FAILED = "open failed: CalledProcessError"
+
+
+def chart_aidev_funnel() -> None:
+    """AIDev selection: repositories left after each step (log scale), drop reasons below."""
+    path = ROOT / "results" / "data_summary" / "aidev_funnel.csv"
+    if not path.exists():
+        return
+    funnel = pd.read_csv(path)
+    stages = funnel[~funnel["stage"].str.startswith("dropped")].iloc[::-1]
+    drops = funnel[funnel["stage"].str.startswith("dropped")]
+    fig, ax = plt.subplots(figsize=(6.4, 2.6), dpi=200)
+    fig.patch.set_facecolor(SURFACE)
+    names = {"in committed files": "used here (1 excluded)"}
+    labels, values = [names.get(s, s) for s in stages["stage"]], list(stages["count"])
+    ax.barh(labels, values, height=0.55, color=SERIES["toy repo"], edgecolor=SURFACE, linewidth=2)
+    for y, v in enumerate(values):
+        ax.text(v * 1.15, y, f"{v:,}", va="center", fontsize=8.5, color=INK)
+    ax.set_xscale("log")
+    ax.set_xlim(10, max(values) * 4)
+    _style(ax, "AIDev repositories kept at each step (log scale)")
+    ax.tick_params(axis="y", colors=INK, labelsize=8.5)
+    reasons = ", ".join(
+        f"{s.removeprefix('dropped: ').replace(OPEN_FAILED, 'could not be opened')} {c}"
+        for s, c in zip(drops["stage"], drops["count"], strict=True)
+    )
+    ax.set_xlabel(f"Dropped of 120: {reasons}", fontsize=7.5, color=INK_2)
+    FIGURES.mkdir(parents=True, exist_ok=True)
+    fig.savefig(FIGURES / "aidev_funnel.png", bbox_inches="tight", facecolor=SURFACE)
+    plt.close(fig)
+
+
 def render_pipeline() -> str:
     mmdc = shutil.which("mmdc")
     if mmdc is None:
@@ -480,6 +512,7 @@ def main() -> None:
     write_table(runs, "judge_check_runs")
     chart_toy_methods(toy)
     chart_judge_models(runs)
+    chart_aidev_funnel()
     print(render_pipeline())
     for path in sorted(OUT.rglob("*")):
         if path.is_file() and path.suffix in (".md", ".csv", ".png", ".mmd"):
