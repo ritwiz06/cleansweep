@@ -42,7 +42,10 @@ METHODS = {
     "guard_tests_only": ("guard_tests_only", "advisory"),
     "tools_only": ("tools_only", None),
     "one_shot_llm": ("one_shot_llm", None),
+    "one_shot_retry": ("one_shot_retry", None),
 }
+# the main comparison; one_shot_retry runs only where asked (the runs whose reply didn't compile)
+DEFAULT_METHODS = list(METHODS)[:5]
 
 
 class Log:
@@ -116,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
         "--tier", required=True, help="split file, e.g. data/splits/swebench_tier2.json"
     )
     parser.add_argument("--out", required=True, help="output folder, e.g. results/raw/swebench_t2")
-    parser.add_argument("--methods", nargs="+", choices=list(METHODS), default=list(METHODS))
+    parser.add_argument("--methods", nargs="+", choices=list(METHODS), default=DEFAULT_METHODS)
     parser.add_argument("--resume", action="store_true", help="skip runs whose report exists")
     parser.add_argument(
         "--hidden-only",

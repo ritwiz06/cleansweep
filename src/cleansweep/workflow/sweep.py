@@ -36,11 +36,13 @@ def report_path(out_dir: str, run_id: str, report: SweepReport) -> Path:
 
 def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0) -> SweepReport:
     """Open, analyze, plan, rank, batch and guard one target; return the sweep report."""
-    if method in ("tools_only", "one_shot_llm"):
+    if method in ("tools_only", "one_shot_llm", "one_shot_retry"):
         from cleansweep import eval as baselines
 
         if method == "tools_only":
             return baselines.tools_only(target, cfg)
+        if method == "one_shot_retry":
+            return baselines.one_shot_retry(target, cfg, seed)
         return baselines.one_shot_llm(target, cfg, seed)
 
     started, t0 = _now(), time.time()

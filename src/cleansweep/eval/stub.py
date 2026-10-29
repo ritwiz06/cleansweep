@@ -22,6 +22,10 @@ def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
     return _sample(target, "one_shot_llm")
 
 
+def one_shot_retry(target: str, cfg: dict, seed: int = 0) -> SweepReport:
+    return _sample(target, "one_shot_retry")
+
+
 def run_hidden_checks(target: str, final_diff: str, cfg: dict) -> dict:
     return {"available": True, "applied": True, "behavior_changed": False}
 

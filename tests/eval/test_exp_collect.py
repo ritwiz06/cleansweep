@@ -107,3 +107,39 @@ def test_aidev_reruns_fill_missing_runs_and_excluded_or_incomplete_repos_drop(
         ("tools_only", 5),
         ("one_shot_llm", 7),
     }
+
+
+def test_oneshot_variants_discard_or_retry_a_reply_that_does_not_compile():
+    collect = load_collect()
+
+    def one_shot(target, lines, hidden):
+        return {
+            "target_set": "t2",
+            "target": target,
+            "method": "one_shot_llm",
+            **dict.fromkeys(collect.OUTCOMES, 1),
+            "lines_removed": lines,
+            "hidden_changed": hidden,
+            "_group": target,
+            "_diff": f"d-{target}",
+        }
+
+    rows = [one_shot("ok", 5, 0), one_shot("bad", 9, 1), one_shot("unknown", 3, 0)]
+    retry = {**one_shot("bad", 7, 0), "method": "one_shot_retry", "target_set": ""}
+    out = collect.oneshot_variants(rows, {("t2", "ok"): False, ("t2", "bad"): True}, {"bad": retry})
+    got = {(r["target"], r["method"]): (r["lines_removed"], r["hidden_changed"]) for r in out}
+    assert got == {
+        ("ok", "one_shot_compile"): (5, 0),
+        ("ok", "one_shot_retry"): (5, 0),
+        ("bad", "one_shot_compile"): (0, 0),  # the diff is discarded
+        ("bad", "one_shot_retry"): (7, 0),
+    }
+    assert (
+        next(r for r in out if r["method"] == "one_shot_retry" and r["target"] == "bad")[
+            "target_set"
+        ]
+        == "t2"
+    )
+    # a set with a run still waiting for its rerun gets no retry rows at all
+    partial = collect.oneshot_variants(rows, {("t2", "ok"): False, ("t2", "bad"): True}, {})
+    assert {r["method"] for r in partial} == {"one_shot_compile"}

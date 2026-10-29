@@ -1,0 +1,5 @@
+These files from your reply do not compile:
+
+{errors}
+
+Reply again with the whole cleanup as JSON only, in the same form, with these files fixed.

@@ -87,3 +87,33 @@ def test_summary_counts_blocks_and_false_alarms(tmp_path, monkeypatch):
     module.write_summary(rows)
     md = (tmp_path / "guard_on_oneshot.md").read_text()
     assert "| swebench_t2 | 5 | 2/3 | 1 | 0 | 1 | 1/2 |" in md
+
+
+def test_compile_failures_name_the_files_that_do_not_compile():
+    oneshot = load("exp_oneshot_compile")
+    files = {"a.py": "x = 1\n", "b.py": 'x = 1\n"', "notes.md": '"'}
+    assert [f.split(":")[0] for f in oneshot.compile_failures(files)] == ["b.py"]
+
+
+def test_rewritten_files_apply_the_diff_at_the_sha(tmp_path):
+    import subprocess
+
+    oneshot = load("exp_oneshot_compile")
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=tmp_path, capture_output=True, text=True, check=True
+        ).stdout
+
+    git("init", "-q")
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "mod.py").write_text(
+        "import sys\nimport os\ndef helper(n):\n    return n\ndef main():\n    return os.sep\n"
+    )
+    (tmp_path / "scratch.py").write_text('print("hi")\nprint("bye")\n')
+    git("add", "-A")
+    git("-c", "user.name=a", "-c", "user.email=a@b", "commit", "-qm", "base")
+    sha = git("rev-parse", "HEAD").strip()
+    (tmp_path / "pkg" / "mod.py").write_text("x")  # the working tree doesn't matter
+    files = oneshot.rewritten_files(tmp_path, sha, DIFF.split("diff --git a/tests")[0])
+    assert files == {"pkg/mod.py": "import os\ndef main():\n    return os.sep\n"}

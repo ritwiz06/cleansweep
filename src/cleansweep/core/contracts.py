@@ -65,6 +65,7 @@ INTERFACES: dict[str, dict[str, list[str]]] = {
     "eval": {
         "tools_only": ["target", "cfg"],
         "one_shot_llm": ["target", "cfg", "seed"],
+        "one_shot_retry": ["target", "cfg", "seed"],
         "run_hidden_checks": ["target", "final_diff", "cfg"],
         "summarize": ["report", "hidden"],
     },

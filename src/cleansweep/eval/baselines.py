@@ -18,6 +18,7 @@ from cleansweep.sandbox import open_workspace
 
 VULTURE_LINE = re.compile(r"^(.+?):(\d+): unused (function|method|class) '([^']+)'")
 PROMPT = (Path(__file__).parent / "prompts" / "one_shot.txt").read_text()
+RETRY_PROMPT = (Path(__file__).parent / "prompts" / "one_shot_retry.txt").read_text()
 AGENT_TARGETS = ("swebench:", "aidev:")  # targets whose agent scope limits the baselines
 
 
@@ -227,6 +228,30 @@ def _agent_files(repo_dir: str) -> list[str] | None:
     return out
 
 
+def _compile_errors(ws, paths: list[str]) -> str:
+    """The compiler's output for the rewritten .py files, in the workspace's Python ("" when
+    they all compile), like the Guard's compile check."""
+    files = [p for p in paths if p.endswith(".py") and (Path(ws.path) / p).exists()]
+    if not files:
+        return ""
+    code, out = ws.run([sys.executable, "-m", "py_compile", *files])
+    return out.strip() if code != 0 else ""
+
+
+def _invalid(reply: str, reason: str) -> tuple[list[CleanupItem], list[EditResult]]:
+    item = CleanupItem(
+        "one-shot",
+        CodeUnit(".", "file"),
+        "other",
+        "apply_patch",
+        "safe",
+        "one-shot cleanup from the model",
+        [reply[:500]],
+        ["llm"],
+    )
+    return [item], [EditResult("one-shot", "skipped", notes=f"invalid_output: {reason}")]
+
+
 def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
     """Baseline: ask the model once for cleaned-up files (JSON) and apply them with no checks.
 
@@ -234,6 +259,20 @@ def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
     agent created or changed. It replies {"delete": [paths], "files": {path: full new content}}; our
     code makes those changes. A reply that doesn't parse or names files it wasn't shown is
     recorded as invalid output (stats["invalid_output"] = 1), not as zero edits."""
+    return _one_shot(target, cfg, seed, retry=False)
+
+
+def one_shot_retry(target: str, cfg: dict, seed: int = 0) -> SweepReport:
+    """one_shot_llm with one follow-up: when a rewritten file doesn't compile, the compiler's
+    message goes back to the model once, and its corrected reply replaces the first one. The
+    first request is the same as one_shot_llm's, so a cached reply is reused.
+    stats["compile_failed"] says whether the first reply needed the follow-up and
+    stats["compile_failed_after"] whether the corrected reply still doesn't compile (it is
+    applied anyway, with no further checks)."""
+    return _one_shot(target, cfg, seed, retry=True)
+
+
+def _one_shot(target: str, cfg: dict, seed: int, retry: bool) -> SweepReport:
     started, t0 = _now(), time.time()
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     try:
@@ -242,34 +281,43 @@ def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
         code, shown = _collect_code(ws.path, paths=paths)
         messages = [{"role": "user", "content": PROMPT.replace("{code}", code)}]
         extra = cfg.get("exp", {}).get("one_shot_extra_body")
-        if extra:
-            reply = llm.chat(messages, temperature=0.0, seed=seed, extra_body=extra)
-        else:
-            reply = llm.chat(messages, temperature=0.0, seed=seed)
+
+        def ask(msgs: list[dict]) -> str:
+            if extra:
+                return llm.chat(msgs, temperature=0.0, seed=seed, extra_body=extra)
+            return llm.chat(msgs, temperature=0.0, seed=seed)
+
+        reply = ask(messages)
         cleanup, reason = parse_cleanup(reply, shown)
-        if cleanup is None:
-            item = CleanupItem(
-                "one-shot",
-                CodeUnit(".", "file"),
-                "other",
-                "apply_patch",
-                "safe",
-                "one-shot cleanup from the model",
-                [reply[:500]],
-                ["llm"],
-            )
-            items, results = (
-                [item],
-                [EditResult("one-shot", "skipped", notes=f"invalid_output: {reason}")],
-            )
-        else:
-            items, results = apply_cleanup(ws, cleanup)
-        report = _report(ws, "one_shot_llm", seed, started, t0, items, results, llm.usage())
+        start = ws.checkpoint("one-shot start")
+        items, results = _invalid(reply, reason) if cleanup is None else apply_cleanup(ws, cleanup)
+        failed = after = 0
+        if retry and cleanup is not None:
+            errors = _compile_errors(ws, sorted(cleanup["files"]))
+            if errors:
+                failed = 1
+                ws.rollback(start)
+                follow = [
+                    *messages,
+                    {"role": "assistant", "content": reply},
+                    {"role": "user", "content": RETRY_PROMPT.replace("{errors}", errors[-2000:])},
+                ]
+                reply = ask(follow)
+                cleanup, reason = parse_cleanup(reply, shown)
+                if cleanup is None:
+                    items, results = _invalid(reply, reason)
+                else:
+                    items, results = apply_cleanup(ws, cleanup)
+                    after = int(bool(_compile_errors(ws, sorted(cleanup["files"]))))
+        method = "one_shot_retry" if retry else "one_shot_llm"
+        report = _report(ws, method, seed, started, t0, items, results, llm.usage())
         report.stats["invalid_output"] = int(cleanup is None)
         report.stats["files_shown"] = len(shown)
         report.stats["files_not_shown"] = len(
             paths if paths is not None else iter_py_files(ws.path)
         ) - len(shown)
+        if retry:
+            report.stats.update(compile_failed=failed, compile_failed_after=after)
         return report
     finally:
         ws.close()  # also on errors: a SWE-bench workspace holds a container

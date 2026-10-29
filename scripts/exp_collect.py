@@ -19,6 +19,13 @@ the other applied edits remove (from each edit's own diff): reformatting can add
 it removes and so hide deleted code in lines_removed. test_slowdown is an AIDev run's first test
 run against the repo's selection-time test time (data/splits/aidev_repos.json);
 overload_suspect marks a run where it more than doubled.
+
+Two stronger one-shot variants are derived from the one_shot_llm rows. one_shot_compile discards
+a diff whose rewritten files don't compile (results/summary/oneshot_compile.csv, from
+exp_oneshot_compile.py): no edits and nothing changed. one_shot_retry is the rerun with one
+compile-error follow-up for those runs (--oneshot-retry, one report per SWE-bench patch, used for
+Tier 1 and Tier 2) and the same as one_shot_llm elsewhere, since its first request is the same.
+A run missing from either source gets no row.
 """
 
 from __future__ import annotations
@@ -42,6 +49,7 @@ from cleansweep.core.models import SweepReport  # noqa: E402
 RAW = ROOT / "results" / "raw"
 OUT = ROOT / "results" / "summary" / "main_results.csv"
 AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
+COMPILE_CSV = ROOT / "results" / "summary" / "oneshot_compile.csv"
 LOCAL_RUNS = {
     "toy": "tests/fixtures/toy_repo",
     "demo": ".cleansweep/demo/shop_app",
@@ -241,6 +249,38 @@ def aidev_rows(folder: Path, reruns: list[Path], exclude: list[str]) -> list[dic
     return [r for r in rows if runs[r["target"]] == max(runs.values())]
 
 
+def compile_status(path: Path = COMPILE_CSV) -> dict[tuple[str, str], bool]:
+    """(target_set, target) -> whether the one-shot diff fails the compile check."""
+    if not path.exists():
+        return {}
+    with path.open() as f:
+        return {
+            (r["target_set"], r["target"]): r["compile_failed"] == "1" for r in csv.DictReader(f)
+        }
+
+
+def oneshot_variants(
+    rows: list[dict], failed: dict[tuple[str, str], bool], retries: dict[str, dict]
+) -> list[dict]:
+    """one_shot_compile and one_shot_retry rows from the one_shot_llm rows (see the module doc).
+    A target set gets no one_shot_retry rows until every run there that failed to compile has its
+    rerun: the others alone would be a biased sample."""
+    nothing = dict.fromkeys(OUTCOMES, 0)
+    out, waiting = [], set()
+    for r in rows:
+        if r["method"] != "one_shot_llm" or (r["target_set"], r["target"]) not in failed:
+            continue
+        if not failed[(r["target_set"], r["target"])]:
+            out += [{**r, "method": "one_shot_compile"}, {**r, "method": "one_shot_retry"}]
+            continue
+        out.append({**r, **nothing, "method": "one_shot_compile", "_diff": _digest("")})
+        if r["target"] in retries:
+            out.append({**retries[r["target"]], "target_set": r["target_set"]})
+        else:
+            waiting.add(r["target_set"])
+    return [r for r in out if not (r["method"] == "one_shot_retry" and r["target_set"] in waiting)]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--t1", default=str(RAW / "swebench_t1"))
@@ -275,6 +315,11 @@ def main(argv: list[str] | None = None) -> int:
         help="AIDev repos without an agent scope (no agent commit in the history; DECISIONS)",
     )
     parser.add_argument(
+        "--oneshot-retry",
+        default=str(ROOT.parent / "cleansweep-runs-6" / "results" / "raw" / "oneshot_retry"),
+        help="one_shot_retry runs on the SWE-bench patches whose one-shot reply didn't compile",
+    )
+    parser.add_argument(
         "--exclude",
         nargs="*",
         default=["psf__requests-2317"],
@@ -294,7 +339,16 @@ def main(argv: list[str] | None = None) -> int:
         t2 += [r for r in extra if (r["target"], r["method"]) not in have]
     t2 = [r for r in t2 if not any(r["target"].startswith(x + "__") for x in args.exclude)]
     aidev = aidev_rows(Path(args.aidev), [Path(f) for f in args.aidev_rerun], args.aidev_exclude)
-    rows = mark_flaky(rows + t2 + aidev)
+    retry_dir = Path(args.oneshot_retry)
+    retries = {r["target"]: r for r in swebench_rows(retry_dir, "")} if retry_dir.exists() else {}
+    base = rows + t2 + aidev
+    variants = oneshot_variants(base, compile_status(), retries)
+    one_shot = sum(r["method"] == "one_shot_llm" for r in base)
+    for method in ("one_shot_compile", "one_shot_retry"):
+        n = sum(r["method"] == method for r in variants)
+        if n < one_shot:
+            print(f"{method}: {n} of {one_shot} one-shot runs (missing compile status or rerun)")
+    rows = mark_flaky(base + variants)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
