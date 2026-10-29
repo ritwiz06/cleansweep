@@ -18,3 +18,8 @@ overengineering: true
 overengineering_max_files: 20
 overengineering_budget_chars: 5000
 scope: auto   # agent = only what the agent patch wrote; repo = everything; auto = agent for swebench: targets
+# Dead code on a public name in a package module (no leading underscore, folder with __init__.py,
+# not a test, script or example) goes to the suggest lane: with no caller in the project the Guard
+# has nothing to run, and only the owner knows whether it is used outside.
+#   on | off | auto (on when the repo has packaging metadata: setup.py, setup.cfg or pyproject)
+keep_public_api: auto

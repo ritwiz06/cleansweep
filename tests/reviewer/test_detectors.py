@@ -36,3 +36,70 @@ def test_dependency_evidence_mentions_configs(tmp_path):
         "gunicorn is mentioned in Dockerfile"
     ]
     assert "not mentioned" in _dependency_mentions(str(tmp_path), "requests", "requirements.txt")[0]
+
+
+def _api_repo(tmp_path, metadata: str | None = None):
+    for path in (
+        "pkg/__init__.py",
+        "pkg/mod.py",
+        "pkg/_private.py",
+        "scripts/__init__.py",
+        "scripts/run.py",
+        "bad-name/__init__.py",
+        "bad-name/mod.py",
+        "loose.py",
+    ):
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text("")
+    if metadata:
+        (tmp_path / "pyproject.toml").write_text(metadata)
+    return str(tmp_path)
+
+
+def test_is_public_api_needs_a_public_name_in_a_package_module(tmp_path):
+    from cleansweep.core.models import CodeUnit
+    from cleansweep.reviewer.detectors import is_public_api
+
+    repo = _api_repo(tmp_path)
+    public = [("pkg/mod.py", "function", "helper"), ("pkg/mod.py", "function", "Box.size")]
+    private = [
+        ("pkg/mod.py", "function", "_helper"),  # private name
+        ("pkg/mod.py", "function", "Box._size"),
+        ("pkg/_private.py", "function", "helper"),  # private module
+        ("scripts/run.py", "function", "main"),  # a script folder
+        ("bad-name/mod.py", "function", "helper"),  # not importable
+        ("loose.py", "function", "helper"),  # not in a package
+        ("pkg/mod.py", "import", "os"),
+    ]
+    assert all(is_public_api(repo, CodeUnit(p, k, n)) for p, k, n in public)
+    assert not any(is_public_api(repo, CodeUnit(p, k, n)) for p, k, n in private)
+
+
+def test_keep_public_api_moves_public_dead_code_to_suggest(tmp_path):
+    from cleansweep.core.models import CodeUnit
+    from cleansweep.reviewer.detectors import PUBLIC_API_REASON, keep_public_api, make_item
+
+    def items():
+        return [
+            make_item(CodeUnit("pkg/mod.py", "function", n), c, "delete_unit", "safe", "r", [], [])
+            for n, c in (("helper", "dead_code"), ("_helper", "dead_code"), ("dup", "duplicate"))
+        ]
+
+    packaged = _api_repo(tmp_path / "a", '[project]\nname = "pkg"\n')
+    plain = _api_repo(tmp_path / "b")
+    moved = keep_public_api(items(), packaged)  # auto, with packaging metadata
+    assert [i.lane for i in moved] == ["suggest", "safe", "safe"]
+    assert moved[0].reason == PUBLIC_API_REASON
+    assert [i.lane for i in keep_public_api(items(), plain)] == ["safe"] * 3  # auto, no metadata
+    assert [i.lane for i in keep_public_api(items(), plain, "on")][0] == "suggest"
+    assert [i.lane for i in keep_public_api(items(), packaged, "off")][0] == "safe"
+
+
+def test_has_package_metadata(tmp_path):
+    from cleansweep.reviewer.detectors import has_package_metadata
+
+    assert not has_package_metadata(str(tmp_path))
+    (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+    assert not has_package_metadata(str(tmp_path))  # a tool config only
+    (tmp_path / "setup.cfg").write_text("[metadata]\nname = x\n")
+    assert has_package_metadata(str(tmp_path))
