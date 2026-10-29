@@ -260,12 +260,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--aidev-rerun",
         nargs="*",
-        default=[
-            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
-        ],
-        help="AIDev runs that failed in the grid, rerun on fixed code; fill in missing rows only",
+        default=[str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped")],
+        help="AIDev runs missing from the grid, rerun with the agent scope; fill in missing rows",
     )
     parser.add_argument(
         "--aidev-exclude",

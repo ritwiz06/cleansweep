@@ -297,9 +297,7 @@ def main(argv: list[str] | None = None) -> int:
         nargs="+",
         default=[
             str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
-            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
         ],
         help="the grid folder, then the rerun folders (first folder wins per repo and method)",
     )
