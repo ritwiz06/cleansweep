@@ -35,6 +35,7 @@ DEFAULTS = {
     "overengineering": True,
     "overengineering_max_files": 20,
     "overengineering_budget_chars": 5000,
+    "keep_public_api": "auto",
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 # when two detectors flag the same unit, the first category in this list wins
@@ -50,6 +51,9 @@ CATEGORY_PRIORITY = [
     "other",
 ]
 SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", "node_modules", "build", "dist"}
+PUBLIC_API_REASON = "public name with no caller in the project; may be public API"
+# folders whose modules are run, not imported by users of the package
+NOT_API_DIRS = {"scripts", "script", "examples", "example", "tests", "test", "docs", "benchmarks"}
 
 
 def item_id(key: str, category: str) -> str:
@@ -237,6 +241,62 @@ def detect_dead_code(
                 ["vulture", "graph"],
             )
         )
+    return items
+
+
+def has_package_metadata(repo_dir: str) -> bool:
+    """A setup.py, a setup.cfg with [metadata] or [options], or a pyproject.toml with a [project]
+    or [tool.poetry] table: the repository is published as a package."""
+    import tomllib
+
+    root = Path(repo_dir)
+    if (root / "setup.py").exists():
+        return True
+    setup_cfg = root / "setup.cfg"
+    if setup_cfg.exists() and re.search(
+        r"^\[(metadata|options)\]", setup_cfg.read_text(errors="replace"), re.MULTILINE
+    ):
+        return True
+    try:
+        data = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return False
+    return "project" in data or "poetry" in data.get("tool", {})
+
+
+def is_public_api(repo_dir: str, unit: CodeUnit) -> bool:
+    """A function or class whose qualified name has no leading underscore, in a module of an
+    importable package (a folder with an __init__.py and a valid module name), and not in a test,
+    script or example folder, a __main__.py or a private _module."""
+    if unit.kind not in ("function", "class") or not unit.name:
+        return False
+    if any(part.startswith("_") for part in unit.name.split(".")):
+        return False
+    path = Path(unit.path)
+    if _is_test(unit.path) or path.suffix != ".py" or path.stem.startswith("_"):
+        return False
+    if any(part in NOT_API_DIRS for part in path.parts[:-1]):
+        return False
+    folder = path.parent
+    return folder.name.isidentifier() and (Path(repo_dir) / folder / "__init__.py").exists()
+
+
+def keep_public_api(
+    items: list[CleanupItem], repo_dir: str, setting: str | None = None
+) -> list[CleanupItem]:
+    """reviewer.keep_public_api: "on" moves dead-code items on public names in package modules
+    (is_public_api) to the suggest lane, "off" never does, "auto" (default) only when the
+    repository has packaging metadata. With no caller in the project, the Guard's tests and probes
+    have nothing to run, so only the owner can tell whether such a name is used outside."""
+    setting = setting or _settings().get("keep_public_api", "auto")
+    if setting == "off" or (setting == "auto" and not has_package_metadata(repo_dir)):
+        return items
+    for item in items:
+        if item.category != "dead_code" or not is_public_api(repo_dir, item.unit):
+            continue
+        if item.lane == "safe":
+            item.lane, item.reason = "suggest", PUBLIC_API_REASON
+        item.evidence.append(f"public API policy: {PUBLIC_API_REASON}")
     return items
 
 
