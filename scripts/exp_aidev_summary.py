@@ -1,16 +1,21 @@
 """AIDev sweeps: what each method found, applied and rolled back, and the hidden-test coverage.
 
-    python scripts/exp_aidev_summary.py [--runs ../cleansweep-runs-3/results/raw/aidev_sweeps]
-        [--tests ../cleansweep-runs-3/.cleansweep/hidden_tests]
+    python scripts/exp_aidev_summary.py [--runs FOLDER ...] [--exclude OWNER__NAME ...]
 
-Reads the AIDev sweep reports (exp_swebench.py on data/splits/aidev_repos.json). Writes
+Reads the AIDev sweep reports (exp_swebench.py on data/splits/aidev_repos.json): the grid
+folder, then the rerun folders for runs missing there (as exp_collect.py does), with the
+second-model hidden tests from each folder's clone (.cleansweep/hidden_tests). Writes
 results/summary/aidev_sweeps.csv (one row per method and category) and aidev_sweeps.md:
-items proposed and applied by category (are there code-level items, not just files?),
-rollbacks by the check that caused them (tests, probes, compile), per repository the
-second-model hidden tests, and the cause of each hidden change: a changed hidden test that
-imports or calls a function or class the cleanup deleted, or tests a file it deleted, counts as
-"deleted code", any other as "behavior". Hidden-change rates with CIs per method are in
-main_table.md (exp_collect.py, exp_tables.py).
+items proposed and applied by category, with the net lines their edits remove (are there
+code-level items, not just files?), rollbacks by the check that caused them (tests, probes,
+compile), runs with over 100 applied edits by category, per repository the second-model hidden
+tests, and the cause of each hidden change: a changed hidden test that imports or calls a
+function or class the cleanup deleted, or tests a file it deleted, counts as "deleted code", any
+other as "behavior". Format and unused-import edits are counted on their own, and
+lines_removed_code is the net lines the other applied edits remove (formatting can add more
+lines than it removes). Repos in --exclude (no agent scope) are summarized in a section of their
+own and left out of the rest. Hidden-change rates with CIs per method are in main_table.md
+(exp_collect.py, exp_tables.py).
 """
 
 from __future__ import annotations
@@ -33,12 +38,36 @@ METHODS = [
     "one_shot_llm",
 ]
 CHECKS = ("compile", "tests", "ast", "probes")
+GROUPS = ("format", "unused_import", "dead_code", "duplicate", "leftover_file")
+SEPARATE = ("format", "unused_import")
+LARGE = 100
+# changed lines, not the "--- a/x" / "+++ b/x" file headers
+MINUS = re.compile(r"^-(?!-- (?:a/|/dev/null))", re.MULTILINE)
+PLUS = re.compile(r"^\+(?!\+\+ (?:b/|/dev/null))", re.MULTILINE)
 DEF = re.compile(r"^([-+])[ \t]*(?:async[ \t]+)?(?:def|class)[ \t]+(\w+)", re.MULTILINE)
 DELETED_FILE = re.compile(r"^--- a/(.+)\n\+\+\+ /dev/null", re.MULTILINE)
 
 
 def _applied(result: dict) -> bool:
     return result["status"] in ("kept", "repaired") and bool((result.get("diff") or "").strip())
+
+
+def net_lines(diff: str) -> int:
+    """Lines the diff deletes minus lines it adds."""
+    return len(MINUS.findall(diff)) - len(PLUS.findall(diff))
+
+
+def applied_by_group(rep: dict) -> tuple[Counter, Counter]:
+    """(applied edits, net lines removed) per category in GROUPS, the rest under "other"."""
+    category = {i["item_id"]: i["category"] for i in rep["plan"]["items"]}
+    edits, lines = Counter(), Counter()
+    for result in rep["results"]:
+        if _applied(result):
+            group = category.get(result["item_id"], "")
+            group = group if group in GROUPS else "other"
+            edits[group] += 1
+            lines[group] += net_lines(result["diff"])
+    return edits, lines
 
 
 def rollback_check(result: dict) -> str:
@@ -119,6 +148,11 @@ def summarize(reports: list[dict]) -> tuple[list[dict], list[dict]]:
         totals["files_removed"] += rep["stats"].get("files_removed", 0)
         totals["llm_retries"] += rep["stats"].get("llm_retries", 0)
         totals["llm_failures"] += rep["stats"].get("llm_failures", 0)
+        edits, lines = applied_by_group(rep)
+        totals["applied_format"] += edits["format"]
+        totals["applied_import"] += edits["unused_import"]
+        code = sum(n for group, n in lines.items() if group not in SEPARATE)
+        totals["lines_removed_code"] += max(code, 0)
         hidden = rep["stats"].get("hidden") or {}
         if hidden.get("available") and hidden.get("behavior_changed") is not None:
             totals["hidden_checked"] += 1
@@ -133,6 +167,7 @@ def summarize(reports: list[dict]) -> tuple[list[dict], list[dict]]:
             result = status.get(item["item_id"], {})
             if _applied(result):
                 c["applied"] += 1
+                c["lines_net"] += net_lines(result["diff"])
                 level = "files" if item.get("action") == "delete_file" else "code"
                 totals[f"applied_{level}"] += 1
             elif "could not be applied" in (result.get("notes") or ""):
@@ -148,6 +183,7 @@ def summarize(reports: list[dict]) -> tuple[list[dict], list[dict]]:
             "proposed": c["proposed"],
             "safe_lane": c["lane_safe"],
             "applied": c["applied"],
+            "lines_net": c["lines_net"],
             "rolled_back": c["rolled_back"],
             "could_not_apply": c["not_applicable"],
         }
@@ -196,6 +232,25 @@ def change_rows(reports: list[dict]) -> list[dict]:
     return sorted(rows, key=lambda r: (r["repo"], METHODS.index(r["method"])))
 
 
+def large_rows(reports: list[dict], limit: int = LARGE) -> list[dict]:
+    """Runs with over `limit` applied edits: applied edits / net lines removed per category."""
+    rows = []
+    for rep in reports:
+        edits, lines = applied_by_group(rep)
+        if sum(edits.values()) <= limit:
+            continue
+        rows.append(
+            {
+                "repo": rep["_repo"],
+                "method": rep["_method"],
+                "applied": sum(edits.values()),
+                **{g: f"{edits[g]} / {lines[g]}" for g in (*GROUPS, "other")},
+                "lines_removed": rep["stats"].get("lines_removed", 0),
+            }
+        )
+    return sorted(rows, key=lambda r: (r["repo"], METHODS.index(r["method"])))
+
+
 def hidden_rows(reports: list[dict]) -> list[dict]:
     """Second-model hidden tests per repository (the same tests for every method)."""
     out = {}
@@ -212,14 +267,22 @@ def hidden_rows(reports: list[dict]) -> list[dict]:
     return sorted(out.values(), key=lambda r: r["repo"])
 
 
-def load(folder: Path, tests_root: Path) -> list[dict]:
-    reports = []
-    for path in sorted(folder.glob("*__*__*.json")):
-        owner, name, method = path.stem.rsplit("__", 2)
-        data = json.loads(path.read_text())
-        tests = next(iter(sorted(tests_root.glob(f"aidev_{owner}_{name}@*"))), None)
-        reports.append({**data, "_repo": f"{owner}/{name}", "_method": method, "_tests": tests})
-    return reports
+def load(folders: list[Path], exclude: list[str]) -> tuple[list[dict], list[dict]]:
+    """Each (repo, method) report from the first folder that has it, with the hidden tests from
+    that folder's clone: (reports, reports of the repos in `exclude`)."""
+    seen, reports, excluded = set(), [], []
+    for folder in folders:
+        tests_root = folder.parents[2] / ".cleansweep" / "hidden_tests"
+        for path in sorted(folder.glob("*__*__*.json")):
+            owner, name, method = path.stem.rsplit("__", 2)
+            if (owner, name, method) in seen:
+                continue
+            seen.add((owner, name, method))
+            data = json.loads(path.read_text())
+            tests = next(iter(sorted(tests_root.glob(f"aidev_{owner}_{name}@*"))), None)
+            rep = {**data, "_repo": f"{owner}/{name}", "_method": method, "_tests": tests}
+            (excluded if f"{owner}__{name}" in exclude else reports).append(rep)
+    return reports, excluded
 
 
 def _table(rows: list[dict], cols: list[str]) -> list[str]:
@@ -231,13 +294,23 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--runs",
-        default=str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
+        nargs="+",
+        default=[
+            str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
+            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
+        ],
+        help="the grid folder, then the rerun folders (first folder wins per repo and method)",
     )
     parser.add_argument(
-        "--tests", default=str(ROOT.parent / "cleansweep-runs-3" / ".cleansweep" / "hidden_tests")
+        "--exclude",
+        nargs="*",
+        default=["commaai__opendbc", "PytorchConnectomics__pytorch_connectomics"],
+        help="AIDev repos without an agent scope (no agent commit in the history; DECISIONS)",
     )
     args = parser.parse_args(argv)
-    reports = load(Path(args.runs), Path(args.tests))
+    reports, excluded = load([Path(f) for f in args.runs], args.exclude)
     cat_rows, method_rows = summarize(reports)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.with_suffix(".csv").open("w", newline="") as f:
@@ -252,6 +325,9 @@ def main(argv: list[str] | None = None) -> int:
         "applied_code",
         "files_removed",
         "lines_removed",
+        "applied_format",
+        "applied_import",
+        "lines_removed_code",
         *[f"rolled_back_{c}" for c in CHECKS],
         "could_not_apply",
         "hidden_checked",
@@ -265,16 +341,23 @@ def main(argv: list[str] | None = None) -> int:
         "# AIDev sweeps",
         "",
         f"{len(reports)} reports on {repos} of the 20 runnable repos used (1 excluded), at their "
-        "head sha. Agent scope: lines and files that agent pull requests wrote (first-parent "
-        "blame). Applied files = deleted files; applied code = every other applied edit. "
-        "Could not apply = the edit tool could not make the change (e.g. a dependency listed "
-        "in pyproject.toml). Hidden checked = runs whose diff applied in a workspace with "
-        "second-model tests; hidden_deleted = changes where every changed test uses a function, "
-        "class or file the cleanup deleted; hidden_behavior = any other change.",
+        f"head sha; {len({r['_repo'] for r in excluded})} repos without an agent scope are "
+        "summarized at the end. Agent scope: lines and files that agent pull requests wrote "
+        "(first-parent blame). Applied files = deleted files; applied code = every other "
+        "applied edit, of which applied_format and applied_import are format and unused-import "
+        "edits; lines_removed_code = net lines removed by the other applied edits (per run, at "
+        "least 0). Could not apply = the edit tool could not make the change (e.g. a "
+        "dependency listed in pyproject.toml). Hidden checked = runs whose diff applied in a "
+        "workspace with second-model tests; hidden_deleted = changes where every changed test "
+        "uses a function, class or file the cleanup deleted; hidden_behavior = any other change.",
         "",
         *_table(method_rows, method_cols),
         "",
         "## Items by category",
+        "",
+        "lines_net: lines deleted minus lines added by the applied edits. tools_only makes one "
+        "ruff-fixes edit per run (ruff F401 --fix, then ruff format on the files agent commits "
+        "created), listed under unused_import.",
         "",
         *_table(
             cat_rows,
@@ -284,9 +367,20 @@ def main(argv: list[str] | None = None) -> int:
                 "proposed",
                 "safe_lane",
                 "applied",
+                "lines_net",
                 "rolled_back",
                 "could_not_apply",
             ],
+        ),
+        "",
+        f"## Runs with over {LARGE} applied edits",
+        "",
+        "Applied edits / net lines removed per category (negative: lines added). Repos without "
+        "an agent scope included.",
+        "",
+        *_table(
+            large_rows(reports + excluded),
+            ["repo", "method", "applied", *GROUPS, "other", "lines_removed"],
         ),
         "",
         "## Hidden changes",
@@ -301,6 +395,12 @@ def main(argv: list[str] | None = None) -> int:
         *_table(
             hidden_rows(reports), ["repo", "test_files", "stable_tests", "passing", "unstable"]
         ),
+        "",
+        "## Repos without an agent scope (not in the tables above)",
+        "",
+        "No agent commit in the recorded history, so the detectors ran on the whole repository.",
+        "",
+        *_table(summarize(excluded)[1], method_cols),
     ]
     OUT.with_suffix(".md").write_text("\n".join(md) + "\n")
     print(f"{len(reports)} reports -> {OUT.with_suffix('.md').relative_to(ROOT)}")

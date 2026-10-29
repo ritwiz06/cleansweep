@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "exp_collect.py"
@@ -33,3 +34,73 @@ def test_a_hidden_change_that_the_same_edits_do_not_repeat_is_flaky():
     marked = collect.mark_flaky(rows)
     assert [r["hidden_flaky"] for r in marked] == [0, 1, 0, 0, 0]
     assert all(not any(k.startswith("_") for k in r) for r in marked)
+
+
+EDITS = {
+    "plan": {
+        "items": [
+            {"item_id": "f", "category": "format"},
+            {"item_id": "i", "category": "unused_import"},
+            {"item_id": "d", "category": "dead_code"},
+            {"item_id": "u", "category": "duplicate"},
+        ]
+    },
+    "results": [
+        # reformatting adds more lines than it removes
+        {"item_id": "f", "status": "kept", "diff": "--- a/x.py\n+++ b/x.py\n-a\n+b\n+c\n+d\n"},
+        {"item_id": "i", "status": "kept", "diff": "--- a/x.py\n+++ b/x.py\n-import os\n"},
+        # a deleted line that starts with "--" is a change, not a file header
+        {
+            "item_id": "d",
+            "status": "repaired",
+            "diff": "--- a/q.py\n+++ b/q.py\n-def f():\n--- -1\n-    return 1\n",
+            "tests": {"duration_s": 250.0},
+        },
+        {"item_id": "u", "status": "rolled_back", "diff": "-x\n-y\n"},
+    ],
+}
+
+
+def test_format_and_import_edits_are_counted_apart_from_the_lines_removed():
+    collect = load_collect()
+    assert collect.edit_counts(EDITS) == {
+        "format_edits": 1,
+        "import_edits": 1,
+        "lines_removed_code": 3,
+    }
+
+
+def test_a_first_test_run_over_twice_the_baseline_is_overload_suspect():
+    collect = load_collect()
+    assert collect.slowdown(EDITS, 100) == {"test_slowdown": 2.5, "overload_suspect": 1}
+    assert collect.slowdown(EDITS, 200) == {"test_slowdown": 1.25, "overload_suspect": 0}
+    assert collect.slowdown(EDITS, None)["overload_suspect"] == ""
+
+
+def _report(folder, name, lines):
+    stats = {
+        "lines_removed": lines,
+        "files_removed": 0,
+        "test_runs": 1,
+        "llm_calls": 0,
+        "minutes": 1.0,
+        "hidden": {"available": True, "applied": True, "behavior_changed": False},
+    }
+    folder.mkdir(parents=True, exist_ok=True)
+    report = {"plan": {"items": []}, "results": [], "stats": stats}
+    (folder / f"{name}.json").write_text(json.dumps(report))
+
+
+def test_aidev_reruns_fill_only_the_missing_runs_and_excluded_repos_drop(tmp_path, monkeypatch):
+    collect = load_collect()
+    monkeypatch.setattr(collect, "AIDEV_SPLIT", tmp_path / "missing.json")
+    grid, rerun = tmp_path / "grid", tmp_path / "rerun"
+    _report(grid, "o__r__tools_only", 5)
+    _report(grid, "o__x__tools_only", 1)
+    _report(rerun, "o__r__tools_only", 9)  # already in the grid
+    _report(rerun, "o__r__one_shot_llm", 7)  # failed in the grid
+    rows = collect.aidev_rows(grid, [rerun, tmp_path / "none"], ["o__x"])
+    assert {(r["method"], r["lines_removed"]) for r in rows} == {
+        ("tools_only", 5),
+        ("one_shot_llm", 7),
+    }

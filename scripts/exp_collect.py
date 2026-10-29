@@ -3,7 +3,7 @@ results/summary/main_results.csv.
 
     python scripts/exp_collect.py [--t2 ../cleansweep-runs/results/raw/swebench_t2]
         [--t2-oneshot ...swebench_t2_oneshot] [--t2-rerun ...swebench_t2_rerun]
-        [--aidev ../cleansweep-runs-3/results/raw/aidev_sweeps]
+        [--aidev ../cleansweep-runs-3/results/raw/aidev_sweeps] [--aidev-rerun FOLDER ...]
 
 One row per (target, method). Toy and demo rows come from the recorded live runs listed in
 LOCAL_RUNS (2026-10-26 on); SWE-bench rows from the runners' report files. Tier 2 one-shot rows
@@ -11,7 +11,13 @@ come from the rerun folder when it exists, and runs that failed in the first Tie
 filled in from the rerun folder. hidden_flaky marks a hidden change that another method's
 identical edits on the same target did not repeat. An AIDev run without second-model hidden
 tests, or whose diff did not apply in the hidden-check workspace, has no hidden outcome (empty,
-not 0).
+not 0). AIDev runs that failed in the grid are filled in from the rerun folders.
+
+Format and unused-import edits are counted on their own, and lines_removed_code is the net lines
+the other applied edits remove (from each edit's own diff): reformatting can add more lines than
+it removes and so hide deleted code in lines_removed. test_slowdown is an AIDev run's first test
+run against the repo's selection-time test time (data/splits/aidev_repos.json);
+overload_suspect marks a run where it more than doubled.
 """
 
 from __future__ import annotations
@@ -20,6 +26,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -32,6 +39,7 @@ from cleansweep.core.models import SweepReport  # noqa: E402
 
 RAW = ROOT / "results" / "raw"
 OUT = ROOT / "results" / "summary" / "main_results.csv"
+AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
 LOCAL_RUNS = {
     "toy": "tests/fixtures/toy_repo",
     "demo": ".cleansweep/demo/shop_app",
@@ -51,8 +59,26 @@ FIELDS = [
     "outcome_total",
     "invalid_output",
     "hidden_flaky",
+    "format_edits",
+    "import_edits",
+    "lines_removed_code",
+    "test_slowdown",
+    "overload_suspect",
 ]
-OUTCOMES = ("edits_applied", "lines_removed", "files_removed", "hidden_changed")
+OUTCOMES = (
+    "edits_applied",
+    "lines_removed",
+    "files_removed",
+    "hidden_changed",
+    "format_edits",
+    "import_edits",
+    "lines_removed_code",
+)
+SEPARATE = {"format": "format_edits", "unused_import": "import_edits"}
+# changed lines, not the "--- a/x" / "+++ b/x" file headers
+MINUS = re.compile(r"^-(?!-- (?:a/|/dev/null))", re.MULTILINE)
+PLUS = re.compile(r"^\+(?!\+\+ (?:b/|/dev/null))", re.MULTILINE)
+OVERLOAD = 2.0
 
 
 def _digest(diff: str) -> str:
@@ -88,6 +114,31 @@ def _applied(results) -> int:
     return sum(
         get(r, "status") in ("kept", "repaired") and bool(get(r, "diff").strip()) for r in results
     )
+
+
+def edit_counts(data: dict) -> dict:
+    """Applied format and unused-import edits, and the net lines the other applied edits remove."""
+    category = {i["item_id"]: i["category"] for i in data["plan"]["items"]}
+    out = dict.fromkeys(SEPARATE.values(), 0)
+    net = 0
+    for r in data["results"]:
+        if r["status"] not in ("kept", "repaired") or not (r.get("diff") or "").strip():
+            continue
+        key = SEPARATE.get(category.get(r["item_id"], ""))
+        if key:
+            out[key] += 1
+        else:
+            net += len(MINUS.findall(r["diff"])) - len(PLUS.findall(r["diff"]))
+    return {**out, "lines_removed_code": max(net, 0)}
+
+
+def slowdown(data: dict, baseline: float | None) -> dict:
+    """The run's first test run against the repo's first baseline; empty without either."""
+    first = next((r["tests"]["duration_s"] for r in data["results"] if r.get("tests")), None)
+    if not first or not baseline:
+        return {"test_slowdown": "", "overload_suspect": ""}
+    ratio = first / baseline
+    return {"test_slowdown": round(ratio, 2), "overload_suspect": int(ratio > OVERLOAD)}
 
 
 def local_rows() -> list[dict]:
@@ -127,9 +178,11 @@ def local_rows() -> list[dict]:
     return rows
 
 
-def swebench_rows(folder: Path, target_set: str) -> list[dict]:
+def swebench_rows(
+    folder: Path, target_set: str, baselines: dict[str, float] | None = None
+) -> list[dict]:
     """One row per report <a>__<b>__<method>.json: SWE-bench <instance>__<agent>, or AIDev
-    <owner>__<name>."""
+    <owner>__<name> (with `baselines`: the repo's selection-time test seconds by target)."""
     rows = []
     for path in sorted(folder.glob("*__*__*.json")):
         instance, agent, method = path.stem.rsplit("__", 2)
@@ -152,11 +205,35 @@ def swebench_rows(folder: Path, target_set: str) -> list[dict]:
             "outcome_hits": "",
             "outcome_total": "",
             "invalid_output": 0,
+            **edit_counts(data),
+            **(slowdown(data, baselines.get(f"{instance}__{agent}")) if baselines else {}),
             "_group": f"{instance}__{agent}",
             "_diff": _digest(stats.get("final_diff", "")),
         }
         rows.append(_invalid(row, stats))
     return rows
+
+
+def aidev_baselines() -> dict[str, float]:
+    """Selection-time test seconds per AIDev target (<owner>__<name>)."""
+    if not AIDEV_SPLIT.exists():
+        return {}
+    repos = json.loads(AIDEV_SPLIT.read_text(encoding="utf-8"))
+    return {r["full_name"].replace("/", "__"): float(r["test_seconds"]) for r in repos}
+
+
+def aidev_rows(folder: Path, reruns: list[Path], exclude: list[str]) -> list[dict]:
+    """AIDev rows from the grid folder; runs missing there come from the rerun folders."""
+    baselines = aidev_baselines()
+    rows = swebench_rows(folder, "aidev", baselines) if folder.exists() else []
+    for extra in (f for f in reruns if f.exists()):
+        have = {(r["target"], r["method"]) for r in rows}
+        rows += [
+            r
+            for r in swebench_rows(extra, "aidev", baselines)
+            if (r["target"], r["method"]) not in have
+        ]
+    return [r for r in rows if r["target"] not in exclude]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -181,6 +258,22 @@ def main(argv: list[str] | None = None) -> int:
         help="AIDev sweeps (exp_swebench.py on data/splits/aidev_repos.json)",
     )
     parser.add_argument(
+        "--aidev-rerun",
+        nargs="*",
+        default=[
+            str(ROOT.parent / "cleansweep-runs-4" / "results" / "raw" / "aidev_rerun"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun2"),
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_rerun3"),
+        ],
+        help="AIDev runs that failed in the grid, rerun on fixed code; fill in missing rows only",
+    )
+    parser.add_argument(
+        "--aidev-exclude",
+        nargs="*",
+        default=["commaai__opendbc", "PytorchConnectomics__pytorch_connectomics"],
+        help="AIDev repos without an agent scope (no agent commit in the history; DECISIONS)",
+    )
+    parser.add_argument(
         "--exclude",
         nargs="*",
         default=["psf__requests-2317"],
@@ -199,7 +292,7 @@ def main(argv: list[str] | None = None) -> int:
         extra = swebench_rows(Path(args.t2_rerun), "swebench_t2")
         t2 += [r for r in extra if (r["target"], r["method"]) not in have]
     t2 = [r for r in t2 if not any(r["target"].startswith(x + "__") for x in args.exclude)]
-    aidev = swebench_rows(Path(args.aidev), "aidev") if Path(args.aidev).exists() else []
+    aidev = aidev_rows(Path(args.aidev), [Path(f) for f in args.aidev_rerun], args.aidev_exclude)
     rows = mark_flaky(rows + t2 + aidev)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:

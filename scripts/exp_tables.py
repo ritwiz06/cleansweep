@@ -5,6 +5,9 @@
 Reads results/summary/main_results.csv (from exp_collect.py) and guard_strength.csv. Writes
 results/summary/{main_table,paired_tests,ablation}.{csv,md} and results/figures/*.png.
 Toy and demo are one target each, so they are pooled as "answer keys" for intervals and tests.
+Hidden changes marked flaky or overload_suspect (see exp_collect) count as no outcome. On AIDev,
+where format edits can add more lines than they remove, the yield is lines_removed_code (lines
+removed by edits other than format and unused imports) in the paired tests, ablation and figures.
 """
 
 from __future__ import annotations
@@ -42,9 +45,16 @@ MARKS = {
 }
 METRICS = [
     ("lines_removed", "lines removed"),
+    ("lines_removed_code", "lines removed excl. format/imports"),
     ("edits_applied", "edits"),
     ("hidden_changed", "hidden changed"),
 ]
+# the yield measure per target set (lines_removed elsewhere)
+YIELD = {"aidev": "lines_removed_code"}
+YIELD_LABEL = {
+    "lines_removed": "lines removed per target",
+    "lines_removed_code": "lines removed excl. format/imports",
+}
 # chart tokens, as in docs/report/make_assets.py
 SURFACE, INK, INK_2, GRID, BAR = "#fcfcfb", "#0b0b0b", "#52514e", "#e1e0d9", "#2a78d6"
 
@@ -64,14 +74,23 @@ def read(path: Path) -> list[dict]:
             "llm_calls",
             "invalid_output",
             "hidden_flaky",
+            "format_edits",
+            "import_edits",
+            "lines_removed_code",
+            "overload_suspect",
         ):
             if k in r and r[k] != "":
                 r[k] = int(float(r[k]))
         if r.get("minutes"):
             r["minutes"] = float(r["minutes"])
-        if r.get("hidden_flaky") == 1:
-            r["hidden_changed"] = ""  # a flaky hidden test, not the edit (see exp_collect)
+        if r.get("hidden_flaky") == 1 or r.get("overload_suspect") == 1:
+            # a flaky hidden test or an overloaded machine, not the edit (see exp_collect)
+            r["hidden_changed"] = ""
     return rows
+
+
+def yield_key(target_set: str) -> str:
+    return YIELD.get(target_set, "lines_removed")
 
 
 def write(name: str, rows: list[dict]) -> None:
@@ -115,10 +134,15 @@ def main_table(rows: list[dict]) -> list[dict]:
             row = {"target set": target_set, "method": method, "n": len(recs)}
             row["invalid output"] = sum(int(r.get("invalid_output") or 0) for r in recs)
             row["flaky hidden"] = sum(int(r.get("hidden_flaky") or 0) for r in recs)
+            row["overload suspect"] = sum(int(r.get("overload_suspect") or 0) for r in recs)
             for key, name in METRICS:
                 vals = _values(recs, key)
                 digits = 2 if key == "hidden_changed" else 1
                 row[f"{name} (mean, 95% CI)"] = fmt(*bootstrap_ci(vals), digits) if vals else "n/a"
+            for key in ("format_edits", "import_edits"):
+                vals = _values(recs, key)
+                name = key.replace("_", " ")
+                row[f"{name} (mean)"] = round(sum(vals) / len(vals), 1) if vals else "n/a"
             row["test runs (mean)"] = round(sum(r["test_runs"] for r in recs) / len(recs), 1)
             row["minutes (mean)"] = round(sum(r["minutes"] for r in recs) / len(recs), 1)
             out.append(row)
@@ -142,12 +166,11 @@ def paired_tests(rows: list[dict]) -> list[dict]:
             ]
             if not pairs:
                 continue
-            # flaky hidden changes ("" after read) count as unchanged
+            # flaky and overload-suspect hidden changes ("" after read) count as unchanged
             b = sum(bool(m["hidden_changed"]) and not g["hidden_changed"] for g, m in pairs)
             c = sum(bool(g["hidden_changed"]) and not m["hidden_changed"] for g, m in pairs)
-            stat, p = wilcoxon(
-                [g["lines_removed"] for g, _ in pairs], [m["lines_removed"] for _, m in pairs]
-            )
+            key = yield_key(target_set)
+            stat, p = wilcoxon([g[key] for g, _ in pairs], [m[key] for _, m in pairs])
             out.append(
                 {
                     "target set": target_set,
@@ -156,6 +179,7 @@ def paired_tests(rows: list[dict]) -> list[dict]:
                     "hidden changed only with method": b,
                     "hidden changed only with gatekeeper": c,
                     "McNemar exact p": round(mcnemar(b, c), 4),
+                    "lines counted": YIELD_LABEL[key],
                     "lines removed: Wilcoxon W": round(stat, 1),
                     "Wilcoxon p": round(p, 4),
                 }
@@ -189,8 +213,8 @@ def ablation(rows: list[dict]) -> list[dict]:
                         f" vs {sum(_values(b, 'hidden_changed'))}/"
                         f"{len(_values(b, 'hidden_changed'))}"
                     ),
-                    "lines removed with / without": f"{sum(_values(a, 'lines_removed'))} vs "
-                    f"{sum(_values(b, 'lines_removed'))}",
+                    "lines removed with / without": f"{sum(_values(a, yield_key(target_set)))}"
+                    f" vs {sum(_values(b, yield_key(target_set)))}",
                     "test runs with / without": f"{sum(r['test_runs'] for r in a)} vs "
                     f"{sum(r['test_runs'] for r in b)}",
                 }
@@ -217,9 +241,8 @@ def figure_lines_removed(rows: list[dict]) -> None:
     axes = axes if len(sets) > 1 else [axes]
     for ax, target_set in zip(axes, sets, strict=True):
         methods = [m for m in METHOD_ORDER if (target_set, m) in by]
-        stats = [
-            bootstrap_ci(_values(by[(target_set, m)], "lines_removed") or [0]) for m in methods
-        ]
+        key = yield_key(target_set)
+        stats = [bootstrap_ci(_values(by[(target_set, m)], key) or [0]) for m in methods]
         means = [s[0] for s in stats]
         errs = [[s[0] - s[1] for s in stats], [s[2] - s[0] for s in stats]]
         y = range(len(methods))
@@ -230,7 +253,7 @@ def figure_lines_removed(rows: list[dict]) -> None:
         ax.invert_yaxis()
         n = len(by[(target_set, methods[0])])
         _style(ax, f"{target_set} (n={n})")
-        ax.set_xlabel("lines removed per target (mean, 95% CI)", fontsize=8, color=INK_2)
+        ax.set_xlabel(f"{YIELD_LABEL[key]}\n(mean, 95% CI)", fontsize=8, color=INK_2)
     fig.tight_layout()
     FIGURES.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIGURES / "main_lines_removed.png", dpi=200)
@@ -250,8 +273,9 @@ def figure_safety_vs_yield(rows: list[dict]) -> None:
     )
     axes = axes if len(sets) > 1 else [axes]
     for ax, target_set in zip(axes, sets, strict=True):
+        key = yield_key(target_set)
         for m in (m for m in METHOD_ORDER if (target_set, m) in by):
-            x = bootstrap_ci(_values(by[(target_set, m)], "lines_removed") or [0])
+            x = bootstrap_ci(_values(by[(target_set, m)], key) or [0])
             y = bootstrap_ci(_values(by[(target_set, m)], "hidden_changed") or [0])
             label, colour, marker = MARKS[m]
             ax.errorbar(
@@ -275,7 +299,7 @@ def figure_safety_vs_yield(rows: list[dict]) -> None:
         if target_set == "aidev":
             ax.set_xscale("symlog", linthresh=10)
             ax.set_xlim(left=-1)
-        ax.set_xlabel("lines removed per target (mean, 95% CI)", fontsize=8, color=INK_2)
+        ax.set_xlabel(f"{YIELD_LABEL[key]} (mean, 95% CI)", fontsize=8, color=INK_2)
     axes[0].set_ylabel("share with hidden behavior changed", fontsize=8, color=INK_2)
     axes[0].set_ylim(-0.05, 1.0)
     handles, labels = axes[-1].get_legend_handles_labels()
