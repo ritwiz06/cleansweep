@@ -41,5 +41,6 @@ aidev:
   excluded_runnable: 1                 # runnable repos left out of committed files (name rejected by the commit hook; DECISIONS)
   history_commits: 300
   history_cache: data/processed/aidev_history
+  scope_history_cache: data/processed/aidev_scope_history  # longer first-parent windows for the agent scope only (repos with no agent commit in the last 300; DECISIONS)
   labels: data/processed/aidev_labels.parquet
   slop_cache: data/processed/aidev_slop  # per-commit static slop for the Scheduler replay

@@ -12,6 +12,7 @@ from cleansweep.guard import Guard
 from cleansweep.llm import get_client
 from cleansweep.ranking import load_ranker
 from cleansweep.reviewer import build_plan, propose_fix
+from cleansweep.reviewer.planner import scope_report
 from cleansweep.sandbox import open_workspace
 from cleansweep.scheduler import apply_with_bisection, make_batches
 
@@ -96,6 +97,7 @@ def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0)
             "wall_seconds": round(time.time() - t0, 2),
             "n_checks": outcome["n_checks"],
             "final_diff": ws.diff(ws.base),
+            "scope": scope_report(ws.repo_id, ws.path, graph),
         }
         report = SweepReport(ws.repo_id, method, "now", seed, started, _now(), plan, results, stats)
         if cfg.get("run_id"):

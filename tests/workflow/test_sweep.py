@@ -17,6 +17,7 @@ def test_real_sweep_on_toy_repo(toy_repo, toy_expected, cfg):
     assert status["shopcart/commands.py::cmd_export"] == "skipped"
     assert set(STATS_KEYS) <= set(report.stats)
     assert report.stats["files_removed"] == 3
+    assert report.stats["scope"] == {"kind": "repo"}  # a local path: the whole repository
 
 
 def test_no_batching_runs_more_tests(toy_repo, cfg):

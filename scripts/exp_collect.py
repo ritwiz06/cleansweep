@@ -12,7 +12,10 @@ filled in from the rerun folder. hidden_flaky marks a hidden change that another
 identical edits on the same target did not repeat. An AIDev run without second-model hidden
 tests, or whose diff did not apply in the hidden-check workspace, has no hidden outcome (empty,
 not 0). AIDev runs that failed in the grid are filled in from the rerun folders, and a repo
-counts only once every method's run is in.
+counts only once every method's run is in. Every AIDev report must record the scope it used
+(stats["scope"]; data_aidev_scope.py --backfill adds it to older reports), or the run stops; a
+report whose agent scope was missing (the sweep saw the whole repository) is listed and left out,
+so a rerun folder's scoped run fills in.
 
 Format and unused-import edits are counted on their own, and lines_removed_code is the net lines
 the other applied edits remove (from each edit's own diff): reformatting can add more lines than
@@ -219,9 +222,28 @@ def swebench_rows(
             **(slowdown(data, baselines.get(f"{instance}__{agent}")) if baselines else {}),
             "_group": f"{instance}__{agent}",
             "_diff": _digest(stats.get("final_diff", "")),
+            "_scope": (stats.get("scope") or {}).get("kind"),
         }
         rows.append(_invalid(row, stats))
     return rows
+
+
+def scoped(rows: list[dict], folder: Path) -> list[dict]:
+    """AIDev rows whose report used the agent scope. A report without a scope record stops the
+    run; one whose scope was missing is listed and left out."""
+    lacking = sorted(f"{r['target']}__{r['method']}" for r in rows if not r["_scope"])
+    if lacking:
+        raise SystemExit(
+            f"{len(lacking)} AIDev reports in {folder} have no scope record "
+            f"(run data_aidev_scope.py --backfill {folder}): {', '.join(lacking[:3])}"
+        )
+    missing = sorted(f"{r['target']}__{r['method']}" for r in rows if r["_scope"] == "missing")
+    if missing:
+        print(
+            f"left out, agent scope missing: {len(missing)} reports in {folder.parent.name}/"
+            f"{folder.name} ({', '.join(sorted({m.rsplit('__', 1)[0] for m in missing}))})"
+        )
+    return [r for r in rows if r["_scope"] != "missing"]
 
 
 def aidev_baselines() -> dict[str, float]:
@@ -236,12 +258,12 @@ def aidev_rows(folder: Path, reruns: list[Path], exclude: list[str]) -> list[dic
     """AIDev rows from the grid folder; runs missing there come from the rerun folders. A repo
     counts only once it has a run for every method (a rerun can still be going)."""
     baselines = aidev_baselines()
-    rows = swebench_rows(folder, "aidev", baselines) if folder.exists() else []
+    rows = scoped(swebench_rows(folder, "aidev", baselines), folder) if folder.exists() else []
     for extra in (f for f in reruns if f.exists()):
         have = {(r["target"], r["method"]) for r in rows}
         rows += [
             r
-            for r in swebench_rows(extra, "aidev", baselines)
+            for r in scoped(swebench_rows(extra, "aidev", baselines), extra)
             if (r["target"], r["method"]) not in have
         ]
     rows = [r for r in rows if r["target"] not in exclude]
@@ -305,14 +327,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--aidev-rerun",
         nargs="*",
-        default=[str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped")],
+        default=[
+            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
+            str(ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window"),
+        ],
         help="AIDev runs missing from the grid, rerun with the agent scope; fill in missing rows",
     )
     parser.add_argument(
         "--aidev-exclude",
         nargs="*",
-        default=["commaai__opendbc", "PytorchConnectomics__pytorch_connectomics"],
-        help="AIDev repos without an agent scope (no agent commit in the history; DECISIONS)",
+        default=[],
+        help="AIDev repos to leave out (reports without an agent scope are left out anyway)",
     )
     parser.add_argument(
         "--oneshot-retry",

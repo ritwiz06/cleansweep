@@ -77,7 +77,7 @@ def test_a_first_test_run_over_twice_the_baseline_is_overload_suspect():
     assert collect.slowdown(EDITS, None)["overload_suspect"] == ""
 
 
-def _report(folder, name, lines):
+def _report(folder, name, lines, scope="agent_blame"):
     stats = {
         "lines_removed": lines,
         "files_removed": 0,
@@ -85,6 +85,7 @@ def _report(folder, name, lines):
         "llm_calls": 0,
         "minutes": 1.0,
         "hidden": {"available": True, "applied": True, "behavior_changed": False},
+        **({"scope": {"kind": scope}} if scope else {}),
     }
     folder.mkdir(parents=True, exist_ok=True)
     report = {"plan": {"items": []}, "results": [], "stats": stats}
@@ -143,3 +144,18 @@ def test_oneshot_variants_discard_or_retry_a_reply_that_does_not_compile():
     # a set with a run still waiting for its rerun gets no retry rows at all
     partial = collect.oneshot_variants(rows, {("t2", "ok"): False, ("t2", "bad"): True}, {})
     assert {r["method"] for r in partial} == {"one_shot_compile"}
+
+
+def test_aidev_rows_need_a_scope_record_and_skip_a_missing_scope(tmp_path, monkeypatch):
+    import pytest
+
+    collect = load_collect()
+    monkeypatch.setattr(collect, "AIDEV_SPLIT", tmp_path / "none.json")
+    grid, rerun = tmp_path / "grid", tmp_path / "rerun"
+    _report(grid, "o__r__tools_only", 5, scope="missing")
+    _report(rerun, "o__r__tools_only", 9)
+    rows = collect.aidev_rows(grid, [rerun], [])
+    assert [r["lines_removed"] for r in rows] == [9]  # the scoped rerun fills in
+    _report(grid, "o__r__one_shot_llm", 3, scope=None)
+    with pytest.raises(SystemExit, match="no scope record"):
+        collect.aidev_rows(grid, [rerun], [])

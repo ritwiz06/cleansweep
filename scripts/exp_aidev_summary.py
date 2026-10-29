@@ -13,8 +13,9 @@ tests, and the cause of each hidden change: a changed hidden test that imports o
 function or class the cleanup deleted, or tests a file it deleted, counts as "deleted code", any
 other as "behavior". Format and unused-import edits are counted on their own, and
 lines_removed_code is the net lines the other applied edits remove (formatting can add more
-lines than it removes). Repos in --exclude (no agent scope) are summarized in a section of
-their own and left out of the rest, and so are repos without a run for every method yet.
+lines than it removes). Reports whose scope record says the agent scope was missing (the sweep
+saw the whole repository) and repos in --exclude are summarized in a section of their own and
+left out of the rest, and so are repos without a run for every method yet.
 Hidden-change rates with CIs per method are in main_table.md (exp_collect.py, exp_tables.py).
 """
 
@@ -269,7 +270,8 @@ def hidden_rows(reports: list[dict]) -> list[dict]:
 
 def load(folders: list[Path], exclude: list[str]) -> tuple[list[dict], list[dict]]:
     """Each (repo, method) report from the first folder that has it, with the hidden tests from
-    that folder's clone: (reports, reports of the repos in `exclude`)."""
+    that folder's clone: (reports, reports of the repos in `exclude` or whose agent scope was
+    missing)."""
     seen, reports, excluded = set(), [], []
     for folder in folders:
         tests_root = folder.parents[2] / ".cleansweep" / "hidden_tests"
@@ -281,6 +283,10 @@ def load(folders: list[Path], exclude: list[str]) -> tuple[list[dict], list[dict
             data = json.loads(path.read_text())
             tests = next(iter(sorted(tests_root.glob(f"aidev_{owner}_{name}@*"))), None)
             rep = {**data, "_repo": f"{owner}/{name}", "_method": method, "_tests": tests}
+            if (data["stats"].get("scope") or {}).get("kind") == "missing":
+                seen.discard((owner, name, method))  # a later folder's scoped run fills in
+                excluded.append(rep)
+                continue
             (excluded if f"{owner}__{name}" in exclude else reports).append(rep)
     return reports, excluded
 
@@ -307,14 +313,15 @@ def main(argv: list[str] | None = None) -> int:
         default=[
             str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
             str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
+            str(ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window"),
         ],
         help="the grid folder, then the rerun folders (first folder wins per repo and method)",
     )
     parser.add_argument(
         "--exclude",
         nargs="*",
-        default=["commaai__opendbc", "PytorchConnectomics__pytorch_connectomics"],
-        help="AIDev repos without an agent scope (no agent commit in the history; DECISIONS)",
+        default=[],
+        help="AIDev repos to leave out (reports without an agent scope are left out anyway)",
     )
     args = parser.parse_args(argv)
     reports, excluded = load([Path(f) for f in args.runs], args.exclude)

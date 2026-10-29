@@ -27,3 +27,13 @@ def test_scope_setting_defaults_by_target(agent_repo):
     graph = build_graph(agent_repo)
     assert review_scope("swebench:x__y-1:agent_a", agent_repo, graph) is not None
     assert review_scope(f"local:{agent_repo}", agent_repo, graph) is None
+
+
+def test_scope_stats_records_the_scope_a_sweep_used(agent_repo):
+    from cleansweep.analysis.scope import agent_scope, scope_stats
+
+    stats = scope_stats(agent_repo, agent_scope(agent_repo), wanted=True)
+    assert stats["kind"] == "agent_patch" and stats["files"] >= 2
+    assert 0 < stats["share"] <= 1 and stats["agent_py_lines"] <= stats["py_lines"]
+    assert scope_stats(agent_repo, None, wanted=True) == {"kind": "missing"}
+    assert scope_stats(agent_repo, None, wanted=False) == {"kind": "repo"}

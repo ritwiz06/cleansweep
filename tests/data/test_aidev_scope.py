@@ -27,3 +27,15 @@ def test_scope_share_counts_agent_files_and_agent_lines_in_python_only():
         "share": 0.35,
     }
     assert scope_script.scope_share({}, {"files_added": [], "lines": {}})["share"] == ""
+
+
+def test_items_outside_counts_plan_items_beyond_the_agent_files():
+    scope_script = load()
+    scope = {"files_added": ["pkg/new.py"], "lines": {"pkg/old.py": [3]}}
+    items = [
+        {"unit": {"path": "pkg/new.py"}},
+        {"unit": {"path": "pkg/old.py"}},
+        {"unit": {"path": "."}},  # tools_only's whole-repo ruff item
+        {"unit": {"path": "examples/demo.py"}},
+    ]
+    assert scope_script.items_outside(items, scope) == 1

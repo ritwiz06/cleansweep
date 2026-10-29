@@ -179,6 +179,33 @@ def _stored_scope(repo_dir: str) -> AgentScope | None:
     return AgentScope(set(data["files_added"]), lines, scratch_rule=False)
 
 
+def scope_stats(repo_dir: str, scope: AgentScope | None, wanted: bool) -> dict:
+    """The scope a sweep used, for its report. kind: "agent_patch" (the agent patch commit),
+    "agent_blame" (the stored AIDev scope), "repo" (the whole repository), or "missing" when an
+    agent scope was wanted but none was found. With a scope: its files and units, the Python lines
+    the agent wrote and their share of the repository's Python lines."""
+    from cleansweep.analysis.graph import iter_py_files
+
+    if scope is None:
+        return {"kind": "missing" if wanted else "repo"}
+    py_lines = {}
+    for path in iter_py_files(repo_dir):
+        text = (Path(repo_dir) / path).read_text(encoding="utf-8", errors="replace")
+        py_lines[path] = len(text.splitlines())
+    agent = sum(py_lines.get(p, 0) for p in scope.files_added) + sum(
+        len(lines) for p, lines in scope.lines.items() if p.endswith(".py")
+    )
+    total = sum(py_lines.values())
+    return {
+        "kind": "agent_patch" if agent_commit(repo_dir) else "agent_blame",
+        "files": len(scope.files),
+        "units": len(scope.units),
+        "agent_py_lines": agent,
+        "py_lines": total,
+        "share": round(agent / total, 3) if total else 0.0,
+    }
+
+
 def agent_scope(repo_dir: str, graph=None) -> AgentScope | None:
     """The agent's files, changed lines and units (with a graph); None without an agent patch
     commit or a stored blame scope."""
