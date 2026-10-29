@@ -80,6 +80,20 @@ def test_install_files_are_left_out_of_the_diff():
     assert without_install_files("") == ""
 
 
+def test_install_files_in_the_diff_do_not_stop_the_alt_checks(toy_repo, cfg, tmp_path):
+    cfg = alt_cfg(cfg, tmp_path)
+    llm = FakeLLM({"shopcart.utils": UTILS_TESTS})
+    # a tracked egg-info file the sweep's install rewrote; the fresh workspace's install differs
+    info = (
+        "diff --git a/src/UNKNOWN.egg-info/PKG-INFO b/src/UNKNOWN.egg-info/PKG-INFO\n"
+        "--- a/src/UNKNOWN.egg-info/PKG-INFO\n+++ b/src/UNKNOWN.egg-info/PKG-INFO\n"
+        "@@ -1 +1 @@\n-Name: UNKNOWN\n+Name: shopcart\n"
+    )
+    diff = info + slugify_diff(toy_repo, cfg["core"]["sandbox"])
+    result = run_alt_hidden(toy_repo, diff, cfg, llm)
+    assert result["applied"] is True and result["behavior_changed"] is True
+
+
 def test_guard_never_sees_the_alt_tests(toy_repo, cfg, tmp_path, monkeypatch):
     cfg = alt_cfg(cfg, tmp_path)
     ws = open_workspace(toy_repo, cfg["core"]["sandbox"])

@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from cleansweep.core.models import CleanupItem
+from cleansweep.llm import LLMError
 
 PROMPT = (Path(__file__).parent / "prompts" / "repair.txt").read_text()
 FENCE = re.compile(r"```(?:diff|patch)?\n(.*?)```", re.S)
@@ -20,7 +21,10 @@ def propose_fix(item: CleanupItem, failure_log: str, repo_dir: str, llm) -> str 
         .replace("{diff}", item.patch or "(see failure)")
         .replace("{failure_log}", failure_log[-4000:])
     )
-    reply = llm.chat([{"role": "user", "content": prompt}])
+    try:
+        reply = llm.chat([{"role": "user", "content": prompt}])
+    except LLMError:  # a failed request is no fix: the edit is rolled back
+        return None
     if "NO_FIX" in reply:
         return None
     m = FENCE.search(reply)

@@ -1,5 +1,5 @@
 from cleansweep.core.models import CleanupItem, CodeUnit
-from cleansweep.llm import FakeLLM
+from cleansweep.llm import FakeLLM, LLMError
 from cleansweep.reviewer import propose_fix
 
 ITEM = CleanupItem(
@@ -18,3 +18,12 @@ def test_returns_diff_or_none():
     assert propose_fix(ITEM, "boom", ".", FakeLLM({"failed": diff})).startswith("--- a/m.py")
     assert propose_fix(ITEM, "boom", ".", FakeLLM({"failed": "NO_FIX"})) is None
     assert propose_fix(ITEM, "boom", ".", None) is None
+
+
+class TimesOut:
+    def chat(self, messages, **kwargs):
+        raise LLMError("APITimeoutError: Request timed out.")
+
+
+def test_failed_request_is_no_fix():
+    assert propose_fix(ITEM, "boom", ".", TimesOut()) is None
