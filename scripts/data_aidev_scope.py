@@ -24,9 +24,12 @@ import argparse
 import csv
 import json
 import subprocess
+import tarfile
+import tempfile
 from pathlib import Path
 
-from cleansweep.analysis.scope import blame_scope
+from cleansweep.analysis.graph import build_graph
+from cleansweep.analysis.scope import AgentScope, add_units, blame_scope
 from cleansweep.core.config import load_config
 from cleansweep.data.aidev import agent_history, extend_history
 from cleansweep.data.swebench import data_path
@@ -72,30 +75,52 @@ def items_outside(plan_items: list[dict], scope: dict) -> int:
     return sum(i["unit"]["path"] not in files for i in plan_items if i["unit"]["path"] != ".")
 
 
+def scope_units(clone: Path, sha: str, scope: dict) -> int:
+    """Units (classes and functions) the agent wrote or changed, on the code graph at sha."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tar = Path(tmp) / "tree.tar"
+        tar.write_bytes(
+            subprocess.run(
+                ["git", "archive", "--format=tar", sha], cwd=clone, capture_output=True, check=True
+            ).stdout
+        )
+        with tarfile.open(tar) as f:
+            f.extractall(Path(tmp) / "tree", filter="data")
+        lines = {p: set(v) for p, v in scope["lines"].items()}
+        agent = AgentScope(set(scope["files_added"]), lines, scratch_rule=False)
+        return len(add_units(agent, build_graph(str(Path(tmp) / "tree"))).units)
+
+
 def backfill(folders: list[Path], cfg: dict, repos: dict[str, str]) -> int:
-    """Write stats["scope"] into the AIDev reports in folders that lack it; returns how many."""
+    """Write stats["scope"] into the AIDev reports in folders that lack it, and the scope's units
+    into records an earlier backfill wrote without them; returns how many reports changed."""
     done, scopes = 0, {}
     for folder in folders:
         for path in sorted(folder.glob("*__*__*.json")):
             data = json.loads(path.read_text(encoding="utf-8"))
             owner, name, _ = path.stem.rsplit("__", 2)
             full = f"{owner}/{name}"
-            if "scope" in data["stats"] or full not in repos:
+            old = data["stats"].get("scope")
+            if full not in repos or (old and (old["kind"] != "agent_blame" or "units" in old)):
                 continue
             if full not in scopes:
                 clone, sha = clone_dir(cfg, full), repos[full]
                 shas, start = agent_history(full, sha)
                 scope = blame_scope(str(clone), sha, shas, start) if shas else None
-                scopes[full] = (scope, python_lines(clone, sha))
-            scope, py_lines = scopes[full]
+                units = scope_units(clone, sha, scope) if scope else None
+                scopes[full] = (scope, python_lines(clone, sha), units)
+            scope, py_lines, units = scopes[full]
             outside = items_outside(data["plan"]["items"], scope) if scope else None
-            if scope is None or outside:
+            if old:
+                record = {**old, "units": units}
+            elif scope is None or outside:
                 record = {"kind": "missing", "items_outside": outside}
             else:
                 share = scope_share(py_lines, scope)
                 record = {
                     "kind": "agent_blame",
                     "files": len(set(scope["files_added"]) | set(scope["lines"])),
+                    "units": units,
                     "agent_py_lines": share["agent_file_lines"] + share["agent_changed_lines"],
                     "py_lines": share["py_lines"],
                     "share": share["share"],
