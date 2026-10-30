@@ -28,7 +28,7 @@ INTERFACES: dict[str, dict[str, list[str]]] = {
         "verify": ["before", "after", "touched", "llm", "cfg"],
     },
     "workflow": {
-        "run_sweep": ["target", "cfg", "method", "seed"],
+        "run_sweep": ["target", "cfg", "method", "seed", "on_event"],
     },
     "data": {
         "load_tasks": ["instance_ids"],
