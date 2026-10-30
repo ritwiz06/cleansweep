@@ -9,8 +9,10 @@ applied), runs the tests, then makes the removed packages unavailable (Workspace
 a package another installed one requires stays, since the edited requirements would still
 install it) and runs the tests again. When they fail, each hidden package is tried alone.
 
-Writes results/summary/aidev_dependency_check.csv: one row per removed package, with its state,
-whether the removal is verified, and which methods applied it.
+Writes results/summary/aidev_dependency_check.csv: one row per removed package, with its state
+(hidden, not installed, or required by another package), whether the removal is verified, and
+which methods applied it. The packages that require it are printed, not written: they are names
+from the repositories' environments.
 """
 
 from __future__ import annotations
@@ -82,6 +84,11 @@ def check_repo(repo: str, packages: list[str], diff: str, sha: str, cfg: dict) -
         ws.close()
 
 
+def csv_state(state: str) -> str:
+    """The state for the CSV: "required by <names>" becomes "required by another package"."""
+    return "required by another package" if state.startswith("required by") else state
+
+
 def main() -> int:
     reports, _ = load([f for f in FOLDERS if f.exists()], [])
     advisory = {r["_repo"]: r for r in reports if r["_method"] == "cleansweep-advisory"}
@@ -96,7 +103,7 @@ def main() -> int:
                 {
                     "repo": repo,
                     "package": package,
-                    "state": state,
+                    "state": csv_state(state),
                     "verified": int(not new),
                     "new_failures": "; ".join(new[:5]),
                     "methods": "; ".join(sorted(packages[package])),
