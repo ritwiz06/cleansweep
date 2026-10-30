@@ -257,7 +257,9 @@ What happened:
   - It **changes hidden behavior on 9 of 57 patches** (16%, 95% CI 7–26%; exact McNemar p = 0.0039 against gatekeeper).
   - The model rewrites the agent's changed source files, and nothing checks the result.
 - **`tools_only`** removes 0.9 lines per patch (unused imports) and changes nothing hidden.
-- **Minutes per patch:** mean gatekeeper 8.2, which includes one Django run that took 197 minutes while the laptop slept; advisory 3.6, `guard_tests_only` 2.1, `tools_only` 1.5, `one_shot_llm` 1.9.
+- **`one_shot_compile`** (the same diff, discarded when a rewritten file doesn't compile; no extra LLM call) changes hidden behavior on **2 of 57** (McNemar p = 0.5) and removes 27.8 lines per patch (Wilcoxon p = 0.087).
+- **`one_shot_retry`** (the compile errors go back to the model once, and the second reply is applied) changes hidden behavior on **5 of 57** (p = 0.063) at 30.1 lines per patch. The second reply compiled for the 4 sympy and scikit-learn patches but not for the 3 sphinx ones (`results/raw/oneshot_retry/` in the runs-6 clone; 1 new LLM request each, the first reply came from the cache).
+- **Minutes per patch (median):** gatekeeper 2.2, advisory 1.3, `guard_tests_only` 1.4, `tools_only` 0.8, `one_shot_llm` 1.4. Medians, because one Django gatekeeper run took 197 minutes while the laptop slept (mean 8.2).
 
 ### Main table
 
@@ -267,23 +269,27 @@ left out of the means and counted apart (there were none). Flaky hidden = hidden
 another method's identical edits did not repeat; they are left out of the hidden-changed mean.
 `scripts/exp_collect.py` then `scripts/exp_tables.py`; files in `results/summary/`.
 
-| target set | method | n | lines removed | edits | hidden changed | flaky hidden | test runs | minutes |
+| target set | method | n | lines removed | edits | hidden changed | flaky hidden | test runs | minutes (median) |
 |---|---|---|---|---|---|---|---|---|
 | answer keys | cleansweep, gatekeeper | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 0 | 4.5 | 0.1 |
 | answer keys | cleansweep, advisory | 2 | 48.5 [47.0, 50.0] | 7.5 [5.0, 10.0] | 0.00 [0.00, 0.00] | 0 | 8.0 | 0.1 |
 | answer keys | `guard_tests_only` | 2 | 57.5 [56.0, 59.0] | 8.5 [6.0, 11.0] | 1.00 [1.00, 1.00] | 0 | 4.5 | 0.1 |
 | answer keys | `tools_only` | 2 | 50.5 [38.0, 63.0] | 9.0 [7.0, 11.0] | 1.00 [1.00, 1.00] | 0 | 0.0 | 0.0 |
 | answer keys | `one_shot_llm` | 2 | 47.0 [47.0, 47.0] | 6.5 [5.0, 8.0] | 0.00 [0.00, 0.00] | 0 | 0.0 | 0.4 |
-| SWE-bench Tier 1 | cleansweep, gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 2.2 |
-| SWE-bench Tier 1 | cleansweep, advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.8 |
-| SWE-bench Tier 1 | `guard_tests_only` | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.8 |
-| SWE-bench Tier 1 | `tools_only` | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 0 | 3.0 | 1.2 |
-| SWE-bench Tier 1 | `one_shot_llm` | 10 | 30.2 [8.4, 62.3] | 1.7 [0.9, 2.4] | 0.30 [0.00, 0.60] | 0 | 3.0 | 2.3 |
-| SWE-bench Tier 2 | cleansweep, gatekeeper | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 8.2 |
-| SWE-bench Tier 2 | cleansweep, advisory | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 3.6 |
-| SWE-bench Tier 2 | `guard_tests_only` | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 1 | 4.8 | 2.1 |
-| SWE-bench Tier 2 | `tools_only` | 57 | 0.9 [0.4, 1.6] | 0.9 [0.8, 1.1] | 0.00 [0.00, 0.00] | 0 | 3.0 | 1.5 |
-| SWE-bench Tier 2 | `one_shot_llm` | 57 | 30.1 [21.0, 41.0] | 1.7 [1.4, 2.0] | **0.16 [0.07, 0.26]** | 0 | 3.0 | 1.9 |
+| SWE-bench Tier 1 | cleansweep, gatekeeper | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.5 |
+| SWE-bench Tier 1 | cleansweep, advisory | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.1 |
+| SWE-bench Tier 1 | `guard_tests_only` | 10 | 57.0 [13.3, 122.9] | 2.0 [0.6, 4.1] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.1 |
+| SWE-bench Tier 1 | `tools_only` | 10 | 1.8 [0.0, 4.2] | 0.8 [0.4, 1.2] | 0.00 [0.00, 0.00] | 0 | 3.0 | 0.5 |
+| SWE-bench Tier 1 | `one_shot_llm` | 10 | 30.2 [8.4, 62.3] | 1.7 [0.9, 2.4] | 0.30 [0.00, 0.60] | 0 | 3.0 | 2.4 |
+| SWE-bench Tier 1 | `one_shot_compile` | 10 | 24.1 [2.9, 57.9] | 1.1 [0.4, 2.0] | 0.00 [0.00, 0.00] | 0 | 3.0 | 2.4 |
+| SWE-bench Tier 1 | `one_shot_retry` | 10 | 30.3 [8.5, 62.4] | 1.6 [0.9, 2.3] | 0.00 [0.00, 0.00] | 0 | 3.0 | 2.5 |
+| SWE-bench Tier 2 | cleansweep, gatekeeper | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 2.2 |
+| SWE-bench Tier 2 | cleansweep, advisory | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 0 | 4.8 | 1.3 |
+| SWE-bench Tier 2 | `guard_tests_only` | 57 | 37.4 [25.7, 53.5] | 1.4 [1.0, 1.9] | 0.00 [0.00, 0.00] | 1 | 4.8 | 1.4 |
+| SWE-bench Tier 2 | `tools_only` | 57 | 0.9 [0.4, 1.6] | 0.9 [0.8, 1.1] | 0.00 [0.00, 0.00] | 0 | 3.0 | 0.8 |
+| SWE-bench Tier 2 | `one_shot_llm` | 57 | 30.1 [21.0, 41.0] | 1.7 [1.4, 2.0] | **0.16 [0.07, 0.26]** | 0 | 3.0 | 1.4 |
+| SWE-bench Tier 2 | `one_shot_compile` | 57 | 27.8 [19.0, 38.9] | 1.5 [1.1, 1.8] | 0.04 [0.00, 0.09] | 0 | 3.0 | 1.4 |
+| SWE-bench Tier 2 | `one_shot_retry` | 57 | 30.1 [21.0, 41.0] | 1.6 [1.3, 2.0] | 0.09 [0.02, 0.18] | 0 | 3.0 | 1.5 |
 
 `results/figures/safety_vs_yield.png` plots lines removed against the hidden-change rate per
 method, with 95% CIs.
@@ -291,6 +297,7 @@ method, with 95% CIs.
 Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 - **Hidden changes:**
   - only `one_shot_llm` differs: 9 vs. 0 on Tier 2 (exact McNemar p = 0.0039) and 3 vs. 0 on Tier 1 (p = 0.25);
+  - `one_shot_compile`: 2 vs. 0 on Tier 2 (p = 0.5), 0 vs. 0 on Tier 1; `one_shot_retry`: 5 vs. 0 (p = 0.063), 0 vs. 0;
   - advisory, `guard_tests_only` and `tools_only`: p = 1.0.
 - **Lines removed:**
   - `tools_only` removes fewer (Wilcoxon p = 0.016 on Tier 1, p < 0.001 on Tier 2);
@@ -436,13 +443,12 @@ repository, kept if stable over 3 runs.
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
 sample of 120. A repository is kept if it installs in `python:3.11` (network cut before tests)
 and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The tables below use
-**20 of 21 runnable repos (1 excluded)**: the repository's commit hook rejects that one's name,
-so it stays out of the committed files until the team decides otherwise
-(`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
+**20 of 21 runnable repos** (one is left out of our released data files;
+`results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
 total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository
 (`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
-**Scheduler trade-off** (20 of 21 runnable repos, 1 excluded; mean and 95% bootstrap CI across
+**Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
 repositories; `scripts/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
 
 | Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |

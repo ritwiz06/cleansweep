@@ -4,7 +4,7 @@ AIDev-pop repositories,25402,
 at least 10 merged agent PRs,666,
 sampled (seeded),120,seed 0
 runnable,21,">= 5 tests, >= 90% passing, < 10 min"
-in committed files,20,1 excluded: name rejected by the commit hook
+in committed files,20,1 left out of the released data files
 dropped: install failed,35,
 dropped: pass rate below 90%,30,
 dropped: fewer than 5 tests ran,23,

@@ -4,11 +4,13 @@ swebench_t1,guard_tests_only,10,0,0,1.0,lines removed per target,0.0,1.0
 swebench_t1,tools_only,10,0,0,1.0,lines removed per target,0.0,0.0156
 swebench_t1,one_shot_llm,10,3,0,0.25,lines removed per target,4.0,0.5
 swebench_t1,one_shot_compile,10,0,0,1.0,lines removed per target,1.0,0.125
+swebench_t1,one_shot_retry,10,0,0,1.0,lines removed per target,3.0,0.625
 swebench_t2,cleansweep-advisory,57,0,0,1.0,lines removed per target,0.0,1.0
 swebench_t2,guard_tests_only,57,0,0,1.0,lines removed per target,0.0,1.0
 swebench_t2,tools_only,57,0,0,1.0,lines removed per target,1.5,0.0
 swebench_t2,one_shot_llm,57,9,0,0.0039,lines removed per target,244.0,0.7049
 swebench_t2,one_shot_compile,57,2,0,0.5,lines removed per target,139.0,0.0869
+swebench_t2,one_shot_retry,57,5,0,0.0625,lines removed per target,230.5,0.7287
 aidev,cleansweep-advisory,17,0,0,1.0,lines removed excl. format/imports,0.0,0.1088
 aidev,guard_tests_only,17,0,0,1.0,lines removed excl. format/imports,0.0,0.0679
 aidev,tools_only,17,1,0,1.0,lines removed excl. format/imports,14.0,0.3139
