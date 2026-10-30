@@ -37,6 +37,7 @@ DEFAULTS = {
     "overengineering_budget_chars": 5000,
     "keep_public_api": "auto",
     "framework_callbacks": "on",
+    "exclude": [],
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 # when two detectors flag the same unit, the first category in this list wins
