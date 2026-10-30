@@ -236,6 +236,16 @@ class Workspace:
             "files_removed": len(deleted.split()),
         }
 
+    def hide_packages(self, names: list[str]) -> dict[str, str] | None:
+        """Make installed packages unavailable for the next test run, as an environment built
+        from the edited requirements would be: {name: "hidden" | "required by ..." |
+        "not installed"}. None when this workspace can't (local runs, SWE-bench conda
+        environments); dependency removals there are checked statically only."""
+        return None
+
+    def restore_packages(self) -> None:
+        """Undo hide_packages."""
+
     def fork(self) -> Workspace:
         """Copy this workspace into an independent one at the same state."""
         new_path = Path(tempfile.mkdtemp(prefix="cs_fork_", dir=Path(self.path).parent))

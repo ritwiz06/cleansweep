@@ -132,6 +132,13 @@ def verify(before, after, touched: list[CodeUnit], llm, cfg: dict) -> tuple[bool
     return True, info
 
 
+STATIC_ONLY = "checked statically only: this workspace can't uninstall packages"
+VERIFIED = {
+    "hidden": "verified: the tests pass without it installed",
+    "not installed": "verified: not installed in the test environment",
+}
+
+
 class Guard:
     """Applies cleanup edits and keeps only those that leave behavior unchanged."""
 
@@ -163,6 +170,9 @@ class Guard:
                 f"new failing tests: {new}\n" + getattr(self.ws, "last_test_output", "")[-4000:]
             )
             return False, info
+        deps = [i.unit.name for i in items if i.action == "remove_dependency" and i.unit.name]
+        if deps and not self._check_dependencies(deps, info):
+            return False, info
         if all(i.action == "format" for i in items):
             same = True
             for f in changed_py_files(self.ws, start):
@@ -188,6 +198,32 @@ class Guard:
                 return False, info
         return True, info
 
+    def _check_dependencies(self, names: list[str], info: dict) -> bool:
+        """Rerun the tests with the removed packages uninstalled, where the workspace can; a
+        package another installed one requires stays installed, so its removal changes nothing."""
+        states = self.ws.hide_packages(names)
+        if states is None:
+            info["dependencies"] = dict.fromkeys(names, STATIC_ONLY)
+            return True
+        try:
+            if "hidden" in states.values():
+                result = self.ws.run_tests(None)
+                new = _new_failures(self.baseline, result)
+                if new or result.errors > self.baseline.errors:
+                    gone = ", ".join(n for n, s in states.items() if s == "hidden")
+                    info.update(tests=result, check="dependency")
+                    info["log"] = (
+                        f"tests fail without {gone}: {new}\n"
+                        + getattr(self.ws, "last_test_output", "")[-4000:]
+                    )
+                    return False
+        finally:
+            self.ws.restore_packages()
+        info["dependencies"] = {
+            n: VERIFIED.get(s, f"verified: still installed ({s})") for n, s in states.items()
+        }
+        return True
+
     def check_batch(self, items: list[CleanupItem]) -> bool:
         """Apply a batch, verify it, and keep it or roll it back. False means rolled back."""
         start = self.ws.checkpoint("before batch")
@@ -209,7 +245,10 @@ class Guard:
         if ok:
             self.ws.checkpoint("batch kept")
             for item in applied:
-                self._record(item, "kept", info, diffs[item.item_id])
+                notes = info.get("dependencies", {}).get(item.unit.name, "")
+                if item.action != "remove_dependency":
+                    notes = ""
+                self._record(item, "kept", info, diffs[item.item_id], notes)
             return True
 
         if len(applied) == 1 and self.repair_fn is not None:
