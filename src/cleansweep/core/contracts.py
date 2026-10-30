@@ -44,6 +44,7 @@ INTERFACES: dict[str, dict[str, list[str]]] = {
         "CodeGraph.callees": ["unit_key"],
         "CodeGraph.is_reachable": ["unit_key"],
         "CodeGraph.dynamic_risk": ["unit_key"],
+        "CodeGraph.framework_callback": ["unit_key"],
         "find_duplicates": ["repo_dir", "threshold"],
         "extract_features": ["repo_dir", "graph", "coverage_json", "history"],
     },

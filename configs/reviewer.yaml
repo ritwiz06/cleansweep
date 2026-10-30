@@ -23,3 +23,8 @@ scope: auto   # agent = only what the agent patch wrote; repo = everything; auto
 # has nothing to run, and only the owner knows whether it is used outside.
 #   on | off | auto (on when the repo has packaging metadata: setup.py, setup.cfg or pyproject)
 keep_public_api: auto
+# Methods a framework calls by name (Textual's compose and on_*, Django's get_queryset, Click's
+# invoke, ...; the table is in src/cleansweep/analysis/frameworks.py) go to the suggest lane:
+# nothing in the project calls them, so neither the graph nor the Guard can see that they are used.
+#   on | off
+framework_callbacks: on

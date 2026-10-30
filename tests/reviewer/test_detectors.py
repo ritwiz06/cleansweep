@@ -110,3 +110,31 @@ def test_has_package_metadata(tmp_path):
     assert not has_package_metadata(str(tmp_path))  # a tool config only
     (tmp_path / "setup.cfg").write_text("[metadata]\nname = x\n")
     assert has_package_metadata(str(tmp_path))
+
+
+def test_keep_framework_callbacks_moves_callbacks_to_suggest(tmp_path):
+    from cleansweep.analysis import build_graph
+    from cleansweep.core.models import CodeUnit
+    from cleansweep.reviewer.detectors import keep_framework_callbacks, make_item
+
+    (tmp_path / "ui.py").write_text(
+        "from textual.app import App\n\nclass Main(App):\n    def on_mount(self):\n"
+        "        pass\n\n    def helper(self):\n        pass\n"
+    )
+    graph = build_graph(str(tmp_path))
+
+    def items():
+        return [
+            make_item(
+                CodeUnit("ui.py", "function", n), "dead_code", "delete_unit", "safe", "r", [], []
+            )
+            for n in ("Main.on_mount", "Main.helper")
+        ]
+
+    moved = keep_framework_callbacks(items(), graph)
+    assert [i.lane for i in moved] == ["suggest", "safe"]
+    assert moved[0].reason.startswith("textual calls this method by name")
+    assert [i.lane for i in keep_framework_callbacks(items(), graph, "off")] == ["safe", "safe"]
+    assert [i.lane for i in keep_framework_callbacks(items(), graph, False)] == ["safe", "safe"]
+    with pytest.raises(ValueError, match="framework_callbacks"):
+        keep_framework_callbacks(items(), graph, "auto")

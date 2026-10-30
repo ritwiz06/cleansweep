@@ -6,7 +6,7 @@ from cleansweep.analysis import build_graph
 from cleansweep.analysis.scope import agent_scope, scope_stats
 from cleansweep.core.models import CATEGORIES, CleanupPlan
 
-from .detectors import _settings, keep_public_api, run_detectors
+from .detectors import _settings, keep_framework_callbacks, keep_public_api, run_detectors
 from .judge import judge_items
 from .overengineering import review_overengineering, wanted
 
@@ -43,7 +43,8 @@ def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> Cleanup
             # one coverage run (a test run) lets the review drop tested "can't happen" claims
             coverage = workspace.coverage_json() if hasattr(workspace, "coverage_json") else None
             items += review_overengineering(items, repo_dir, graph, llm, coverage_json=coverage)
-    # after the judge, which rewrites reasons, so the policy's reason is the one shown
+    # after the judge, which rewrites reasons, so the policies' reasons are the ones shown
     items = keep_public_api(items, repo_dir)
+    items = keep_framework_callbacks(items, graph)
     items.sort(key=lambda i: (i.lane != "safe", CATEGORIES.index(i.category), i.unit.key))
     return CleanupPlan(repo_id, datetime.now(UTC).isoformat(timespec="seconds"), items)

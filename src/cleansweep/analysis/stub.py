@@ -26,6 +26,9 @@ class CodeGraph:
     def dynamic_risk(self, unit_key: str) -> bool:
         return False
 
+    def framework_callback(self, unit_key: str) -> str | None:
+        return None
+
 
 def build_graph(repo_dir: str) -> CodeGraph:
     return CodeGraph(repo_dir)
