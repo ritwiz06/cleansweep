@@ -109,7 +109,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
 - **Inputs:** `data/splits/swebench_tier2.json`: 60 patches on 21 instances in 11 repositories
   (Tier 1 included), 18 differ from the developer's fix. Results use 57: the three
   `psf__requests-2317` patches are left out (`exp_collect.py --exclude` default) because that
-  project's tests call a live web service (2.5–3.5 h per patch). PatchDiff tests had to be stable
+  project's tests call a live web service (two took 2.7 and 3.5 h; the third was stopped). PatchDiff tests had to be stable
   over 2 runs in the first run, 3 from PR #39 on. `swebench_tier3.json` (435 patches) was not run.
 - **Outputs:** per-run reports in the three folders; the `swebench_t2` rows of `main_results.csv`.
 - **Runtime:** first run about 28 h, including a 3 h pause and about 6.5 h on the requests

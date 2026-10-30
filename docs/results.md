@@ -110,8 +110,8 @@ agent-written code itself the detectors found no dead code, unused imports or du
 
 **57 PatchDiff patches × 5 methods** (`scripts/exp_swebench.py --tier data/splits/swebench_tier2.json`
 in a frozen clone of main, 2026-10-26 15:08 to 2026-10-27 21:39 with the reruns). Tier 2 has 60 patches, from 21
-instances in 11 repositories. The three `psf__requests-2317` patches were stopped and left out:
-`requests`' own tests call httpbin.org live, so each patch took 2.5–3.5 hours.
+instances in 11 repositories. The three `psf__requests-2317` patches were left out: `requests`'
+own tests call httpbin.org live, so two of them took 2.7 and 3.5 hours, and the third was stopped.
 
 - **First run:** 53 patches finished completely.
 - **Four patches failed there and were rerun with the fixes from #39**, in a second frozen clone at 83e3b00:
@@ -260,7 +260,7 @@ and/or, return None.
   sympy patches.
 - **Tier 2 (47 patches beyond Tier 1, runner only):** the tests catch 130 of 189 mutants and the
   probes 5 more (astropy `SkyCoord.__getattr__` × 3, sphinx `_parse_annotation` and napoleon
-  `_skip_member`). Most survivors are in sympy-12096 (13) and pylint-6903 (12). The 3
+  `_skip_member`). The largest groups of the 54 survivors are in sympy-12096 (13) and pylint-6903 (12). The 3
   django-11099 patches only change a class attribute, so there is nothing to mutate or probe.
 - **PatchDiff recall:** every catch is a real difference.
   - `sphinx-10466` × 3: the agent removes duplicate locations, the developer's fix doesn't.
@@ -403,7 +403,7 @@ sample of 120. A repository is kept if it installs in `python:3.11` (network cut
 and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The tables below use
 **20 of 21 runnable repos** (one is left out of our released data files;
 `results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
-total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository
+total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository plus the last
 (`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
 **Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
