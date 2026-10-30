@@ -55,14 +55,23 @@ sys.exit(0 if ok else 1)
 """
 INSTALL = "python - <<'CS_EOF'\n" + INSTALL_PY + "\nCS_EOF"
 # Runs inside the container: for each package, keep it when another installed distribution (not
-# the project itself) requires it, else move its installed files aside, the files pip uninstall
-# would remove (the container has no network to reinstall them). Prints {name: state}.
+# the project itself: installed from /repo or named like it) requires it, else move its installed
+# files aside, the files pip uninstall would remove (the container has no network to reinstall
+# them). Prints {name: state}.
 HIDE_PY = r"""
 import importlib.metadata as md, json, os, shutil, sys
 from pip._vendor.packaging.requirements import Requirement
 from pip._vendor.packaging.utils import canonicalize_name
 STASH = "/tmp/cs_hidden"
+try:
+    import tomllib
+    with open("/repo/pyproject.toml", "rb") as f:
+        OWN = {canonicalize_name(tomllib.load(f).get("project", {}).get("name") or "")}
+except Exception:
+    OWN = set()
 def project(d):
+    if canonicalize_name(d.metadata["Name"] or "") in OWN - {""}:
+        return True
     try:
         return "file:///repo" in (d.read_text("direct_url.json") or "")
     except Exception:
