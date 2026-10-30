@@ -74,3 +74,47 @@ def test_policy_drops_public_dead_code_from_the_final_diff(tmp_path):
 
 def _unit(name):
     return {"path": "pkg/mod.py", "kind": "function", "name": name, "start_line": 1}
+
+
+def test_framework_and_final_policies_and_reused_reruns(tmp_path, monkeypatch):
+    import json
+
+    from cleansweep.analysis import build_graph
+
+    policy = load()
+    tree = _tree(tmp_path)
+    (tree / "pkg" / "ui.py").write_text(
+        "from textual.app import App\n\nclass Main(App):\n    def on_mount(self):\n        pass\n"
+    )
+    graph = build_graph(str(tree))
+    rep = {
+        "plan": {
+            "items": [
+                {"item_id": "a", "category": "dead_code", "unit": _unit("helper")},
+                {
+                    "item_id": "c",
+                    "category": "dead_code",
+                    "unit": {"path": "pkg/ui.py", "kind": "function", "name": "Main.on_mount"},
+                },
+            ]
+        },
+        "results": [
+            {"item_id": "a", "status": "kept", "diff": "x"},
+            {"item_id": "c", "status": "kept", "diff": "y"},
+        ],
+    }
+
+    def moved(name):
+        return [r["item_id"] for r in policy.policy_edits(rep, tree, name, graph)[2]]
+
+    # Main.on_mount is public too, so the public-API policy also keeps it
+    assert moved("public_api") == ["a", "c"]
+    assert moved("framework") == ["c"]
+    assert moved("final") == ["a", "c"]
+    # a rerun stored under another policy is reused for the same filtered diff
+    monkeypatch.setattr(policy, "RAW_DIR", tmp_path / "raw")
+    (tmp_path / "raw" / "aidev_public_api").mkdir(parents=True)
+    stored = {"filtered_diff": "d", "hidden": {"behavior_changed": False}}
+    (tmp_path / "raw" / "aidev_public_api" / "t__m.json").write_text(json.dumps(stored))
+    assert policy._reused("t__m.json", "d") == {"behavior_changed": False}
+    assert policy._reused("t__m.json", "other") is None
