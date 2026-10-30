@@ -18,6 +18,11 @@ def _scope_setting(repo_id: str, cfg: dict | None = None) -> str:
     return setting
 
 
+def excluded(path: str, prefixes: list[str]) -> bool:
+    """reviewer.exclude: folders (or files) the Reviewer leaves alone, e.g. ["tests/fixtures/"]."""
+    return any(path == p.rstrip("/") or path.startswith(p.rstrip("/") + "/") for p in prefixes)
+
+
 def review_scope(repo_id: str, repo_dir: str, graph, cfg: dict | None = None):
     """reviewer.scope: "agent" reviews only what the agent wrote, "repo" everything; "auto"
     (default) means agent for swebench: and aidev: targets and repo for local paths."""
@@ -43,6 +48,7 @@ def build_plan(
     graph = graph or build_graph(repo_dir)
     settings = _settings(cfg)
     items = run_detectors(repo_dir, graph, review_scope(repo_id, repo_dir, graph, cfg), cfg)
+    items = [i for i in items if not excluded(i.unit.path, settings["exclude"])]
     if use_llm and llm is not None:
         items = judge_items(items, repo_dir, llm, graph=graph, cfg=cfg)
         if wanted(cfg):

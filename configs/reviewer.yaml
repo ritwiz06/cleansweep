@@ -28,3 +28,5 @@ keep_public_api: auto
 # nothing in the project calls them, so neither the graph nor the Guard can see that they are used.
 #   on | off
 framework_callbacks: on
+# Folders or files the Reviewer leaves alone (path prefixes), e.g. [tests/fixtures/, demo/]
+exclude: []

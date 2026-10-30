@@ -26,3 +26,15 @@ def test_build_plan_uses_the_run_config(toy_ws):
     cfg["reviewer"]["vulture_min_confidence"] = 100  # vulture's 60% hits drop out
     plan = build_plan(toy_ws, use_llm=False, cfg=cfg)
     assert not any(i.category == "dead_code" for i in plan.items)
+
+
+def test_exclude_leaves_folders_alone(toy_ws):
+    from cleansweep.core.config import load_config
+    from cleansweep.reviewer.planner import excluded
+
+    assert excluded("demo/app.py", ["demo/"]) and excluded("demo", ["demo/"])
+    assert not excluded("demos/app.py", ["demo/"])
+    cfg = load_config()
+    cfg["reviewer"]["exclude"] = ["shopcart/"]
+    plan = build_plan(toy_ws, use_llm=False, cfg=cfg)
+    assert plan.items and not any(i.unit.path.startswith("shopcart/") for i in plan.items)
