@@ -8,16 +8,17 @@ from app.live_runner import (
     EventLog,
     fold,
     list_runs,
-    logged_check_fn,
     read_events,
     replay,
     run_live,
+    translate,
 )
 from cleansweep.core.io import load_json
 from cleansweep.core.models import CleanupItem, CodeUnit, EditResult, SweepReport
 from cleansweep.llm import FakeLLM
 from cleansweep.reviewer.detectors import item_id
 from cleansweep.scheduler import apply_with_bisection
+from cleansweep.workflow.sweep import report_checks
 
 
 def test_event_log_round_trip(tmp_path):
@@ -79,7 +80,7 @@ def item(n: int) -> CleanupItem:
 def test_bisection_splits_show_up_as_events(tmp_path):
     log = EventLog(tmp_path / "events.jsonl")
     ws = types.SimpleNamespace(test_runs=0, base="b", diff_stats=lambda since: {"lines_removed": 3})
-    check = logged_check_fn(FakeGuard(bad={"i2"}), ws, log)
+    check = report_checks(FakeGuard(bad={"i2"}), ws, translate(log))
     out = apply_with_bisection([[item(n) for n in range(4)]], check)
     assert out["rejected"] == ["i2"]
     results = [e for e in read_events(tmp_path / "events.jsonl") if e["kind"] == "batch_result"]

@@ -1,7 +1,7 @@
-"""Run one sweep step by step and log every step, for the Live sweep page.
+"""Run one sweep and log every step, for the Live sweep page.
 
-The steps and settings mirror cleansweep.workflow.sweep.run_sweep; keep the two in sync.
-Run from the repo root to record a run without the browser:
+The sweep is cleansweep.workflow.run_sweep; its on_event callback (translate) turns each step and
+Guard check into the page's events. Run from the repo root to record a run without the browser:
     python -m app.live_runner --judge-mode gatekeeper
 """
 
@@ -14,20 +14,15 @@ import os
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
-from cleansweep.analysis import build_graph, extract_features
 from cleansweep.core.config import load_config
 from cleansweep.core.io import save_json, to_dict
-from cleansweep.core.models import METHODS, EditResult, SweepReport
-from cleansweep.eval import one_shot_llm, run_hidden_checks, summarize, tools_only
-from cleansweep.guard import Guard
-from cleansweep.llm import get_client
-from cleansweep.ranking import load_ranker
-from cleansweep.reviewer import build_plan, propose_fix
-from cleansweep.sandbox import open_workspace
-from cleansweep.scheduler import apply_with_bisection, make_batches
+from cleansweep.core.models import METHODS, SweepReport
+from cleansweep.eval import run_hidden_checks, summarize
+from cleansweep.workflow import run_sweep
+from cleansweep.workflow.sweep import make_llm
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_DIR = ROOT / "results" / "raw" / "live"
@@ -45,7 +40,15 @@ STAGE_LABELS = {
 }
 JUDGE_MODES = ["gatekeeper", "advisory", "off"]
 JUDGE_ENV = "CLEANSWEEP_JUDGE_MODE"
-BASELINES = ("tools_only", "one_shot_llm")
+BASELINES = ("tools_only", "one_shot_llm", "one_shot_retry")
+# run_sweep's step events, and the stage that starts after each
+NEXT_STAGE = {
+    "open": "analyze",
+    "analyze": "plan",
+    "plan": "rank",
+    "rank": "batch",
+    "batch": "guard",
+}
 
 
 class EventLog:
@@ -137,6 +140,7 @@ class LoggedLLM:
         self._llm = llm
         self._log = log
         self._n = 0
+        self.model = getattr(llm, "model", None)
 
     def _call(self, fn, messages, temperature, seed, extra_body):
         self._n += 1
@@ -160,179 +164,45 @@ class LoggedLLM:
         return self._llm.usage()
 
 
-def logged_check_fn(guard, ws, log: EventLog) -> Callable[[list], bool]:
-    """Wrap Guard.check_batch so every check, including bisection halves, is logged."""
-    count = 0
+def translate(log: EventLog) -> Callable[[str, dict], None]:
+    """run_sweep's on_event callback: each step and Guard check becomes the page's event."""
 
-    def check(batch) -> bool:
-        nonlocal count
-        count += 1
+    def on_event(name: str, payload: dict) -> None:
+        if name in NEXT_STAGE or name == "guard":
+            log.emit("stage_done", stage=name, **payload)
+            if name in NEXT_STAGE:
+                log.emit("stage_start", stage=NEXT_STAGE[name])
+        elif name == "baseline":
+            log.emit("guard_baseline", **payload)
+        elif name == "check_start":
+            log.emit("batch_start", **payload)
+        elif name == "check":
+            log.emit("batch_result", **payload)
+
+    return on_event
+
+
+def _run(target: str, cfg: dict, method: str, log: EventLog) -> SweepReport:
+    if method in BASELINES:
+        for stage in NEXT_STAGE:
+            log.emit("stage_done", stage=stage, seconds=0, skipped=True)
+        log.emit("stage_start", stage="guard")
+        since = time.time()
+        report = run_sweep(target, cfg, method)
         log.emit(
-            "batch_start",
-            n=count,
-            items=[i.item_id for i in batch],
-            units=[i.unit.key for i in batch],
-            categories=[i.category for i in batch],
+            "stage_done",
+            stage="guard",
+            seconds=round(time.time() - since, 1),
+            baseline=True,
+            items=to_dict(report.plan.items),
+            results=to_dict(report.results),
+            stats={k: v for k, v in report.stats.items() if k != "final_diff"},
         )
-        start = time.time()
-        ok = guard.check_batch(batch)
-        latest = {r.item_id: r for r in guard.results()}
-        found = [latest.get(i.item_id) for i in batch]
-        statuses = {
-            i.item_id: (r.status if r else "unknown") for i, r in zip(batch, found, strict=True)
-        }
-        tests = next((r.tests for r in found if r is not None and r.tests is not None), None)
-        ast_equal = next(
-            (r.ast_equal for r in found if r is not None and r.ast_equal is not None), None
-        )
-        probes = next((r.diff_check for r in found if r is not None and r.diff_check), None)
-        if ok and set(statuses.values()) == {"skipped"}:
-            result = "skipped"
-        elif ok:
-            result = "repaired" if "repaired" in statuses.values() else "kept"
-        else:
-            result = "split in half" if len(batch) > 1 else "rolled back"
-        lines_removed = ws.diff_stats(ws.base)["lines_removed"]
-        log.emit(
-            "batch_result",
-            n=count,
-            ok=ok,
-            result=result,
-            statuses=statuses,
-            tests=to_dict(tests) if tests is not None else None,
-            ast_equal=ast_equal,
-            probes=to_dict(probes) if probes is not None else None,
-            test_runs=ws.test_runs,
-            lines_removed=lines_removed,
-            seconds=round(time.time() - start, 1),
-        )
-        return ok
-
-    return check
-
-
-def _make_llm(core: dict):
-    # Same rule as cleansweep.workflow.sweep.make_llm (not exported by the package).
-    llm_cfg = core.get("llm", {})
-    enabled = llm_cfg.get("enabled", "auto")
-    if enabled == "auto":
-        enabled = bool(os.environ.get(llm_cfg.get("api_key_env", "VOYAGER_API_KEY")))
-    return get_client(llm_cfg) if enabled else None
-
-
-def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
-
-
-def _sweep(target: str, cfg: dict, method: str, log: EventLog) -> SweepReport:
-    started, t0 = _now(), time.time()
-    core = cfg.get("core", {})
-    exp = cfg.get("exp", {})
-
-    def begin(stage: str) -> float:
-        log.emit("stage_start", stage=stage)
-        return time.time()
-
-    def done(stage: str, since: float, **data) -> None:
-        log.emit("stage_done", stage=stage, seconds=round(time.time() - since, 1), **data)
-
-    since = begin("open")
-    ws = open_workspace(target, core.get("sandbox"))
-    real_llm = cfg.get("llm_client") or _make_llm(core)
-    llm = LoggedLLM(real_llm, log) if real_llm is not None else None
-    done("open", since, repo_id=ws.repo_id, workspace=ws.path, llm=getattr(real_llm, "model", None))
-
-    try:
-        since = begin("analyze")
-        graph = build_graph(ws.path)
-        features = extract_features(ws.path, graph)
-        done("analyze", since, units=len(graph.units()))
-
-        since = begin("plan")
-        plan = build_plan(ws, graph, llm, use_llm=llm is not None)
-        done("plan", since, items=to_dict(plan.items))
-
-        since = begin("rank")
-        if method != "no_ranker":
-            load_ranker(exp.get("ranker_path")).score(plan.items, features)
-            done("rank", since, scores={i.item_id: i.safe_score for i in plan.items})
-        else:
-            done("rank", since, skipped=True)
-
-        since = begin("batch")
-        safe = [i for i in plan.items if i.lane == "safe" and i.action != "report_only"]
-        max_size = 1 if method == "no_batching" else exp.get("batch_max_size", 8)
-        batches = make_batches(safe, max_size)
-        done("batch", since, max_size=max_size, batches=[[i.item_id for i in b] for b in batches])
-
-        since = begin("guard")
-        guard_cfg = dict(core.get("guard", {}))
-        if method == "guard_tests_only":
-            guard_cfg["diff_tests"] = False
-        repair_fn = propose_fix if llm is not None else None
-        guard = Guard(ws, llm, guard_cfg, repair_fn=repair_fn, graph=graph)
-        log.emit("guard_baseline", test_runs=ws.test_runs)
-        outcome = apply_with_bisection(batches, logged_check_fn(guard, ws, log))
-
-        results = guard.results()
-        results += [
-            EditResult(i.item_id, "skipped", notes="suggest lane: reported, not applied")
-            for i in plan.items
-            if i not in safe
-        ]
-        counts = {
-            s: sum(r.status == s for r in results) for s in ("kept", "repaired", "rolled_back")
-        }
-        diff_stats = ws.diff_stats(ws.base)
-        usage = llm.usage() if llm is not None else {}
-        stats = {
-            "items_total": len(plan.items),
-            "items_safe": len(safe),
-            "items_kept": counts["kept"],
-            "items_repaired": counts["repaired"],
-            "items_rolled_back": counts["rolled_back"],
-            "lines_removed": diff_stats["lines_removed"],
-            "files_removed": diff_stats["files_removed"],
-            "test_runs": ws.test_runs,
-            "llm_calls": usage.get("llm_calls", 0),
-            "prompt_tokens": usage.get("prompt_tokens", 0),
-            "completion_tokens": usage.get("completion_tokens", 0),
-            "llm_retries": usage.get("llm_retries", 0),
-            "llm_failures": usage.get("llm_failures", 0),
-            "llm_events": usage.get("llm_events", []),
-            "wall_seconds": round(time.time() - t0, 2),
-            "n_checks": outcome["n_checks"],
-            "final_diff": ws.diff(ws.base),
-        }
-        done(
-            "guard",
-            since,
-            outcome=outcome,
-            results=to_dict(results),
-            stats={k: v for k, v in stats.items() if k != "final_diff"},
-        )
-        return SweepReport(ws.repo_id, method, "now", 0, started, _now(), plan, results, stats)
-    finally:
-        if not core.get("sandbox", {}).get("keep_workspace"):
-            ws.close()
-
-
-def _baseline(target: str, cfg: dict, method: str, log: EventLog) -> SweepReport:
-    for stage in ("open", "analyze", "plan", "rank", "batch"):
-        log.emit("stage_done", stage=stage, seconds=0, skipped=True)
-    log.emit("stage_start", stage="guard")
-    since = time.time()
-    report = tools_only(target, cfg) if method == "tools_only" else one_shot_llm(target, cfg, 0)
-    log.emit(
-        "stage_done",
-        stage="guard",
-        seconds=round(time.time() - since, 1),
-        baseline=True,
-        items=to_dict(report.plan.items),
-        results=to_dict(report.results),
-        stats={k: v for k, v in report.stats.items() if k != "final_diff"},
-    )
-    return report
+        return report
+    log.emit("stage_start", stage="open")
+    llm = cfg.get("llm_client") or make_llm(cfg.get("core", {}))
+    cfg = {**cfg, "llm_client": LoggedLLM(llm, log) if llm is not None else None}
+    return run_sweep(target, cfg, method, on_event=translate(log))
 
 
 def run_live(
@@ -368,10 +238,7 @@ def run_live(
             model=os.environ.get("VOYAGER_MODEL"),
         )
         with capture_logs(log):
-            if method in BASELINES:
-                report = _baseline(target, cfg, method, log)
-            else:
-                report = _sweep(target, cfg, method, log)
+            report = _run(target, cfg, method, log)
 
         log.emit("stage_start", stage="hidden")
         since = time.time()
