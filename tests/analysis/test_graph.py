@@ -35,3 +35,50 @@ def test_relative_imports_methods_and_decorators(tmp_path):
     assert g.is_reachable("pkg/b.py::plugin")  # decorated => entry point
     assert g.dynamic_risk("pkg/b.py::plugin")
     assert {u.kind for u in g.units()} == {"file", "class", "function"}
+
+
+def test_framework_callbacks_follow_bases_to_the_framework(tmp_path):
+    g = write(
+        tmp_path,
+        {
+            "app/__init__.py": "",
+            "app/base.py": "from textual.screen import Screen\n\nclass Base(Screen[None]):\n"
+            "    pass\n",
+            "app/ui.py": "import textual.app\nfrom .base import Base\n\n"
+            "class Welcome(Base):\n    def compose(self):\n        pass\n\n"
+            "    def on_mount(self):\n        pass\n\n    def helper(self):\n        pass\n\n"
+            "class Main(textual.app.App):\n    def action_quit(self):\n        pass\n\n"
+            "class Plain:\n    def on_mount(self):\n        pass\n\n"
+            "class Err(ValueError):\n    def compose(self):\n        pass\n",
+            "app/web.py": "from django.views.generic import ListView\nimport click\n"
+            "from _pytest.nodes import Item\n\n"
+            "class Books(ListView):\n    def get_queryset(self):\n        pass\n\n"
+            "class Cli(click.Command):\n    def invoke(self, ctx):\n        pass\n\n"
+            "class YamlItem(Item):\n    def runtest(self):\n        pass\n",
+        },
+    )
+    found = {
+        k: g.framework_callback(f"app/{k}")
+        for k in (
+            "ui.py::Welcome.compose",
+            "ui.py::Welcome.on_mount",
+            "ui.py::Welcome.helper",
+            "ui.py::Main.action_quit",
+            "ui.py::Plain.on_mount",
+            "ui.py::Err.compose",
+            "web.py::Books.get_queryset",
+            "web.py::Cli.invoke",
+            "web.py::YamlItem.runtest",
+        )
+    }
+    assert found == {
+        "ui.py::Welcome.compose": "textual",  # through the project's own Base(Screen[None])
+        "ui.py::Welcome.on_mount": "textual",
+        "ui.py::Welcome.helper": None,  # not a Textual callback name
+        "ui.py::Main.action_quit": "textual",
+        "ui.py::Plain.on_mount": None,  # no framework base
+        "ui.py::Err.compose": None,  # a standard-library base
+        "web.py::Books.get_queryset": "django",
+        "web.py::Cli.invoke": "click",
+        "web.py::YamlItem.runtest": "pytest",
+    }

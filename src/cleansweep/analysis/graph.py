@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from cleansweep.analysis.frameworks import framework_for, is_callback_name
 from cleansweep.core.models import CodeUnit
 
 SKIP_DIRS = {
@@ -95,6 +96,7 @@ class CodeGraph:
         self.modules: dict[str, _Module] = {}
         self._reachable: set[str] = set()
         self._dynamic: set[str] = set()
+        self._framework: dict[str, str] = {}  # method key -> framework that calls it by name
         self._dyn_modules: set[str] = set()
         self._strings: set[str] = set()
         self._prefixes: set[str] = set()
@@ -121,6 +123,10 @@ class CodeGraph:
     def dynamic_risk(self, unit_key: str) -> bool:
         """True if the unit might be used in ways the static graph can't see."""
         return unit_key in self._dynamic
+
+    def framework_callback(self, unit_key: str) -> str | None:
+        """The framework that calls this method by name (see analysis/frameworks.py), or None."""
+        return self._framework.get(unit_key)
 
     def file_of(self, unit_key: str) -> str:
         return unit_key.split("::", 1)[0]
@@ -211,6 +217,7 @@ def build_graph(repo_dir: str) -> CodeGraph:
             _add_edges(g, mod, by_name, method_names)
     _find_entries(g, root)
     _find_dynamic(g, by_name)
+    _find_framework_callbacks(g, by_name)
     _compute_reachable(g)
     return g
 
@@ -368,6 +375,52 @@ def _find_dynamic(g: CodeGraph, by_name: dict[str, _Module]) -> None:
             or (unit.name and unit.path in g._dyn_modules)
         ):
             g._dynamic.add(key)
+
+
+def _class_framework(
+    mod: _Module, name: str, by_name: dict[str, _Module], seen: set[tuple[str, str]]
+) -> str | None:
+    """The framework a class inherits from, following bases through the project's modules."""
+    node = mod.defs.get(name)
+    if not isinstance(node, ast.ClassDef) or (mod.path, name) in seen:
+        return None
+    seen.add((mod.path, name))
+    for base in node.bases:
+        base = base.value if isinstance(base, ast.Subscript) else base  # Screen[None]
+        if not isinstance(base, ast.Name | ast.Attribute):
+            continue
+        head, *rest = ast.unparse(base).split(".")
+        alias = mod.aliases.get(head)
+        if alias is None:
+            found = _class_framework(mod, head, by_name, seen) if not rest else None
+        elif alias[0] == "module":
+            module = ".".join([alias[1], *rest[:-1]])
+            if module in by_name:
+                found = _class_framework(by_name[module], rest[-1] if rest else "", by_name, seen)
+            else:
+                found = framework_for(module)
+        elif alias[1] in by_name:
+            found = _class_framework(by_name[alias[1]], alias[2], by_name, seen)
+        else:
+            found = framework_for(alias[1] or "")
+        if found:
+            return found
+    return None
+
+
+def _find_framework_callbacks(g: CodeGraph, by_name: dict[str, _Module]) -> None:
+    for mod in g.modules.values():
+        for qual, node in mod.defs.items():
+            if not isinstance(node, ast.ClassDef):
+                continue
+            framework = _class_framework(mod, qual, by_name, set())
+            if framework is None:
+                continue
+            for sub in node.body:
+                if isinstance(sub, ast.FunctionDef | ast.AsyncFunctionDef) and is_callback_name(
+                    framework, sub.name
+                ):
+                    g._framework[f"{mod.path}::{qual}.{sub.name}"] = framework
 
 
 def _compute_reachable(g: CodeGraph) -> None:

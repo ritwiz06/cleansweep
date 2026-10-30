@@ -36,6 +36,7 @@ DEFAULTS = {
     "overengineering_max_files": 20,
     "overengineering_budget_chars": 5000,
     "keep_public_api": "auto",
+    "framework_callbacks": "on",
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
 # when two detectors flag the same unit, the first category in this list wins
@@ -301,6 +302,33 @@ def keep_public_api(
         if item.lane == "safe":
             item.lane, item.reason = "suggest", PUBLIC_API_REASON
         item.evidence.append(f"public API policy: {PUBLIC_API_REASON}")
+    return items
+
+
+FRAMEWORK_REASON = "{framework} calls this method by name; nothing in the project calls it"
+
+
+def keep_framework_callbacks(
+    items: list[CleanupItem], graph, setting: str | None = None
+) -> list[CleanupItem]:
+    """reviewer.framework_callbacks: "on" (default) moves dead-code and duplicate items on methods
+    a framework calls by name (analysis/frameworks.py) to the suggest lane, "off" never does. With
+    no caller in the project, neither the graph nor the Guard can see that they are used."""
+    if setting is None:
+        setting = _settings().get("framework_callbacks", "on")
+    setting = {True: "on", False: "off"}.get(setting, setting)  # YAML reads bare on/off as bools
+    if setting not in ("on", "off"):
+        raise ValueError(f"reviewer.framework_callbacks must be on or off, got {setting!r}")
+    if setting == "off" or graph is None:
+        return items
+    for item in items:
+        framework = graph.framework_callback(item.unit.key)
+        if item.category not in ("dead_code", "duplicate") or framework is None:
+            continue
+        reason = FRAMEWORK_REASON.format(framework=framework)
+        if item.lane == "safe":
+            item.lane, item.reason = "suggest", reason
+        item.evidence.append(f"framework callback: {reason}")
     return items
 
 
