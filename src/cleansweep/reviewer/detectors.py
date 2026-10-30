@@ -84,7 +84,11 @@ def make_item(
     )
 
 
-def _settings() -> dict:
+def _settings(cfg: dict | None = None) -> dict:
+    """Reviewer settings: DEFAULTS under the reviewer section of cfg, or of the config files when
+    cfg has none."""
+    if cfg is not None and "reviewer" in cfg:
+        return {**DEFAULTS, **(cfg.get("reviewer") or {})}
     try:
         return {**DEFAULTS, **(load_config().get("reviewer") or {})}
     except Exception:
@@ -650,14 +654,14 @@ def merge_items(items: list[CleanupItem]) -> list[CleanupItem]:
     return list(merged.values())
 
 
-def run_detectors(repo_dir: str, graph=None, scope=None) -> list[CleanupItem]:
+def run_detectors(repo_dir: str, graph=None, scope=None, cfg=None) -> list[CleanupItem]:
     """Run every static detector and return merged cleanup items.
 
     With an AgentScope (cleansweep.analysis.scope), only what the agent wrote is reviewed:
     leftover files among the files it created, formatting of those files, and the other
     detectors on the units and lines it added or changed.
     """
-    cfg = _settings()
+    cfg = _settings(cfg)
     graph = graph or build_graph(repo_dir)
     agent_py = sorted(f for f in scope.files if f.endswith(".py")) if scope else None
     new_py = sorted(f for f in scope.files_added if f.endswith(".py")) if scope else None

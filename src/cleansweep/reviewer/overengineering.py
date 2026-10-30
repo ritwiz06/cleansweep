@@ -69,9 +69,9 @@ def pack(files: list[tuple[str, str]], budget: int) -> list[list[tuple[str, str]
     return requests
 
 
-def wanted() -> bool:
+def wanted(cfg: dict | None = None) -> bool:
     """True if the review would run (config and env switch), so callers can skip its setup."""
-    return enabled(_settings())
+    return enabled(_settings(cfg))
 
 
 def load_coverage(coverage_json: str | None) -> dict[str, dict[int, list[str]]]:
@@ -297,13 +297,19 @@ def to_items(
 
 
 def review_overengineering(
-    items: list[CleanupItem], repo_dir: str, graph, llm, features=None, coverage_json=None
+    items: list[CleanupItem],
+    repo_dir: str,
+    graph,
+    llm,
+    features=None,
+    coverage_json=None,
+    cfg: dict | None = None,
 ) -> list[CleanupItem]:
     """Ask the LLM for over-engineering; return new suggest-lane, report_only items.
 
     With coverage, "can't happen" findings on lines that a test runs are dropped.
     """
-    cfg = _settings()
+    cfg = _settings(cfg)
     if llm is None or not enabled(cfg):
         return []
     if features is None:

@@ -41,3 +41,9 @@ def test_stub_workflow(monkeypatch, toy_repo):
 
     report = stub.run_sweep(toy_repo, {}, method="no_ranker")
     assert report.repo_id == "local:toy_repo" and report.method == "no_ranker"
+
+
+def test_run_sweep_passes_its_config_to_the_reviewer(toy_repo, cfg):
+    cfg["reviewer"]["vulture_min_confidence"] = 100
+    report = run_sweep(toy_repo, cfg, method="cleansweep")
+    assert not any(i.category == "dead_code" for i in report.plan.items)
