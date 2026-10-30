@@ -11,7 +11,7 @@ from cleansweep.analysis import extract_features
 from cleansweep.analysis.graph import is_test_file, iter_py_files
 from cleansweep.core.models import CleanupItem, CodeUnit
 
-from .detectors import _settings, _unit_at, item_id
+from .detectors import _settings, _unit_at, excluded, item_id
 
 PROMPT = (Path(__file__).parent / "prompts" / "overengineering.txt").read_text()
 ENV = "CLEANSWEEP_OVERENGINEERING"
@@ -39,9 +39,16 @@ def enabled(cfg: dict) -> bool:
     return bool(cfg.get("overengineering", True))
 
 
-def select_files(repo_dir: str, features, skip: set[str], max_files: int) -> list[str]:
-    """Agent-written files if the features mark any; otherwise all non-test .py files."""
-    candidates = [p for p in iter_py_files(repo_dir) if not is_test_file(p) and p not in skip]
+def select_files(
+    repo_dir: str, features, skip: set[str], max_files: int, exclude: list[str] | None = None
+) -> list[str]:
+    """Agent-written files if the features mark any; otherwise all non-test .py files.
+    Files under reviewer.exclude are never sent."""
+    candidates = [
+        p
+        for p in iter_py_files(repo_dir)
+        if not is_test_file(p) and p not in skip and not excluded(p, exclude or [])
+    ]
     agent: set[str] = set()
     if features is not None and len(features) and "written_by_agent" in features:
         marked = features.index[features["written_by_agent"] == 1]
@@ -315,7 +322,13 @@ def review_overengineering(
     if features is None:
         features = extract_features(repo_dir, graph)
     leftovers = {i.unit.path for i in items if i.category == "leftover_file"}
-    files = select_files(repo_dir, features, leftovers, cfg.get("overengineering_max_files", 20))
+    files = select_files(
+        repo_dir,
+        features,
+        leftovers,
+        cfg.get("overengineering_max_files", 20),
+        cfg.get("exclude", []),
+    )
     texts, line_counts = [], {}
     tests = _test_lines(repo_dir)
     for path in files:

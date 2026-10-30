@@ -6,7 +6,13 @@ from cleansweep.analysis import build_graph
 from cleansweep.analysis.scope import agent_scope, scope_stats
 from cleansweep.core.models import CATEGORIES, CleanupPlan
 
-from .detectors import _settings, keep_framework_callbacks, keep_public_api, run_detectors
+from .detectors import (
+    _settings,
+    excluded,
+    keep_framework_callbacks,
+    keep_public_api,
+    run_detectors,
+)
 from .judge import judge_items
 from .overengineering import review_overengineering, wanted
 
@@ -16,11 +22,6 @@ def _scope_setting(repo_id: str, cfg: dict | None = None) -> str:
     if setting == "auto":
         setting = "agent" if repo_id.startswith(("swebench:", "aidev:")) else "repo"
     return setting
-
-
-def excluded(path: str, prefixes: list[str]) -> bool:
-    """reviewer.exclude: folders (or files) the Reviewer leaves alone, e.g. ["tests/fixtures/"]."""
-    return any(path == p.rstrip("/") or path.startswith(p.rstrip("/") + "/") for p in prefixes)
 
 
 def review_scope(repo_id: str, repo_dir: str, graph, cfg: dict | None = None):
@@ -54,9 +55,10 @@ def build_plan(
         if wanted(cfg):
             # one coverage run (a test run) lets the review drop tested "can't happen" claims
             coverage = workspace.coverage_json() if hasattr(workspace, "coverage_json") else None
-            items += review_overengineering(
+            found = review_overengineering(
                 items, repo_dir, graph, llm, coverage_json=coverage, cfg=cfg
             )
+            items += [i for i in found if not excluded(i.unit.path, settings["exclude"])]
     # after the judge, which rewrites reasons, so the policies' reasons are the ones shown
     items = keep_public_api(items, repo_dir, settings["keep_public_api"])
     items = keep_framework_callbacks(items, graph, settings["framework_callbacks"])
