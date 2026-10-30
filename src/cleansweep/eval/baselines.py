@@ -8,7 +8,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from cleansweep.analysis.graph import is_test_file, iter_py_files
+from cleansweep.analysis.graph import is_test_file, iter_py_files, ruff_isolation
 from cleansweep.analysis.scope import agent_scope, scope_stats
 from cleansweep.core.models import CleanupItem, CleanupPlan, CodeUnit, EditResult, SweepReport
 from cleansweep.guard import apply_edit
@@ -110,7 +110,7 @@ def tools_only(target: str, cfg: dict) -> SweepReport:
         if fix_paths:
             _host(["ruff", "check", "--isolated", "--select", "F401", "--fix", *fix_paths], ws.path)
         if fmt_paths:
-            _host(["ruff", "format", "--isolated", *fmt_paths], ws.path)
+            _host(["ruff", "format", *ruff_isolation(ws.path), *fmt_paths], ws.path)
         ruff_item = CleanupItem(
             "ruff-fixes",
             CodeUnit(".", "file"),

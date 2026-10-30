@@ -135,9 +135,11 @@ def _remove_dependency(ws, item: CleanupItem) -> bool:
 
 
 def _format(ws, item: CleanupItem) -> bool:
+    from cleansweep.analysis.graph import ruff_isolation
+
     # ruff runs on the host copy: a Docker workspace's container doesn't have it
     proc = subprocess.run(
-        [sys.executable, "-m", "ruff", "format", "--isolated", item.unit.path],
+        [sys.executable, "-m", "ruff", "format", *ruff_isolation(ws.path), item.unit.path],
         cwd=ws.path,
         capture_output=True,
     )

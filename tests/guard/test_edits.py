@@ -48,3 +48,16 @@ def test_format(toy_ws):
 
 def test_report_only_does_nothing(toy_ws):
     assert not apply_edit(toy_ws, item("shopcart/storage.py", "function", "report_only"))
+
+
+def test_format_uses_the_project_ruff_config(tmp_path):
+    from types import SimpleNamespace
+
+    long_call = "combined_result = compute(" + ", ".join(f"argument_{i}" for i in range(6)) + ")\n"
+    (tmp_path / "mod.py").write_text(long_call)
+    (tmp_path / "ruff.toml").write_text("line-length = 100\n")
+    assert apply_edit(SimpleNamespace(path=str(tmp_path)), item("mod.py", "file", "format"))
+    assert read(SimpleNamespace(path=str(tmp_path)), "mod.py") == long_call
+    (tmp_path / "ruff.toml").unlink()
+    assert apply_edit(SimpleNamespace(path=str(tmp_path)), item("mod.py", "file", "format"))
+    assert read(SimpleNamespace(path=str(tmp_path)), "mod.py") != long_call
