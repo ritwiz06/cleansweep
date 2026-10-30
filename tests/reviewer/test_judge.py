@@ -195,6 +195,13 @@ def test_mode_from_env_overrides_config(monkeypatch, toy_repo):
         judge_items([make("a")], toy_repo, llm)
 
 
+def test_yaml_off_turns_the_judge_off():
+    from cleansweep.reviewer.judge import resolve_mode
+
+    assert resolve_mode(None, {"judge_mode": False}) == "off"  # `judge_mode: off` in YAML
+    assert resolve_mode(None, {}) == "gatekeeper"
+
+
 def test_no_llm_and_bad_mode(toy_repo):
     items = [make("a")]
     assert judge_items(items, toy_repo, None) == items
