@@ -1,0 +1,20 @@
+| target set | method vs gatekeeper | pairs | hidden changed only with method | hidden changed only with gatekeeper | McNemar exact p | lines counted | lines removed: Wilcoxon W | Wilcoxon p |
+|---|---|---|---|---|---|---|---|---|
+| swebench_t1 | cleansweep-advisory | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 1.0 |
+| swebench_t1 | guard_tests_only | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 1.0 |
+| swebench_t1 | tools_only | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 0.5 |
+| swebench_t1 | one_shot_llm | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 0.5 |
+| swebench_t1 | one_shot_compile | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 0.5 |
+| swebench_t1 | one_shot_retry | 3 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 0.5 |
+| swebench_t2 | cleansweep-advisory | 5 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 1.0 |
+| swebench_t2 | guard_tests_only | 5 | 0 | 0 | 1.0 | lines removed per target | 0.0 | 1.0 |
+| swebench_t2 | tools_only | 5 | 0 | 0 | 1.0 | lines removed per target | 1.0 | 0.125 |
+| swebench_t2 | one_shot_llm | 5 | 0 | 0 | 1.0 | lines removed per target | 3.0 | 1.0 |
+| swebench_t2 | one_shot_compile | 5 | 0 | 0 | 1.0 | lines removed per target | 3.0 | 1.0 |
+| swebench_t2 | one_shot_retry | 5 | 0 | 0 | 1.0 | lines removed per target | 3.0 | 1.0 |
+| aidev | cleansweep-advisory | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 0.0 | 0.5 |
+| aidev | guard_tests_only | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 0.0 | 0.5 |
+| aidev | tools_only | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 0.0 | 0.5 |
+| aidev | one_shot_llm | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 2.0 | 0.375 |
+| aidev | one_shot_compile | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 2.0 | 0.375 |
+| aidev | one_shot_retry | 4 | 0 | 0 | 1.0 | lines removed excl. format/imports | 2.0 | 0.375 |

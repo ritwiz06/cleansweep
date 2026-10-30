@@ -14,6 +14,7 @@ removed by edits other than format and unused imports) in the paired tests, abla
 from __future__ import annotations
 
 import csv
+import os
 import statistics
 from pathlib import Path
 
@@ -25,8 +26,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 from cleansweep.eval.stats import bootstrap_ci, mcnemar, wilcoxon  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-SUMMARY = ROOT / "results" / "summary"
-FIGURES = ROOT / "results" / "figures"
+# CLEANSWEEP_RESULTS points the tables at another results folder (reproduce_tables.sh DIR)
+RESULTS = Path(os.environ.get("CLEANSWEEP_RESULTS", ROOT / "results"))
+SUMMARY = RESULTS / "summary"
+FIGURES = RESULTS / "figures"
 REFERENCE = "cleansweep-gatekeeper"
 METHOD_ORDER = [
     "cleansweep-gatekeeper",

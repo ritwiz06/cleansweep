@@ -1,0 +1,14 @@
+| target set | part | with | without | hidden changed with / without | lines removed with / without | test runs with / without |
+|---|---|---|---|---|---|---|
+| answer keys | differential probes | cleansweep-advisory | guard_tests_only | 0/2 vs 2/2 | 97 vs 115 | 16 vs 9 |
+| answer keys | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/2 vs 0/2 | 97 vs 97 | 9 vs 16 |
+| answer keys | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/2 vs 2/2 | 97 vs 101 | 16 vs 0 |
+| swebench_t1 | differential probes | cleansweep-advisory | guard_tests_only | 0/3 vs 0/3 | 430 vs 430 | 15 vs 15 |
+| swebench_t1 | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/3 vs 0/3 | 430 vs 430 | 15 vs 15 |
+| swebench_t1 | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/3 vs 0/3 | 430 vs 0 | 15 vs 9 |
+| swebench_t2 | differential probes | cleansweep-advisory | guard_tests_only | 0/5 vs 0/5 | 194 vs 194 | 24 vs 24 |
+| swebench_t2 | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/5 vs 0/5 | 194 vs 194 | 24 vs 24 |
+| swebench_t2 | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/5 vs 0/5 | 194 vs 5 | 24 vs 15 |
+| aidev | differential probes | cleansweep-advisory | guard_tests_only | 0/3 vs 0/3 | 151 vs 151 | 12 vs 12 |
+| aidev | judge as gatekeeper | cleansweep-gatekeeper | cleansweep-advisory | 0/3 vs 0/3 | 28 vs 151 | 10 vs 12 |
+| aidev | Guard and Reviewer vs tools | cleansweep-advisory | tools_only | 0/3 vs 0/3 | 151 vs 78 | 12 vs 0 |
