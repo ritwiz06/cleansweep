@@ -18,6 +18,9 @@ callbacks when a callback is among its rolled-back items. Hours = those test run
 median test time. Flaky failures and edits that only apply after another one add checks the
 rebuild can't see, so its failed test runs are a lower bound. No sweep, no LLM, no Docker.
 
+The UI columns come from exp_shotgun_ui.py (results/summary/shotgun_ui.csv): screens and
+widgets whose snapshot changed, as run and with the framework rule and the final policy.
+
 Writes results/summary/framework_callbacks.csv (one row per method).
 """
 
@@ -62,7 +65,11 @@ FIELDS = [
     "run_hours",
     "checks_rebuilt",
     "checks_reported",
+    "ui_changed_as_run",
+    "ui_changed_framework",
+    "ui_changed_final",
 ]
+UI = ROOT / "results" / "summary" / "shotgun_ui.csv"
 
 
 def _name(node: ast.expr) -> str:
@@ -211,6 +218,21 @@ def method_row(method: str, rep: dict, safe_ids: set[str], kinds: dict[str, str]
     }
 
 
+def ui(method: str) -> dict:
+    """Changed screens and widgets for a method's diff as run and under the two policies."""
+    if not UI.exists():
+        return {}
+    with UI.open() as f:
+        rows = {(r["method"], r["policy"]): r["changed"] for r in csv.DictReader(f)}
+    as_run = rows.get((method, "as run"), "")
+    return {
+        "ui_changed_as_run": as_run,
+        # the framework rule moves nothing in gatekeeper's diff, so it is the diff as run
+        "ui_changed_framework": rows.get((method, "framework"), as_run),
+        "ui_changed_final": rows.get((method, "final"), ""),
+    }
+
+
 def main() -> int:
     reports = {
         m: json.loads((REPORTS / f"{TARGET}__{m}.json").read_text())
@@ -237,7 +259,7 @@ def main() -> int:
         if method not in reports:
             print(f"{method}: no report yet")
             continue
-        rows.append(method_row(method, reports[method], safe_ids, kinds))
+        rows.append({**method_row(method, reports[method], safe_ids, kinds), **ui(method)})
         print(rows[-1])
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
