@@ -34,6 +34,12 @@ def test_select_files_prefers_agent_written(tmp_path):
     assert oe.select_files(repo, features, set(), 20) == ["b.py"]
 
 
+def test_select_files_leaves_out_excluded_folders(tmp_path):
+    repo = write(tmp_path, {"a.py": "x = 1\n", "demo/app.py": "y = 2\n", "demos.py": "z = 3\n"})
+    assert oe.select_files(repo, None, set(), 2) == ["a.py", "demo/app.py"]
+    assert oe.select_files(repo, None, set(), 2, ["demo/"]) == ["a.py", "demos.py"]
+
+
 def test_pack_groups_small_files_under_the_budget():
     files = [("a.py", "x" * 40), ("b.py", "y" * 40), ("c.py", "z" * 40), ("big.py", "w" * 500)]
     requests = oe.pack(files, budget=100)

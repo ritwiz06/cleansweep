@@ -337,6 +337,11 @@ def keep_framework_callbacks(
     return items
 
 
+def excluded(path: str, prefixes: list[str]) -> bool:
+    """reviewer.exclude: folders (or files) the Reviewer leaves alone, e.g. ["tests/fixtures/"]."""
+    return any(path == p.rstrip("/") or path.startswith(p.rstrip("/") + "/") for p in prefixes)
+
+
 def detect_unused_imports(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
     if paths == []:
         return []

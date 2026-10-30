@@ -512,6 +512,19 @@ haliax `aqtp`, and Skill_Seekers `PyGithub`, `PyMuPDF` and `html5lib`. The hidde
 them because those packages stayed installed. Outside AIDev containers the Guard marks such
 removals "checked statically only".
 
+### Self-sweep
+
+CleanSweep on a copy of its own repository at a439dcd: the whole repository except
+`tests/fixtures/`, `demo/`, `results/` and `data/`, with the offline test suite as the Guard's
+tests (`scripts/exp_self_sweep.py`, `results/summary/self_sweep.csv`). Both modes found 139
+items. The Guard kept all 124 format edits, 15 items stayed in the suggest lane in gatekeeper
+mode (7 by the judge), and in advisory mode the probes rolled back the one duplicate merge that
+reached the Guard (`kept_label` and `repos_label` print different text). We applied none of the
+edits. The format edits used ruff's default line length, not the project's 100; the self-sweep
+found this, #63 fixed it, and now only the hand-aligned `core/models.py` is flagged. The other
+items are an unused public function, intended `eval` and XML uses, and two over-engineering
+notes in `demo/`, which `reviewer.exclude` now keeps out of that review too.
+
 ### AIDev: Scheduler replay, removal requests, ranker
 
 AIDev-pop (`data/raw/aidev/`): 666 Python repositories with ≥10 merged agent PRs; a seeded
