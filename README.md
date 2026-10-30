@@ -258,7 +258,7 @@ What happened:
   - The model rewrites the agent's changed source files, and nothing checks the result.
 - **`tools_only`** removes 0.9 lines per patch (unused imports) and changes nothing hidden.
 - **`one_shot_compile`** (the same diff, discarded when a rewritten file doesn't compile; no extra LLM call) changes hidden behavior on **2 of 57** (McNemar p = 0.5) and removes 27.8 lines per patch (Wilcoxon p = 0.087).
-- **`one_shot_retry`** (the compile errors go back to the model once, and the second reply is applied) changes hidden behavior on **5 of 57** (p = 0.063) at 30.1 lines per patch. The second reply compiled for the 4 sympy and scikit-learn patches but not for the 3 sphinx ones (`results/raw/oneshot_retry/` in the runs-6 clone; 1 new LLM request each, the first reply came from the cache).
+- **`one_shot_retry`** (the compile errors go back to the model once, and the second reply is applied) changes hidden behavior on **5 of 57** (p = 0.063) at 30.1 lines per patch. The second reply compiled for the 4 sympy and scikit-learn patches but not for the 3 sphinx ones, which end with the same stray `"` after the last line (1 new LLM request each; the first reply came from the cache). The 5 are those 3 and the 2 Django behavior changes that the compile check keeps too; no second reply that compiled changed hidden behavior.
 - **Minutes per patch (median):** gatekeeper 2.2, advisory 1.3, `guard_tests_only` 1.4, `tools_only` 0.8, `one_shot_llm` 1.4. Medians, because one Django gatekeeper run took 197 minutes while the laptop slept (mean 8.2).
 
 ### Main table
@@ -293,6 +293,22 @@ another method's identical edits did not repeat; they are left out of the hidden
 
 `results/figures/safety_vs_yield.png` plots lines removed against the hidden-change rate per
 method, with 95% CIs.
+
+**The one-shot series at stated yield** (`oneshot_series.md`; each variant against gatekeeper,
+exact McNemar on hidden changes, Wilcoxon on lines removed):
+
+| tier | variant | lines removed | hidden changed | McNemar p | Wilcoxon p |
+|---|---|---|---|---|---|
+| Tier 2 (57) | `one_shot_llm` | 30.1 [21.0, 41.0] | 9/57 | 0.0039 | 0.70 |
+| Tier 2 (57) | `one_shot_compile` | 27.8 [19.0, 38.9] | 2/57 | 0.5 | 0.087 |
+| Tier 2 (57) | `one_shot_retry` | 30.1 [21.0, 41.0] | 5/57 | 0.063 | 0.73 |
+| Tier 2 (57) | cleansweep, gatekeeper | 37.4 [25.7, 53.5] | 0/57 | | |
+| Tier 1 (10) | `one_shot_llm` | 30.2 [8.4, 62.3] | 3/10 | 0.25 | 0.50 |
+| Tier 1 (10) | `one_shot_compile` | 24.1 [2.9, 57.9] | 0/10 | 1.0 | 0.13 |
+| Tier 1 (10) | `one_shot_retry` | 30.3 [8.5, 62.4] | 0/10 | 1.0 | 0.63 |
+| Tier 1 (10) | cleansweep, gatekeeper | 57.0 [13.3, 122.9] | 0/10 | | |
+
+On AIDev every one-shot diff compiles, so the two variants equal `one_shot_llm` there.
 
 Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 - **Hidden changes:**
@@ -392,51 +408,109 @@ and/or, return None.
 
 ### AIDev sweeps
 
-The five methods on the AIDev repositories at their head sha (`exp_swebench.py` on
+The five methods on the 20 AIDev repositories at their head sha (`exp_swebench.py` on
 `data/splits/aidev_repos.json`; `exp_collect.py`, `exp_tables.py`, `exp_aidev_summary.py`;
-`results/summary/main_table.md` and `aidev_sweeps.md`). Hidden checks are pytest tests that a
-second model (glm-5-3) writes for the public functions in up to six agent files, once per
-repository, kept if stable over 3 runs.
+`results/summary/main_table.md` and `aidev_sweeps.md`). The Reviewer looks only at the code
+agent pull requests wrote (first-parent blame). Hidden checks are pytest tests that a second
+model (glm-5-3) writes for the public functions in up to six agent files, once per repository,
+kept if stable over 3 runs.
 
-- **17 of the 20 repositories.** opendbc and pytorch_connectomics have no agent commit in the
-  300-commit history the scope comes from, so their sweeps covered the whole repository (up to
-  292 edits, 268 of them formatting); they are listed apart in `aidev_sweeps.md`. shotgun's runs
-  are still going. Fu-Jie/openwebui-extensions got no usable hidden tests, so hidden rates are
-  out of 16.
+- **20 repositories.** opendbc and pytorch_connectomics have no agent commit in the 300-commit
+  history the scope comes from, so theirs comes from a longer one (999 and 338 commits). Their
+  first, unscoped runs are listed apart in `aidev_sweeps.md` and left out of the tables.
+  Fu-Jie/openwebui-extensions got no usable hidden tests, so hidden rates are out of 19.
 - **The agent scope** covers a median 8% of a repository's Python lines (0.6% to 78%;
   `results/data_summary/aidev_scope.csv`, `scripts/data_aidev_scope.py`).
 - **Lines removed leaves out formatting and unused imports.** A `ruff format` edit can add more
-  lines than it removes; the gatekeeper's 109 format edits added 1,407 lines net, so its final
-  diffs remove only 3.6 lines per repository against 33.2 from its other edits.
-- **Integrity:** no test-run timeout or out-of-memory kill; no run's first test run took over
-  twice the repository's selection-time test time (0 overload-suspect runs); 0 flaky hidden
-  changes. Six grid runs failed on the repair timeout (fixed in #47): the two in scoped repos
-  (wove and Skill_Seekers `guard_tests_only`) were rerun, and the other four are in the two
-  dropped repos.
+  lines than it removes: each CleanSweep method's 126 format edits added 1,719 lines net.
+- **Integrity:** no test-run timeout or out-of-memory kill; 0 overload-suspect runs (first test
+  run over twice the selection-time test time); 0 flaky hidden changes. Six grid runs failed on
+  the repair timeout (fixed in #47): two were rerun, and the other four were unscoped runs that
+  the scoped opendbc and pytorch_connectomics runs replace.
 
 | method | lines removed (excl. format/imports) | edits | format edits | hidden changed | rolled back: tests / probes | McNemar p | Wilcoxon p |
 |---|---|---|---|---|---|---|---|
-| cleansweep, gatekeeper | 33.2 [5.4, 80.4] | 9.1 [3.2, 16.5] | 6.4 | 0.19 [0.00, 0.38] | 2 / 0 | | |
-| cleansweep, advisory | 40.9 [10.1, 89.6] | 9.6 [3.5, 17.1] | 6.4 | 0.19 [0.00, 0.38] | 6 / 6 | 1.0 | 0.11 |
-| `guard_tests_only` | 41.9 [10.2, 93.4] | 9.7 [3.8, 17.8] | 6.4 | 0.19 [0.00, 0.38] | 6 / (no probes) | 1.0 | 0.07 |
-| `tools_only` | 42.6 [9.9, 83.4] | 3.1 [1.2, 5.6] | (1 ruff edit) | 0.25 [0.06, 0.50] | | 1.0 | 0.31 |
-| `one_shot_llm` | **325.9 [131.7, 543.6]** | 4.1 [2.1, 6.5] | 0 | 0.13 [0.00, 0.33] | | 1.0 | **0.002** |
+| cleansweep, gatekeeper | 64.8 [12.1, 133.4] | 9.7 [4.3, 16.4] | 6.3 | 0.16 [0.00, 0.32] | 7 / 0 | | |
+| cleansweep, advisory | 121.7 [18.9, 292.9] | 11.8 [5.3, 19.4] | 6.3 | 0.16 [0.00, 0.32] | 32 / 7 | 1.0 | 0.068 |
+| `guard_tests_only` | 128.9 [20.1, 303.4] | 11.8 [5.5, 19.4] | 6.3 | 0.21 [0.05, 0.42] | 35 / (no probes) | 1.0 | 0.028 |
+| `tools_only` | 117.2 [22.4, 276.8] | 5.7 [1.8, 12.1] | (1 ruff edit) | 0.21 [0.05, 0.42] | | 1.0 | 0.31 |
+| `one_shot_llm` | **347.6 [170.7, 551.8]** | 4.3 [2.4, 6.5] | 0 | 0.11 [0.00, 0.28] | | 1.0 | **0.004** |
 
-- **CleanSweep edits code here, not only files.** Advisory applied 31 dead-code removals, 3
-  duplicate merges and 18 unused dependencies, besides 109 format edits, 1 unused import and 1
-  leftover file.
-- **The probes rolled back 6 edits the tests passed**, all near-duplicates in Skill_Seekers
+- **CleanSweep edits code here, not only files.** Advisory applied 87 dead-code removals, 3
+  duplicate merges and 18 unused dependencies, besides 126 format edits, 1 unused import and 1
+  leftover file. 35 of the dead-code removals are shotgun's Textual callbacks (below).
+- **The probes rolled back 7 edits the tests passed.** Six are near-duplicates in Skill_Seekers
   (five MCP workflow tools and `_get_progress_dir`) that behave differently from the function
-  they would be merged into. In gatekeeper mode the judge moved 50 more items to the suggest lane
-  before any edit. Without probes, `guard_tests_only` kept 2 of the 6 (`list_workflows`,
-  `_get_progress_dir`; the other 4 could not be applied after them), and neither the
-  project's tests nor the hidden tests noticed.
+  they would be merged into. The seventh is pytorch_connectomics' `divide_rows`, which the
+  duplicate finder matched with `divide_columns`: one divides rows, the other columns, and the
+  probes found different outputs on a 2×2 input. In gatekeeper mode the judge moved 115 items out
+  of the safe lane before any edit, `divide_rows` among them ("row-wise vs. column-wise
+  division"). Without probes, `guard_tests_only` kept 3 of the 7 (`list_workflows`,
+  `_get_progress_dir`, `divide_rows`; the others could not be applied after them). The
+  projects' tests passed all three, and the hidden tests caught only `divide_rows`.
 - **Hidden changes.** CleanSweep (either mode) changed hidden behavior on skillport,
   Telegram-Snowball-Sampling and Skill_Seekers. In every case the changed tests call functions
   the cleanup deleted as dead code: nothing in the project, its tests included, calls them.
-  `tools_only` changed the same three and slop-guard. `one_shot_llm` changed slop-guard (deleted
-  benchmark scripts) and Usagi, where it deleted `src/config.py`, which the remaining modules
-  import: the only change in code that stayed. One one-shot reply (Telegram) did not parse.
+  `guard_tests_only` also changed pytorch_connectomics (the duplicate merge above). `tools_only`
+  changed the same three and slop-guard. `one_shot_llm` changed slop-guard (deleted benchmark
+  scripts) and Usagi, where it deleted `src/config.py`, which the remaining modules import. One
+  one-shot reply (Telegram) did not parse.
+
+### AIDev: the v1.0 policies, re-scored
+
+The runs above stay as run. Two Reviewer rules added after them are measured by re-scoring: the
+edits a rule would have kept in the suggest lane are taken out of each run's final diff, and the
+hidden checks rerun on the filtered diff with the same cached second-model tests
+(`scripts/exp_public_api_policy.py --policy public_api|framework|final --run`; Docker, no LLM).
+
+- **Public API** (`reviewer.keep_public_api: auto`): dead-code edits on public names in package
+  modules stay in the suggest lane.
+- **Framework rule** (`reviewer.framework_callbacks: on`, table in
+  `src/cleansweep/analysis/frameworks.py`): methods that Textual, Django, Flask/FastAPI,
+  Click/Typer or pytest call by name, on classes that inherit from them, stay in the suggest lane.
+- **Final policy**: both rules, the v1.0 defaults.
+
+| method | hidden changed: as run → public API → framework → final | lines removed (excl. format/imports): as run → public API → framework → final |
+|---|---|---|
+| cleansweep, gatekeeper | 3/19 → 0/19 → 3/19 → **0/19** | 64.8 → 12.2 → 64.8 → 12.2 |
+| cleansweep, advisory | 3/19 → 0/19 → 3/19 → **0/19** | 121.7 → 55.3 → 81.0 → 31.3 |
+| `guard_tests_only` | 4/19 → 1/19 → 4/19 → 1/19 | 128.9 → 63.5 → 82.3 → 33.5 |
+
+The public-API rule moves 47 to 54 edits per method in 7 repositories and takes out every
+CleanSweep hidden change (exact McNemar p = 0.25, 3 vs. 0; Wilcoxon p = 0.018 on lines). The
+framework rule moves 35 edits, all in shotgun, which the hidden tests did not see (next section).
+`guard_tests_only`'s remaining change is the duplicate merge above, which neither rule covers.
+Files: `aidev_public_api_policy.md`, `aidev_framework_rule.md`, `aidev_final_policy.md`.
+
+### AIDev: framework callbacks and a UI check
+
+shotgun is a Textual terminal app. 53 of the 85 detector-safe items in its runs are Textual
+callbacks (`compose`, `on_mount`, `watch_*`, `action_*`): the framework calls them by name, so
+nothing in the project does (`scripts/exp_framework_callbacks.py`, `framework_callbacks.csv`).
+
+- **Gatekeeper:** the judge vetoed 49 of the 53; none was kept (1 rolled back, 3 could not be applied).
+- **Advisory and `guard_tests_only`:** all 53 reached the Guard; 35 were deleted with every test
+  passing and 14 rolled back. Batches with callback edits failed 29 and 31 test runs (3.4 and 3.3
+  of the runs' 11.0 and 13.0 hours).
+- **UI check** (`scripts/exp_shotgun_ui.py`, `shotgun_ui.csv`): each of shotgun's 44 Textual
+  screen and widget classes is mounted headless (`App.run_test`) in the AIDev container, for the
+  base and for every final diff, and its widget tree is compared; 32 render. As run, 17 classes
+  changed under advisory, 16 under `guard_tests_only` and 18 under `tools_only` (gatekeeper and
+  one-shot: 0). With the framework rule (and the final policy): 0. The remaining differences are
+  whole classes deleted that nothing references; no module stopped importing.
+- The second-model hidden tests call public functions, so they did not notice any of this.
+
+### AIDev: dependency removals, verified
+
+Removing a line from `pyproject.toml` uninstalls nothing, so the tests were the only check on
+the 18 unused-dependency removals the sweeps applied. The Guard now reruns the tests with each
+removed package's installed files moved aside, unless another installed package still requires
+it (#2; `scripts/exp_dependency_check.py`, `aidev_dependency_check.csv`). Re-checked this way,
+**14 of 18 removals hold** (gatekeeper 13 of 15, advisory and `guard_tests_only` 14 of 18): 2 with
+the package gone, 1 never installed, 11 still required by another package. **4 break tests**:
+haliax `aqtp`, and Skill_Seekers `PyGithub`, `PyMuPDF` and `html5lib`. The hidden checks missed
+them because those packages stayed installed. Outside AIDev containers the Guard marks such
+removals "checked statically only".
 
 ### AIDev: Scheduler replay, removal requests, ranker
 
@@ -484,6 +558,32 @@ exist at the last commit and are no longer flagged, because a later commit start
   - unreviewed units are not "must keep";
   - its scores (median 0.026, at most 0.20) never reach the Reviewer's 0.6 batching threshold.
 - So the Reviewer keeps its category priors.
+
+## Known limitations
+
+- **Unused is not unneeded.** The Guard can't check the deletion of a function nothing in the
+  project calls: there is nothing to run. `keep_public_api: auto` keeps public names in package
+  modules in the suggest lane, and the framework rule keeps framework callbacks there; anything
+  else relies on the judge.
+- **The framework rule knows five frameworks** (Textual, Django, Flask/FastAPI, Click/Typer,
+  pytest; `analysis/frameworks.py`). Callbacks of other frameworks look like dead code.
+- **Probes check only what the model thinks to call.** A target that needs files, the network
+  or the clock gets no probe cases; direct-mode probes can't set up a framework (runner mode,
+  the default in containers, can).
+- **Dependency removals are verified only where packages can be uninstalled** (AIDev
+  containers). Local and SWE-bench workspaces mark them "checked statically only".
+- **Format edits follow ruff's settings** (`ruff.toml`, `[tool.ruff]`, or ruff's defaults),
+  not black's or another formatter's.
+- **Rewrites only handle uses in the same file**; other duplicates go to the suggest lane.
+- **Judge decisions are model output.** They were consistent across runs and models on the
+  answer keys, but that isn't guaranteed. The run seed is recorded, not sent to the judge.
+- **Scale.** Duplicate finding is pairwise (O(n²)), fine for agent-scoped code but slow on a
+  whole large repository. A timed-out model request (600 s) is not retried.
+- **Measurement.** SWE-bench images run under amd64 emulation on arm64; hidden checks on AIDev
+  are second-model tests of public functions, so they don't see UI callbacks or uninstalled
+  packages; the scheduler replay uses static detectors and estimated test runs.
+- **The ranker** predicts "a reviewer asked to remove this", not "safe to remove", so it is off
+  by default.
 
 ## Repository layout
 

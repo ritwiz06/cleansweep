@@ -1,0 +1,19 @@
+repo,package,state,verified,new_failures,methods
+567-labs/instructor,click,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+567-labs/instructor,eval-type-backport,not installed,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+567-labs/instructor,idna,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+567-labs/instructor,pydantic-core,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+Human-Agent-Society/CORAL,httpx,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+Human-Agent-Society/CORAL,pip,hidden,1,,cleansweep-advisory; guard_tests_only
+marin-community/haliax,aqtp,hidden,0,::tests.core_test; ::tests.test_attention; ::tests.test_axis; ::tests.test_bitwise_ops; ::tests.test_conv,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+marin-community/haliax,jmp,hidden,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+posit-dev/chatlas,opentelemetry-api,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+trailofbits/dropkit,shellingham,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,PyGithub,hidden,0,pytest::internal,cleansweep-advisory; guard_tests_only
+yusufkaraaslan/Skill_Seekers,PyMuPDF,hidden,0,tests.test_data_file_dir_regressions::test_pdf_extract_creates_missing_output_parent; tests.test_pdf_extractor.TestVectorFigureExtraction::test_disabling_image_extraction_disables_vector_fallback; tests.test_pdf_extractor.TestVectorFigureExtraction::test_extracts_vector_only_figure_with_nearby_label_once; tests.test_pdf_extractor.TestVectorFigureExtraction::test_keeps_nearby_vector_figures_separate; tests.test_pdf_extractor.TestVectorFigureExtraction::test_keeps_vector_figure_containing_a_raster,cleansweep-advisory; guard_tests_only
+yusufkaraaslan/Skill_Seekers,Pygments,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,click,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,html5lib,hidden,0,tests.test_html_parsing.TestFallback::test_html5lib_available; tests.test_html_parsing.TestFallback::test_tag_free_result_falls_back; tests.test_html_parsing.TestFallback::test_primary_parser_exception_falls_back; tests.test_real_world_fastmcp.TestRealWorldFastMCP::test_01_three_streams_present; tests.test_real_world_fastmcp.TestRealWorldFastMCP::test_02_c3x_components_populated,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,jsonschema,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,pydantic-settings,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only
+yusufkaraaslan/Skill_Seekers,python-dotenv,required by another package,1,,cleansweep-advisory; cleansweep-gatekeeper; guard_tests_only

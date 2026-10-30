@@ -144,7 +144,7 @@ def blame_scope(clone: str, head: str, agent_shas: set[str], window_start: str |
     return {"files_added": sorted(added), "lines": lines}
 
 
-def _add_units(scope: AgentScope, graph) -> AgentScope:
+def add_units(scope: AgentScope, graph) -> AgentScope:
     """Unit keys the agent wrote or changed, from its files and lines."""
     for unit in graph.units() if graph is not None else []:
         if unit.path in scope.files_added:
@@ -212,7 +212,7 @@ def agent_scope(repo_dir: str, graph=None) -> AgentScope | None:
     sha = agent_commit(repo_dir)
     if sha is None:
         stored = _stored_scope(repo_dir)
-        return _add_units(stored, graph) if stored is not None else None
+        return add_units(stored, graph) if stored is not None else None
     added, lines = _changes(repo_dir, sha)
     tree = subprocess.run(
         ["git", "ls-tree", "-d", "--name-only", f"{sha}~1"],
@@ -220,4 +220,4 @@ def agent_scope(repo_dir: str, graph=None) -> AgentScope | None:
         capture_output=True,
         text=True,
     ).stdout
-    return _add_units(AgentScope(added, lines, base_dirs=set(tree.split())), graph)
+    return add_units(AgentScope(added, lines, base_dirs=set(tree.split())), graph)

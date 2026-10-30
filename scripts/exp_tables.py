@@ -3,7 +3,8 @@
     python scripts/exp_tables.py
 
 Reads results/summary/main_results.csv (from exp_collect.py) and guard_strength.csv. Writes
-results/summary/{main_table,paired_tests,ablation}.{csv,md} and results/figures/*.png.
+results/summary/{main_table,paired_tests,oneshot_series,ablation}.{csv,md} and
+results/figures/*.png.
 Toy and demo are one target each, so they are pooled as "answer keys" for intervals and tests.
 Hidden changes marked flaky or overload_suspect (see exp_collect) count as no outcome. On AIDev,
 where format edits can add more lines than they remove, the yield is lines_removed_code (lines
@@ -194,6 +195,40 @@ def paired_tests(rows: list[dict]) -> list[dict]:
     return out
 
 
+SERIES = ["one_shot_llm", "one_shot_compile", "one_shot_retry", REFERENCE]
+
+
+def oneshot_series(rows: list[dict], table: list[dict], paired: list[dict]) -> list[dict]:
+    """The one-shot variants next to gatekeeper on SWE-bench: yield and hidden changes."""
+    by = groups(rows)
+    stats = {(r["target set"], r["method"]): r for r in table}
+    tests = {(r["target set"], r["method vs gatekeeper"]): r for r in paired}
+    out = []
+    for target_set in ("swebench_t1", "swebench_t2"):
+        for method in SERIES:
+            if (target_set, method) not in stats:
+                continue
+            hidden = _values(by[(target_set, method)], "hidden_changed")
+            test = tests.get((target_set, method), {})
+            out.append(
+                {
+                    "target set": target_set,
+                    "variant": method,
+                    "n": stats[(target_set, method)]["n"],
+                    "lines removed (mean, 95% CI)": stats[(target_set, method)][
+                        "lines removed (mean, 95% CI)"
+                    ],
+                    "hidden changed": f"{sum(hidden)}/{len(hidden)}",
+                    "hidden changed (mean, 95% CI)": stats[(target_set, method)][
+                        "hidden changed (mean, 95% CI)"
+                    ],
+                    "McNemar p vs gatekeeper": test.get("McNemar exact p", "--"),
+                    "Wilcoxon p (lines) vs gatekeeper": test.get("Wilcoxon p", "--"),
+                }
+            )
+    return out
+
+
 def ablation(rows: list[dict]) -> list[dict]:
     """What each part adds: probes (advisory vs guard_tests_only), judge (gatekeeper vs
     advisory), checks (cleansweep advisory vs tools_only)."""
@@ -366,8 +401,10 @@ def figure_guard_strength() -> None:
 
 def main() -> int:
     rows = read(SUMMARY / "main_results.csv")
-    write("main_table", main_table(rows))
-    write("paired_tests", paired_tests(rows))
+    table, paired = main_table(rows), paired_tests(rows)
+    write("main_table", table)
+    write("paired_tests", paired)
+    write("oneshot_series", oneshot_series(rows, table, paired))
     write("ablation", ablation(rows))
     figure_lines_removed(rows)
     figure_safety_vs_yield(rows)

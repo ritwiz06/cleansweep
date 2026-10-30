@@ -1,0 +1,14 @@
+variant,method,policy,applied,classes,rendered,changed,removed,removed_referenced,modules_broken,changed_classes,removed_classes
+cleansweep-gatekeeper,cleansweep-gatekeeper,as run,1,44,32,0,1,0,0,,CodebaseIndexPromptScreen
+cleansweep-gatekeeper__public_api,cleansweep-gatekeeper,public_api,1,44,32,0,0,0,0,,
+cleansweep-gatekeeper__final,cleansweep-gatekeeper,final,1,44,32,0,0,0,0,,
+cleansweep-advisory,cleansweep-advisory,as run,1,44,32,17,2,0,0,AutopilotStartupScreen; AttachmentHintWidget; WelcomeWidget; DatabaseLockedDialog; DatabaseTimeoutDialog; DirectorySetupScreen; GitHubIssueScreen; KuzuErrorDialog; ModelPickerScreen; PipxMigrationScreen; CreateSpecDialog; ShareSpecsDialog; UploadProgressScreen; ShotgunAuthScreen; WelcomeScreen; StageApprovalWidget; AttachmentBar,CodebaseIndexPromptScreen; FeedbackScreen
+cleansweep-advisory__public_api,cleansweep-advisory,public_api,1,44,32,11,1,0,0,AutopilotStartupScreen; DatabaseLockedDialog; DatabaseTimeoutDialog; DirectorySetupScreen; GitHubIssueScreen; KuzuErrorDialog; ModelPickerScreen; PipxMigrationScreen; ShotgunAuthScreen; WelcomeScreen; AttachmentBar,FeedbackScreen
+cleansweep-advisory__framework,cleansweep-advisory,framework,1,44,32,0,2,0,0,,CodebaseIndexPromptScreen; FeedbackScreen
+cleansweep-advisory__final,cleansweep-advisory,final,1,44,32,0,1,0,0,,FeedbackScreen
+guard_tests_only,guard_tests_only,as run,1,44,32,16,2,0,0,AutopilotStartupScreen; AttachmentHintWidget; WelcomeWidget; DatabaseLockedDialog; DatabaseTimeoutDialog; DirectorySetupScreen; KuzuErrorDialog; ModelPickerScreen; PipxMigrationScreen; CreateSpecDialog; ShareSpecsDialog; UploadProgressScreen; ShotgunAuthScreen; WelcomeScreen; StageApprovalWidget; AttachmentBar,CodebaseIndexPromptScreen; FeedbackScreen
+guard_tests_only__public_api,guard_tests_only,public_api,1,44,32,10,1,0,0,AutopilotStartupScreen; DatabaseLockedDialog; DatabaseTimeoutDialog; DirectorySetupScreen; KuzuErrorDialog; ModelPickerScreen; PipxMigrationScreen; ShotgunAuthScreen; WelcomeScreen; AttachmentBar,FeedbackScreen
+guard_tests_only__framework,guard_tests_only,framework,1,44,32,0,2,0,0,,CodebaseIndexPromptScreen; FeedbackScreen
+guard_tests_only__final,guard_tests_only,final,1,44,32,0,1,0,0,,FeedbackScreen
+tools_only,tools_only,as run,1,44,32,18,0,0,0,AutopilotStartupScreen; AttachmentHintWidget; WelcomeWidget; DatabaseLockedDialog; DatabaseTimeoutDialog; KuzuErrorDialog; CreateSpecDialog; ShareSpecsDialog; UploadProgressScreen; SpecPullScreen; Tier1WarningModal; PlanApprovalWidget; CascadeConfirmationWidget; ChoiceSelectorWidget; PlanPanelWidget; StageApprovalWidget; StepCheckpointWidget; AttachmentBar,
+one_shot_llm,one_shot_llm,as run,1,44,32,0,0,0,0,,

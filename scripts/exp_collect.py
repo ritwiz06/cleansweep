@@ -222,19 +222,28 @@ def swebench_rows(
             **(slowdown(data, baselines.get(f"{instance}__{agent}")) if baselines else {}),
             "_group": f"{instance}__{agent}",
             "_diff": _digest(stats.get("final_diff", "")),
-            "_scope": (stats.get("scope") or {}).get("kind"),
+            "_scope": _scope_kind(stats.get("scope") or {}),
         }
         rows.append(_invalid(row, stats))
     return rows
 
 
+def _scope_kind(record: dict) -> str | None:
+    """The scope kind of a complete record: an agent scope also needs its units and share."""
+    kind = record.get("kind")
+    if kind in ("agent_patch", "agent_blame") and not {"units", "share"} <= set(record):
+        return None
+    return kind
+
+
 def scoped(rows: list[dict], folder: Path) -> list[dict]:
-    """AIDev rows whose report used the agent scope. A report without a scope record stops the
-    run; one whose scope was missing is listed and left out."""
+    """AIDev rows whose report used the agent scope. A report without a complete scope record
+    (kind; units and share for an agent scope) stops the run; one whose scope was missing is
+    listed and left out."""
     lacking = sorted(f"{r['target']}__{r['method']}" for r in rows if not r["_scope"])
     if lacking:
         raise SystemExit(
-            f"{len(lacking)} AIDev reports in {folder} have no scope record "
+            f"{len(lacking)} AIDev reports in {folder} have no complete scope record "
             f"(run data_aidev_scope.py --backfill {folder}): {', '.join(lacking[:3])}"
         )
     missing = sorted(f"{r['target']}__{r['method']}" for r in rows if r["_scope"] == "missing")

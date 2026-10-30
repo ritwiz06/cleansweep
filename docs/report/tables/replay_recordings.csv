@@ -13,3 +13,4 @@ recording,target,method,judge mode,model,kept,test runs,lines removed,hidden cha
 20261026_toy_tools_only,toy repo,tools_only,off,qwen36-35b-a3b,7,0,38,yes,2/13
 20261027_demo_feature_one_shot_llm,demo app + feature,one_shot_llm,off,qwen36-35b-a3b,5,0,47,no,5/7
 20261027_toy_one_shot_llm,toy repo,one_shot_llm,off,qwen36-35b-a3b,8,0,47,no,7/13
+20261030_demo_feature_advisory_v1,demo app + feature,cleansweep,advisory,qwen36-35b-a3b,5,7,47,no,7/7

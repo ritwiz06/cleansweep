@@ -85,7 +85,7 @@ def _report(folder, name, lines, scope="agent_blame"):
         "llm_calls": 0,
         "minutes": 1.0,
         "hidden": {"available": True, "applied": True, "behavior_changed": False},
-        **({"scope": {"kind": scope}} if scope else {}),
+        **({"scope": {"kind": scope, "units": 3, "share": 0.1}} if scope else {}),
     }
     folder.mkdir(parents=True, exist_ok=True)
     report = {"plan": {"items": []}, "results": [], "stats": stats}
@@ -157,5 +157,10 @@ def test_aidev_rows_need_a_scope_record_and_skip_a_missing_scope(tmp_path, monke
     rows = collect.aidev_rows(grid, [rerun], [])
     assert [r["lines_removed"] for r in rows] == [9]  # the scoped rerun fills in
     _report(grid, "o__r__one_shot_llm", 3, scope=None)
-    with pytest.raises(SystemExit, match="no scope record"):
+    with pytest.raises(SystemExit, match="no complete scope record"):
+        collect.aidev_rows(grid, [rerun], [])
+    report = json.loads((grid / "o__r__one_shot_llm.json").read_text())
+    report["stats"]["scope"] = {"kind": "agent_blame", "share": 0.1}  # no units
+    (grid / "o__r__one_shot_llm.json").write_text(json.dumps(report))
+    with pytest.raises(SystemExit, match="no complete scope record"):
         collect.aidev_rows(grid, [rerun], [])
