@@ -288,7 +288,11 @@ def keep_public_api(
     (is_public_api) to the suggest lane, "off" never does, "auto" (default) only when the
     repository has packaging metadata. With no caller in the project, the Guard's tests and probes
     have nothing to run, so only the owner can tell whether such a name is used outside."""
-    setting = setting or _settings().get("keep_public_api", "auto")
+    if setting is None:
+        setting = _settings().get("keep_public_api", "auto")
+    setting = {True: "on", False: "off"}.get(setting, setting)  # YAML reads bare on/off as bools
+    if setting not in ("auto", "on", "off"):
+        raise ValueError(f"reviewer.keep_public_api must be auto, on or off, got {setting!r}")
     if setting == "off" or (setting == "auto" and not has_package_metadata(repo_dir)):
         return items
     for item in items:

@@ -182,6 +182,8 @@ def group_requests(items: list[CleanupItem], batch_size: int) -> list[list[Clean
 def resolve_mode(mode: str | None, cfg: dict) -> str:
     """Pick the judge mode: explicit argument, then CLEANSWEEP_JUDGE_MODE, then the config."""
     mode = mode or os.environ.get(MODE_ENV, "").strip().lower() or cfg.get("judge_mode")
+    if mode is False:  # YAML reads a bare `off` as false
+        mode = "off"
     mode = mode or "gatekeeper"
     if mode not in MODES:
         raise ValueError(

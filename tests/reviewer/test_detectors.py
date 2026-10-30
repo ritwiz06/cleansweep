@@ -1,3 +1,5 @@
+import pytest
+
 from cleansweep.reviewer import run_detectors
 
 
@@ -93,6 +95,11 @@ def test_keep_public_api_moves_public_dead_code_to_suggest(tmp_path):
     assert [i.lane for i in keep_public_api(items(), plain)] == ["safe"] * 3  # auto, no metadata
     assert [i.lane for i in keep_public_api(items(), plain, "on")][0] == "suggest"
     assert [i.lane for i in keep_public_api(items(), packaged, "off")][0] == "safe"
+    # YAML reads a bare on/off as a bool
+    assert [i.lane for i in keep_public_api(items(), packaged, False)][0] == "safe"
+    assert [i.lane for i in keep_public_api(items(), plain, True)][0] == "suggest"
+    with pytest.raises(ValueError, match="keep_public_api"):
+        keep_public_api(items(), packaged, "sometimes")
 
 
 def test_has_package_metadata(tmp_path):
