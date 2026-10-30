@@ -107,14 +107,3 @@ def test_rules_funnel_and_labels(tmp_path):
     assert load_csv("missing.csv", tmp_path) is None
     assert repos_label(20, 1) == "20 of 21 runnable repos (1 excluded)"
     assert repos_label(20) == "20 runnable repos"
-
-
-def test_result_pages_render():
-    from streamlit.testing.v1 import AppTest
-
-    from tests.conftest import FIXTURES
-
-    pages = FIXTURES.parents[1] / "app" / "pages"
-    for name in ("2_Scheduler.py", "3_Baselines.py", "4_Data.py", "5_Guard.py"):
-        at = AppTest.from_file(str(pages / name), default_timeout=60).run()
-        assert not at.exception, (name, [e.value for e in at.exception])

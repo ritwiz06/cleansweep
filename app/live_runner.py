@@ -26,6 +26,7 @@ from cleansweep.workflow.sweep import make_llm
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_DIR = ROOT / "results" / "raw" / "live"
+SHIPPED_DIR = ROOT / "demo" / "replay"
 TOY_REPO = ROOT / "tests" / "fixtures" / "toy_repo"
 STAGES = ["open", "analyze", "plan", "rank", "batch", "guard", "hidden", "done"]
 STAGE_LABELS = {
@@ -347,6 +348,11 @@ def list_runs(out_dir: str | Path = LIVE_DIR) -> list[Path]:
     """Saved live runs (folders with an events.jsonl), newest first."""
     found = [p.parent for p in Path(out_dir).glob("*/events.jsonl")]
     return sorted(found, key=lambda p: p.stat().st_mtime, reverse=True)
+
+
+def shipped_runs(folder: str | Path = SHIPPED_DIR) -> list[Path]:
+    """Recordings that ship with the repository (demo/replay/), newest run id first."""
+    return sorted((p.parent for p in Path(folder).glob("*/events.jsonl")), reverse=True)
 
 
 def main(argv: list[str] | None = None) -> int:
