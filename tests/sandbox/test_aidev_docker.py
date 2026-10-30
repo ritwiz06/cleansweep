@@ -75,3 +75,38 @@ def test_aidev_workspace_stores_the_agent_scope(sandbox_cfg):
         assert not scope.outside_project(sorted(scope.files_added or scope.files)[0])
     finally:
         ws.close()
+
+
+@pytest.mark.docker
+@needs_docker
+def test_aidev_workspace_hides_and_restores_packages(tmp_path, sandbox_cfg):
+    from cleansweep.sandbox import open_workspace
+
+    clone = tmp_path / "clones" / "o__dep"
+    (clone / "dep").mkdir(parents=True)
+    (clone / "dep" / "__init__.py").write_text("")
+    (clone / "pyproject.toml").write_text(
+        '[project]\nname = "dep"\nversion = "0.1"\ndependencies = ["six"]\n[build-system]\n'
+        'requires = ["setuptools"]\nbuild-backend = "setuptools.build_meta"\n'
+    )
+    (clone / "test_dep.py").write_text("def test_six():\n    import six\n\n    assert six.PY3\n")
+    subprocess.run(["git", "init", "-q"], cwd=clone, check=True)
+    subprocess.run([*GIT, "add", "-A"], cwd=clone, check=True)
+    subprocess.run([*GIT, "commit", "-q", "-m", "c"], cwd=clone, check=True)
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=clone, capture_output=True, text=True
+    ).stdout.strip()
+    ws = open_workspace(
+        f"aidev:o/dep@{sha}", {**sandbox_cfg, "aidev_clones": str(tmp_path / "clones")}
+    )
+    try:
+        assert ws.run_tests(None).ok
+        states = ws.hide_packages(["six", "iniconfig", "nope"])
+        assert states["six"] == "hidden"
+        assert states["iniconfig"].startswith("required by") and "pytest" in states["iniconfig"]
+        assert states["nope"] == "not installed"
+        assert not ws.run_tests(None).ok
+        ws.restore_packages()
+        assert ws.run_tests(None).ok
+    finally:
+        ws.close()

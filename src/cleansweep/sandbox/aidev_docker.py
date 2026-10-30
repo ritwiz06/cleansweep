@@ -54,6 +54,63 @@ pip("pytest", "coverage")
 sys.exit(0 if ok else 1)
 """
 INSTALL = "python - <<'CS_EOF'\n" + INSTALL_PY + "\nCS_EOF"
+# Runs inside the container: for each package, keep it when another installed distribution (not
+# the project itself) requires it, else move its installed files aside, the files pip uninstall
+# would remove (the container has no network to reinstall them). Prints {name: state}.
+HIDE_PY = r"""
+import importlib.metadata as md, json, os, shutil, sys
+from pip._vendor.packaging.requirements import Requirement
+from pip._vendor.packaging.utils import canonicalize_name
+STASH = "/tmp/cs_hidden"
+def project(d):
+    try:
+        return "file:///repo" in (d.read_text("direct_url.json") or "")
+    except Exception:
+        return False
+dists = {canonicalize_name(d.metadata["Name"]): d for d in md.distributions() if d.metadata["Name"]}
+out = {}
+for name in json.loads(sys.argv[1]):
+    key = canonicalize_name(name)
+    if key not in dists:
+        out[name] = "not installed"
+        continue
+    users = []
+    for other, d in dists.items():
+        if other == key or project(d):
+            continue
+        for line in d.requires or []:
+            try:
+                req = Requirement(line)
+            except Exception:
+                continue
+            if canonicalize_name(req.name) == key and (
+                req.marker is None or req.marker.evaluate({"extra": ""})
+            ):
+                users.append(d.metadata["Name"])
+                break
+    if users:
+        out[name] = "required by " + ", ".join(sorted(users)[:3])
+        continue
+    for f in dists[key].files or []:
+        src = str(dists[key].locate_file(f))
+        if os.path.lexists(src):
+            dst = STASH + os.path.abspath(src)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.move(src, dst)
+    out[name] = "hidden"
+print(json.dumps(out))
+"""
+RESTORE_PY = r"""
+import os, shutil
+STASH = "/tmp/cs_hidden"
+for folder, _, files in os.walk(STASH):
+    for f in files:
+        src = os.path.join(folder, f)
+        dst = src[len(STASH):]
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.move(src, dst)
+shutil.rmtree(STASH, ignore_errors=True)
+"""
 
 
 def _docker(args: list[str], timeout: float | None = None) -> subprocess.CompletedProcess:
@@ -93,6 +150,17 @@ class AidevWorkspace(Workspace):
         if cmd and cmd[0] == sys.executable:
             cmd = [self.python, *cmd[1:]]
         return self._exec(shlex.join(cmd), timeout)
+
+    def hide_packages(self, names: list[str]) -> dict[str, str] | None:
+        """See Workspace.hide_packages: a package another installed one requires stays."""
+        cmd = f"python - {shlex.quote(json.dumps(names))} <<'CS_EOF'\n{HIDE_PY}\nCS_EOF"
+        code, out = self._exec(cmd, 120)
+        if code != 0:
+            raise RuntimeError(f"could not hide {names}: {out[-300:]}")
+        return json.loads(out.strip().splitlines()[-1])
+
+    def restore_packages(self) -> None:
+        self._exec(f"python - <<'CS_EOF'\n{RESTORE_PY}\nCS_EOF", 120)
 
     def run_tests(self, test_paths: list[str] | None = None, timeout: int = 900) -> RunResult:
         """pytest in the container with a JUnit report copied back to the host."""
