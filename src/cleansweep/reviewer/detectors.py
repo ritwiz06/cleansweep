@@ -474,13 +474,15 @@ def detect_security(
 
 
 def detect_formatting(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
+    from cleansweep.analysis.graph import ruff_isolation
+
     if paths == []:
         return []
     out = _tool(
         [
             "ruff",
             "format",
-            "--isolated",
+            *ruff_isolation(repo_dir),
             "--check",
             "--output-format",
             "concise",

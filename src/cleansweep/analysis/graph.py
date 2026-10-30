@@ -453,6 +453,18 @@ CONFIG_FILES = (
 )
 
 
+def ruff_isolation(repo_dir: str) -> list[str]:
+    """[] if the project configures ruff itself (ruff.toml, .ruff.toml, [tool.ruff]), else
+    ["--isolated"]: format edits follow the project's own line length when it sets one."""
+    root = Path(repo_dir)
+    if (root / "ruff.toml").is_file() or (root / ".ruff.toml").is_file():
+        return []
+    pyproject = root / "pyproject.toml"
+    if pyproject.is_file() and "[tool.ruff" in pyproject.read_text(errors="replace"):
+        return []
+    return ["--isolated"]
+
+
 def name_in_configs(repo_dir: str, path: str) -> bool:
     """True if a file name is mentioned in config files (setup.cfg, pyproject, Makefile...)."""
     root = Path(repo_dir)

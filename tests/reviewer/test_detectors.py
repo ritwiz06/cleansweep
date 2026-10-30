@@ -138,3 +138,14 @@ def test_keep_framework_callbacks_moves_callbacks_to_suggest(tmp_path):
     assert [i.lane for i in keep_framework_callbacks(items(), graph, False)] == ["safe", "safe"]
     with pytest.raises(ValueError, match="framework_callbacks"):
         keep_framework_callbacks(items(), graph, "auto")
+
+
+def test_formatting_follows_the_project_line_length(tmp_path):
+    from cleansweep.reviewer.detectors import detect_formatting
+
+    long_call = "combined_result = compute(" + ", ".join(f"argument_{i}" for i in range(6)) + ")\n"
+    assert 88 < len(long_call.strip()) < 100
+    (tmp_path / "mod.py").write_text(long_call)
+    assert [i.unit.path for i in detect_formatting(str(tmp_path))] == ["mod.py"]
+    (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+    assert detect_formatting(str(tmp_path)) == []
