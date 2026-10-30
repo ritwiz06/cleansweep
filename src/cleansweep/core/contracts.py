@@ -72,8 +72,8 @@ INTERFACES: dict[str, dict[str, list[str]]] = {
     },
     "reviewer": {
         "run_detectors": ["repo_dir", "graph"],
-        "judge_items": ["items", "repo_dir", "llm"],
+        "judge_items": ["items", "repo_dir", "llm"],  # optional cfg (issue #1)
         "propose_fix": ["item", "failure_log", "repo_dir", "llm"],
-        "build_plan": ["workspace", "graph", "llm", "use_llm"],
+        "build_plan": ["workspace", "graph", "llm", "use_llm", "cfg"],
     },
 }

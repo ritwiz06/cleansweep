@@ -48,7 +48,7 @@ def run_detectors(repo_dir: str, graph=None) -> list[CleanupItem]:
     ]
 
 
-def judge_items(items: list[CleanupItem], repo_dir: str, llm) -> list[CleanupItem]:
+def judge_items(items: list[CleanupItem], repo_dir: str, llm, cfg=None) -> list[CleanupItem]:
     return items
 
 
@@ -56,7 +56,7 @@ def propose_fix(item: CleanupItem, failure_log: str, repo_dir: str, llm) -> str 
     return None
 
 
-def build_plan(workspace, graph=None, llm=None, use_llm: bool = True) -> CleanupPlan:
+def build_plan(workspace, graph=None, llm=None, use_llm: bool = True, cfg=None) -> CleanupPlan:
     repo_dir = getattr(workspace, "path", workspace)
     return CleanupPlan(
         getattr(workspace, "repo_id", "local:toy_repo"),

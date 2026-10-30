@@ -224,18 +224,21 @@ def judge_items(
     batch_size: int | None = None,
     mode: str | None = None,
     graph=None,
+    cfg: dict | None = None,
 ) -> list[CleanupItem]:
     """Ask the LLM about each item. Every item stays in the plan; the mode decides lanes.
 
     gatekeeper: "suggest" and "keep" move an item to the suggest lane.
     advisory: only the reason and confidence are recorded; the Guard decides.
     off: the judge is skipped.
+
+    cfg is a run's config (its reviewer section); CLEANSWEEP_JUDGE_MODE still overrides it.
     """
     if llm is None:
         return items
     from .detectors import _settings
 
-    cfg = _settings()
+    cfg = _settings(cfg)
     mode = resolve_mode(mode, cfg)
     if mode == "off":
         return items

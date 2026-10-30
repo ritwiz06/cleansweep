@@ -102,8 +102,8 @@ def test_switches_turn_the_review_off(toy_repo, monkeypatch):
     monkeypatch.setenv("CLEANSWEEP_OVERENGINEERING", "0")
     assert oe.review_overengineering([], toy_repo, graph, llm) == []
     monkeypatch.delenv("CLEANSWEEP_OVERENGINEERING")
-    monkeypatch.setattr(oe, "_settings", lambda: {"overengineering": False})
-    assert oe.review_overengineering([], toy_repo, graph, llm) == []
+    off = {"reviewer": {"overengineering": False}}
+    assert oe.review_overengineering([], toy_repo, graph, llm, cfg=off) == []
     assert llm.calls == []
     assert oe.review_overengineering([], toy_repo, graph, None) == []
 

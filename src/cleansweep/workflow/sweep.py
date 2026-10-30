@@ -55,7 +55,7 @@ def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0)
 
         graph = build_graph(ws.path)
         features = extract_features(ws.path, graph)
-        plan = build_plan(ws, graph, llm, use_llm=llm is not None)
+        plan = build_plan(ws, graph, llm, use_llm=llm is not None, cfg=cfg)
         if method != "no_ranker":
             load_ranker(exp.get("ranker_path")).score(plan.items, features)
 
@@ -97,7 +97,7 @@ def run_sweep(target: str, cfg: dict, method: str = "cleansweep", seed: int = 0)
             "wall_seconds": round(time.time() - t0, 2),
             "n_checks": outcome["n_checks"],
             "final_diff": ws.diff(ws.base),
-            "scope": scope_report(ws.repo_id, ws.path, graph),
+            "scope": scope_report(ws.repo_id, ws.path, graph, cfg),
         }
         report = SweepReport(ws.repo_id, method, "now", seed, started, _now(), plan, results, stats)
         if cfg.get("run_id"):

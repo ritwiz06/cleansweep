@@ -207,3 +207,12 @@ def test_no_llm_and_bad_mode(toy_repo):
     assert judge_items(items, toy_repo, None) == items
     with pytest.raises(ValueError):
         judge_items(items, toy_repo, FakeLLM(), mode="strict")
+
+
+def test_run_config_sets_the_mode_and_the_env_still_wins(monkeypatch, toy_repo):
+    llm = judge_reply(("a", "keep"))
+    off = {"reviewer": {"judge_mode": "off"}}
+    assert judge_items([make("a")], toy_repo, llm, cfg=off)[0].lane == "safe"
+    assert llm.calls == []
+    monkeypatch.setenv("CLEANSWEEP_JUDGE_MODE", "gatekeeper")
+    assert judge_items([make("a")], toy_repo, llm, cfg=off)[0].lane == "suggest"

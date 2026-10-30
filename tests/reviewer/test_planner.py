@@ -16,3 +16,13 @@ def test_reviewer_stub(monkeypatch, toy_repo, toy_expected):
 
     plan = stub.build_plan(toy_repo)
     assert len(plan.items) == len(toy_expected)
+
+
+def test_build_plan_uses_the_run_config(toy_ws):
+    from cleansweep.core.config import load_config
+
+    cfg = load_config()
+    assert any(i.category == "dead_code" for i in build_plan(toy_ws, use_llm=False).items)
+    cfg["reviewer"]["vulture_min_confidence"] = 100  # vulture's 60% hits drop out
+    plan = build_plan(toy_ws, use_llm=False, cfg=cfg)
+    assert not any(i.category == "dead_code" for i in plan.items)
