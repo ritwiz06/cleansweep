@@ -23,18 +23,19 @@ leftover helper behind (`inventory._print_low_stock`).
    **Live sweep** in the browser.
 3. Terminal 2: `bash demo/prepare_demo.sh`. It builds the app in `.cleansweep/demo/shop_app`
    (gitignored) and prints that path.
-4. Check that Replay lists `20261026_demo_feature_advisory_probes` (the main fallback) and
-   `20261025_demo_feature_advisory` (the same run before the probes existed).
-   Run the live sweep once the day before, so the LLM cache is warm: a cold advisory run with
-   probes took about 8 minutes; a warm one takes seconds.
+4. Check that Replay lists `20261030_demo_feature_advisory_v1` (the main fallback: advisory
+   with the v1.0 defaults) and `20261025_demo_feature_advisory` (the same run before the probes
+   existed). Both ship in `demo/replay/`, so Replay works offline, even on a fresh clone.
+   Run the live sweep once the day before, so the LLM cache is warm: a cold advisory run took
+   6.3 minutes (7 LLM requests); a warm one takes seconds.
 5. OpenCode is connected to Voyager and opened in the prepared app folder.
 
 ## Script
 
-**0:00–0:30 · The app.** In terminal 2: `cd .cleansweep/demo/shop_app && python -m pytest -q`
+**0:00–0:25 · The app.** In terminal 2: `cd .cleansweep/demo/shop_app && python -m pytest -q`
 (11 passed). Open `scratch_restock.py` and `orders.py` for a second: "an agent built this, and it left things behind."
 
-**0:30–1:30 · An agent adds a feature.** Ask OpenCode:
+**0:25–1:15 · An agent adds a feature.** Ask OpenCode:
 > Add a `lowstock [threshold]` command that lists the titles with that many copies or
 > fewer (default 2), with a test.
 
@@ -42,7 +43,7 @@ Run the tests again (12 passed).
 *Fallback if the agent is slow or goes off track:* `bash demo/prepare_demo.sh --with-feature`
 (same change, already committed).
 
-**1:30–3:00 · Live sweep, advisory mode.** On the Live sweep page: target **Prepared demo**,
+**1:15–2:40 · Live sweep, advisory mode.** On the Live sweep page: target **Prepared demo**,
 method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it runs:
 - Open → Analyze → Plan: the detectors, then the LLM judge (the stage bar shows a timer).
 - Plan table: green rows are safe edits, orange rows are only reported (the `cmd_*`
@@ -51,10 +52,10 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
 - Guard feed: each card is one check: apply the batch, compile, import, run the tests, then
   the differential probes ("probes: N cases agree").
 
-*If the judge is still working at 2:30, or the network is slow:* switch to **Replay**, pick
-`20261026_demo_feature_advisory_probes`, speed 20×, press **Replay**.
+*If the judge is still working at 2:10, or the network is slow:* switch to **Replay**, pick
+`20261030_demo_feature_advisory_v1`, speed 20×, press **Replay** (about 20 seconds).
 
-**3:00–3:45 · What it found.**
+**2:40–3:30 · What it found.**
 - Kept edits (slop meter): the leftover script, the old module, the dead function, the
   exact duplicate, and the helper the agent just left behind. All tests still pass.
 - `cmd_restock` stayed in suggest: it is reached through `getattr`, and deleting it
@@ -63,13 +64,15 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
   alone would keep it. Point at its card: "The probes caught a behavior change": the probes
   called `_round_money` and `utils.round_money` on the same inputs, and 0.125 gives 0.13
   before but 0.12 after. The Guard rolled the edit back, and the hidden check says
-  **behavior unchanged**. For contrast, replay `20261025_demo_feature_advisory` (before the
-  probes): the same edit was kept and the hidden check failed.
+  **behavior unchanged**. For contrast (only if there is time), replay
+  `20261025_demo_feature_advisory` at 50×: before the probes, the same edit was kept and the
+  hidden check failed.
 
-**3:45–4:00 · Close** on the results slide (outcome accuracy and the toy/demo tables).
+**3:30–3:50 · Close** on the results slide: outcome 7/7, hidden behavior unchanged.
 
 ## After the talk
 
-The prepared copy stays in `.cleansweep/demo/` until the next `prepare_demo.sh`, so Replay keeps
-its outcome score. Recording a fresh run without the browser:
-`python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`.
+Recording a fresh run without the browser:
+`python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`. It goes to
+`results/raw/live/` (not in git). The shipped copies in `demo/replay/` store paths relative to
+the repository, and Replay scores them against `demo/shop_app_expected.json`.

@@ -180,3 +180,20 @@ def test_probe_outcome_reaches_the_batch_cards(toy_repo, cfg, tmp_path):
     trap = item_id("shopcart/storage.py::_safe_round", "duplicate")
     assert state["statuses"][trap] == "rolled_back"
     assert state["hidden"]["behavior_changed"] is False
+
+
+def test_shipped_recordings_replay_from_the_repository():
+    from app.live_runner import ROOT, shipped_runs
+
+    changed = {}
+    for run_dir in shipped_runs():
+        state = fold(read_events(run_dir / "events.jsonl"))
+        assert (ROOT / state["report"]).is_file()
+        changed[run_dir.name] = state["hidden"]["behavior_changed"]
+    assert list(changed)[0] == "20261030_demo_feature_advisory_v1"
+    # before the probes existed, the near-duplicate trap got through
+    assert changed == {
+        "20261030_demo_feature_advisory_v1": False,
+        "20261026_demo_feature_advisory_probes": False,
+        "20261025_demo_feature_advisory": True,
+    }

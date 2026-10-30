@@ -22,6 +22,7 @@ from app.live_runner import (  # noqa: E402
     read_events,
     replay,
     run_live,
+    shipped_runs,
 )
 from app.loaders import compare_reports, judge_decision, load_report, outcome_score  # noqa: E402
 from cleansweep.core.models import METHODS  # noqa: E402
@@ -58,6 +59,15 @@ st.markdown(CSS, unsafe_allow_html=True)
 st.title("Live sweep")
 
 
+def answer_key(target_path: str) -> Path | None:
+    """The target's answer key next to it, or the demo folder's copy for a prepared demo."""
+    target = Path(target_path.rstrip("/"))
+    keys = [Path(f"{target}_expected.json")]
+    if target.parent.name == "demo":
+        keys.append(ROOT / "demo" / f"{target.name}_expected.json")
+    return next((k for k in keys if k.is_file()), None)
+
+
 def target_options() -> dict[str, str]:
     options = {"Toy repo": str(TOY_REPO)}
     prepared = ROOT / ".cleansweep" / "demo" / "shop_app"
@@ -81,6 +91,7 @@ with st.sidebar:
 
     st.header("Replay")
     runs = list_runs()
+    runs += [p for p in shipped_runs() if p.name not in {r.name for r in runs}]
     picked = st.selectbox("Saved run", runs, format_func=lambda p: p.name) if runs else None
     speed = st.slider("Speed", 1, 50, 10, format="%dx")
     replay_clicked = st.button("Replay", disabled=picked is None)
@@ -248,9 +259,10 @@ def show_bottom(state: dict, target_path: str, frame: int) -> None:
                 st.success("Behavior changed: no")
             if hidden.get("visible_new_failures"):
                 st.warning(f"Visible tests broken: {', '.join(hidden['visible_new_failures'])}")
-        expected = Path(target_path.rstrip("/") + "_expected.json")
-        if state["report"] and expected.exists():
-            score = outcome_score(load_report(state["report"]), expected)
+        expected = answer_key(target_path)
+        if state["report"] and expected is not None:
+            # a recording that ships with the repository stores its report path relative to it
+            score = outcome_score(load_report(ROOT / state["report"]), expected)
             st.subheader("Outcome vs. answer key")
             st.metric("Outcome accuracy", f"{score['hits']}/{score['total']}")
             st.dataframe(score["table"], hide_index=True, width="stretch", key=f"score-{frame}")
