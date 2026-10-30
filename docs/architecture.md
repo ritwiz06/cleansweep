@@ -69,7 +69,7 @@ default for SWE-bench and AIDev, so they get the project's setup).
 | `eval` | Baselines (`tools_only`, `one_shot_llm`, `one_shot_retry`), hidden checks, mutation testing, metrics and statistics (bootstrap intervals, exact McNemar, Wilcoxon) |
 | `data` | Loaders for SWE-bench Verified, PatchDiff agent patches and hidden tests, the AIDev repositories and their histories, and the tier splits |
 | `mining` | Review-comment mining: removal requests (keyword filter plus an LLM check), their taxonomy (TF-IDF and k-means), and association rules |
-| `app` | Streamlit dashboard: report viewer, live sweep and replay, Scheduler, baselines, data and Guard pages |
+| `app` | Streamlit dashboard: report viewer, live sweep and replay (local recordings in `results/raw/live/`, plus the ones that ship in `demo/replay/`), Scheduler, baselines, data and Guard pages |
 
 Each package can be swapped for its stub with `CLEANSWEEP_STUBS=<package>[,<package>]` (or
 `all`), so one package can be developed while another is unfinished.
@@ -93,6 +93,10 @@ Security findings always stay in the suggest lane. Two policies run after the ju
   `get_queryset`, and Click's `invoke`. The conventions are one table in
   `analysis/frameworks.py`, covering Textual, Django, Flask, FastAPI/Starlette, Click/Typer
   and pytest.
+
+Format items and format edits run `ruff format` with the project's own ruff settings when it
+has them (`ruff.toml`, `.ruff.toml` or `[tool.ruff]` in `pyproject.toml`), and with ruff's
+defaults otherwise, so detection and the edit always agree.
 
 ## Interfaces
 
@@ -129,7 +133,7 @@ A sweep's `cfg` is the merged dictionary; a caller can override any section.
 | `reviewer.scope` | `auto` | `agent` (only what the agent wrote), `repo`, or agent for SWE-bench and AIDev targets |
 | `reviewer.keep_public_api` | `auto` | `on`, `off`, `auto` |
 | `reviewer.framework_callbacks` | `on` | `on`, `off` |
-| `reviewer.exclude` | `[]` | path prefixes the Reviewer leaves alone |
+| `reviewer.exclude` | `[]` | path prefixes the Reviewer leaves alone (detectors and the over-engineering review) |
 | `reviewer.vulture_min_confidence`, `duplicate_threshold` | 60, 0.8 | detector thresholds |
 | `reviewer.overengineering` | true | the over-engineering review (report only) |
 | `exp.batch_max_size` | 8 | Guard batch size |
@@ -167,3 +171,6 @@ The experiment scripts in `scripts/` are described in `docs/experiments.md`.
 - Duplicate finding compares all pairs, which is fine for one agent's changes and slow for a
   whole large repository.
 - The Scheduler replay uses the static detectors at sampled commits and estimates test runs.
+- Dependency removals are verified by uninstalling only in AIDev containers; elsewhere they
+  are "checked statically only".
+- Format edits follow ruff's settings, not those of other formatters.

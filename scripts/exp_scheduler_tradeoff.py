@@ -11,6 +11,7 @@ results/figures/scheduler_tradeoff.png.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import matplotlib
@@ -23,9 +24,10 @@ from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.eval.stats import bootstrap_ci  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-REPLAY = ROOT / "results" / "summary" / "scheduler_replay.csv"
-OUT = ROOT / "results" / "summary" / "scheduler_tradeoff.csv"
-FIGURE = ROOT / "results" / "figures" / "scheduler_tradeoff.png"
+RESULTS = Path(os.environ.get("CLEANSWEEP_RESULTS", ROOT / "results"))
+REPLAY = RESULTS / "summary" / "scheduler_replay.csv"
+OUT = RESULTS / "summary" / "scheduler_tradeoff.csv"
+FIGURE = RESULTS / "figures" / "scheduler_tradeoff.png"
 POLICIES = ["every_pr", "every_n", "daily", "adaptive"]
 NAMES = {
     "every_pr": "after every agent PR",

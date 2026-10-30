@@ -1,0 +1,9 @@
+target set,variant,n,"lines removed (mean, 95% CI)",hidden changed,"hidden changed (mean, 95% CI)",McNemar p vs gatekeeper,Wilcoxon p (lines) vs gatekeeper
+swebench_t1,one_shot_llm,3,"53.7 [0.0, 161.0]",0/3,"0.00 [0.00, 0.00]",1.0,0.5
+swebench_t1,one_shot_compile,3,"53.7 [0.0, 161.0]",0/3,"0.00 [0.00, 0.00]",1.0,0.5
+swebench_t1,one_shot_retry,3,"53.7 [0.0, 161.0]",0/3,"0.00 [0.00, 0.00]",1.0,0.5
+swebench_t1,cleansweep-gatekeeper,3,"143.3 [0.0, 338.0]",0/3,"0.00 [0.00, 0.00]",--,--
+swebench_t2,one_shot_llm,5,"37.0 [2.8, 82.0]",0/5,"0.00 [0.00, 0.00]",1.0,1.0
+swebench_t2,one_shot_compile,5,"37.0 [2.8, 82.0]",0/5,"0.00 [0.00, 0.00]",1.0,1.0
+swebench_t2,one_shot_retry,5,"37.0 [2.8, 82.0]",0/5,"0.00 [0.00, 0.00]",1.0,1.0
+swebench_t2,cleansweep-gatekeeper,5,"38.8 [6.8, 81.4]",0/5,"0.00 [0.00, 0.00]",--,--
