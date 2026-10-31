@@ -1,6 +1,10 @@
 """Guard as a filter on one-shot cleanups: verify(agent patch, agent patch + one-shot diff).
 
     python scripts/exp_guard_on_oneshot.py [--resume] [--probe-mode runner|direct]
+        [--t2-oneshot FOLDER]
+
+The Tier 2 one-shot reports default to the run copy's raw reports in ../cleansweep-archive
+(scripts/archive_paths.py).
 
 For every Tier 1 and Tier 2 patch where one_shot_llm applied edits, the agent patch is the
 before version and the agent patch plus one-shot's final diff is the after version. verify runs
@@ -24,8 +28,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import check_defaults  # noqa: E402
 from exp_guard_strength import _check, _mismatches, guard_cfg  # noqa: E402
-from exp_oneshot_breakages import diff_files, report_path, targets  # noqa: E402
+from exp_oneshot_breakages import T2, diff_files, report_path, targets  # noqa: E402
 
 from cleansweep.analysis import build_graph  # noqa: E402
 from cleansweep.analysis.graph import is_test_file  # noqa: E402
@@ -153,7 +158,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--probe-mode", choices=["direct", "runner"], default="runner")
+    parser.add_argument("--t2-oneshot", default=str(T2["t2_oneshot"]))
     args = parser.parse_args(argv)
+    check_defaults("exp_guard_on_oneshot.py", parser, args, ["--t2-oneshot"])
+    T2["t2_oneshot"] = Path(args.t2_oneshot)
     cfg = load_config()
     cfg["core"]["guard"]["probe_mode"] = args.probe_mode
     llm = get_client(cfg["core"]["llm"])

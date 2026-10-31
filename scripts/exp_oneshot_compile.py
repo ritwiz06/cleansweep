@@ -1,6 +1,6 @@
 """Which one-shot diffs fail a compile check: the one_shot_compile variant, from existing data.
 
-    python scripts/exp_oneshot_compile.py
+    python scripts/exp_oneshot_compile.py [--runs FOLDER ...] [--t2-oneshot FOLDER]
 
 one_shot_compile is one_shot_llm plus a compile check that discards the whole diff when a
 rewritten .py file doesn't compile. No LLM and no new sweep:
@@ -12,11 +12,15 @@ rewritten .py file doesn't compile. No LLM and no new sweep:
   (the local clone, no Docker) and the rewritten .py files are compiled with this Python (3.11,
   as in the AIDev containers).
 
+The AIDev run folders and the Tier 2 one-shot folder default to the run copies' raw reports in
+../cleansweep-archive (scripts/archive_paths.py).
+
 Writes results/summary/oneshot_compile.csv: one row per one_shot_llm run.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import re
@@ -26,8 +30,9 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import aidev_folders, check_defaults  # noqa: E402
 from exp_aidev_summary import load  # noqa: E402
-from exp_oneshot_breakages import diff_files, report_path, targets  # noqa: E402
+from exp_oneshot_breakages import T2, diff_files, report_path, targets  # noqa: E402
 
 from cleansweep.core.config import load_config  # noqa: E402
 
@@ -35,12 +40,6 @@ ROOT = Path(__file__).resolve().parents[1]
 GUARD_CSV = ROOT / "results" / "summary" / "guard_on_oneshot.csv"
 OUT = ROOT / "results" / "summary" / "oneshot_compile.csv"
 AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
-# first folder wins (reports without the agent scope are skipped), as in exp_collect.py
-AIDEV_FOLDERS = [
-    ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps",
-    ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped",
-    ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window",
-]
 FIELDS = ["target_set", "target", "files_compiled", "compile_failed", "source", "errors"]
 
 
@@ -114,14 +113,15 @@ def swebench_rows() -> list[dict]:
     return rows
 
 
-def aidev_rows() -> list[dict]:
+def aidev_rows(folders: list[Path]) -> list[dict]:
+    """One row per AIDev one_shot_llm run; first folder wins, as in exp_collect.py."""
     clones = ROOT / load_config()["data"]["aidev"]["clones"]
     heads = {
         r["full_name"].replace("/", "__"): r["head_sha"]
         for r in json.loads(AIDEV_SPLIT.read_text(encoding="utf-8"))
     }
     rows = []
-    reports, _ = load([f for f in AIDEV_FOLDERS if f.exists()], [])
+    reports, _ = load([f for f in folders if f.exists()], [])
     for rep in (r for r in reports if r["_method"] == "one_shot_llm"):
         target = rep["_repo"].replace("/", "__")
         if target not in heads:
@@ -142,8 +142,14 @@ def aidev_rows() -> list[dict]:
     return rows
 
 
-def main() -> int:
-    rows = swebench_rows() + aidev_rows()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--runs", nargs="+", default=[str(f) for f in aidev_folders()])
+    parser.add_argument("--t2-oneshot", default=str(T2["t2_oneshot"]))
+    args = parser.parse_args(argv)
+    check_defaults("exp_oneshot_compile.py", parser, args, ["--runs", "--t2-oneshot"])
+    T2["t2_oneshot"] = Path(args.t2_oneshot)
+    rows = swebench_rows() + aidev_rows([Path(f) for f in args.runs])
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)

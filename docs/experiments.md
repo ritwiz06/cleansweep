@@ -10,6 +10,11 @@ README and in `results/summary/`.
   "Not recorded" means our run log does not say.
 - Per-run reports go to `results/raw/<folder>/` (gitignored). Files in `results/summary/`,
   `results/data_summary/` and `results/figures/` are committed.
+- The frozen clones are gone; their reports and caches are kept outside the repository in
+  `../cleansweep-archive/` (`raw/<clone>/results_raw/<folder>/`, `llm_caches/<clone>/`). The raw
+  reports are not published because they contain third-party code. Scripts that read them
+  default to the archive folders (`scripts/archive_paths.py`); their folder flags override that,
+  and a default folder that is missing stops the script with the flag to pass.
 - Runtimes are wall-clock on the [reference machine](#requirements) and include contention when
   two jobs shared it. Model names are those our LLM endpoint served at the time.
 - Run every command from the repository root.
@@ -403,9 +408,13 @@ on meanwhile:
 5. Run at most two sweeps at once (four at once doubled test times on the largest repository).
    Failed runs are logged in `<out>/errors/`; restart with the same command plus `--resume`. To
    stop a job, send SIGTERM to its process group, then remove its container.
-6. Copy the reports back to `results/raw/`, or pass the clone's folders to `exp_collect.py`
-   (`--t1`, `--t2`, `--t2-oneshot`, `--t2-rerun`, `--aidev`, `--aidev-rerun`, `--oneshot-retry`);
-   its defaults expect the reported clones next to the main checkout.
+6. Copy the reports back to `results/raw/`, or pass the clone's folders to the scripts that read
+   them: `exp_collect.py` (`--t1`, `--t2`, `--t2-oneshot`, `--t2-rerun`, `--aidev`, `--aidev-rerun`,
+   `--oneshot-retry`), `exp_oneshot_breakages.py` (`--t2`, `--t2-oneshot`, `--t2-rerun`),
+   `exp_oneshot_compile.py` and `exp_guard_on_oneshot.py` (`--t2-oneshot`; the first also `--runs`),
+   `exp_aidev_summary.py`, `exp_public_api_policy.py` and `exp_dependency_check.py` (`--runs`), and
+   `exp_framework_callbacks.py` and `exp_shotgun_ui.py` (`--reports`). Without a flag they read the
+   reported runs from `../cleansweep-archive/raw/<clone>/results_raw/`.
 
 Current main does not reproduce the as-run numbers: since v1.0 the Reviewer keeps public API and
 framework callbacks in the suggest lane, format edits follow the project's ruff settings (#63),

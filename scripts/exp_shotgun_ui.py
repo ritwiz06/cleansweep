@@ -1,6 +1,6 @@
 """Shotgun UI check: does a cleanup change what shotgun's screens and widgets show?
 
-    python scripts/exp_shotgun_ui.py
+    python scripts/exp_shotgun_ui.py [--reports FOLDER]
 
 shotgun is a Textual app, and its hidden tests don't draw screens. This opens shotgun at the swept
 commit in its AIDev container (Docker, no LLM) and runs scripts/shotgun_ui_harness.py there, which
@@ -15,21 +15,29 @@ counted apart (removed), with whether its name appears anywhere else in the proj
 classes are left out, and a module that stops importing is counted too. Saved snapshots in
 results/raw/shotgun_ui/ are reused, so only a missing variant needs Docker.
 
+The shotgun reports default to the scoped AIDev reruns in ../cleansweep-archive
+(scripts/archive_paths.py).
+
 Writes results/raw/shotgun_ui/<variant>.json and results/summary/shotgun_ui.csv.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import subprocess
+import sys
 from pathlib import Path
 
-from cleansweep.core.config import load_config
-from cleansweep.sandbox import open_workspace
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import archived, check_defaults  # noqa: E402
+
+from cleansweep.core.config import load_config  # noqa: E402
+from cleansweep.sandbox import open_workspace  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORTS = ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"
+REPORTS = archived("cleansweep-runs-5", "aidev_scoped")
 TARGET = "shotgun-sh__shotgun"
 METHODS = [
     "cleansweep-gatekeeper",
@@ -62,11 +70,11 @@ FIELDS = [
 ]
 
 
-def variants() -> list[tuple[str, str, str, str]]:
+def variants(reports: Path) -> list[tuple[str, str, str, str]]:
     """(name, method, policy, diff) for each method's final diff and each policy's filtered diff."""
     out = []
     for method in METHODS:
-        rep = json.loads((REPORTS / f"{TARGET}__{method}.json").read_text())
+        rep = json.loads((reports / f"{TARGET}__{method}.json").read_text())
         out.append((method, method, "as run", rep["stats"].get("final_diff", "")))
         for policy, folder in POLICIES.items():
             path = ROOT / "results" / "raw" / folder / f"{TARGET}__{method}.json"
@@ -109,9 +117,9 @@ def referenced(clone: Path, sha: str, name: str) -> bool:
     return any(not line.split(":", 1)[-1].endswith(f"{own}.py") for line in out.splitlines())
 
 
-def snapshots(rep: dict) -> dict[str, dict | None]:
+def snapshots(rep: dict, reports: Path) -> dict[str, dict | None]:
     """Snapshot per variant: from results/raw/shotgun_ui/ when saved, else run in Docker."""
-    wanted = ["base", "base_again", *(name for name, *_ in variants())]
+    wanted = ["base", "base_again", *(name for name, *_ in variants(reports))]
     if all((RAW / f"{n}.json").exists() for n in wanted):
         return {n: json.loads((RAW / f"{n}.json").read_text()) for n in wanted}
     ws = open_workspace(rep["repo_id"], load_config()["core"].get("sandbox"))
@@ -121,7 +129,7 @@ def snapshots(rep: dict) -> dict[str, dict | None]:
         for name in ("base", "base_again"):
             out[name] = snapshot(ws)
             (RAW / f"{name}.json").write_text(json.dumps(out[name], indent=1))
-        for name, _, _, diff in variants():
+        for name, _, _, diff in variants(reports):
             ws.rollback(ws.base)
             applied = ws.apply_patch(diff) if diff.strip() else True
             out[name] = snapshot(ws) if applied else None
@@ -133,9 +141,14 @@ def snapshots(rep: dict) -> dict[str, dict | None]:
     return out
 
 
-def main() -> int:
-    rep = json.loads((REPORTS / f"{TARGET}__cleansweep-gatekeeper.json").read_text())
-    snaps = snapshots(rep)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--reports", default=str(REPORTS), help="folder with the shotgun reports")
+    args = parser.parse_args(argv)
+    check_defaults("exp_shotgun_ui.py", parser, args, ["--reports"])
+    reports = Path(args.reports)
+    rep = json.loads((reports / f"{TARGET}__cleansweep-gatekeeper.json").read_text())
+    snaps = snapshots(rep, reports)
     base = snaps["base"]
     unstable = {n for n, s in base["classes"].items() if snaps["base_again"]["classes"].get(n) != s}
     rendered = sum("tree" in s for n, s in base["classes"].items() if n not in unstable)
@@ -143,7 +156,7 @@ def main() -> int:
     sha = rep["repo_id"].rsplit("@", 1)[1]
     print(f"base: {len(base['classes'])} classes, {rendered} render, {len(unstable)} unstable")
     rows = []
-    for name, method, policy, _ in variants():
+    for name, method, policy, _ in variants(reports):
         snap = snaps.get(name)
         found = compare(base, snap, unstable) if snap else {}
         used = [n for n in found.get("removed", []) if referenced(clone, sha, n)]

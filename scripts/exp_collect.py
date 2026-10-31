@@ -1,9 +1,11 @@
 """Merge the toy, demo, SWE-bench Tier 1 and Tier 2 and AIDev runs into
 results/summary/main_results.csv.
 
-    python scripts/exp_collect.py [--t2 ../cleansweep-runs/results/raw/swebench_t2]
-        [--t2-oneshot ...swebench_t2_oneshot] [--t2-rerun ...swebench_t2_rerun]
-        [--aidev ../cleansweep-runs-3/results/raw/aidev_sweeps] [--aidev-rerun FOLDER ...]
+    python scripts/exp_collect.py [--t2 FOLDER] [--t2-oneshot FOLDER] [--t2-rerun FOLDER]
+        [--aidev FOLDER] [--aidev-rerun FOLDER ...] [--oneshot-retry FOLDER]
+
+The run folders default to the run copies' raw reports in ../cleansweep-archive
+(scripts/archive_paths.py); a default that is missing stops the script with the flag to pass.
 
 One row per (target, method). Toy and demo rows come from the recorded live runs listed in
 LOCAL_RUNS (2026-10-26 on); SWE-bench rows from the runners' report files. Tier 2 one-shot rows
@@ -44,6 +46,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
+from archive_paths import archived, check_defaults  # noqa: E402
+
 from app.live_runner import fold, read_events  # noqa: E402
 from app.loaders import outcome_score  # noqa: E402
 from cleansweep.core.io import load_json  # noqa: E402
@@ -315,30 +320,28 @@ def oneshot_variants(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--t1", default=str(RAW / "swebench_t1"))
-    parser.add_argument(
-        "--t2", default=str(ROOT.parent / "cleansweep-runs" / "results" / "raw" / "swebench_t2")
-    )
+    parser.add_argument("--t2", default=str(archived("cleansweep-runs", "swebench_t2")))
     parser.add_argument(
         "--t2-oneshot",
-        default=str(ROOT.parent / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_oneshot"),
+        default=str(archived("cleansweep-runs-2", "swebench_t2_oneshot")),
         help="one_shot_llm reruns on Tier 2; preferred over the first run's one_shot_llm rows",
     )
     parser.add_argument(
         "--t2-rerun",
-        default=str(ROOT.parent / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_rerun"),
+        default=str(archived("cleansweep-runs-2", "swebench_t2_rerun")),
         help="Tier 2 runs that failed in the first run (fixed code); fill in missing rows only",
     )
     parser.add_argument(
         "--aidev",
-        default=str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
+        default=str(archived("cleansweep-runs-3", "aidev_sweeps")),
         help="AIDev sweeps (exp_swebench.py on data/splits/aidev_repos.json)",
     )
     parser.add_argument(
         "--aidev-rerun",
         nargs="*",
         default=[
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
-            str(ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window"),
+            str(archived("cleansweep-runs-5", "aidev_scoped")),
+            str(archived("cleansweep-runs-8", "aidev_window")),
         ],
         help="AIDev runs missing from the grid, rerun with the agent scope; fill in missing rows",
     )
@@ -350,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--oneshot-retry",
-        default=str(ROOT.parent / "cleansweep-runs-6" / "results" / "raw" / "oneshot_retry"),
+        default=str(archived("cleansweep-runs-6", "oneshot_retry")),
         help="one_shot_retry runs on the SWE-bench patches whose one-shot reply didn't compile",
     )
     parser.add_argument(
@@ -360,6 +363,8 @@ def main(argv: list[str] | None = None) -> int:
         help="SWE-bench instances left out (requests' tests need live network; DECISIONS)",
     )
     args = parser.parse_args(argv)
+    flags = ["--t2", "--t2-oneshot", "--t2-rerun", "--aidev", "--aidev-rerun", "--oneshot-retry"]
+    check_defaults("exp_collect.py", parser, args, flags)
     rows = local_rows() + swebench_rows(Path(args.t1), "swebench_t1")
     t2 = swebench_rows(Path(args.t2), "swebench_t2") if Path(args.t2).exists() else []
     if Path(args.t2_oneshot).exists():
