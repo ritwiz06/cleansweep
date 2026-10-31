@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.2 (2026-10-30)
+
+A display fix in the dashboard; no change to the sweep or the results.
+
+- Live sweep: Replay and live runs no longer leave elements of an earlier frame on the page (a
+  "Waiting for the Reviewer" line and empty metrics under the stage bar, and a finished check's
+  probe differences under the next check's card). Every frame now fills the same slots; the
+  Replay test checks for leftovers.
+
 ## v1.0.1 (2026-10-30)
 
 Documentation fixes from following the README on a fresh clone; no code changes.

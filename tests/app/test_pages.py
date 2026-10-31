@@ -38,3 +38,6 @@ def test_replay_of_a_shipped_recording_works_offline():
     assert not at.exception, [e.value for e in at.exception]
     assert any("Behavior changed: no" in s.value for s in at.success)
     assert any(m.label == "Outcome accuracy" and m.value == "7/7" for m in at.metric)
+    # nothing from an earlier frame is left: checks 2 and 3 are the only probe catches
+    assert not any("Waiting for the Reviewer" in c.value for c in at.caption)
+    assert sum("The probes caught" in m.value for m in at.markdown) == 2
