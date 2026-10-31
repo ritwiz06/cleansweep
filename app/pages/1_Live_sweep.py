@@ -119,6 +119,8 @@ def stage_bar(state: dict, clock: float) -> None:
             )
         else:
             st.markdown("<span class='cs-spin'></span>Running detectors", unsafe_allow_html=True)
+    else:
+        st.empty()
 
 
 def plan_frame(state: dict) -> pd.DataFrame:
@@ -221,6 +223,12 @@ def show_guard(state: dict, frame: int) -> None:
                         "**The probes caught a behavior change:**\n"
                         + "\n".join(f"- `{m}`" for m in probes["mismatches"][:5])
                     )
+                else:
+                    st.empty()
+            else:
+                # same four slots as a finished card, which may be drawn here next frame
+                st.empty()
+                st.empty()
 
 
 def show_bottom(state: dict, target_path: str, frame: int) -> None:
@@ -285,14 +293,20 @@ def render(root, state: dict, clock: float) -> None:
     frame = next(FRAMES)
     with root.container():
         run = state["run"]
+        # Every frame fills the same slots: an element missing from one frame would leave
+        # the previous frame's element in its place on the page.
         if run:
             st.caption(
                 f"{run['run_id']} · {Path(run['target']).name} · method {run['method']} · "
                 f"judge {run['judge_mode']} · model {run.get('model') or 'none'}"
             )
+        else:
+            st.empty()
         stage_bar(state, clock)
         if state["error"]:
             st.error(state["error"])
+        else:
+            st.empty()
         left, right = st.columns([3, 2])
         with left:
             show_plan(state, frame)
