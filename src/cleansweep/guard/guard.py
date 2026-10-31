@@ -139,6 +139,47 @@ VERIFIED = {
 }
 
 
+def ast_unchanged(ws, start: str) -> bool:
+    """True when every Python file changed since a checkpoint has the same AST as before."""
+    same = True
+    for f in changed_py_files(ws, start):
+        old = subprocess.run(
+            ["git", "show", f"{start}:{f}"],
+            cwd=ws.path,
+            capture_output=True,
+            text=True,
+        ).stdout
+        same &= ast.dump(ast.parse(old)) == _ast_dump(Path(ws.path) / f)
+    return same
+
+
+def check_dependencies(ws, baseline: RunResult, names: list[str], info: dict) -> bool:
+    """Rerun the tests with the removed packages uninstalled, where the workspace can; a
+    package another installed one requires stays installed, so its removal changes nothing."""
+    states = ws.hide_packages(names)
+    if states is None:
+        info["dependencies"] = dict.fromkeys(names, STATIC_ONLY)
+        return True
+    try:
+        if "hidden" in states.values():
+            result = ws.run_tests(None)
+            new = _new_failures(baseline, result)
+            if new or result.errors > baseline.errors:
+                gone = ", ".join(n for n, s in states.items() if s == "hidden")
+                info.update(tests=result, check="dependency")
+                info["log"] = (
+                    f"tests fail without {gone}: {new}\n"
+                    + getattr(ws, "last_test_output", "")[-4000:]
+                )
+                return False
+    finally:
+        ws.restore_packages()
+    info["dependencies"] = {
+        n: VERIFIED.get(s, f"verified: still installed ({s})") for n, s in states.items()
+    }
+    return True
+
+
 class Guard:
     """Applies cleanup edits and keeps only those that leave behavior unchanged."""
 
@@ -174,15 +215,7 @@ class Guard:
         if deps and not self._check_dependencies(deps, info):
             return False, info
         if all(i.action == "format" for i in items):
-            same = True
-            for f in changed_py_files(self.ws, start):
-                old = subprocess.run(
-                    ["git", "show", f"{start}:{f}"],
-                    cwd=self.ws.path,
-                    capture_output=True,
-                    text=True,
-                ).stdout
-                same &= ast.dump(ast.parse(old)) == _ast_dump(Path(self.ws.path) / f)
+            same = ast_unchanged(self.ws, start)
             info.update(ast_equal=same, check="ast")
             if not same:
                 info["log"] = "formatting changed the AST"
@@ -199,30 +232,7 @@ class Guard:
         return True, info
 
     def _check_dependencies(self, names: list[str], info: dict) -> bool:
-        """Rerun the tests with the removed packages uninstalled, where the workspace can; a
-        package another installed one requires stays installed, so its removal changes nothing."""
-        states = self.ws.hide_packages(names)
-        if states is None:
-            info["dependencies"] = dict.fromkeys(names, STATIC_ONLY)
-            return True
-        try:
-            if "hidden" in states.values():
-                result = self.ws.run_tests(None)
-                new = _new_failures(self.baseline, result)
-                if new or result.errors > self.baseline.errors:
-                    gone = ", ".join(n for n, s in states.items() if s == "hidden")
-                    info.update(tests=result, check="dependency")
-                    info["log"] = (
-                        f"tests fail without {gone}: {new}\n"
-                        + getattr(self.ws, "last_test_output", "")[-4000:]
-                    )
-                    return False
-        finally:
-            self.ws.restore_packages()
-        info["dependencies"] = {
-            n: VERIFIED.get(s, f"verified: still installed ({s})") for n, s in states.items()
-        }
-        return True
+        return check_dependencies(self.ws, self.baseline, names, info)
 
     def check_batch(self, items: list[CleanupItem]) -> bool:
         """Apply a batch, verify it, and keep it or roll it back. False means rolled back."""
