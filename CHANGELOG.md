@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.0.3 (2026-10-31)
+
+Experiment scripts default to the archive; no change to the sweep or the results.
+
+- The frozen run copies are gone, and their reports and caches live in `../cleansweep-archive/`.
+  `scripts/archive_paths.py` gives the archive folders, and the scripts that read the copies'
+  reports default to them: `exp_collect.py`, `exp_aidev_summary.py`, `exp_oneshot_breakages.py`,
+  `exp_oneshot_compile.py`, `exp_guard_on_oneshot.py`, `exp_public_api_policy.py`,
+  `exp_dependency_check.py`, `exp_framework_callbacks.py` and `exp_shotgun_ui.py`.
+- Existing folder flags still override the defaults; scripts that had none get one (`--runs`,
+  `--reports`, `--t2-oneshot`, `--t2`, `--t2-rerun`). A default folder that is missing stops the
+  script with one line naming the flag to pass.
+- An archived AIDev run folder finds its second-model hidden tests in the archive's
+  `llm_caches/<copy>/hidden_tests/`.
+- Rerun from the archive, every script that runs offline writes byte-identical
+  `results/summary/` files.
+
 ## v1.0.2 (2026-10-30)
 
 A display fix in the dashboard; no change to the sweep or the results.

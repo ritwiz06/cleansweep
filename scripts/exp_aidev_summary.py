@@ -4,7 +4,8 @@
 
 Reads the AIDev sweep reports (exp_swebench.py on data/splits/aidev_repos.json): the grid
 folder, then the rerun folders for runs missing there (as exp_collect.py does), with the
-second-model hidden tests from each folder's clone (.cleansweep/hidden_tests). Writes
+second-model hidden tests from each folder's copy (.cleansweep/hidden_tests in a run copy,
+llm_caches/<copy>/hidden_tests in ../cleansweep-archive, where the folders default to). Writes
 results/summary/aidev_sweeps.csv (one row per method and category) and aidev_sweeps.md:
 items proposed and applied by category, with the net lines their edits remove (are there
 code-level items, not just files?), rollbacks by the check that caused them (tests, probes,
@@ -26,8 +27,12 @@ import ast
 import csv
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import aidev_folders, check_defaults, hidden_tests_root  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "summary" / "aidev_sweeps"
@@ -274,7 +279,7 @@ def load(folders: list[Path], exclude: list[str]) -> tuple[list[dict], list[dict
     missing)."""
     seen, reports, excluded = set(), [], []
     for folder in folders:
-        tests_root = folder.parents[2] / ".cleansweep" / "hidden_tests"
+        tests_root = hidden_tests_root(folder)
         for path in sorted(folder.glob("*__*__*.json")):
             owner, name, method = path.stem.rsplit("__", 2)
             if (owner, name, method) in seen:
@@ -310,11 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--runs",
         nargs="+",
-        default=[
-            str(ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps"),
-            str(ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"),
-            str(ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window"),
-        ],
+        default=[str(f) for f in aidev_folders()],
         help="the grid folder, then the rerun folders (first folder wins per repo and method)",
     )
     parser.add_argument(
@@ -324,6 +325,7 @@ def main(argv: list[str] | None = None) -> int:
         help="AIDev repos to leave out (reports without an agent scope are left out anyway)",
     )
     args = parser.parse_args(argv)
+    check_defaults("exp_aidev_summary.py", parser, args, ["--runs"])
     reports, excluded = load([Path(f) for f in args.runs], args.exclude)
     reports, running = complete_runs(reports)
     cat_rows, method_rows = summarize(reports)

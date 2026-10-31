@@ -1,6 +1,10 @@
 """Reviewer policies on the AIDev sweeps, re-scored without new sweeps.
 
     python scripts/exp_public_api_policy.py [--policy public_api|framework|final] [--run]
+        [--runs FOLDER ...]
+
+The AIDev run folders default to the run copies' raw reports in ../cleansweep-archive
+(scripts/archive_paths.py).
 
 For every AIDev CleanSweep run (gatekeeper, advisory, guard_tests_only) in main_results.csv,
 the applied edits a policy would have kept in the suggest lane are taken out of the final diff:
@@ -37,6 +41,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import aidev_folders, check_defaults  # noqa: E402
 from exp_aidev_summary import load  # noqa: E402
 from exp_collect import edit_counts  # noqa: E402
 
@@ -63,11 +68,6 @@ TITLES = {
     "final": "final policy (public API + framework callbacks)",
 }
 METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
-FOLDERS = [
-    ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps",
-    ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped",
-    ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window",
-]
 FIELDS = [
     "target",
     "method",
@@ -241,9 +241,10 @@ def rerun_hidden(rep: dict, target_id: str, diff: str, cfg: dict) -> dict:
     return run_hidden_checks(target_id, diff, cfg)
 
 
-def score(run: bool, policy: str = "public_api") -> list[dict]:
+def score(run: bool, policy: str = "public_api", folders: list[Path] | None = None) -> list[dict]:
     rows = as_run()
-    reports, _ = load([f for f in FOLDERS if f.exists()], [])
+    folders = aidev_folders() if folders is None else folders
+    reports, _ = load([f for f in folders if f.exists()], [])
     by = {(r["_repo"].replace("/", "__"), r["_method"]): r for r in reports}
     heads = {
         e["full_name"].replace("/", "__"): e["head_sha"]
@@ -385,8 +386,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--policy", choices=list(POLICIES), default="public_api")
     parser.add_argument("--run", action="store_true", help="rerun the hidden checks (Docker)")
+    parser.add_argument(
+        "--runs",
+        nargs="+",
+        default=[str(f) for f in aidev_folders()],
+        help="the AIDev grid folder, then the rerun folders (first folder wins)",
+    )
     args = parser.parse_args(argv)
-    rows = score(args.run, args.policy)
+    check_defaults("exp_public_api_policy.py", parser, args, ["--runs"])
+    rows = score(args.run, args.policy, [Path(f) for f in args.runs])
     out = OUT_DIR / POLICIES[args.policy][1]
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.with_suffix(".csv").open("w", newline="") as f:

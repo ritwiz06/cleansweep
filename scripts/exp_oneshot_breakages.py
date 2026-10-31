@@ -1,11 +1,13 @@
 """One-shot breakages: what one_shot_llm changed where SWE-bench hidden behavior changed.
 
-    python scripts/exp_oneshot_breakages.py [--no-inspect]
+    python scripts/exp_oneshot_breakages.py [--no-inspect] [--t2 FOLDER] [--t2-oneshot FOLDER]
+        [--t2-rerun FOLDER]
 
-Reads the same Tier 1 and Tier 2 reports as exp_collect.py. For every one_shot_llm run whose
-hidden checks changed, it classifies the edits (a deleted file that tests or code use, an edit
-to source code, or other) and lists the hidden tests that changed. It also compares the edit
-types of one_shot_llm and cleansweep (gatekeeper) over all patches.
+Reads the same Tier 1 and Tier 2 reports as exp_collect.py (the Tier 2 folders default to the
+run copies' raw reports in ../cleansweep-archive, scripts/archive_paths.py). For every
+one_shot_llm run whose hidden checks changed, it classifies the edits (a deleted file that tests
+or code use, an edit to source code, or other) and lists the hidden tests that changed. It also
+compares the edit types of one_shot_llm and cleansweep (gatekeeper) over all patches.
 
 Unless --no-inspect, each distinct breaking diff is applied in the patch's workspace (Docker,
 no LLM): the edited files are parsed and checked with ruff for undefined names, before and after,
@@ -26,13 +28,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-from cleansweep.analysis import build_graph
-from cleansweep.analysis.graph import is_test_file
-from cleansweep.core.config import load_config
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import archived, check_defaults  # noqa: E402
+
+from cleansweep.analysis import build_graph  # noqa: E402
+from cleansweep.analysis.graph import is_test_file  # noqa: E402
+from cleansweep.core.config import load_config  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "results" / "raw"
-RUNS = ROOT.parent
+# Tier 2 report folders as exp_collect.py reads them; main() takes them from its flags
+T2 = {
+    "t2": archived("cleansweep-runs", "swebench_t2"),
+    "t2_oneshot": archived("cleansweep-runs-2", "swebench_t2_oneshot"),
+    "t2_rerun": archived("cleansweep-runs-2", "swebench_t2_rerun"),
+}
 OUT = ROOT / "results" / "summary" / "oneshot_breakages"
 EXCLUDE = ("psf__requests-2317",)
 FIELDS = [
@@ -63,12 +73,9 @@ def report_path(target_set: str, target: str, method: str) -> Path | None:
     if target_set == "swebench_t1":
         folders = [RAW / "swebench_t1"]
     elif method == "one_shot_llm":
-        folders = [RUNS / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_oneshot"]
+        folders = [T2["t2_oneshot"]]
     else:
-        folders = [
-            RUNS / "cleansweep-runs" / "results" / "raw" / "swebench_t2",
-            RUNS / "cleansweep-runs-2" / "results" / "raw" / "swebench_t2_rerun",
-        ]
+        folders = [T2["t2"], T2["t2_rerun"]]
     return next((f / name for f in folders if (f / name).exists()), None)
 
 
@@ -345,7 +352,11 @@ def write(rows: list[dict], compare: list[dict], examples: list[tuple[str, str, 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--no-inspect", action="store_true", help="skip the Docker inspection")
+    for key, folder in T2.items():
+        parser.add_argument("--" + key.replace("_", "-"), default=str(folder))
     args = parser.parse_args(argv)
+    check_defaults("exp_oneshot_breakages.py", parser, args, ["--t2", "--t2-oneshot", "--t2-rerun"])
+    T2.update({key: Path(getattr(args, key)) for key in T2})
     rows = breakages(not args.no_inspect)
     by_target = {r["target"]: r["_diff"] for r in rows}
     wanted = [

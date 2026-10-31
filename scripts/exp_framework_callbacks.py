@@ -1,6 +1,6 @@
 """Framework callbacks among shotgun's safe items: what the judge and the Guard did with them.
 
-    python scripts/exp_framework_callbacks.py
+    python scripts/exp_framework_callbacks.py [--reports FOLDER]
 
 A framework callback is a method the framework calls by its name, so no caller appears in the
 project: on_*, action_*, watch_*, compute_*, validate_*, handle_*, compose or render, in a class
@@ -21,11 +21,15 @@ rebuild can't see, so its failed test runs are a lower bound. No sweep, no LLM, 
 The UI columns come from exp_shotgun_ui.py (results/summary/shotgun_ui.csv): screens and
 widgets whose snapshot changed, as run and with the framework rule and the final policy.
 
+The shotgun reports default to the scoped AIDev reruns in ../cleansweep-archive
+(scripts/archive_paths.py).
+
 Writes results/summary/framework_callbacks.csv (one row per method).
 """
 
 from __future__ import annotations
 
+import argparse
 import ast
 import csv
 import json
@@ -37,11 +41,14 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from cleansweep.core.config import load_config
-from cleansweep.scheduler.batching import apply_with_bisection, make_batches
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import archived, check_defaults  # noqa: E402
+
+from cleansweep.core.config import load_config  # noqa: E402
+from cleansweep.scheduler.batching import apply_with_bisection, make_batches  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORTS = ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped"
+REPORTS = archived("cleansweep-runs-5", "aidev_scoped")
 TARGET = "shotgun-sh__shotgun"
 PROJECT = "shotgun"
 METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
@@ -233,11 +240,16 @@ def ui(method: str) -> dict:
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--reports", default=str(REPORTS), help="folder with the shotgun reports")
+    args = parser.parse_args(argv)
+    check_defaults("exp_framework_callbacks.py", parser, args, ["--reports"])
+    folder = Path(args.reports)
     reports = {
-        m: json.loads((REPORTS / f"{TARGET}__{m}.json").read_text())
+        m: json.loads((folder / f"{TARGET}__{m}.json").read_text())
         for m in METHODS
-        if (REPORTS / f"{TARGET}__{m}.json").exists()
+        if (folder / f"{TARGET}__{m}.json").exists()
     }
     base = reports["guard_tests_only"]
     sha = base["repo_id"].split("@")[1]

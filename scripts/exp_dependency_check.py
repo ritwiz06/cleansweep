@@ -1,6 +1,9 @@
 """Re-check the dependency removals the AIDev sweeps applied, with the Guard's new check (#2).
 
-    python scripts/exp_dependency_check.py
+    python scripts/exp_dependency_check.py [--runs FOLDER ...]
+
+The AIDev run folders default to the run copies' raw reports in ../cleansweep-archive
+(scripts/archive_paths.py), in the order exp_aidev_summary.py reads them.
 
 The sweeps removed declared dependencies with the tests as their only check, and removing a line
 from pyproject.toml doesn't uninstall anything. For each repository, this opens the AIDev
@@ -17,23 +20,20 @@ from the repositories' environments.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archive_paths import aidev_folders, check_defaults  # noqa: E402
 from exp_aidev_summary import load  # noqa: E402
 
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLDERS = [
-    ROOT.parent / "cleansweep-runs-3" / "results" / "raw" / "aidev_sweeps",
-    ROOT.parent / "cleansweep-runs-5" / "results" / "raw" / "aidev_scoped",
-    ROOT.parent / "cleansweep-runs-8" / "results" / "raw" / "aidev_window",
-]
 METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
 OUT = ROOT / "results" / "summary" / "aidev_dependency_check.csv"
 FIELDS = ["repo", "package", "state", "verified", "new_failures", "methods"]
@@ -89,8 +89,17 @@ def csv_state(state: str) -> str:
     return "required by another package" if state.startswith("required by") else state
 
 
-def main() -> int:
-    reports, _ = load([f for f in FOLDERS if f.exists()], [])
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--runs",
+        nargs="+",
+        default=[str(f) for f in aidev_folders()],
+        help="the AIDev grid folder, then the rerun folders (first folder wins)",
+    )
+    args = parser.parse_args(argv)
+    check_defaults("exp_dependency_check.py", parser, args, ["--runs"])
+    reports, _ = load([Path(f) for f in args.runs if Path(f).exists()], [])
     advisory = {r["_repo"]: r for r in reports if r["_method"] == "cleansweep-advisory"}
     cfg = load_config()
     rows = []
