@@ -1,0 +1,376 @@
+# CleanSweep v2: agentic design
+
+CleanSweep v1 sweeps a project in one fixed pipeline: detect, judge, batch, guard. v2 adds a
+second method, `method=agentic`, and a `cleansweep clean <path>` command. It cleans a whole
+Python project the way a careful engineer would: learn the project, measure how healthy it is,
+look for slop, investigate each finding, plan the work, apply it one work package at a time with
+checks after each, verify everything at the end, and hand over a branch with a report.
+
+v1 stays as it is. `method=cleansweep` and every v1 result are unchanged; the agents reuse v1's
+code through a tool registry instead of copying it.
+
+This document is the design. Where the built code differs, `docs/architecture.md` says so.
+
+## 1. Where the design comes from
+
+The team structure follows AutoData (Ma et al., "AutoData: A Multi-Agent System for Open Web
+Data Collection", NeurIPS 2025, arXiv:2505.15859). AutoData collects web data with a manager
+agent (MGR) and two squads of ReAct-style agents (Yao et al., ICLR 2023): a research squad (plan,
+web, tool and blueprint agents) that writes a development blueprint, and a development squad
+(engineering, test and validation agents) that builds and checks the program. The agents talk
+through OHCache, an "oriented hypergraph cache" with three parts: an oriented message hypergraph
+(each message is a hyperedge from one sender to a set of receivers, so a message reaches only the
+agents that need it), an oriented hyperedge formatter (each agent's messages follow a structure
+made for its role), and a local cache system (large artifacts are stored once and referenced by a
+cache ID). AutoData's ablations remove the research squad, the development squad, the whole of
+OHCache (broadcast messages), the formatter and the local cache, one at a time. In their results
+every ablation scores lower; removing all of OHCache lowers quality the most and raises the
+cost, and removing only the local cache costs much more for a small quality change (their
+Section 5.4 and Figure 3).
+
+| AutoData | CleanSweep v2 | Why |
+|---|---|---|
+| Manager agent (MGR) orchestrates and tracks progress; message delivery does not trigger execution | **Manager**: owns the phase machine, assigns work, enforces budgets, decides when the run is done | Same role. Our Manager is rule-based (section 4): the phase order is known in advance, and rules keep its decisions fast, testable and explainable. Each decision is logged with the rule that made it. |
+| Research squad: plan, web, tool, blueprint agents | **Explorer** (reads the project, like the web agent reads sources), **Auditor** (runs the detectors and the knowledge base, like the tool agent runs utilities), **Investigator** (a ReAct loop per finding), **Planner** (plan + blueprint agents in one: work packages and `blueprint.md`) | Code cleanup needs one more research step than data collection: each finding has to be investigated before anything is planned. AutoData's plan agent splits the goal up front; our phases already fix the steps, so the Planner's job is the blueprint. |
+| Development squad: engineering, test, validation agents | **Engineer**, **Tester**, **Validator**, plus **Fixer** and **Reporter** | AutoData's test agent both runs and debugs; we split debugging out into the Fixer, because a failed cleanup edit must be either repaired in at most 2 turns or rolled back, and every rollback teaches a lesson. The Reporter writes the deliverables. |
+| Oriented message hypergraph | **Message board**: messages are directed hyperedges (one sender, a set of recipients); an agent reads only its own inbox | Same idea. |
+| Oriented hyperedge formatter | **Message schemas**: one fixed schema per message type, checked when a message is posted | AutoData formats free text into each role's structure; we make the structure a schema, so a malformed message is caught in code. |
+| Local cache system: stores a file, broadcasts its cache ID to all agents | **Artifact cache**: artifacts stored once, content-addressed, referenced by ID; the ID travels only in the messages that need it | We do not broadcast cache IDs: the agents that need an artifact are the recipients of the message that names it. |
+| — | **Lessons**: every rollback writes a lesson; later decisions must check them and cite the ones that apply | Not in AutoData. A cleanup run repeats the same kind of decision many times, so one mistake should change the next decision. |
+| — | **Slop knowledge base**: v1's mined review-comment taxonomy, association rules and the framework conventions table, as a tool | v1's data mining becomes something the agents use, not only a result table. |
+| Ablations: no research squad, no development squad, no OHCache (broadcast), no formatter, no local cache | No research squad, broadcast messages, artifacts inlined, no lessons, no coverage guidance, a single ReAct agent with every tool | The same style of ablation. "No development squad" cannot run in cleanup (nothing would be applied or checked); the one-shot LLM baseline plays that role. The formatter cannot be removed either: the JSON protocol needs the schemas. A single agent is added because it is the obvious simpler alternative to a team. |
+
+MetaGPT (Hong et al., ICLR 2024) also gives agents roles and a shared message pool in which
+agents subscribe to what their role needs. Our board is closer to AutoData's: the sender names
+the recipients, so routing is decided when a message is written, not by each reader.
+
+## 2. Tool-calling protocol (measured in Phase 0)
+
+Every agent step is one LLM reply that picks one tool, or finishes. We measured two ways to do
+that on Voyager, with 10 different Investigator steps (each with a known set of sensible next
+tools), for the default model and two coding models, with reasoning on and off: 120 requests,
+2026-10-31, 3 in parallel. Raw replies: `results/raw/tool_calling/` (not in git); the full table
+is in the project's run log.
+
+| Model | Protocol | Reasoning | Valid calls | Sensible tool | Median s | Median completion tokens | Median prompt tokens |
+|---|---|---|---|---|---|---|---|
+| qwen36-35b-a3b (`VOYAGER_MODEL`) | native tool calls | off | 9/10 | 8/10 | 1.2 | 54 | 1,046 |
+| qwen36-35b-a3b | native tool calls | on | 8/10 | 7/10 | 3.8 | 187 | 1,046 |
+| qwen36-35b-a3b | JSON ReAct | off | **10/10** | 9/10 | 1.4 | 49 | 510 |
+| qwen36-35b-a3b | JSON ReAct | on | 10/10 | 8/10 | 4.9 | 189 | 510 |
+| qwen3-coder-next | native tool calls | off / on | 10/10, 10/10 | 8/10, 8/10 | 4.2 | 45 | 1,163 |
+| qwen3-coder-next | JSON ReAct | off / on | 10/10, 10/10 | 9/10, 9/10 | 3.9 | 42 | 495 |
+| kimi-k2-7-code | native tool calls | off / on | 10/10, 10/10 | 9/10, 9/10 | 7.3–8.2 | 132 | 522 |
+| kimi-k2-7-code | JSON ReAct | off / on | 10/10, 10/10 | 8/10, 8/10 | 16–18 | 238–255 | 492 |
+
+What we learned:
+- Native tool calls mostly work, but the default model sometimes answered with 2 or 3 parallel
+  calls when the protocol asks for one (3 of its 20 native tries).
+- The JSON ReAct protocol was valid on the first try in all 60 requests; the repair retry was
+  never needed.
+- With native tools, the server writes the tool definitions into the prompt in a long form: the
+  qwen models' prompts were twice as large (about 1,050–1,160 tokens against about 500).
+- Reasoning off is as reliable as reasoning on for choosing a tool, and 3–4 times cheaper in
+  completion tokens on the default model. The switch has no visible effect on qwen3-coder-next
+  (it does not reason) or kimi-k2-7-code (it always reasons).
+- Most "not sensible" choices were a `read_code` step before deciding, which is cautious rather
+  than wrong; the expected sets were strict.
+
+**Choice: the JSON ReAct protocol for every agent, reasoning off for tool-choosing steps,
+`VOYAGER_MODEL` by default.** It was the most reliable, it halves the prompt, and it runs through
+the existing LLM client unchanged (its response cache, retries and `FakeLLM` for tests). A step's
+reply is either
+
+```json
+{"thought": "<one line>", "tool": "<tool name>", "args": {"...": "..."}}
+```
+
+or
+
+```json
+{"final": {"...": "the agent's output schema"}}
+```
+
+The reply is checked against a JSON schema (the tool's argument schema, or the agent's output
+schema). An invalid reply gets one repair turn that quotes the problem; a second invalid reply
+ends the step as a failure, which the agent handles cautiously (an Investigator's candidate goes
+to `suggest`).
+
+## 3. Orchestration: LangGraph
+
+The team runs as a LangGraph `StateGraph` with one node per agent (10 nodes). Every worker node
+returns to the Manager node, and the Manager's conditional edge picks the next node or ends the
+run. The JSON protocol does not rule LangGraph out: tool calls happen inside a node, so the
+graph only sees which agent works next.
+
+Why LangGraph and not v1's plain loop: the Manager-as-router shape is exactly a `StateGraph` with
+conditional edges, step-backs are just edges, and the graph can be drawn for the docs and the
+Studio. What we do not use: LangGraph's checkpointer (the event log is our record, and Replay
+folds it) and its LLM wrappers (agents call our own client). Parallel Investigators run in a
+thread pool inside the Investigator node (at most 3 requests at once), which keeps the event
+order and budgets in one place. The graph state holds only plain data (phase, queues, counters,
+artifact IDs); the workspace, LLM client, board and cache live in a runtime object the nodes
+share.
+
+## 4. The phases (the Manager's state machine)
+
+| # | Phase | Agents | Produces | Next | May step back to |
+|---|---|---|---|---|---|
+| 1 | ONBOARD | Explorer | project brief (artifact), secret scan | BASELINE | — |
+| 2 | BASELINE | Tester | 3 test runs: passing, failing and flaky tests, coverage (artifacts) | AUDIT | ONBOARD, once: the install or test command failed, the Explorer revises the brief |
+| 3 | AUDIT | Auditor (one instance per category group) | candidates with detector evidence and knowledge-base priors | INVESTIGATE, or REPORT if there are none | — |
+| 4 | INVESTIGATE | Investigator (up to 3 in parallel) | a verdict per candidate: safe / suggest / drop, an evidence chain, cited lessons | PLAN | — |
+| 5 | PLAN | Planner | work packages and `blueprint.md`; with `--approve-plan`, the run pauses for approval | EXECUTE, or REPORT if nothing is safe | — |
+| 6 | EXECUTE + VERIFY | Engineer → Tester → Validator → Fixer, one package at a time | per package: commit kept, repaired or rolled back; lessons | next package, then FINAL VERIFY | PLAN, at most twice: a rollback invalidates later packages that depend on it |
+| 7 | FINAL VERIFY | Tester, Validator | full suite against the baseline; probes on every changed public function; UI and dependency checks where they apply | REPORT | EXECUTE, once: the final suite is worse than the baseline; packages are reverted by bisection until it is not |
+| 8 | REPORT and DELIVER | Reporter | `CLEANUP_REPORT.md`, PR description, changelog entry, the branch | done | — |
+
+The rule over everything: **never make the project worse.** The final suite is at least as good
+as the baseline: every test that passed in all 3 baseline runs still passes (flaky tests are
+reported, not compared), and no new errors appear. A test that only existed in a file the
+cleanup deleted as a leftover is listed in the report, never silently dropped. If the baseline
+cannot run at all, `safe` mode stops after PLAN and delivers the plan as suggestions only.
+
+Every step back is a `phase_change` event with its reason. Each back edge has a limit, so a run
+always ends.
+
+## 5. The ten agents
+
+Budgets are per agent instance: steps (tool calls), LLM calls and seconds. They are defaults in
+`configs/base.yaml` under `core.agents.<agent>`; Phase 2 tunes them from measured runs. When a
+budget runs out, the agent stops and the Manager takes the cautious path (a candidate goes to
+`suggest`, a package is rolled back).
+
+| Agent | Squad | Job | Tools (wrapping existing code) | Reads (message types) | Writes | Default budget (steps / LLM calls / s) |
+|---|---|---|---|---|---|---|
+| Manager (MGR) | — | phases, assignments, budgets, progress, done | board, budgets, phase machine | every result message addressed to it | `task`, `phase_change` events | run budget (`--budget`) |
+| Explorer | research | the project brief: languages, packages, frameworks, entry points, install and test commands, CI and config files | `list_files`, `read_file` (redacted), `read_config` (pyproject, setup.cfg, requirements, tox/nox, CI), `build_graph` (entry points), `frameworks.framework_for`, secret scan | `task` | `brief` | 12 / 4 / 300 |
+| Auditor | research | find candidates | v1 detectors (`reviewer.detectors.run_detectors`: leftovers, dead code, unused imports, unused dependencies, security, format, wrappers, duplicates), the new line-level detectors (section 9), the over-engineering review (thorough mode), `query_knowledge_base` | `task`, `brief`, `lesson` | `candidates` | 6 / 2 / 300 per instance |
+| Investigator | research | a ReAct loop per candidate: decision, an evidence chain where every step cites a tool result, the lessons it used | `find_references` (code graph callers + text search in code, tests, configs, strings), `read_code`, `check_dynamic_use` (`CodeGraph.dynamic_risk`, `framework_callback`), `find_related_tests`, `check_dependency_usage`, `compare_functions` (AST equality + shingle similarity from `analysis.minhash`), `query_lessons`, `query_knowledge_base`, `read_artifact` | `candidates` (its own), `lesson` | `verdict` | 6 / 6 / 600 per candidate |
+| Planner | research | turn safe verdicts into work packages ordered by risk and dependencies; each has a goal, files, edits, a verification plan and a rollback plan; writes `blueprint.md` | `scheduler.batching.risk_tier`, code graph (dependencies between edits), `query_lessons`, `query_knowledge_base` | `verdict`, `baseline`, `lesson` | `blueprint` | 8 / 3 / 300 |
+| Engineer | development | apply one package: deterministic edits first (`guard.edits.apply_edit`, `reviewer.rewrite`), an LLM rewrite only when no deterministic edit exists (thorough mode); one commit per package | `apply_edit`, `apply_patch`, `Workspace.checkpoint`, commit | `blueprint` / `task` (one package) | `package_applied` | 8 / 2 / 300 per package |
+| Tester | development | install and run the baseline; per package, the related tests (selected from the code graph) and then the full suite; the full suite at the end | `Workspace.run_tests`, `coverage_json`, related-test selection | `task`, `brief`, `package_applied` | `baseline`, `test_result` | per package: test timeouts only |
+| Validator | development | coverage-guided differential probes until the changed lines are covered or the budget ends; the UI snapshot check where a UI framework is in the brief; the dependency-uninstall check; the public-API check | `guard.difftest` (targets, probes, harness, compare), coverage of the probes, `Workspace.hide_packages`, `detectors.is_public_api`, UI snapshot harness | `package_applied`, `test_result` | `validation` | 3 probe rounds / 3 / 600 per package |
+| Fixer | development | diagnose a failure; repair in at most 2 turns or roll back; write a lesson either way | `reviewer.repair.propose_fix`, `Workspace.apply_patch`, `Workspace.rollback`, the Tester's and Validator's checks | `failure` | `repair`, `lesson` | 2 turns / 2 / 600 per failure |
+| Reporter | development | `CLEANUP_REPORT.md`, the PR description, a changelog entry | report templates over the cache (numbers come from artifacts, not from the LLM) | `final_check`, every `verdict` and `repair` | `report` | 4 / 2 / 300 |
+
+Each agent has a plain-language prompt file in `src/cleansweep/agents/prompts/<agent>.txt`.
+
+### The Investigator's output
+
+```json
+{"item_id": "dead_code:shop/utils.py::format_legacy_date",
+ "decision": "safe | suggest | drop",
+ "reason": "one or two sentences for a human",
+ "evidence": [{"step": 1, "tool": "find_references", "result": "R1", "says": "0 references in code or tests"}],
+ "lessons_cited": ["L2"],
+ "confidence": 0.8}
+```
+
+Every evidence step must cite a tool result ID from this investigation. A `safe` decision with
+no evidence, or a decision that ignores a lesson whose pattern matches the candidate, is
+rejected by the schema check and repaired once; if it is still invalid, the candidate goes to
+`suggest`.
+
+### Work packages
+
+```json
+{"package_id": "P3", "goal": "Remove the unused helpers in shop/utils.py",
+ "items": ["..."], "files": ["shop/utils.py"], "edits": [{"item_id": "...", "action": "delete_unit"}],
+ "risk": 1, "depends_on": ["P1"],
+ "verify": {"tests": ["tests/test_utils.py"], "probes": ["shop.utils.parse_price"], "checks": ["public_api"]},
+ "rollback": "git reset to the commit before P3; nothing else changes"}
+```
+
+## 6. Message board
+
+Every message is a directed hyperedge: one sender, a set of recipients, a type, a body that
+follows the type's schema, a list of artifact IDs, an ID and the ID of the message it answers.
+The board keeps every message (that is the run's communication record); `inbox(agent)` returns
+only the messages addressed to that agent, and an agent's prompt is built only from its inbox.
+
+| Type | Sender | Recipients | Body (besides artifact IDs) |
+|---|---|---|---|
+| `task` | Manager | one agent | phase, goal, inputs, budget |
+| `brief` | Explorer | Manager, Tester, Auditor, Planner, Validator | languages, frameworks, install and test commands, entry points, UI framework, secret findings (masked) |
+| `baseline` | Tester | Manager, Planner, Validator, Fixer | passed / failed / errors / flaky counts, failing and flaky test IDs |
+| `candidates` | Auditor | Manager, Investigator | candidate list: item ID, unit, category, detector evidence, knowledge-base prior |
+| `verdict` | Investigator | Manager, Planner | decision, reason, evidence chain, lessons cited, confidence |
+| `blueprint` | Planner | Manager, Engineer, Tester, Validator, Reporter | package IDs in order |
+| `package_applied` | Engineer | Manager, Tester, Validator | package ID, commit, edits applied, edits that could not be applied |
+| `test_result` | Tester | Manager, Validator, Fixer | package ID, ok, new failures |
+| `validation` | Validator | Manager, Fixer, Reporter | package ID, ok, probe outcome, coverage reached, dependency and public-API results |
+| `failure` | Manager | Fixer | package ID, the stage that failed |
+| `repair` | Fixer | Manager, Engineer, Reporter | package ID, repaired or rolled back, turns used |
+| `lesson` | Fixer | Manager, Auditor, Investigator, Planner | lesson ID, pattern, reason |
+| `final_check` | Tester, Validator | Manager, Reporter | suite against the baseline, probe and UI results |
+| `report` | Reporter | Manager | the delivered files |
+
+In the **broadcast** ablation, every message goes to every agent, so each agent's inbox (and
+prompt) holds everything.
+
+## 7. Artifact cache
+
+Large things are stored once and referenced by ID: the brief, the code graph, test logs,
+coverage, diffs, probe tables, the blueprint, source snippets and the reports. An ID looks like
+`art:diff:3f2a9c1b` (kind plus the start of the content's sha256), so storing the same content
+twice gives the same ID. Artifacts live in `<run dir>/cache/`. A message carries artifact IDs and
+a short digest (at most about 300 characters); an agent that needs more calls `read_artifact(id,
+start, end)`, which returns a bounded slice. In the **inlined** ablation, artifacts are pasted
+into the messages, and so into the prompts.
+
+## 8. Slop knowledge base
+
+v1's data mining becomes a tool the Auditor, Investigator and Planner can query:
+- the review-comment taxonomy (`results/data_summary/aidev_taxonomy.csv`: 15 clusters of 535
+  maintainers' removal requests on agent pull requests),
+- the association rules (`aidev_rules.csv`: agent and change type → slop type, with support,
+  confidence and lift),
+- detection by category (`detection_by_category.csv`),
+- the framework conventions table (`cleansweep.analysis.frameworks.FRAMEWORKS`: methods a
+  framework calls by name).
+
+`query_knowledge_base(category=..., agent=..., change_type=..., file_pattern=..., framework=...)`
+returns the matching rows, best lift first, with a one-line reading. The Auditor uses it to give
+each candidate a prior (for example, the mined rule "agent=Copilot, leftover_file, PR merged →
+the file is a test", confidence 0.68, lift 2.0, says leftover files in such pull requests are
+mostly test files); the Investigator and Planner use the framework table to keep framework
+callbacks out of packages.
+
+## 9. New line-level detectors (Phase 2)
+
+| Detector | Category (new) | Edit | Source |
+|---|---|---|---|
+| unused local variables | `unused_variable` | `delete_lines` | ruff F841 |
+| debug print and logging leftovers (`print(` outside CLI entry points, `breakpoint()`, `pdb.set_trace()`, `logging.debug("here")`-style lines) | `debug_leftover` | `delete_lines` | `ast` |
+| commented-out code blocks (consecutive comment lines that parse as Python) | `commented_code` | `delete_lines` | `tokenize` + `ast` |
+| TODO/FIXME lines the agent added | `todo_note` | `delete_lines` (suggest lane by default) | comments in the agent scope |
+| simple redundant checks (`if x == True`, `if c: return True else: return False`, a repeated identical condition) | `redundant_check` | `apply_patch` | `ast` |
+
+These are additive contract changes: five categories and one action (`delete_lines`) appended
+to the lists in `core.models`. v1's detectors never produce them, so v1 plans are unchanged.
+
+## 10. Lessons
+
+When the Fixer rolls a package back (or repairs it), it writes a lesson:
+
+```json
+{"lesson_id": "L2", "pattern": {"category": "dead_code", "unit_kind": "function",
+  "name_pattern": "on_*", "framework": "textual", "file_glob": "ui/*.py"},
+ "reason": "Textual calls on_* methods by name; deleting one broke a UI test",
+ "source": {"package": "P4", "item": "...", "check": "tests"}}
+```
+
+Lessons go to the board (to the Manager, Auditor, Investigator and Planner) and to the run's
+lesson store. Before deciding, the Investigator calls `query_lessons`; a lesson whose pattern
+matches the candidate must be cited in the verdict, or the verdict is rejected. Lessons are kept
+per run by default (so repeated experiment runs stay independent); `core.agents.lessons_file`
+keeps them across runs.
+
+## 11. Coverage-guided probes
+
+v1's Guard asks the LLM once for probe cases. The Validator keeps going: after each probe round
+it measures which changed and deleted lines the probes executed (on the version before the
+change, where the deleted lines still exist), and asks for cases that reach the lines still
+uncovered, quoting them with line numbers. It stops when the target coverage is reached (default
+90% of the changed lines), after 3 rounds, or when the budget ends, and records the coverage
+reached. Before and after are then compared on every case, as in v1.
+
+## 12. Safety
+
+- **Never touch the original.** `clean` copies the project into a scratch workspace (a git clone
+  when the original is a git repository, so the branch applies to its history; otherwise a copy
+  with a fresh `base` commit). The result is a branch in that workspace, one commit per work
+  package, plus `CLEANUP_REPORT.md` and `blueprint.md`, and a patch series in `--out`. Nothing is
+  pushed or applied to the original.
+- **Secrets never reach the LLM.** ONBOARD runs a secret scan over the copy (private keys,
+  cloud and API key patterns, tokens, passwords in configs, `.env` files, key and credential
+  files). Secret files are never read into a prompt (the tools return "[withheld]"), and every
+  message sent to the LLM passes through one redaction wrapper around the client, so no agent can
+  bypass it. Events and artifacts sent to the browser are redacted the same way.
+- **Checks on every package**: compile and import, related tests then the full suite against the
+  baseline, coverage-guided probes, the public-API check, the dependency-uninstall check where
+  the workspace can uninstall, the UI snapshot check where a UI framework is detected. A failed
+  package is repaired (at most 2 turns) or rolled back.
+- **Cautious defaults**: an exhausted budget, an invalid reply after the repair turn, or an LLM
+  failure sends the candidate to `suggest`; a package that cannot be verified is rolled back.
+- A single LLM request that takes over 10 minutes is cancelled and logged (the client's timeout
+  is 600 s), and the step counts as failed.
+
+## 13. Latency and budgets
+
+Voyager requests take 30–200 s under load (1–5 s when it is quiet, as in the Phase 0
+measurements). The design keeps the number of sequential requests small:
+- deterministic tools do the work (detectors, graph, edits, tests); the LLM chooses and explains;
+- reasoning is off for tool-choosing steps;
+- up to 3 LLM requests run at once (Investigators, Auditor instances);
+- prompts carry artifact IDs and digests, never whole artifacts;
+- `--budget` caps the run (LLM calls, minutes, test runs); per-agent budgets cap each instance.
+
+If an agentic run on the toy repository is more than 3 times slower than v1, the budgets are cut
+and the reason recorded.
+
+## 14. Event schema v2
+
+Every event is one JSON line in `events.jsonl`:
+
+```json
+{"v": 2, "id": "e0042", "parent": "e0040", "t": 12.53, "ts": "2026-11-01T10:02:13Z",
+ "run_id": "...", "agent": "investigator#2", "squad": "research", "phase": "INVESTIGATE",
+ "kind": "tool_call", "recipients": [], "artifacts": ["art:graph:91c0d2aa"],
+ "payload": {"tool": "find_references", "args": {"name": "export_csv"}}}
+```
+
+Kinds: `thought`, `tool_call`, `tool_result`, `message`, `decision`, `check`, `budget`,
+`lesson`, `phase_change`, plus `run_start`, `run_end`, `llm_start`, `llm_end` and `log`. It is a
+superset of v1's events: `t` and `kind` are kept, and the emitter also calls v1's
+`on_event(name, payload)` hooks (`open`, `analyze`, `plan`, `baseline`, `check_start`, `check`,
+`report`) at the matching moments, so v1 readers (the Live sweep page, `read_events`, Replay)
+still work on an agentic run.
+
+## 15. Command line
+
+```
+python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minutes=60,tests=80]
+                                  [--approve-plan] [--dry-run] [--out <dir>]
+```
+
+- `--mode safe` (default): deterministic edits only, every package fully verified, anything
+  uncertain goes to `suggest`. `thorough`: also LLM rewrites (duplicates, redundant checks) and
+  the over-engineering review, and more probe rounds.
+- `--approve-plan` pauses after PLAN and shows `blueprint.md`; the run continues only on approval.
+- `--dry-run` stops after PLAN and changes nothing.
+- `--out` (default `cleanup-<name>-<date>/`): the scratch workspace with the branch,
+  `CLEANUP_REPORT.md`, `blueprint.md`, the patch series, `events.jsonl` and the run report.
+
+`run_sweep(target, cfg, method="agentic", seed, on_event)` runs the same team for experiments and
+returns a normal `SweepReport`, so v1's collection and statistics scripts read it unchanged.
+
+## 16. Ablation switches
+
+Each ablation is a config switch under `core.agents.ablation`, recorded in the report's stats:
+
+| Switch | What changes |
+|---|---|
+| `no_research` | v1 detectors go straight to the development squad (one package per safe item, no Explorer, Investigator or Planner LLM steps) |
+| `broadcast` | every message goes to every agent |
+| `inline_artifacts` | artifacts are pasted into messages and prompts |
+| `no_lessons` | the Fixer writes no lessons and nobody queries them |
+| `no_coverage` | the Validator runs one probe round, as v1 does |
+| `single_agent` | one ReAct agent with every tool and one context, under the same total budget |
+
+## 17. Contract changes (all additive)
+
+- `METHODS` gains `agentic`; `CATEGORIES` gains the five line-level categories; `ACTIONS` gains
+  `delete_lines`.
+- `run_sweep(..., method="agentic")` dispatches to the agent team.
+- A new `agents` entry in `core.contracts.INTERFACES` (the runtime, board, cache, `clean_project`).
+
+## 18. Risks
+
+- Voyager latency: a run with many candidates is many sequential requests. Mitigations: budgets,
+  parallel Investigators, deterministic tools, cached replies for repeat runs.
+- LLM judgment varies between models and runs; the checks, not the agents' opinions, decide
+  what is kept.
+- Real projects may need data, a GPU or the network for their tests; the baseline records what
+  runs, and the rule is never to weaken it.
