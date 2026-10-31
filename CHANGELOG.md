@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.1 (2026-10-30)
+
+Documentation fixes from following the README on a fresh clone; no code changes.
+
+- The quick start saves its report under `results/raw/quickstart/`, where the dashboard lists
+  it, instead of `/tmp`.
+- The README says why the toy sweep without a key reports a hidden change (the planted
+  near-duplicate needs the judge and the probes) and which test markers the offline set leaves
+  out.
+- `one_shot_compile` in the results table is marked as a re-score, not a `--method`.
+
 ## v1.0 (2026-10-30)
 
 The first release: the system, the experiments and their results as reported in our final
