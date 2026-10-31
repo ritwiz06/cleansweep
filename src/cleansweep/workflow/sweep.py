@@ -111,6 +111,11 @@ def run_sweep(
                 payload["seconds"] = round(time.time() - since, 1)
             on_event(name, payload)
 
+    if method == "agentic":
+        from cleansweep.agents import run_agentic
+
+        return run_agentic(target, cfg, seed, on_event)
+
     if method in ("tools_only", "one_shot_llm", "one_shot_retry"):
         from cleansweep import eval as baselines
 

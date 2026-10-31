@@ -65,6 +65,78 @@ def cmd_show(args) -> int:
     return 0
 
 
+def _progress(event: dict) -> None:
+    kind, p = event["kind"], event["payload"]
+    if kind == "phase_change":
+        back = " (step back)" if p.get("back") else ""
+        print(f"-> {p['to']}{back}: {p['reason']}", file=sys.stderr)
+    elif kind == "decision" and p.get("rule") in (
+        "package_done",
+        "approval",
+        "budget",
+        "baseline_failed",
+    ):
+        print(f"   {p['text']}", file=sys.stderr)
+    elif kind == "lesson":
+        print(f"   lesson {p['lesson_id']}: {p['reason']}", file=sys.stderr)
+    elif kind == "log" and p.get("level") == "ERROR":
+        print(f"   error in {event['agent']}: {p['message']}", file=sys.stderr)
+
+
+def _ask_approval(blueprint: str) -> bool:
+    print(f"\nThe plan is in {blueprint}.", file=sys.stderr)
+    return input("Apply this plan? [y/N] ").strip().lower() in ("y", "yes")
+
+
+def cmd_clean(args) -> int:
+    import os
+
+    from cleansweep.agents import clean_project
+    from cleansweep.agents.budgets import parse_budget
+
+    cfg = load_config()
+    agents = cfg["core"].setdefault("agents", {})
+    try:
+        if args.budget:
+            agents["budget"] = {**agents.get("budget", {}), **parse_budget(args.budget)}
+    except ValueError as exc:
+        print(f"cleansweep clean: {exc}", file=sys.stderr)
+        return 2
+    if args.approve_plan and not sys.stdin.isatty():
+        print(
+            "cleansweep clean: --approve-plan needs a terminal; use --dry-run to only plan",
+            file=sys.stderr,
+        )
+        return 2
+    if args.model:
+        os.environ["CLEANSWEEP_MODEL"] = args.model
+        cfg["core"]["llm"]["model_env"] = "CLEANSWEEP_MODEL"
+    try:
+        result = clean_project(
+            args.path,
+            cfg,
+            out=args.out,
+            mode=args.mode,
+            dry_run=args.dry_run,
+            approve=_ask_approval if args.approve_plan else None,
+            on_event=None if args.quiet else _progress,
+            use_llm=not args.no_llm,
+        )
+    except (FileNotFoundError, FileExistsError, ValueError, RuntimeError) as exc:
+        print(f"cleansweep clean: {exc}", file=sys.stderr)
+        return 1
+    s = result["summary"]
+    print(
+        f"\nResult: {s['verdict']}. {s['applied']} edits applied; {s['lines_removed']} lines "
+        f"and {s['files_removed']} files removed; {s['suggested']} suggestions."
+    )
+    if result["branch"]:
+        print(f"Branch: {result['branch']} in {result['workspace']}")
+    for path in result["files"]:
+        print(f"  {path}")
+    return 0 if s["verdict"] in ("everything runs", "nothing applied") else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cleansweep")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -81,6 +153,39 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("show", help="print a saved sweep report")
     p.add_argument("report")
     p.set_defaults(func=cmd_show)
+    p = sub.add_parser(
+        "clean",
+        help="clean a whole project with the agent team; the original folder is never changed",
+        description=(
+            "Copy a Python project into a scratch workspace and clean it in phases: onboard, "
+            "baseline tests, audit, investigate, plan, then apply and verify one work package at a "
+            "time. The result is a branch in the workspace (one commit per package), "
+            "CLEANUP_REPORT.md and blueprint.md in the output folder. Nothing is applied to the "
+            "original folder."
+        ),
+    )
+    p.add_argument("path", help="the project folder to clean")
+    p.add_argument(
+        "--mode",
+        choices=["safe", "thorough"],
+        default=None,
+        help="safe (default): deterministic edits only, anything uncertain is suggested; "
+        "thorough: also LLM rewrites and more checks",
+    )
+    p.add_argument("--budget", help="caps for the whole run, e.g. llm=150,minutes=60,tests=80")
+    p.add_argument(
+        "--approve-plan", action="store_true", help="show blueprint.md and ask before applying"
+    )
+    p.add_argument(
+        "--dry-run", action="store_true", help="plan only: write blueprint.md and change nothing"
+    )
+    p.add_argument(
+        "--out", help="output folder (default: <project>-cleanup-<time> next to the project)"
+    )
+    p.add_argument("--model", help="LLM model for the agents (default: VOYAGER_MODEL)")
+    p.add_argument("--no-llm", action="store_true", help="run offline: the agents decide by rules")
+    p.add_argument("--quiet", action="store_true", help="print only the result")
+    p.set_defaults(func=cmd_clean)
     args = parser.parse_args(argv)
     return args.func(args)
 

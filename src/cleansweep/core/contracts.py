@@ -70,6 +70,18 @@ INTERFACES: dict[str, dict[str, list[str]]] = {
         "run_hidden_checks": ["target", "final_diff", "cfg"],
         "summarize": ["report", "hidden"],
     },
+    "agents": {  # v2 (additive)
+        "run_agentic": ["target", "cfg", "seed", "on_event"],
+        "clean_project": ["path", "cfg", "out", "mode", "dry_run"],
+        "MessageBoard.post": ["type", "sender", "body", "recipients", "artifacts"],
+        "MessageBoard.inbox": ["agent", "type"],
+        "ArtifactCache.put": ["kind", "content"],
+        "ArtifactCache.get": ["art_id"],
+        "EventLog.emit": ["kind", "agent", "payload", "recipients", "artifacts", "parent"],
+        "PhaseMachine.go": ["to", "reason"],
+        "scan_secrets": ["repo_dir"],
+        "Redactor": ["values"],
+    },
     "reviewer": {
         "run_detectors": ["repo_dir", "graph"],
         "judge_items": ["items", "repo_dir", "llm"],  # optional cfg (issue #1)
