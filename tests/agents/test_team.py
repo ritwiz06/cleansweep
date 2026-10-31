@@ -142,7 +142,7 @@ def test_a_planted_secret_never_reaches_the_llm(mini, agent_cfg, tmp_path):
     (mini / "shop" / "settings.py").write_text(
         f'AWS_KEY = "{key}"\n\n\ndef legacy_gamma():\n    return AWS_KEY\n'
     )
-    (mini / ".env").write_text("VOYAGER_API_KEY=not-for-the-llm\n")
+    (mini / ".env").write_text("SETTING=" + "not-for-the-llm" + "\n")
     llm = ScriptedLLM(
         [
             (
