@@ -25,6 +25,9 @@ pytest -q -m "not llm and not docker and not network and not slow"   # offline t
 python scripts/check_contracts.py
 ```
 
+The offline set leaves out the tests marked `llm` (they need the key below), `docker` (a running
+Docker), `network` and `slow`; plain `pytest -q` runs them all.
+
 For the LLM features, put the settings of an OpenAI-compatible endpoint in `.env` (never commit
 it):
 
@@ -43,17 +46,23 @@ probes).
 python -m cleansweep plan --target tests/fixtures/toy_repo
 
 # run a sweep, save the report, and score it with the hidden checks
-python -m cleansweep sweep --target tests/fixtures/toy_repo --out /tmp/report.json --hidden
+python -m cleansweep sweep --target tests/fixtures/toy_repo --out results/raw/quickstart/report.json --hidden
 
 # baselines and ablations use the same command
 python -m cleansweep sweep --target tests/fixtures/toy_repo --method tools_only --hidden
 
 # print a saved report
-python -m cleansweep show /tmp/report.json
+python -m cleansweep show results/raw/quickstart/report.json
 
-# dashboard (reads results/raw/, falls back to the sample report)
+# dashboard (lists the reports under results/raw/, falls back to the sample report)
 streamlit run app/dashboard.py
 ```
+
+`results/raw/` is git-ignored, and the dashboard lists every report saved under it. Without a
+key, the toy sweep applies the planted near-duplicate `_safe_round`, which passes every visible
+test, so the hidden checks print `"behavior_changed": true`. Catching it is the job of the judge
+and the probes, which need the LLM; with a key, the toy repo's outcome is 13/13 and hidden
+behavior is unchanged (Results summary below).
 
 Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_shot_retry`,
 `no_ranker`, `no_batching`. Every package has a stub with the same interface;
@@ -164,7 +173,8 @@ never sees) give a different result after the cleanup. Full tables in
 
 **SWE-bench Tier 2: 57 agent patches, the headline.** CleanSweep removes about as much as an
 unchecked one-shot LLM cleanup and breaks nothing; stronger one-shot variants close part of the
-gap (`oneshot_series.md`; McNemar and Wilcoxon against gatekeeper):
+gap (`oneshot_series.md`; McNemar and Wilcoxon against gatekeeper). `one_shot_compile` is a
+re-score of the `one_shot_llm` runs (`scripts/exp_collect.py`), not a `--method`:
 
 | method | lines removed | hidden changed | McNemar p | Wilcoxon p |
 |---|---|---|---|---|
