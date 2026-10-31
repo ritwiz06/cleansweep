@@ -332,7 +332,8 @@ still work on an agentic run.
 
 ```
 python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minutes=60,tests=80]
-                                  [--approve-plan] [--dry-run] [--out <dir>]
+                                  [--approve-plan] [--dry-run] [--out <dir>] [--model M]
+                                  [--no-llm] [--quiet]
 ```
 
 - `--mode safe` (default): deterministic edits only, every package fully verified, anything
@@ -340,8 +341,15 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
   the over-engineering review, and more probe rounds.
 - `--approve-plan` pauses after PLAN and shows `blueprint.md`; the run continues only on approval.
 - `--dry-run` stops after PLAN and changes nothing.
-- `--out` (default `cleanup-<name>-<date>/`): the scratch workspace with the branch,
-  `CLEANUP_REPORT.md`, `blueprint.md`, the patch series, `events.jsonl` and the run report.
+- `--out` (default `<project>-cleanup-<time>/` next to the project; a folder inside the project
+  is refused): the scratch workspace with the branch, `CLEANUP_REPORT.md`, `blueprint.md`,
+  `PR_DESCRIPTION.md`, `CHANGELOG_ENTRY.md`, the patch series, `events.jsonl`, the artifact cache
+  and `report.json`. The LLM and probe caches go to `~/.cache/cleansweep/`, so nothing is written
+  inside the project, whatever folder the command runs from.
+- `--no-llm` runs offline: the Investigator gathers the same evidence with its tools and decides
+  by rules (keep the detector lane unless a lesson fits or the code may be used dynamically).
+- Exit code 0 when the result is "everything runs" or nothing was applied, 1 otherwise or on an
+  error (one readable line), 2 for a bad option.
 
 `run_sweep(target, cfg, method="agentic", seed, on_event)` runs the same team for experiments and
 returns a normal `SweepReport`, so v1's collection and statistics scripts read it unchanged.
@@ -366,7 +374,34 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 - `run_sweep(..., method="agentic")` dispatches to the agent team.
 - A new `agents` entry in `core.contracts.INTERFACES` (the runtime, board, cache, `clean_project`).
 
-## 18. Risks
+## 18. Built so far (Phase 1)
+
+The runtime and a first version of every agent are in `src/cleansweep/agents/`:
+deterministic where the job allows it (brief facts, baseline, detectors, packaging, edits,
+checks, reports), with JSON ReAct steps for the Explorer's summary and the Investigator.
+Details worth knowing:
+- The Investigator can only make a candidate more cautious than its detector lane: an edit is
+  applied only when the detector put it in the safe lane and the Investigator says "safe".
+  Formatting items skip the investigation (the AST check decides), security items are always
+  suggestions.
+- Work packages group a file's edits of the same risk tier (at most `max_package`, default 4);
+  formatting goes last in its own package, checked by AST equality. A package that fails with
+  several edits is split in half (as v1's bisection does); a single edit gets at most 2 repair
+  turns, else it is rolled back and a lesson is written.
+- After a rollback, the Manager steps back to PLAN when later packages depend on the rolled-back
+  one or a new lesson fits them; the Planner moves those items to the suggest lane, citing the
+  lesson. If the final suite is worse than the baseline, the Manager steps back to EXECUTE and
+  the Engineer reverts packages from the last one, rebuilding the branch without them.
+- The delivered branch is built with `git commit-tree` from the workspace tree after each kept
+  package, so the workspace's internal checkpoints never reach it.
+- Agent turns are timed per role; an agent that raises ends the run cautiously (its package is
+  rolled back) and the run still ends with a report.
+
+Coverage-guided probes, the new line-level detectors, the UI snapshot check and the ablation
+switches other than `broadcast`, `inline_artifacts`, `no_lessons` and `no_research` come in
+Phase 2 and Phase 4.
+
+## 19. Risks
 
 - Voyager latency: a run with many candidates is many sequential requests. Mitigations: budgets,
   parallel Investigators, deterministic tools, cached replies for repeat runs.

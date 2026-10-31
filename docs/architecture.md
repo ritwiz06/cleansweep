@@ -65,7 +65,8 @@ default for SWE-bench and AIDev, so they get the project's setup).
 | `guard` | `apply_edit` for every action (delete a file or unit, remove an import or dependency, format, merge a duplicate, inline a wrapper), the `Guard`, and the differential probes (`difftest.py`, `probe_harness.py`) |
 | `scheduler` | Batching and bisection, sweep policies (`should_sweep`: daily, after each agent PR, every n commits, adaptive) and the history replay (`simulate`) |
 | `ranking` | `Ranker` (category priors or a trained model) and its training |
-| `workflow` | `run_sweep` and its optional event callback |
+| `workflow` | `run_sweep` and its optional event callback; `method="agentic"` hands the target to the agent team |
+| `agents` | v2 agent team (`docs/agentic_design.md`): the Manager's phase machine (`phases.py`, `manager.py`), the message board (`board.py`), the artifact cache (`cache.py`), budgets, the event log (schema v2, `events.py`), the secret scan and redactor (`secrets.py`), the one LLM door that redacts and charges every request (`llm.py`), the JSON ReAct protocol (`protocol.py`), the tool registry over existing code (`tools.py`), lessons, the knowledge base over the mined tables, the ten agents, the LangGraph team (`team.py`), delivery of the branch (`delivery.py`) and the entry points `run_agentic` and `clean_project` (`run.py`). `ScriptedLLM` plays scripted replies in tests |
 | `eval` | Baselines (`tools_only`, `one_shot_llm`, `one_shot_retry`), hidden checks, mutation testing, metrics and statistics (bootstrap intervals, exact McNemar, Wilcoxon) |
 | `data` | Loaders for SWE-bench Verified, PatchDiff agent patches and hidden tests, the AIDev repositories and their histories, and the tier splits |
 | `mining` | Review-comment mining: removal requests (keyword filter plus an LLM check), their taxonomy (TF-IDF and k-means), and association rules |
@@ -155,6 +156,8 @@ A sweep's `cfg` is the merged dictionary; a caller can override any section.
 python -m cleansweep plan  --target PATH            # the plan, nothing applied, no LLM
 python -m cleansweep sweep --target T [--method M] [--out report.json] [--hidden]
 python -m cleansweep show  report.json
+python -m cleansweep clean PATH [--mode safe|thorough] [--budget llm=N,minutes=N,tests=N]
+                                [--approve-plan] [--dry-run] [--out DIR] [--model M] [--no-llm]
 streamlit run app/dashboard.py
 ```
 

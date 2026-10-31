@@ -10,7 +10,7 @@ ACTIONS = ["delete_file", "delete_unit", "remove_import", "remove_dependency",
 LANES = ["safe", "suggest"]
 EDIT_STATUS = ["kept", "repaired", "rolled_back", "skipped"]
 METHODS = ["cleansweep", "guard_tests_only", "tools_only", "one_shot_llm",
-           "no_ranker", "no_batching", "one_shot_retry"]
+           "no_ranker", "no_batching", "one_shot_retry", "agentic"]
 POLICIES = ["now", "every_pr", "every_n", "daily", "adaptive"]
 
 FEATURE_COLUMNS = [
