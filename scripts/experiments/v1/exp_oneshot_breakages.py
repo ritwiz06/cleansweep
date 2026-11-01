@@ -14,7 +14,7 @@ no LLM): the edited files are parsed and checked with ruff for undefined names, 
 removed functions are looked up in the rest of the project, and deleted files are looked up in
 the import graph.
 
-Writes results/summary/oneshot_breakages.csv and oneshot_breakages.md.
+Writes results/summary/v1/oneshot_breakages.csv and oneshot_breakages.md.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ T2 = {
     "t2_oneshot": archived("cleansweep-runs-2", "swebench_t2_oneshot"),
     "t2_rerun": archived("cleansweep-runs-2", "swebench_t2_rerun"),
 }
-OUT = ROOT / "results" / "summary" / "oneshot_breakages"
+OUT = ROOT / "results" / "summary" / "v1" / "oneshot_breakages"
 EXCLUDE = ("psf__requests-2317",)
 FIELDS = [
     "target_set",

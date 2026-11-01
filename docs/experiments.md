@@ -3,13 +3,13 @@
 This page lists the experiments behind the CleanSweep results: how to run each one, which code
 version produced the reported numbers, what it reads and writes, how long it took and which LLMs
 it used. The pipeline is described in [architecture.md](architecture.md); the results are in the
-README and in `results/summary/`.
+README and in `results/summary/v1/`.
 
 - **Code version** is the commit the reported runs used. Long runs ran in a separate clone frozen
   at that commit ("main at 07a4dad"); runs made from a working branch name its pull request.
   "Not recorded" means our run log does not say.
-- Per-run reports go to `results/raw/<folder>/` (gitignored). Files in `results/summary/`,
-  `results/data_summary/` and `results/figures/` are committed.
+- Per-run reports go to `results/raw/<folder>/` (gitignored). Files in `results/summary/v1/`,
+  `results/data_summary/` and `results/figures/v1/` are committed.
 - The frozen clones are gone; their reports and caches are kept outside the repository in
   `../cleansweep-archive/` (`raw/<clone>/results_raw/<folder>/`, `llm_caches/<clone>/`). The raw
   reports are not published because they contain third-party code. Scripts that read them
@@ -24,7 +24,7 @@ README and in `results/summary/`.
 | Experiment | Scripts | Code version | Committed summary |
 |---|---|---|---|
 | [Answer keys](#answer-keys-toy-repo-and-demo-app) | `app.live_runner` | main, 2026-10-26/27 (not recorded) | `main_results.csv` |
-| [Judge model checks](#judge-model-checks) | `cleansweep sweep` | main, 2026-10-24 (not recorded) | `docs/report/tables/judge_*.md` |
+| [Judge model checks](#judge-model-checks) | `cleansweep sweep` | main, 2026-10-24 (not recorded) | `results/summary/v1/judge_*.md` |
 | [SWE-bench Tier 1](#swe-bench-tier-1) | `exp_swebench.py` | main at 9c536a5, plus reruns | `main_results.csv` |
 | [SWE-bench Tier 2](#swe-bench-tier-2) | `exp_swebench.py` | main at 07a4dad and 83e3b00 | `main_results.csv` |
 | [AIDev sweeps](#aidev-sweeps) | `exp_swebench.py`, `exp_aidev_summary.py` | main at 06d2ab6, e57cf92, c8ae076 | `main_results.csv`, `aidev_sweeps.csv` |
@@ -81,7 +81,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
   The demo check used `--target demo/shop_app` with `CLEANSWEEP_OVERENGINEERING=0`. The seed only
   labels repeat runs; the judge never receives it. Main checkout, 2026-10-24; commits not recorded.
 - **Outputs:** `results/raw/judge_bakeoff/`, `judge_check/`, `demo_check/`; tables
-  `docs/report/tables/judge_checks.md` and `judge_check_runs.md` (`python scripts/report/make_assets.py`).
+  `results/summary/v1/judge_checks.md` and `judge_check_runs.md` (`python scripts/report/make_assets.py`).
 - **Runtime:** 1.5–9 min per sweep; judge requests took 40–260 s each, depending on endpoint load.
 - **Models:** first comparison, one run each: `qwen36-27b`, `qwen36-35b-a3b`, `qwen3-235b-a22b`,
   `qwen3-coder-next`, `kimi-k2-7-code`. Answer-key check, three runs each at temperature 0:
@@ -171,7 +171,7 @@ alarms on identical copies, all through `guard.verify`.
 - **Inputs:** up to 20 mutants per answer-key target; up to 5 per SWE-bench patch, in functions
   the agent wrote (39 on Tier 1, 189 on Tier 2 beyond Tier 1).
 - **Outputs:** `results/raw/guard_strength/<set>__<target>__<mode>.json`; `guard_strength.csv`;
-  `results/figures/guard_strength.png` (from `exp_tables.py`).
+  `results/figures/v1/guard_strength.png` (from `exp_tables.py`).
 - **Runtime:** Tier 1 runner mode about 30 min (Django patches 4–5 min each, 2–3 min in direct
   mode); Tier 2 about 2 h, plus 1.5 h to redo two patches whose probe requests failed; toy and
   demo not recorded. **Models:** probe requests `qwen36-35b-a3b` with reasoning off; no judge.
@@ -223,7 +223,7 @@ SWE-bench patch where `one_shot_llm` applied edits.
 - **Inputs:** the 20 repositories, the last 300 first-parent commits of each (4,695 commits, 626
   from agent pull requests), static detectors only, measured at up to 40 commits plus the last.
 - **Outputs:** `scheduler_replay.csv`, `scheduler_curves.csv`, `scheduler_tradeoff.csv`,
-  `results/figures/scheduler_tradeoff.png`; per-commit cache in `data/processed/aidev_slop/`.
+  `results/figures/v1/scheduler_tradeoff.png`; per-commit cache in `data/processed/aidev_slop/`.
 - **Runtime:** not recorded. **Models:** none.
 
 ### Ranker and Reviewer detection
@@ -246,7 +246,7 @@ and score what the detectors flag.
 - **Outputs:** `data/processed/aidev_{requests,labels,detection}.parquet`;
   `results/data_summary/aidev_taxonomy.csv`, `aidev_rules.csv`, `detection_by_category.csv`;
   `ranker_cv.csv`, `ranker_status.json`, `ranker_report.md`, `reviewer_detection.csv`,
-  `results/figures/ranker_reliability.png`; the model in `results/models/ranker.joblib`
+  `results/figures/v1/ranker_reliability.png`; the model in `results/models/ranker.joblib`
   (gitignored, not used by default).
 - **Runtime:** labels capped at 1 h; the rest not recorded. **Models:** mining `qwen36-35b-a3b`
   with reasoning off (40 requests of 20 comments); no LLM elsewhere.
@@ -304,7 +304,7 @@ sees everything except fixtures, demo, results and data; the Guard runs the copy
 - **Run:** `python scripts/experiments/v1/exp_self_sweep.py --ref main [--modes gatekeeper advisory]` at main
   a439dcd (after PR #62), 2026-10-30; then `python scripts/experiments/v1/exp_self_sweep.py --table --ref a439dcd`
   (PR #66) for the table, which also counts the format items today's detector flags on that copy.
-- **Outputs:** `results/raw/self_sweep/<mode>.json`; `results/summary/self_sweep.csv`.
+- **Outputs:** `results/raw/self_sweep/<mode>.json`; `results/summary/v1/self_sweep.csv`.
 - **Runtime:** gatekeeper 59 min (18 test runs, 12 LLM requests); advisory 52 min (19 test runs;
   one request timed out after 600 s and was not retried). **Models:** judge, repair and probes
   `qwen36-35b-a3b`.
@@ -424,7 +424,7 @@ repeat a reported run.
 ## Regenerating the tables
 
 ```bash
-bash scripts/reproduce_tables.sh          # results/summary/ and results/figures/
+bash scripts/reproduce_tables.sh          # results/summary/v1/ and results/figures/v1/
 bash scripts/reproduce_tables.sh DIR      # or DIR/summary/ and DIR/figures/
 ```
 
@@ -439,7 +439,7 @@ and checks that every table comes out byte for byte. Set `PYTHON` to pick the in
 The per-run CSVs need the raw reports, clones, Docker or the LLM, so the script leaves them
 alone:
 
-| Committed file in `results/summary/` | Written by | Needs |
+| Committed file in `results/summary/v1/` | Written by | Needs |
 |---|---|---|
 | `main_results.csv` | `exp_collect.py` | every sweep report folder |
 | `aidev_sweeps.csv`, `.md` | `exp_aidev_summary.py` | AIDev reports, cached hidden tests |

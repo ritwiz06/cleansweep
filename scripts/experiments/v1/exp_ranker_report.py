@@ -5,7 +5,7 @@ not a safety score.
 
 Repeats the ranker's cross-validation (GroupKFold by repository, the same calibrated model as
 ranking/train.py) to get out-of-fold predictions, a reliability table and permutation importance
-on each held-out fold (drop in AUC, 5 repeats). Writes results/summary/ranker_report.md. The
+on each held-out fold (drop in AUC, 5 repeats). Writes results/summary/v1/ranker_report.md. The
 Reviewer keeps its category priors; this script changes nothing about that.
 """
 
@@ -21,7 +21,7 @@ from cleansweep.data import load_removal_labels
 from cleansweep.ranking.train import _model, can_train
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT / "results" / "summary" / "ranker_report.md"
+OUT = ROOT / "results" / "summary" / "v1" / "ranker_report.md"
 
 
 def cross_validate(labels: pd.DataFrame, repeats: int = 5):

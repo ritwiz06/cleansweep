@@ -1,5 +1,5 @@
 """Merge the toy, demo, SWE-bench Tier 1 and Tier 2 and AIDev runs into
-results/summary/main_results.csv.
+results/summary/v1/main_results.csv.
 
     python scripts/experiments/v1/exp_collect.py [--t2 FOLDER] [--t2-oneshot FOLDER]
         [--t2-rerun FOLDER] [--aidev FOLDER] [--aidev-rerun FOLDER ...] [--oneshot-retry FOLDER]
@@ -27,7 +27,7 @@ run against the repo's selection-time test time (data/splits/aidev_repos.json);
 overload_suspect marks a run where it more than doubled.
 
 Two stronger one-shot variants are derived from the one_shot_llm rows. one_shot_compile discards
-a diff whose rewritten files don't compile (results/summary/oneshot_compile.csv, from
+a diff whose rewritten files don't compile (results/summary/v1/oneshot_compile.csv, from
 exp_oneshot_compile.py): no edits and nothing changed. one_shot_retry is the rerun with one
 compile-error follow-up for those runs (--oneshot-retry, one report per SWE-bench patch, used for
 Tier 1 and Tier 2) and the same as one_shot_llm elsewhere, since its first request is the same.
@@ -56,9 +56,9 @@ from cleansweep.core.io import load_json  # noqa: E402
 from cleansweep.core.models import SweepReport  # noqa: E402
 
 RAW = ROOT / "results" / "raw"
-OUT = ROOT / "results" / "summary" / "main_results.csv"
+OUT = ROOT / "results" / "summary" / "v1" / "main_results.csv"
 AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
-COMPILE_CSV = ROOT / "results" / "summary" / "oneshot_compile.csv"
+COMPILE_CSV = ROOT / "results" / "summary" / "v1" / "oneshot_compile.csv"
 LOCAL_RUNS = {
     "toy": "tests/fixtures/toy_repo",
     "demo": ".cleansweep/demo/shop_app",

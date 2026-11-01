@@ -1,8 +1,8 @@
 """Rebuild the progress-report tables and charts from results/raw/.
 
 Run from the repo root:  python scripts/report/make_assets.py
-Writes docs/report/tables/*.md and *.csv, docs/report/figures/*.png, and renders
-scripts/report/pipeline.mmd to docs/report/pipeline.png when mermaid-cli (mmdc) is installed.
+Writes results/summary/v1/*.md and *.csv, results/figures/v1/*.png, and renders
+scripts/report/pipeline.mmd to results/figures/v1/pipeline.png when mermaid-cli (mmdc) is installed.
 results/raw/ is not in git, so only a machine with the runs can regenerate these.
 """
 
@@ -27,8 +27,8 @@ from app.loaders import compare_reports, load_report, outcome_score  # noqa: E40
 
 RAW = ROOT / "results" / "raw"
 HERE = Path(__file__).resolve().parent
-OUT = ROOT / "docs" / "report"
-TABLES, FIGURES = OUT / "tables", OUT / "figures"
+TABLES = ROOT / "results" / "summary" / "v1"
+FIGURES = ROOT / "results" / "figures" / "v1"
 TOY_KEY = ROOT / "tests" / "fixtures" / "toy_repo_expected.json"
 DEMO_KEY = ROOT / "demo" / "shop_app_expected.json"
 
@@ -492,7 +492,15 @@ def render_pipeline() -> str:
     if mmdc is None:
         return "pipeline.png not rendered (mermaid-cli not installed)"
     subprocess.run(
-        [mmdc, "-i", str(HERE / "pipeline.mmd"), "-o", str(OUT / "pipeline.png"), "-b", "white"],
+        [
+            mmdc,
+            "-i",
+            str(HERE / "pipeline.mmd"),
+            "-o",
+            str(FIGURES / "pipeline.png"),
+            "-b",
+            "white",
+        ],
         check=True,
         capture_output=True,
     )
@@ -515,7 +523,7 @@ def main() -> None:
     chart_judge_models(runs)
     chart_aidev_funnel()
     print(render_pipeline())
-    for path in sorted(OUT.rglob("*")):
+    for path in sorted([*TABLES.iterdir(), *FIGURES.iterdir()]):
         if path.is_file() and path.suffix in (".md", ".csv", ".png", ".mmd"):
             print(path.relative_to(ROOT))
 

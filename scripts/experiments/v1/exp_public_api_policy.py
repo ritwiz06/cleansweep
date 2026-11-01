@@ -24,7 +24,7 @@ JSON per run in results/raw/aidev_<policy>/. A rerun of the same filtered diff u
 policy is reused. A run the policy leaves alone keeps its hidden outcome; a changed run without
 a rerun has none yet.
 
-Writes results/summary/aidev_<policy>.csv (one row per run) and .md (per method: as run and
+Writes results/summary/v1/aidev_<policy>.csv (one row per run) and .md (per method: as run and
 with the policy, mean [95% CI], McNemar and Wilcoxon of the policy against as run).
 """
 
@@ -52,7 +52,7 @@ from cleansweep.eval.stats import bootstrap_ci, mcnemar, wilcoxon  # noqa: E402
 from cleansweep.reviewer.detectors import has_package_metadata, is_public_api  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-RESULTS = ROOT / "results" / "summary" / "main_results.csv"
+RESULTS = ROOT / "results" / "summary" / "v1" / "main_results.csv"
 AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
 # policy -> (raw folder, summary name)
 POLICIES = {
@@ -61,7 +61,7 @@ POLICIES = {
     "final": ("aidev_final_policy", "aidev_final_policy"),
 }
 RAW_DIR = ROOT / "results" / "raw"
-OUT_DIR = ROOT / "results" / "summary"
+OUT_DIR = ROOT / "results" / "summary" / "v1"
 TITLES = {
     "public_api": "public-API policy",
     "framework": "framework-callback rule",

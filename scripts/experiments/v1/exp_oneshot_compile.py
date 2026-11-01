@@ -6,7 +6,7 @@ one_shot_compile is one_shot_llm plus a compile check that discards the whole di
 rewritten .py file doesn't compile. No LLM and no new sweep:
 
 - SWE-bench Tier 1 and Tier 2: the Guard's own compile step from exp_guard_on_oneshot.py
-  (results/summary/guard_on_oneshot.csv), which compiled the changed files in the instance's
+  (results/summary/v1/guard_on_oneshot.csv), which compiled the changed files in the instance's
   container. A run blocked at "compile" fails; a run with no edits has nothing to compile.
 - AIDev: each one_shot_llm run's final diff is applied to the repository's files at its head sha
   (the local clone, no Docker) and the rewritten .py files are compiled with this Python (3.11,
@@ -15,7 +15,7 @@ rewritten .py file doesn't compile. No LLM and no new sweep:
 The AIDev run folders and the Tier 2 one-shot folder default to the run copies' raw reports in
 ../cleansweep-archive (scripts/experiments/v1/archive_paths.py).
 
-Writes results/summary/oneshot_compile.csv: one row per one_shot_llm run.
+Writes results/summary/v1/oneshot_compile.csv: one row per one_shot_llm run.
 """
 
 from __future__ import annotations
@@ -37,8 +37,8 @@ from exp_oneshot_breakages import T2, diff_files, report_path, targets  # noqa: 
 from cleansweep.core.config import load_config  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-GUARD_CSV = ROOT / "results" / "summary" / "guard_on_oneshot.csv"
-OUT = ROOT / "results" / "summary" / "oneshot_compile.csv"
+GUARD_CSV = ROOT / "results" / "summary" / "v1" / "guard_on_oneshot.csv"
+OUT = ROOT / "results" / "summary" / "v1" / "oneshot_compile.csv"
 AIDEV_SPLIT = ROOT / "data" / "splits" / "aidev_repos.json"
 FIELDS = ["target_set", "target", "files_compiled", "compile_failed", "source", "errors"]
 

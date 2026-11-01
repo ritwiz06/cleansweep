@@ -2,8 +2,8 @@
 # Rebuild the aggregate tables and figures from the committed per-run CSVs, offline (no Docker,
 # LLM or raw reports).
 #
-#   bash scripts/reproduce_tables.sh        # results/summary/ and results/figures/
-#   bash scripts/reproduce_tables.sh DIR    # DIR/summary/ and DIR/figures/ instead
+#   bash scripts/reproduce_tables.sh        # results/summary/v1/ and results/figures/v1/
+#   bash scripts/reproduce_tables.sh DIR    # DIR/summary/v1/ and DIR/figures/v1/ instead
 #
 # exp_tables.py: main_table, paired_tests, ablation, oneshot_series and the main figures, from
 # main_results.csv and guard_strength.csv. exp_scheduler_tradeoff.py: scheduler_tradeoff.csv and

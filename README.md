@@ -158,8 +158,8 @@ python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode adviso
 bash scripts/reproduce_tables.sh
 ```
 
-rebuilds the aggregate tables and figures (`results/summary/`, `results/figures/`) offline from
-the committed per-run CSVs; on a clean checkout `git status results/` shows no change afterwards.
+rebuilds the aggregate tables and figures (`results/summary/v1/`, `results/figures/v1/`) offline
+from the committed per-run CSVs; on a clean checkout `git status results/` shows no change afterwards.
 [docs/experiments.md](docs/experiments.md) has, for every experiment, the command, the commit it
 ran at, its inputs and outputs, runtime and models, how to download the data (SWE-bench
 Verified, PatchDiff, AIDev), and the Docker and disk needs (about 65 GB for all images and
@@ -267,7 +267,9 @@ src/cleansweep/
   mining/      review-comment mining: removal requests, taxonomy, rules
 app/           Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
-docs/          architecture, experiments, full results; report assets
+docs/          architecture, agentic design, experiments, full results
+results/       summary/v1 and figures/v1 (v1 tables and figures), summary/v2 and figures/v2 (Phase 4),
+               data_summary/ (mined-data summaries)
 configs/       base.yaml (core), data.yaml, exp.yaml, reviewer.yaml
 scripts/       data/ (fetch, splits, AIDev selection and mining), experiments/v1 and v2 (runners and tables),
                report/ (report tables and figures), tools/ (contract check, LLM ping), reproduce_tables.sh
