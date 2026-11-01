@@ -171,12 +171,13 @@ def _drop_assignment(lines: list[str], row: int, name: str) -> list[str] | None:
                 segment = ast.get_source_segment("".join(lines), value)
                 if segment is None:
                     return None
-                body = [
-                    f"{indent}{ln}" if i else ln
-                    for i, ln in enumerate(segment.splitlines(keepends=True))
-                ]
-                kept = f"{indent}{''.join(body)}".rstrip("\n") + "\n"
-                return lines[: node.lineno - 1] + [kept] + lines[node.end_lineno :]
+                # the segment's later lines keep their own indentation; one list entry per line
+                kept = (indent + segment).rstrip("\n") + "\n"
+                return (
+                    lines[: node.lineno - 1]
+                    + kept.splitlines(keepends=True)
+                    + lines[node.end_lineno :]
+                )
             return _remove_stmt(lines, node, parents.get(node))
     return None
 

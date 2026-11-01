@@ -47,6 +47,19 @@ def test_unused_variables_keep_calls_and_handlers(tmp_path):
     compile(text, "m.py", "exec")
 
 
+def test_an_unused_name_for_a_multi_line_call_keeps_the_call(tmp_path):
+    source = (
+        "def f(db, run):\n    if run:\n        ref = db.upsert(\n            run, 1\n        )\n"
+        "    return run\n"
+    )
+    repo = _repo(tmp_path, {"pkg/m.py": source})
+    (item,) = detect_unused_variables(repo)
+    _apply(repo, item)
+    text = (tmp_path / "pkg/m.py").read_text()
+    assert text == source.replace("ref = db.upsert(", "db.upsert(")
+    compile(text, "m.py", "exec")
+
+
 def test_debug_leftovers(tmp_path):
     repo = _repo(
         tmp_path,
