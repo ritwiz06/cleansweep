@@ -251,6 +251,9 @@ code-level edits comes from the rest:
 
 ## Repository layout
 
+Every folder and what it is for: [docs/repo_layout.md](docs/repo_layout.md). All documents:
+[docs/index.md](docs/index.md).
+
 ```
 src/cleansweep/
   core/        contracts (models.py), config, JSON io, stub switch
@@ -258,6 +261,7 @@ src/cleansweep/
   sandbox/     git-backed workspaces: local folders, SWE-bench and AIDev Docker containers
   guard/       applies edits, verifies them (tests, AST, differential probes), rolls back failures
   workflow/    run_sweep: open -> analyze -> plan -> rank -> batch -> guard -> report
+  agents/      v2 agent team behind `cleansweep clean` and method=agentic
   analysis/    code graph, duplicate finder, features
   reviewer/    detectors, duplicate/wrapper rewrites, LLM judge, over-engineering review, repair, planner
   ranking/     safe-to-remove scores (category priors; a classifier trained on AIDev labels)
@@ -265,17 +269,15 @@ src/cleansweep/
   eval/        baselines, hidden checks, metrics, mutation testing, statistics
   data/        SWE-bench Verified, PatchDiff and AIDev loaders, tier splits
   mining/      review-comment mining: removal requests, taxonomy, rules
-app/           dashboard/: Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
-               (studio/: CleanSweep Studio, Phase 5)
+app/dashboard/ Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
-docs/          architecture, agentic design, experiments, full results
-results/       summary/v1 and figures/v1 (v1 tables and figures), summary/v2 and figures/v2 (Phase 4),
-               data_summary/ (mined-data summaries)
-configs/       base.yaml (core), data.yaml, exp.yaml, reviewer.yaml
-scripts/       data/ (fetch, splits, AIDev selection and mining), experiments/v1 and v2 (runners and tables),
-               report/ (report tables and figures), tools/ (contract check, LLM ping), reproduce_tables.sh
-tests/         one folder per package, plus fixtures/ (toy repo, answer key, hidden tests, sample report,
-               small results set)
+scripts/       data/, experiments/v1 and v2/, report/, tools/, reproduce_tables.sh
+results/       summary/v1 and figures/v1 (v1 tables and figures; v2 in Phase 4), data_summary/
+data/splits/   committed tier and repository splits
+docs/          index, user guide, architecture, agentic design, experiments, results, layout
+configs/       base.yaml (core and agents), data.yaml, exp.yaml, reviewer.yaml
+tests/         mirrors src/, app/ and scripts/, plus fixtures/ (toy repo, answer key, hidden tests,
+               sample report, small results set)
 ```
 
 ## Team

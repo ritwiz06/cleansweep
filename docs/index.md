@@ -1,0 +1,31 @@
+# Documentation
+
+Start with the [README](../README.md): what CleanSweep does, how to install it, the quick start,
+the results in brief and the known limitations. The documents below go deeper.
+
+**[User guide](user_guide.md).** How to clean your own project with `cleansweep clean`, read its
+report and branch, and use the dashboard. A short version for now; the full guide with
+screenshots of Studio and watch mode comes with v2.0.
+
+**[Architecture](architecture.md).** CleanSweep v1, the sweep pipeline (`method=cleansweep`):
+open → analyze → plan → rank → batch → guard → report. What each package does, the contracts
+between packages (`core/models.py`, `core/contracts.py`), the events and every setting.
+
+**[Agentic design](agentic_design.md).** CleanSweep v2, the agent team behind `cleansweep clean`
+and `method=agentic`: how it adapts AutoData's manager, squads and OHCache to code cleanup, the
+Manager's phases, the 10 agents and their budgets, the message board and artifact cache,
+lessons, coverage-guided probes, the safety rules, the command line and the ablations.
+
+**[Experiments](experiments.md).** For every experiment: the command, the commit it ran at, its
+inputs and outputs, the models, runtime and data needs, and which script writes each committed
+table. `scripts/reproduce_tables.sh` rebuilds the aggregate tables offline.
+
+**[Results](results.md).** The full v1 results: SWE-bench Tier 1 and Tier 2, the AIDev
+repositories, Guard strength, the one-shot breakages, the Reviewer policies, the Scheduler and
+the ranker, with confidence intervals and paired tests. v2 results are added in Phase 4.
+
+**[Repository layout](repo_layout.md).** Every folder and what it is for: the package, the
+dashboard, the demo, the scripts by purpose, the committed results, the data splits and the
+tests.
+
+**[Changelog](../CHANGELOG.md).** Every release and what changed in it.
