@@ -339,3 +339,40 @@ def test_harness_main_puts_back_what_it_changed(tmp_path):
     probe_harness.main(str(tmp_path / "spec.json"), str(tmp_path))
     assert json.loads((tmp_path / "out.json").read_text())["probes"]["t0"]["cases"] == {"one": "1"}
     assert (os.getcwd(), sys.path, socket.socket.connect) == (cwd, path, connect)
+
+
+def test_harness_loads_a_script_by_path_without_its_main_block(tmp_path):
+    from cleansweep.guard import probe_harness
+
+    (tmp_path / "bench").mkdir()
+    (tmp_path / "bench" / "make-chart.py").write_text(
+        "# /// script\n# dependencies = ['plotlib_x']\n# ///\n"
+        "import plotlib_x\nfrom plotlib_x.style import theme\n\n\n"
+        "def title(n):\n    return f'{n} rows'\n\n\n"
+        "if __name__ == '__main__':\n    raise SystemExit('the main block ran')\n"
+    )
+    (tmp_path / "bench" / "uses_local.py").write_text("import mylib\n")
+    (tmp_path / "src" / "mylib").mkdir(parents=True)  # the project's own, but off sys.path here
+    (tmp_path / "src" / "mylib" / "__init__.py").write_text("")
+    (tmp_path / "p.py").write_text(
+        "def make_cases():\n    from bench.make_chart import title\n"
+        "    return [('two', lambda: title(2))]\n"
+    )
+    spec = {
+        "paths": ["."],
+        "out": "out.json",
+        "probes": [{"id": "t0", "file": "p.py"}],
+        "scripts": {
+            "bench.make_chart": "bench/make-chart.py",
+            "bench.uses_local": "bench/uses_local.py",
+        },
+    }
+    (tmp_path / "spec.json").write_text(json.dumps(spec))
+    meta, modules = list(sys.meta_path), set(sys.modules)
+    probe_harness.main(str(tmp_path / "spec.json"), str(tmp_path))
+    out = json.loads((tmp_path / "out.json").read_text())
+    assert out["scripts"]["bench.make_chart"] == {"ok": True, "stubbed": ["plotlib_x"]}
+    assert not out["scripts"]["bench.uses_local"]["ok"]  # the project's code is never stubbed
+    assert out["probes"]["t0"]["cases"] == {"two": "'2 rows'"}
+    left = {m for m in set(sys.modules) - modules if m.startswith(("plotlib_x", "bench."))}
+    assert sys.meta_path == meta and not left  # runner mode shares the test process
