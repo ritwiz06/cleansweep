@@ -11,6 +11,7 @@ from pathlib import Path
 from cleansweep.core.io import to_dict
 from cleansweep.guard.guard import static_checks
 
+from . import environment
 from .tools import related_tests
 
 NAME = "tester"
@@ -24,7 +25,9 @@ def _run(rt, paths: list[str] | None = None):
 
 
 def baseline(rt) -> None:
-    """BASELINE: run the suite several times and record what already fails or flakes."""
+    """BASELINE: set up the project's environment, run the suite several times and record what
+    already fails or flakes."""
+    rt.environment = environment.prepare(rt)
     runs = max(1, int(rt.acfg.get("baseline_runs", 3)))
     results, statuses = [], []
     for n in range(runs):
@@ -96,7 +99,25 @@ def check_package(rt, pkg) -> bool:
     if rt.run_budget.out_of_tests(rt.ws.test_runs):
         return _fail(rt, pkg, "budget", "the run's test-run budget is used up", [])
     related = related_tests(rt.graph, pkg.files)
-    slow = (rt.baseline or {}).get("duration_s", 0) > float(rt.acfg.get("related_first_s", 20))
+    seconds = (rt.baseline or {}).get("duration_s", 0)
+    if seconds > float(rt.acfg.get("full_suite_max_s", 120)):
+        # a slow suite: the related tests now, the full suite once in FINAL VERIFY (and the
+        # Manager reverts packages from the last one if that is worse than the baseline)
+        present = [p for p in related if (Path(rt.ws.path) / p).exists()]
+        if present:
+            result, statuses = _run(rt, present)
+            new = [t for t in compare(rt, result, statuses)[0] if t in statuses or "crashed" in t]
+            pkg.verify["_tests"] = result
+            if new:
+                return _fail(rt, pkg, "tests", getattr(rt.ws, "last_test_output", ""), new)
+        pkg.verify["full_suite"] = f"deferred to FINAL VERIFY (the suite takes {seconds:.0f} s)"
+        rt.board.post(
+            "test_result",
+            NAME,
+            {"package": pkg.package_id, "ok": True, "new_failures": [], "stage": "related tests"},
+        )
+        return True
+    slow = seconds > float(rt.acfg.get("related_first_s", 20))
     if related and slow:
         result, statuses = _run(rt, [p for p in related if (Path(rt.ws.path) / p).exists()])
         new = [t for t in compare(rt, result, statuses)[0] if t in statuses or "crashed" in t]

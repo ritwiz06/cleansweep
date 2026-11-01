@@ -36,6 +36,8 @@ core:
     parallel_llm: 3        # LLM requests at once (Investigators)
     baseline_runs: 3       # test runs for the baseline (flaky tests are those that change)
     related_first_s: 20    # run related tests before the full suite when the suite takes longer
+    full_suite_max_s: 120  # slower suites: related tests per package, the full suite in FINAL VERIFY
+    install: auto          # auto: install the project into .cs_venv when it has packaging files | off
     max_package: 4         # edits per work package
     lessons_file: null     # keep lessons across runs in this JSON-lines file
     knowledge_dir: null    # mined results; null = results/data_summary

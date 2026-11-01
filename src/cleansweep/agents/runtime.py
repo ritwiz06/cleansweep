@@ -124,6 +124,7 @@ class Runtime:
         self.delivered: dict = {}
         self.summary: dict = {}
         self.files: list[str] = []
+        self.environment: dict = {}
         self.turns = 0
         self.stopped: str | None = None
 

@@ -11,7 +11,7 @@ from pathlib import Path
 from cleansweep.sandbox.local import SKIP, WS_EXCLUDE
 from cleansweep.sandbox.workspace import GIT_ID, Workspace
 
-EXCLUDE = WS_EXCLUDE + ["_cs_*/"]
+EXCLUDE = WS_EXCLUDE + ["_cs_*/", ".cs_venv/"]
 
 
 def _git(cwd: str | Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:

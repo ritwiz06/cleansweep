@@ -67,12 +67,18 @@ def junit_statuses(xml_path: str | Path) -> dict[str, str]:
 class Workspace:
     """A scratch git repo holding the code under cleanup. Every edit can be rolled back."""
 
+    # the project's interpreter: a class attribute, so the Docker workspaces' own value stands;
+    # an agentic run may set a venv's python on one workspace
+    python = sys.executable
+
     def __init__(self, path: str | Path, repo_id: str, cfg: dict | None = None):
         self.path = str(path)
         self.repo_id = repo_id
         self.cfg = cfg or {}
         self.test_runs = 0
         self.last_statuses: dict[str, str] = {}  # test id -> status, from the last run_tests
+        self.extra_env: dict[str, str] = {}  # added to every command's environment
+        self.pytest_args: list[str] = []  # e.g. a marker selection for the project's tests
         self.base = self._git("rev-parse", "HEAD").strip()
         qdir = Path(self.cfg.get("quarantine_dir") or ".cleansweep/quarantine")
         self.quarantine_dir = str(qdir.resolve() / repo_id.replace("/", "_").replace(":", "_"))
@@ -88,7 +94,7 @@ class Workspace:
     def run(self, cmd: list[str], timeout: int = 300) -> tuple[int, str]:
         """Run a command inside the workspace; return (exit code, stdout+stderr)."""
         try:
-            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **self.extra_env}
             proc = subprocess.run(
                 cmd, cwd=self.path, capture_output=True, text=True, timeout=timeout, env=env
             )
@@ -102,13 +108,14 @@ class Workspace:
         with tempfile.TemporaryDirectory() as tmp:
             xml = Path(tmp) / "junit.xml"
             cmd = [
-                sys.executable,
+                self.python,
                 "-m",
                 "pytest",
                 "-q",
                 "-p",
                 "no:cacheprovider",
                 f"--junitxml={xml}",
+                *self.pytest_args,
                 *(test_paths or []),
             ]
             start = time.time()
@@ -138,7 +145,7 @@ class Workspace:
         self, rel_path: str, timeout: int = 900, with_directives: bool = True
     ) -> tuple[int, str]:
         """Run the project's test command on a generated probe test file (pytest here)."""
-        cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", rel_path]
+        cmd = [self.python, "-m", "pytest", "-q", "-p", "no:cacheprovider", rel_path]
         return self.run(cmd, timeout=timeout)
 
     def coverage_json(self, test_paths: list[str] | None = None) -> str | None:
@@ -148,7 +155,7 @@ class Workspace:
         rc.write_text(f"[run]\ndynamic_context = test_function\ndata_file = {out_dir}/.coverage\n")
         code, _ = self.run(
             [
-                sys.executable,
+                self.python,
                 "-m",
                 "coverage",
                 "run",
@@ -158,6 +165,7 @@ class Workspace:
                 "-q",
                 "-p",
                 "no:cacheprovider",
+                *self.pytest_args,
                 *(test_paths or []),
             ]
         )
@@ -165,7 +173,7 @@ class Workspace:
         json_path = out_dir / "coverage.json"
         code, _ = self.run(
             [
-                sys.executable,
+                self.python,
                 "-m",
                 "coverage",
                 "json",

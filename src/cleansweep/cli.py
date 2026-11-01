@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 
 from cleansweep.core.config import load_config
@@ -108,6 +109,8 @@ def cmd_clean(args) -> int:
             file=sys.stderr,
         )
         return 2
+    if args.no_install:
+        agents["install"] = "off"
     if args.model:
         os.environ["CLEANSWEEP_MODEL"] = args.model
         cfg["core"]["llm"]["model_env"] = "CLEANSWEEP_MODEL"
@@ -121,6 +124,8 @@ def cmd_clean(args) -> int:
             approve=_ask_approval if args.approve_plan else None,
             on_event=None if args.quiet else _progress,
             use_llm=not args.no_llm,
+            test_args=shlex.split(args.test_args) if args.test_args else None,
+            exclude=[e.rstrip("/") + "/" for e in args.exclude or []],
         )
     except (FileNotFoundError, FileExistsError, ValueError, RuntimeError) as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
@@ -184,6 +189,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--model", help="LLM model for the agents (default: VOYAGER_MODEL)")
     p.add_argument("--no-llm", action="store_true", help="run offline: the agents decide by rules")
+    p.add_argument(
+        "--exclude",
+        action="append",
+        metavar="FOLDER",
+        help="a folder the cleanup leaves alone (repeatable), e.g. --exclude tests/fixtures",
+    )
+    p.add_argument(
+        "--test-args",
+        help="extra pytest arguments for the project's tests, e.g. --test-args \"-m 'not slow'\"",
+    )
+    p.add_argument(
+        "--no-install",
+        action="store_true",
+        help="run the tests with this interpreter instead of installing the project into a venv",
+    )
     p.add_argument("--quiet", action="store_true", help="print only the result")
     p.set_defaults(func=cmd_clean)
     args = parser.parse_args(argv)
