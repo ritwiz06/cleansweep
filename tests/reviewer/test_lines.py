@@ -96,6 +96,28 @@ def test_commented_code_but_not_prose(tmp_path):
     assert "old = x" not in text and "Compute the total" in text
 
 
+def test_prose_that_parses_and_output_prints_stay(tmp_path):
+    repo = _repo(
+        tmp_path,
+        {
+            "pkg/m.py": (
+                "def f(x, n):\n"
+                "    # Common patterns:\n"
+                "    # - name(param1, param2)\n"
+                "    # Paragraph (default)\n"
+                "    # Links [text](url)\n"
+                "    # Author(s)\n"
+                "    # os.system('clear' if os.name != 'nt' else 'cls')\n"
+                "    print(f'Creating index (dimension={n})')\n"
+                "    print(f'\\n--- Extracting content for: {x}')\n"
+                "    return x\n"
+            )
+        },
+    )
+    assert [(i.unit.start_line, i.unit.end_line) for i in detect_commented_code(repo)] == [(7, 7)]
+    assert {i.lane for i in detect_debug_leftovers(repo)} == {"suggest"}  # output, not debugging
+
+
 def test_todo_notes_are_suggestions(tmp_path):
     repo = _repo(
         tmp_path,
