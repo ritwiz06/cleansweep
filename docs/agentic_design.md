@@ -378,8 +378,12 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
 ```
 
 - `--mode safe` (default): deterministic edits only, every package fully verified, anything
-  uncertain goes to `suggest`. `thorough`: also LLM rewrites (duplicates, redundant checks) and
-  the over-engineering review, and more probe rounds.
+  uncertain goes to `suggest`. `thorough`: a duplicate or wrapper the Investigator judges safe is
+  applied even when its detector lane is `suggest` (a near-duplicate, say); when no
+  deterministic rewrite exists, the Engineer asks the LLM for one (exact search-and-replace
+  edits in the duplicate's own file, which must still parse; uses in other files rule it out);
+  the probes get 2 more rounds, must run cases on every rewrite's own target, and the Fixer may
+  repair a probe-found behavior change. Everything else is as in safe mode.
 - `--approve-plan` pauses after PLAN and shows `blueprint.md`; the run continues only on approval.
 - `--dry-run` stops after PLAN and changes nothing.
 - `--out` (default `<project>-cleanup-<time>/` next to the project; a folder inside the project

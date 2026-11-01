@@ -11,6 +11,7 @@ from .coverage_probes import probe_with_coverage
 from .llm import acting
 
 NAME = "validator"
+EXTRA_ROUNDS = {"thorough": 2}  # probe rounds beyond probe_rounds
 REWRITES = ("replace_with", "apply_patch")  # code rewrites, not deletions
 
 
@@ -60,7 +61,7 @@ def check_package(rt, pkg) -> bool:
                     rt.graph,
                     rt.llm,
                     guard_cfg,
-                    rounds=int(settings.get("probe_rounds", 3)),
+                    rounds=int(settings.get("probe_rounds", 3)) + EXTRA_ROUNDS.get(rt.mode, 0),
                     target=float(settings.get("coverage_target", 0.9)),
                     guided=rt.ablation != "no_coverage",  # off: one round, as v1's Guard
                 )

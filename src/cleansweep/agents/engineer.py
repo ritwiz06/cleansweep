@@ -1,16 +1,46 @@
 """Engineer: applies one work package with the deterministic edits, then, once the package has
-passed its checks, makes its one commit on the delivery branch."""
+passed its checks, makes its one commit on the delivery branch. In thorough mode, a duplicate or
+wrapper with no deterministic rewrite gets one from the LLM (its own file only)."""
 
 from __future__ import annotations
 
+import ast
 import os
 import subprocess
+from pathlib import Path
 
+import jsonschema
+
+from cleansweep.analysis.graph import module_name
 from cleansweep.core.models import EditResult
 from cleansweep.guard import apply_edit
+from cleansweep.guard.difftest import defs, segment
+from cleansweep.reviewer.rewrite import _unified
 from cleansweep.sandbox.workspace import GIT_ID
 
+from .llm import acting
+from .protocol import REASONING_OFF, load_prompt
+
 NAME = "engineer"
+MAX_FILE_CHARS = 12000
+REWRITE_SCHEMA = {
+    "type": "object",
+    "required": ["edits"],
+    "properties": {
+        "edits": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": ["old", "new"],
+                "properties": {
+                    "old": {"type": "string", "minLength": 1},
+                    "new": {"type": "string"},
+                },
+            },
+        }
+    },
+}
 
 
 def _git(ws, *args: str, stdin: str | None = None) -> str:
@@ -27,13 +57,76 @@ def _git(ws, *args: str, stdin: str | None = None) -> str:
     return proc.stdout.strip()
 
 
+def _rewrite_task(rt, item, text: str) -> str | None:
+    keep_path, _, keep_name = (item.keep_target or "").partition("::")
+    if not keep_name:
+        return None
+    try:
+        keep_text = (Path(rt.ws.path) / keep_path).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    node = defs(keep_text).get(keep_name)
+    if node is None:
+        return None
+    return (
+        f"File {item.unit.path}:\n```python\n{text}\n```\n"
+        f"The kept copy, `{keep_name}` in {keep_path} (module {module_name(keep_path)}):\n"
+        f"```python\n{segment(keep_text, node)}\n```\n"
+        f"Remove the duplicate `{item.unit.name}` from {item.unit.path} and make its uses in this "
+        f"file use the kept copy instead. Evidence: {'; '.join(item.evidence[:4])}"
+    )
+
+
+def llm_rewrite(rt, item, budget) -> str:
+    """Thorough mode: a patch for a duplicate or wrapper with no deterministic rewrite, from one
+    LLM request. Only the item's own file changes; uses in other files rule it out. "" when
+    there is no usable rewrite."""
+    path = item.unit.path
+    if rt.llm is None or any(rt.graph.file_of(c) != path for c in rt.graph.callers(item.unit.key)):
+        return ""
+    text = (Path(rt.ws.path) / path).read_text(encoding="utf-8")
+    task = _rewrite_task(rt, item, text) if len(text) <= MAX_FILE_CHARS else None
+    if task is None:
+        return ""
+    messages = [
+        {"role": "system", "content": load_prompt(NAME)},
+        {"role": "user", "content": task},
+    ]
+    try:
+        with acting(NAME, budget):
+            reply = rt.llm.chat_json(messages, temperature=0.0, extra_body=REASONING_OFF)
+        jsonschema.validate(reply, REWRITE_SCHEMA)
+    except Exception:  # out of budget, LLM error or a malformed reply: no rewrite
+        return ""
+    new = text
+    for edit in reply["edits"]:
+        if new.count(edit["old"]) != 1:
+            return ""
+        new = new.replace(edit["old"], edit["new"], 1)
+    try:
+        ast.parse(new)
+    except SyntaxError:
+        return ""
+    if new == text:
+        return ""
+    return _unified(path, text.splitlines(keepends=True), new.splitlines(keepends=True))
+
+
 def apply(rt, pkg) -> None:
     """Apply a package's edits; edits that can't be applied are skipped, not forced."""
     pkg.start = rt.ws.checkpoint(f"before {pkg.package_id}")
     prev = pkg.start
     pkg.applied = []
+    budget = rt.budget(NAME)
     for iid in pkg.items:
         item = rt.items[iid]
+        if rt.mode == "thorough" and item.action == "replace_with" and not item.patch:
+            item.patch = llm_rewrite(rt, item, budget)
+            rt.log.emit(
+                "tool_result",
+                agent=NAME,
+                payload={"tool": "llm_rewrite", "item": iid, "made": bool(item.patch)},
+            )
         call = rt.log.emit(
             "tool_call",
             agent=NAME,
@@ -52,6 +145,7 @@ def apply(rt, pkg) -> None:
             parent=call["id"],
             payload={"tool": "apply_edit", "item": iid, "applied": ok},
         )
+    rt.record_usage(NAME, budget)
     not_applied = [i for i in pkg.items if i not in pkg.applied]
     if not pkg.applied:
         pkg.status, pkg.stage = "skipped", "done"
