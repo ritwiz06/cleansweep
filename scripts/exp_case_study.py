@@ -4,9 +4,12 @@
         [--runs-dir ../case_studies/runs] [--mode safe|thorough]
 
 The clean output (workspace with the branch, report files) goes to --runs-dir/NAME (outside
-the project). The record goes to results/raw/case_studies/NAME/: summary.json (brief,
-candidates by category and decision, packages by outcome, lines and files removed, tests before
-and after, probe coverage, LLM requests and tokens, time, lessons), diffstat.txt, and copies of
+the project). An "aidev:owner/name@sha" target (an untrusted repository) runs only inside its
+network-less container, through run_sweep(method="agentic"), with the whole project in scope.
+
+The record goes to results/raw/case_studies/NAME/: summary.json (brief, candidates by category
+and decision, packages by outcome, lines and files removed, tests before and after, probe
+coverage, LLM requests and tokens, time, lessons), diffstat.txt, and copies of
 CLEANUP_REPORT.md, blueprint.md, report.json and events.jsonl.
 """
 
@@ -78,6 +81,28 @@ def record(result: dict, seconds: float) -> dict:
     }
 
 
+def run_container(args, out: Path) -> dict:
+    """An untrusted repository runs only inside the AIDev container (network off for the
+    tests): the agent team via run_sweep(method="agentic"), the whole project in scope."""
+    from cleansweep.core.io import save_json
+    from cleansweep.workflow import run_sweep
+
+    cfg = load_config({"reviewer": {"scope": "repo"}})
+    cfg["agent_out"] = str(out)
+    out.mkdir(parents=True, exist_ok=True)
+    report = run_sweep(args.path, cfg, method="agentic")
+    save_json(report, out / "report.json")
+    agentic = report.stats["agentic"]
+    return {
+        "out": str(out),
+        "report": report,
+        "summary": {"verdict": agentic["verdict"]},
+        "branch": None,
+        "workspace": None,
+        "base": None,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("path")
@@ -91,6 +116,38 @@ def main(argv: list[str] | None = None) -> int:
     dest = ROOT / "results" / "raw" / "case_studies" / args.name
     dest.mkdir(parents=True, exist_ok=True)
     start = time.time()
+    if args.path.startswith("aidev:"):
+        result = run_container(args, out)
+        summary = record(result, time.time() - start)
+        stat = subprocess.run(
+            ["git", "apply", "--stat", "-"],
+            input=result["report"].stats["final_diff"],
+            capture_output=True,
+            text=True,
+        )
+        (dest / "diffstat.txt").write_text(stat.stdout)
+        (dest / "final.diff").write_text(result["report"].stats["final_diff"])
+        for name in COPY:
+            if (out / name).exists():
+                shutil.copy(out / name, dest / name)
+        (dest / "summary.json").write_text(json.dumps(summary, indent=1, default=str))
+        print(
+            json.dumps(
+                {
+                    k: summary[k]
+                    for k in (
+                        "verdict",
+                        "seconds",
+                        "candidates",
+                        "packages",
+                        "lines_removed",
+                        "files_removed",
+                        "llm_requests",
+                    )
+                }
+            )
+        )
+        return 0 if summary["verdict"] in ("everything runs", "nothing applied") else 1
     result = clean_project(
         args.path,
         load_config(),

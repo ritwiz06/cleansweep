@@ -166,7 +166,8 @@ def probe_with_coverage(
         ws.path, changes, items, graph, int(_setting(cfg, "max_targets"))
     )
     if not targets and not checks:
-        return None, {"coverage": None, "rounds": 0, "targets": 0, "note": "nothing to probe"}
+        info = {"coverage": None, "rounds": 0, "targets": 0, "cases_by_target": {}}
+        return None, {**info, "note": "nothing to probe"}
     mode = probe_mode(ws, cfg)
     probes, note = get_probes(targets, llm, cfg, mode)
     wanted = target_statements(ws, start, changes, targets)
@@ -206,17 +207,31 @@ def probe_with_coverage(
                         all_targets.append(clone)
                         all_probes[clone.key] = extra[t.key]
                 used += 1
-        outcome = probe_versions(
-            at(start), at(after_sha), all_targets, checks, all_probes, paths, cfg
-        )
+        first: list[dict] = []
+
+        def before(spec: dict, files: dict[str, str]) -> dict:
+            out = at(start)(spec, files)
+            first.append(out)
+            return out
+
+        outcome = probe_versions(before, at(after_sha), all_targets, checks, all_probes, paths, cfg)
     finally:
         ws.rollback(after_sha)
     probed = sum(t.key in all_probes for t in targets)
+    # cases each target's probes ran on the before version (follow-up rounds count for their
+    # target): a rewrite is verified only by cases against its own target, not by module checks
+    cases: dict[str, int] = {}
+    with_probes = [t for t in all_targets if t.key in all_probes]
+    for i, t in enumerate(with_probes):
+        result = (first[0].get("probes", {}) if first else {}).get(f"t{i}") or {}
+        key = t.key.split("#r")[0]
+        cases[key] = cases.get(key, 0) + (len(result.get("cases", {})) if result.get("ok") else 0)
     info = {
         "coverage": reached,
         "rounds": used,
         "targets": len(targets),
         "target_lines": sum(len(s) for s in wanted.values()),
+        "cases_by_target": cases,
         "note": f"{probed}/{len(targets)} targets probed, {len(checks)} module checks ({mode} mode)"
         + (f"; {note}" if note else ""),
     }

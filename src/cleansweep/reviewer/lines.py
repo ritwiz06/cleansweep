@@ -335,6 +335,23 @@ def code_runs(block: list[str]) -> list[tuple[int, int]]:
     return runs
 
 
+METADATA_START = re.compile(r"^# /// [A-Za-z0-9-]+\s*$")
+METADATA_END = re.compile(r"^# ///\s*$")
+
+
+def metadata_lines(lines: list[str]) -> set[int]:
+    """Line numbers inside inline script metadata blocks (PEP 723: `# /// script` ... `# ///`),
+    which tools like uv read; their `# dependencies = [...]` lines are not commented-out code."""
+    out, start = set(), None
+    for n, line in enumerate(lines, 1):
+        if start is None and METADATA_START.match(line):
+            start = n
+        elif start is not None and METADATA_END.match(line):
+            out.update(range(start, n + 1))
+            start = None
+    return out
+
+
 def detect_commented_code(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
     """Runs of comment lines that parse as Python statements (prose around them stays)."""
     items = []
@@ -342,10 +359,11 @@ def detect_commented_code(repo_dir: str, paths: list[str] | None = None) -> list
         lines = _lines(repo_dir, path)
         if lines is None:
             continue
+        meta = metadata_lines(lines)
         comments = [
             c
             for c in _comments("".join(lines))
-            if not SKIP_COMMENT.match(c[2]) and not TODO.search(c[2])
+            if not SKIP_COMMENT.match(c[2]) and not TODO.search(c[2]) and c[0] not in meta
         ]
         blocks: list[list[tuple[int, int, str]]] = []
         for c in comments:
