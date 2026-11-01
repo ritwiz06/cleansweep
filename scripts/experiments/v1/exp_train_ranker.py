@@ -3,10 +3,10 @@
     python scripts/experiments/v1/exp_train_ranker.py
 
 With at least 300 labeled rows covering both classes (and 3+ repositories): histogram
-gradient boosting, calibrated, GroupKFold by repository; writes results/summary/ranker_cv.csv,
-results/figures/ranker_reliability.png and results/models/ranker.joblib (set exp.ranker_path to
+gradient boosting, calibrated, GroupKFold by repository; writes results/summary/v1/ranker_cv.csv,
+results/figures/v1/ranker_reliability.png and results/models/ranker.joblib (set exp.ranker_path to
 use it). Otherwise the ranker keeps its category priors and the reason is printed and saved in
-results/summary/ranker_status.json.
+results/summary/v1/ranker_status.json.
 """
 
 from __future__ import annotations
@@ -25,13 +25,13 @@ def main() -> int:
     result = train_ranker(
         labels,
         ROOT / "results" / "models" / "ranker.joblib",
-        ROOT / "results" / "summary" / "ranker_cv.csv",
-        ROOT / "results" / "figures" / "ranker_reliability.png",
+        ROOT / "results" / "summary" / "v1" / "ranker_cv.csv",
+        ROOT / "results" / "figures" / "v1" / "ranker_reliability.png",
     )
     result["label_rows"] = len(labels)
     result["positives"] = int(labels.label.sum()) if len(labels) else 0
-    (ROOT / "results" / "summary").mkdir(parents=True, exist_ok=True)
-    (ROOT / "results" / "summary" / "ranker_status.json").write_text(
+    (ROOT / "results" / "summary" / "v1").mkdir(parents=True, exist_ok=True)
+    (ROOT / "results" / "summary" / "v1" / "ranker_status.json").write_text(
         json.dumps(result, indent=1) + "\n"
     )
     print(json.dumps(result))

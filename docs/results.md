@@ -2,7 +2,7 @@
 
 Every result in detail: what was run, the numbers, and where the files are.
 [experiments.md](experiments.md) has the commands, code versions and runtimes;
-`results/summary/` has the CSVs.
+`results/summary/v1/` has the CSVs.
 
 ## Answer keys: toy repo and demo app
 
@@ -104,7 +104,7 @@ agent-written code itself the detectors found no dead code, unused imports or du
 - Cost: 14 live LLM calls (about 23k prompt and 46k completion tokens) for the first method on each
   patch, plus 8 for the gatekeeper rerun after #26; the other methods were answered from the
   cache. The hidden checks add about 0.9 minutes
-  per patch. Tables: `docs/report/tables/swebench_tier1*.md`.
+  per patch. Tables: `results/summary/v1/swebench_tier1*.md`.
 
 ## SWE-bench Tier 2
 
@@ -138,7 +138,7 @@ Mean per target and 95% bootstrap CI (2,000 resamples). "Answer keys" pools the 
 demo app (one target each). Invalid output = one-shot replies that couldn't be applied: they are
 left out of the means and counted apart (there were none). Flaky hidden = hidden changes that
 another method's identical edits did not repeat; they are left out of the hidden-changed mean.
-`scripts/experiments/v1/exp_collect.py` then `scripts/experiments/v1/exp_tables.py`; files in `results/summary/`.
+`scripts/experiments/v1/exp_collect.py` then `scripts/experiments/v1/exp_tables.py`; files in `results/summary/v1/`.
 
 | target set | method | n | lines removed | edits | hidden changed | flaky hidden | test runs | minutes (median) |
 |---|---|---|---|---|---|---|---|---|
@@ -162,7 +162,7 @@ another method's identical edits did not repeat; they are left out of the hidden
 | SWE-bench Tier 2 | `one_shot_compile` | 57 | 27.8 [19.0, 38.9] | 1.5 [1.1, 1.8] | 0.04 [0.00, 0.09] | 0 | 3.0 | 1.4 |
 | SWE-bench Tier 2 | `one_shot_retry` | 57 | 30.1 [21.0, 41.0] | 1.6 [1.3, 2.0] | 0.09 [0.02, 0.18] | 0 | 3.0 | 1.5 |
 
-`results/figures/safety_vs_yield.png` plots lines removed against the hidden-change rate per
+`results/figures/v1/safety_vs_yield.png` plots lines removed against the hidden-change rate per
 method, with 95% CIs.
 
 **The one-shot series at stated yield** (`oneshot_series.md`; each variant against gatekeeper,
@@ -195,7 +195,7 @@ Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 
 ## Why one-shot breaks things
 
-`scripts/experiments/v1/exp_oneshot_breakages.py` (`results/summary/oneshot_breakages.{csv,md}`) applies each
+`scripts/experiments/v1/exp_oneshot_breakages.py` (`results/summary/v1/oneshot_breakages.{csv,md}`) applies each
 one-shot diff that changed hidden behavior in its workspace (Docker, no LLM) and classifies what
 broke. There are 12 such runs, 3 on Tier 1 and 9 on Tier 2; the Tier 1 patches are also in
 Tier 2 and got the same diffs, so 9 are distinct.
@@ -215,7 +215,7 @@ Tier 2 and got the same diffs, so 9 are distinct.
 
 ## The Guard as a filter on one-shot edits
 
-`scripts/experiments/v1/exp_guard_on_oneshot.py` (`results/summary/guard_on_oneshot.{csv,md}`) runs
+`scripts/experiments/v1/exp_guard_on_oneshot.py` (`results/summary/v1/guard_on_oneshot.{csv,md}`) runs
 `verify(agent patch, agent patch + one-shot diff)` with the tests and then runner-mode probes,
 on every patch where one-shot applied edits. It ran in a frozen clone at 2ad7387 on
 2026-10-27, 23:54 to 00:40.
@@ -237,7 +237,7 @@ on every patch where one-shot applied edits. It ran in a frozen clone at 2ad7387
 ## Guard strength
 
 How often `verify` (tests, then probes) rejects a change that should be rejected
-(`scripts/experiments/v1/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-27), with the
+(`scripts/experiments/v1/exp_guard_strength.py`, `results/summary/v1/guard_strength.csv`, 2026-10-27), with the
 probes in direct and in runner mode (see [architecture.md](architecture.md#what-the-guard-checks)).
 
 | Target | Experiment | n | Direct: caught (tests / only probes) | Runner: caught (tests / only probes) |
@@ -281,7 +281,7 @@ and/or, return None.
 
 The five methods on the 20 AIDev repositories at their head sha (`exp_swebench.py` on
 `data/splits/aidev_repos.json`; `exp_collect.py`, `exp_tables.py`, `exp_aidev_summary.py`;
-`results/summary/main_table.md` and `aidev_sweeps.md`). The Reviewer looks only at the code
+`results/summary/v1/main_table.md` and `aidev_sweeps.md`). The Reviewer looks only at the code
 agent pull requests wrote (first-parent blame). Hidden checks are pytest tests that a second
 model (glm-5-3) writes for the public functions in up to six agent files, once per repository,
 kept if stable over 3 runs.
@@ -387,7 +387,7 @@ removals "checked statically only".
 
 CleanSweep on a copy of its own repository at a439dcd: the whole repository except
 `tests/fixtures/`, `demo/`, `results/` and `data/`, with the offline test suite as the Guard's
-tests (`scripts/experiments/v1/exp_self_sweep.py`, `results/summary/self_sweep.csv`). Both modes found 139
+tests (`scripts/experiments/v1/exp_self_sweep.py`, `results/summary/v1/self_sweep.csv`). Both modes found 139
 items. The Guard kept all 124 format edits, 15 items stayed in the suggest lane in gatekeeper
 mode (7 by the judge), and in advisory mode the probes rolled back the one duplicate merge that
 reached the Guard (`kept_label` and `repos_label` print different text). We applied none of the
@@ -407,7 +407,7 @@ total, 626 from agent PRs) and the static detectors, measured at up to 40 commit
 (`scripts/experiments/v1/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
 **Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
-repositories; `scripts/experiments/v1/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
+repositories; `scripts/experiments/v1/exp_scheduler_tradeoff.py`, `results/figures/v1/scheduler_tradeoff.png`):
 
 | Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |
 |---|---|---|---|---|
@@ -426,14 +426,14 @@ exist at the last commit and are no longer flagged, because a later commit start
 - Taxonomy: 15 clusters. Rules: 64 with lift ≥ 1.2 (`results/data_summary/`).
 - The runnable repositories have almost no human review, so labels come from all repositories with a request: **9,416 units, 262 removal requests, 79 repositories** (static analysis only).
 
-**Reviewer detection vs. those requests** (`results/summary/reviewer_detection.csv`,
+**Reviewer detection vs. those requests** (`results/summary/v1/reviewer_detection.csv`,
 `results/data_summary/detection_by_category.csv`):
 - Overall: precision 0.024, recall 0.075 (19 of 253 requested units are flagged by some detector).
 - By kind of request, the detectors almost never flag a requested unit under its own category: dead code 1 of 119, wrappers 0 of 31, duplicates 0 of 20, leftover files 0 of 5, unused imports 0 of 3.
 - When they do flag one, it is mostly under another category: requested dead code is flagged as a duplicate 5 times and as dead code once.
 - The largest cluster of requests ("remove, line, just, suggestion", 242 requests) is about lines inside functions (comments, try/except blocks, assertions). The unit-level detectors don't look at those: recall 0.025.
 
-**Ranker: a negative result** (`results/summary/ranker_report.md`).
+**Ranker: a negative result** (`results/summary/v1/ranker_report.md`).
 - Calibrated gradient boosting, cross-validated by repository, on the 9,416 labeled units.
 - Out-of-fold scores: AUC 0.607; average precision 0.047 against a base rate of 0.028; Brier 0.0269 against 0.0271 for always predicting the base rate.
 - Unit size (`loc`) carries most of the signal: the request rate rises from 0.9% for the smallest quarter of units to 5.5% for the largest. That is about where reviewers look.

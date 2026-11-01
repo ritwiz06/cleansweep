@@ -19,7 +19,7 @@ results/raw/shotgun_ui/ are reused, so only a missing variant needs Docker.
 The shotgun reports default to the scoped AIDev reruns in ../cleansweep-archive
 (scripts/experiments/v1/archive_paths.py).
 
-Writes results/raw/shotgun_ui/<variant>.json and results/summary/shotgun_ui.csv.
+Writes results/raw/shotgun_ui/<variant>.json and results/summary/v1/shotgun_ui.csv.
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ POLICIES = {
 }
 HARNESS = Path(__file__).resolve().parent / "shotgun_ui_harness.py"
 RAW = ROOT / "results" / "raw" / "shotgun_ui"
-OUT = ROOT / "results" / "summary" / "shotgun_ui.csv"
+OUT = ROOT / "results" / "summary" / "v1" / "shotgun_ui.csv"
 FIELDS = [
     "variant",
     "method",

@@ -7,7 +7,7 @@ Reads the AIDev sweep reports (exp_swebench.py on data/splits/aidev_repos.json):
 folder, then the rerun folders for runs missing there (as exp_collect.py does), with the
 second-model hidden tests from each folder's copy (.cleansweep/hidden_tests in a run copy,
 llm_caches/<copy>/hidden_tests in ../cleansweep-archive, where the folders default to). Writes
-results/summary/aidev_sweeps.csv (one row per method and category) and aidev_sweeps.md:
+results/summary/v1/aidev_sweeps.csv (one row per method and category) and aidev_sweeps.md:
 items proposed and applied by category, with the net lines their edits remove (are there
 code-level items, not just files?), rollbacks by the check that caused them (tests, probes,
 compile), runs with over 100 applied edits by category, per repository the second-model hidden
@@ -36,7 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from archive_paths import aidev_folders, check_defaults, hidden_tests_root  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT / "results" / "summary" / "aidev_sweeps"
+OUT = ROOT / "results" / "summary" / "v1" / "aidev_sweeps"
 METHODS = [
     "cleansweep-gatekeeper",
     "cleansweep-advisory",

@@ -15,7 +15,7 @@ Probes run in core.guard.probe_mode (auto: runner on SWE-bench, direct on local 
 --probe-mode says otherwise. One JSON of records per target and probe mode in
 results/raw/guard_strength/ (`<set>__<target>__<mode>.json`; a later run with other
 --experiments adds its records to the same file), and a summary by target set, experiment and
-probe mode in results/summary/guard_strength.csv.
+probe mode in results/summary/v1/guard_strength.csv.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ from cleansweep.sandbox.swebench_docker import drop_files, patch_files
 
 ROOT = Path(__file__).resolve().parents[3]
 RAW = ROOT / "results" / "raw" / "guard_strength"
-SUMMARY = ROOT / "results" / "summary" / "guard_strength.csv"
+SUMMARY = ROOT / "results" / "summary" / "v1" / "guard_strength.csv"
 EXPERIMENTS = ("mutation", "recall", "false_alarm")
 
 

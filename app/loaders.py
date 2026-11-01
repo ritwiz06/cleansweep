@@ -139,7 +139,7 @@ def compare_reports(folder: str | Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-SUMMARY = Path(__file__).resolve().parents[1] / "results" / "summary"
+SUMMARY = Path(__file__).resolve().parents[1] / "results" / "summary" / "v1"
 
 
 def load_replay(folder: str | Path = SUMMARY) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:

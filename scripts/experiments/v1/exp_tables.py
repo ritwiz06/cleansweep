@@ -2,9 +2,9 @@
 
     python scripts/experiments/v1/exp_tables.py
 
-Reads results/summary/main_results.csv (from exp_collect.py) and guard_strength.csv. Writes
-results/summary/{main_table,paired_tests,oneshot_series,ablation}.{csv,md} and
-results/figures/*.png.
+Reads results/summary/v1/main_results.csv (from exp_collect.py) and guard_strength.csv. Writes
+results/summary/v1/{main_table,paired_tests,oneshot_series,ablation}.{csv,md} and
+results/figures/v1/*.png.
 Toy and demo are one target each, so they are pooled as "answer keys" for intervals and tests.
 Hidden changes marked flaky or overload_suspect (see exp_collect) count as no outcome. On AIDev,
 where format edits can add more lines than they remove, the yield is lines_removed_code (lines
@@ -28,8 +28,8 @@ from cleansweep.eval.stats import bootstrap_ci, mcnemar, wilcoxon  # noqa: E402
 ROOT = Path(__file__).resolve().parents[3]
 # CLEANSWEEP_RESULTS points the tables at another results folder (reproduce_tables.sh DIR)
 RESULTS = Path(os.environ.get("CLEANSWEEP_RESULTS", ROOT / "results"))
-SUMMARY = RESULTS / "summary"
-FIGURES = RESULTS / "figures"
+SUMMARY = RESULTS / "summary" / "v1"
+FIGURES = RESULTS / "figures" / "v1"
 REFERENCE = "cleansweep-gatekeeper"
 METHOD_ORDER = [
     "cleansweep-gatekeeper",

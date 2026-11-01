@@ -27,7 +27,7 @@ table = guard_strength_table(rows)
 experiments = [e for e in table.experiment.unique() if not e.startswith("false alarms")]
 st.subheader("Caught by the tests vs. only by the probes")
 st.dataframe(table[table.experiment.isin(experiments)], hide_index=True, width="stretch")
-figure = ROOT / "results" / "figures" / "guard_strength.png"
+figure = ROOT / "results" / "figures" / "v1" / "guard_strength.png"
 if figure.exists():
     st.image(str(figure), caption="Share of mutants caught, by target set and probe mode")
 

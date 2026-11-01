@@ -29,7 +29,7 @@ sets = list(dict.fromkeys(table["target set"]))
 chosen = st.sidebar.multiselect("Target sets", sets, default=sets)
 st.subheader("Main table")
 st.dataframe(table[table["target set"].isin(chosen)], hide_index=True, width="stretch")
-figure = ROOT / "results" / "figures" / "main_lines_removed.png"
+figure = ROOT / "results" / "figures" / "v1" / "main_lines_removed.png"
 if figure.exists():
     st.image(str(figure), caption="Lines removed per target (mean, 95% CI)")
 

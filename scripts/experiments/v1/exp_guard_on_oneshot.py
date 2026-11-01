@@ -14,7 +14,7 @@ any other run is a false alarm. The Tier 1 patches are also in Tier 2: a diff th
 both is verified once and reported for both.
 
 One JSON per patch and diff in results/raw/guard_on_oneshot/, one row per run in
-results/summary/guard_on_oneshot.csv and a summary in guard_on_oneshot.md.
+results/summary/v1/guard_on_oneshot.csv and a summary in guard_on_oneshot.md.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from cleansweep.sandbox import open_workspace  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 RAW = ROOT / "results" / "raw" / "guard_on_oneshot"
-SUMMARY = ROOT / "results" / "summary" / "guard_on_oneshot"
+SUMMARY = ROOT / "results" / "summary" / "v1" / "guard_on_oneshot"
 FIELDS = [
     "target_set",
     "target",

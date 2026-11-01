@@ -4,7 +4,7 @@
 
 For every kept repository (data/splits/aidev_repos.json): its history (last 300 first-parent
 commits, agent pull requests marked), then simulate() under each policy, plus "none" (never
-sweep) for reference. Writes results/summary/scheduler_replay.csv and scheduler_curves.csv.
+sweep) for reference. Writes results/summary/v1/scheduler_replay.csv and scheduler_curves.csv.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from cleansweep.data import load_history, load_repos
 from cleansweep.scheduler import simulate
 
 ROOT = Path(__file__).resolve().parents[3]
-SUMMARY = ROOT / "results" / "summary"
+SUMMARY = ROOT / "results" / "summary" / "v1"
 POLICIES = ["none", "every_pr", "every_n", "daily", "adaptive"]
 FIELDS = [
     "repo",
@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         writer.writeheader()
         writer.writerows(curves)
-    print(f"{len(rows)} rows -> results/summary/scheduler_replay.csv")
+    print(f"{len(rows)} rows -> results/summary/v1/scheduler_replay.csv")
     return 0
 
 

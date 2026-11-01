@@ -40,7 +40,7 @@ if tradeoff is not None:
         "95% bootstrap CIs across repositories."
     )
     st.dataframe(tradeoff.drop(columns=["repo_set"], errors="ignore"), hide_index=True)
-    figure = ROOT / "results" / "figures" / "scheduler_tradeoff.png"
+    figure = ROOT / "results" / "figures" / "v1" / "scheduler_tradeoff.png"
     if figure.exists():
         st.image(str(figure), width=640)
 

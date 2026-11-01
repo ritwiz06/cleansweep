@@ -5,7 +5,7 @@
 For every labeled commented commit (data_aidev_mine.py labels), compares the units the static
 detectors flag in the commented files with the units reviewers asked agents to remove, on the
 kept repositories and on all labeled repositories (the kept ones have few review comments).
-Writes results/summary/reviewer_detection.csv (overall and per category).
+Writes results/summary/v1/reviewer_detection.csv (overall and per category).
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ def main() -> int:
         ("all labeled", lambda df: df.repo_id == df.repo_id),
     ):
         rows += _rows(repos, labels[in_set(labels)], flagged[in_set(flagged)])
-    out = ROOT / "results" / "summary" / "reviewer_detection.csv"
+    out = ROOT / "results" / "summary" / "v1" / "reviewer_detection.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))

@@ -13,7 +13,7 @@ items by category and lane, kept, rolled back by check, lines removed, and the j
 
     python scripts/experiments/v1/exp_self_sweep.py --table [--ref a439dcd]
 
-writes results/summary/self_sweep.csv from the saved reports, one row per mode, plus
+writes results/summary/v1/self_sweep.csv from the saved reports, one row per mode, plus
 format_items_now: the format items today's detector finds on the same copy (format edits follow
 the project's ruff settings since the self-sweep found them ignored).
 """
@@ -37,7 +37,7 @@ from cleansweep.workflow import run_sweep
 
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "results" / "raw" / "self_sweep"
-TABLE = ROOT / "results" / "summary" / "self_sweep.csv"
+TABLE = ROOT / "results" / "summary" / "v1" / "self_sweep.csv"
 CATEGORIES = ["format", "dead_code", "duplicate", "security", "other"]
 EXCLUDE = ["tests/fixtures/", "demo/", "results/", "data/", ".notes/"]
 OFFLINE = '-m "not llm and not docker and not network and not slow"'

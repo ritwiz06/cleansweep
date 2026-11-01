@@ -18,13 +18,13 @@ callbacks when a callback is among its rolled-back items. Hours = those test run
 median test time. Flaky failures and edits that only apply after another one add checks the
 rebuild can't see, so its failed test runs are a lower bound. No sweep, no LLM, no Docker.
 
-The UI columns come from exp_shotgun_ui.py (results/summary/shotgun_ui.csv): screens and
+The UI columns come from exp_shotgun_ui.py (results/summary/v1/shotgun_ui.csv): screens and
 widgets whose snapshot changed, as run and with the framework rule and the final policy.
 
 The shotgun reports default to the scoped AIDev reruns in ../cleansweep-archive
 (scripts/experiments/v1/archive_paths.py).
 
-Writes results/summary/framework_callbacks.csv (one row per method).
+Writes results/summary/v1/framework_callbacks.csv (one row per method).
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ PROJECT = "shotgun"
 METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
 PREFIXES = ("on_", "action_", "watch_", "compute_", "validate_", "handle_")
 NAMES = {"compose", "render"}
-OUT = ROOT / "results" / "summary" / "framework_callbacks.csv"
+OUT = ROOT / "results" / "summary" / "v1" / "framework_callbacks.csv"
 FIELDS = [
     "method",
     "safe_items",
@@ -76,7 +76,7 @@ FIELDS = [
     "ui_changed_framework",
     "ui_changed_final",
 ]
-UI = ROOT / "results" / "summary" / "shotgun_ui.csv"
+UI = ROOT / "results" / "summary" / "v1" / "shotgun_ui.csv"
 
 
 def _name(node: ast.expr) -> str:

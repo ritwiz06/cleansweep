@@ -15,9 +15,9 @@ def test_reproduce_tables_rebuilds_the_fixture_tables_exactly(tmp_path):
     subprocess.run(
         ["bash", "scripts/reproduce_tables.sh", str(results)], cwd=ROOT, env=env, check=True
     )
-    for path in sorted((FIXTURE / "summary").iterdir()):
-        assert (results / "summary" / path.name).read_bytes() == path.read_bytes(), path.name
-    figures = {p.name for p in (results / "figures").glob("*.png")}
+    for path in sorted((FIXTURE / "summary" / "v1").iterdir()):
+        assert (results / "summary" / "v1" / path.name).read_bytes() == path.read_bytes(), path.name
+    figures = {p.name for p in (results / "figures" / "v1").glob("*.png")}
     assert figures == {
         "guard_strength.png",
         "main_lines_removed.png",

@@ -12,7 +12,7 @@ applied), runs the tests, then makes the removed packages unavailable (Workspace
 a package another installed one requires stays, since the edited requirements would still
 install it) and runs the tests again. When they fail, each hidden package is tried alone.
 
-Writes results/summary/aidev_dependency_check.csv: one row per removed package, with its state
+Writes results/summary/v1/aidev_dependency_check.csv: one row per removed package, with its state
 (hidden, not installed, or required by another package), whether the removal is verified, and
 which methods applied it. The packages that require it are printed, not written: they are names
 from the repositories' environments.
@@ -35,7 +35,7 @@ from cleansweep.sandbox import open_workspace  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 METHODS = ["cleansweep-gatekeeper", "cleansweep-advisory", "guard_tests_only"]
-OUT = ROOT / "results" / "summary" / "aidev_dependency_check.csv"
+OUT = ROOT / "results" / "summary" / "v1" / "aidev_dependency_check.csv"
 FIELDS = ["repo", "package", "state", "verified", "new_failures", "methods"]
 
 

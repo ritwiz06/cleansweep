@@ -2,11 +2,11 @@
 
     python scripts/experiments/v1/exp_scheduler_tradeoff.py
 
-Reads results/summary/scheduler_replay.csv (exp_replay.py). Per repository, the slop-debt
+Reads results/summary/v1/scheduler_replay.csv (exp_replay.py). Per repository, the slop-debt
 reduction of a policy is 1 - its slop debt / the debt of never sweeping. Per policy: mean and
 95% bootstrap CI across repositories for the reduction and the estimated test runs, plus the mean
-resurrection rate. Writes results/summary/scheduler_tradeoff.csv and
-results/figures/scheduler_tradeoff.png.
+resurrection rate. Writes results/summary/v1/scheduler_tradeoff.csv and
+results/figures/v1/scheduler_tradeoff.png.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ from cleansweep.eval.stats import bootstrap_ci  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 RESULTS = Path(os.environ.get("CLEANSWEEP_RESULTS", ROOT / "results"))
-REPLAY = RESULTS / "summary" / "scheduler_replay.csv"
-OUT = RESULTS / "summary" / "scheduler_tradeoff.csv"
-FIGURE = RESULTS / "figures" / "scheduler_tradeoff.png"
+REPLAY = RESULTS / "summary" / "v1" / "scheduler_replay.csv"
+OUT = RESULTS / "summary" / "v1" / "scheduler_tradeoff.csv"
+FIGURE = RESULTS / "figures" / "v1" / "scheduler_tradeoff.png"
 POLICIES = ["every_pr", "every_n", "daily", "adaptive"]
 NAMES = {
     "every_pr": "after every agent PR",
