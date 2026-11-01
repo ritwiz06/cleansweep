@@ -20,4 +20,4 @@ jobs:
       - name: Tests
         run: pytest -q -m "not llm and not docker and not network and not slow"
       - name: Contracts
-        run: python scripts/check_contracts.py
+        run: python scripts/tools/check_contracts.py

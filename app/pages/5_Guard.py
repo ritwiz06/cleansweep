@@ -13,7 +13,7 @@ st.set_page_config(page_title="CleanSweep · Guard", layout="wide")
 st.title("Guard strength")
 rows = load_csv("guard_strength.csv")
 if rows is None:
-    st.info("No measurement yet. Run `python scripts/exp_guard_strength.py`.")
+    st.info("No measurement yet. Run `python scripts/experiments/v1/exp_guard_strength.py`.")
     st.stop()
 
 st.caption(

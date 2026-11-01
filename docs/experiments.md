@@ -13,7 +13,7 @@ README and in `results/summary/`.
 - The frozen clones are gone; their reports and caches are kept outside the repository in
   `../cleansweep-archive/` (`raw/<clone>/results_raw/<folder>/`, `llm_caches/<clone>/`). The raw
   reports are not published because they contain third-party code. Scripts that read them
-  default to the archive folders (`scripts/archive_paths.py`); their folder flags override that,
+  default to the archive folders (`scripts/experiments/v1/archive_paths.py`); their folder flags override that,
   and a default folder that is missing stops the script with the flag to pass.
 - Runtimes are wall-clock on the [reference machine](#requirements) and include contention when
   two jobs shared it. Model names are those our LLM endpoint served at the time.
@@ -81,7 +81,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
   The demo check used `--target demo/shop_app` with `CLEANSWEEP_OVERENGINEERING=0`. The seed only
   labels repeat runs; the judge never receives it. Main checkout, 2026-10-24; commits not recorded.
 - **Outputs:** `results/raw/judge_bakeoff/`, `judge_check/`, `demo_check/`; tables
-  `docs/report/tables/judge_checks.md` and `judge_check_runs.md` (`python docs/report/make_assets.py`).
+  `docs/report/tables/judge_checks.md` and `judge_check_runs.md` (`python scripts/report/make_assets.py`).
 - **Runtime:** 1.5–9 min per sweep; judge requests took 40–260 s each, depending on endpoint load.
 - **Models:** first comparison, one run each: `qwen36-27b`, `qwen36-35b-a3b`, `qwen3-235b-a22b`,
   `qwen3-coder-next`, `kimi-k2-7-code`. Answer-key check, three runs each at temperature 0:
@@ -90,7 +90,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
 
 ### SWE-bench Tier 1
 
-- **Run:** `python scripts/exp_swebench.py --tier data/splits/swebench_tier1.json --out results/raw/swebench_t1 [--methods ...] [--resume]`
+- **Run:** `python scripts/experiments/v1/exp_swebench.py --tier data/splits/swebench_tier1.json --out results/raw/swebench_t1 [--methods ...] [--resume]`
 - **Code version:** four methods at main 9c536a5 (2026-10-26; the script was then
   `exp_swebench_tier1.py`). Gatekeeper rerun after the judge-signal fix on the PR #29 branch
   (merged as 1fd53e9); `one_shot_llm` with JSON replies on the PR #36 branch (merged as a2e0883);
@@ -106,7 +106,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
 
 ### SWE-bench Tier 2
 
-- **Run:** `python scripts/exp_swebench.py --tier data/splits/swebench_tier2.json --out results/raw/swebench_t2 [--resume]`
+- **Run:** `python scripts/experiments/v1/exp_swebench.py --tier data/splits/swebench_tier2.json --out results/raw/swebench_t2 [--resume]`
 - **Code version:** main at 07a4dad (after PR #28), 2026-10-26/27. A second clone at 83e3b00 (after
   PR #39) ran `one_shot_llm` on all reported patches (`results/raw/swebench_t2_oneshot/`) and every
   method on the 4 patches that failed under 07a4dad (`results/raw/swebench_t2_rerun/`).
@@ -126,10 +126,10 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
 
 - **Run:**
   ```bash
-  python scripts/exp_swebench.py --tier data/splits/aidev_repos.json --out results/raw/aidev_sweeps --resume
-  python scripts/exp_swebench.py --tier data/splits/aidev_repos.json --out results/raw/aidev_sweeps --hidden-only
-  python scripts/data_aidev_scope.py --backfill results/raw/aidev_sweeps   # reports from before PR #53
-  python scripts/exp_aidev_summary.py --runs results/raw/aidev_sweeps [rerun folders ...]
+  python scripts/experiments/v1/exp_swebench.py --tier data/splits/aidev_repos.json --out results/raw/aidev_sweeps --resume
+  python scripts/experiments/v1/exp_swebench.py --tier data/splits/aidev_repos.json --out results/raw/aidev_sweeps --hidden-only
+  python scripts/data/data_aidev_scope.py --backfill results/raw/aidev_sweeps   # reports from before PR #53
+  python scripts/experiments/v1/exp_aidev_summary.py --runs results/raw/aidev_sweeps [rerun folders ...]
   ```
   `--hidden-only` reruns the hidden checks of reports whose diff did not apply.
 - **Code version:** main at 06d2ab6 (after PR #44) from 2026-10-28, one worker, then two (the 15
@@ -158,9 +158,9 @@ alarms on identical copies, all through `guard.verify`.
 
 - **Run:**
   ```bash
-  python scripts/exp_guard_strength.py --local tests/fixtures/toy_repo .cleansweep/demo/shop_app --resume
-  python scripts/exp_guard_strength.py --tier data/splits/swebench_tier1.json --probe-mode direct --resume
-  python scripts/exp_guard_strength.py --tier data/splits/swebench_tier1.json --probe-mode runner --resume
+  python scripts/experiments/v1/exp_guard_strength.py --local tests/fixtures/toy_repo .cleansweep/demo/shop_app --resume
+  python scripts/experiments/v1/exp_guard_strength.py --tier data/splits/swebench_tier1.json --probe-mode direct --resume
+  python scripts/experiments/v1/exp_guard_strength.py --tier data/splits/swebench_tier1.json --probe-mode runner --resume
   ```
   The demo target needs `bash demo/prepare_demo.sh --with-feature` first. The Tier 2 part (runner
   mode, the 47 reported patches outside Tier 1) used `--tier` with Tier 2 patches; the exact
@@ -185,10 +185,10 @@ compile errors back once and applies the second reply.
 
 - **Run:**
   ```bash
-  python scripts/exp_swebench.py --tier <split> --out <folder> --methods one_shot_llm --resume
-  python scripts/exp_oneshot_compile.py        # no LLM, no Docker
-  python scripts/exp_swebench.py --tier <retry split> --out results/raw/oneshot_retry --methods one_shot_retry
-  python scripts/exp_oneshot_breakages.py      # what breaking diffs changed; Docker, no LLM
+  python scripts/experiments/v1/exp_swebench.py --tier <split> --out <folder> --methods one_shot_llm --resume
+  python scripts/experiments/v1/exp_oneshot_compile.py        # no LLM, no Docker
+  python scripts/experiments/v1/exp_swebench.py --tier <retry split> --out results/raw/oneshot_retry --methods one_shot_retry
+  python scripts/experiments/v1/exp_oneshot_breakages.py      # what breaking diffs changed; Docker, no LLM
   ```
   The retry split (not committed) holds the 7 patches whose first reply didn't compile: 3 of
   `sympy__sympy-11618`, 3 of `sphinx-doc__sphinx-7454`, 1 of `scikit-learn__scikit-learn-10844`.
@@ -208,7 +208,7 @@ compile errors back once and applies the second reply.
 `verify(agent patch, agent patch + one-shot diff)` with tests and runner-mode probes, for every
 SWE-bench patch where `one_shot_llm` applied edits.
 
-- **Run:** `python scripts/exp_guard_on_oneshot.py --resume` at main 2ad7387 (after PR #42), 2026-10-27/28.
+- **Run:** `python scripts/experiments/v1/exp_guard_on_oneshot.py --resume` at main 2ad7387 (after PR #42), 2026-10-27/28.
 - **Inputs:** the Tier 1 and Tier 2 reports: 57 one-shot runs with edits (8 Tier 1, 49 Tier 2; the
   Tier 1 diffs repeat in Tier 2, so 49 are distinct).
 - **Outputs:** `results/raw/guard_on_oneshot/`; `guard_on_oneshot.csv`, `.md`.
@@ -217,7 +217,7 @@ SWE-bench patch where `one_shot_llm` applied edits.
 
 ### Scheduler replay and trade-off
 
-- **Run:** `python scripts/exp_replay.py [--points 40]`, then `python scripts/exp_scheduler_tradeoff.py`.
+- **Run:** `python scripts/experiments/v1/exp_replay.py [--points 40]`, then `python scripts/experiments/v1/exp_scheduler_tradeoff.py`.
   Replay from PRs #31–#33 (2026-10-26), trade-off from PR #37 (merged as aa15e60, 2026-10-27);
   exact commits not recorded.
 - **Inputs:** the 20 repositories, the last 300 first-parent commits of each (4,695 commits, 626
@@ -233,10 +233,10 @@ and score what the detectors flag.
 
 - **Run:**
   ```bash
-  python scripts/data_aidev_mine.py mine
-  python scripts/data_aidev_mine.py labels --scope requests --hours 1
-  python scripts/exp_train_ranker.py && python scripts/exp_ranker_report.py
-  python scripts/exp_reviewer_detection.py && python scripts/data_detection_by_category.py
+  python scripts/data/data_aidev_mine.py mine
+  python scripts/data/data_aidev_mine.py labels --scope requests --hours 1
+  python scripts/experiments/v1/exp_train_ranker.py && python scripts/experiments/v1/exp_ranker_report.py
+  python scripts/experiments/v1/exp_reviewer_detection.py && python scripts/data/data_detection_by_category.py
   ```
   Mining, labels, ranker and detection from PRs #31–#33 (2026-10-26); ranker report and detection
   by category from PR #37 (2026-10-27). Exact commits not recorded.
@@ -258,7 +258,7 @@ the suggest lane are reversed out of each final diff, lines are recounted, and w
 hidden checks rerun on the filtered diff with the cached second-model tests. Policies: `public_api`
 (`reviewer.keep_public_api`), `framework` (`reviewer.framework_callbacks`), `final` (both).
 
-- **Run:** `python scripts/exp_public_api_policy.py --policy public_api|framework|final --run`
+- **Run:** `python scripts/experiments/v1/exp_public_api_policy.py --policy public_api|framework|final --run`
 - **Code version:** first public-API re-score (17 repositories) at main f2d0bce (after PR #52),
   2026-10-29; the `--policy` option and the 20-repository re-scores on the PR #64 branch
   (merged as ff98c90), 2026-10-29/30.
@@ -278,8 +278,8 @@ snapshots before and after each diff, including the policy-filtered diffs.
 
 - **Run** (after the policy re-scores):
   ```bash
-  python scripts/exp_shotgun_ui.py           # runs scripts/shotgun_ui_harness.py in shotgun's container
-  python scripts/exp_framework_callbacks.py  # offline; reads shotgun_ui.csv for the UI columns
+  python scripts/experiments/v1/exp_shotgun_ui.py           # runs scripts/experiments/v1/shotgun_ui_harness.py in shotgun's container
+  python scripts/experiments/v1/exp_framework_callbacks.py  # offline; reads shotgun_ui.csv for the UI columns
   ```
   PR #64 branch (merged as ff98c90), 2026-10-29.
 - **Outputs:** `results/raw/shotgun_ui/<variant>.json`; `shotgun_ui.csv`, `framework_callbacks.csv`.
@@ -290,7 +290,7 @@ snapshots before and after each diff, including the policy-filtered diffs.
 Applies advisory's final diff (it holds every dependency removal any method applied) in each AIDev
 container, makes the removed packages unavailable and reruns the tests.
 
-- **Run:** `python scripts/exp_dependency_check.py`. A first pass at e7278fa (PR #61 branch) was
+- **Run:** `python scripts/experiments/v1/exp_dependency_check.py`. A first pass at e7278fa (PR #61 branch) was
   replaced by the reported pass with the PR #62 fix (a5e3353, merged as a439dcd), 2026-10-30.
 - **Inputs:** the AIDev reports (18 applied removals in 6 repositories) and their containers.
 - **Outputs:** `aidev_dependency_check.csv`, one row per removed package.
@@ -301,8 +301,8 @@ container, makes the removed packages unavailable and reruns the tests.
 CleanSweep on a `git archive` copy of its own repository, gatekeeper then advisory. The Reviewer
 sees everything except fixtures, demo, results and data; the Guard runs the copy's offline tests.
 
-- **Run:** `python scripts/exp_self_sweep.py --ref main [--modes gatekeeper advisory]` at main
-  a439dcd (after PR #62), 2026-10-30; then `python scripts/exp_self_sweep.py --table --ref a439dcd`
+- **Run:** `python scripts/experiments/v1/exp_self_sweep.py --ref main [--modes gatekeeper advisory]` at main
+  a439dcd (after PR #62), 2026-10-30; then `python scripts/experiments/v1/exp_self_sweep.py --table --ref a439dcd`
   (PR #66) for the table, which also counts the format items today's detector flags on that copy.
 - **Outputs:** `results/raw/self_sweep/<mode>.json`; `results/summary/self_sweep.csv`.
 - **Runtime:** gatekeeper 59 min (18 test runs, 12 LLM requests); advisory 52 min (19 test runs;
@@ -313,13 +313,13 @@ sees everything except fixtures, demo, results and data; the Guard runs the copy
 
 Everything under `data/` except `data/splits/` is gitignored. In order:
 
-1. **PatchDiff.** `python scripts/data_fetch_patchdiff.py` clones PatchDiff at the commit pinned
+1. **PatchDiff.** `python scripts/data/data_fetch_patchdiff.py` clones PatchDiff at the commit pinned
    in `configs/data.yaml` (it holds the three agents' SWE-bench patches), downloads the paper's
    results archive from Zenodo (record 17074796), checks its sha256, extracts it and writes the
    label and hidden-test index.
 2. **SWE-bench Verified** (`SWE-bench/SWE-bench_Verified` on Hugging Face, test split) downloads
-   the first time a script loads it, e.g. `python scripts/data_summary.py`. The tier splits are
-   committed; `python scripts/data_make_splits.py` rewrites them from the index and this cache.
+   the first time a script loads it, e.g. `python scripts/data/data_summary.py`. The tier splits are
+   committed; `python scripts/data/data_make_splits.py` rewrites them from the index and this cache.
 3. **AIDev tables.** The four AIDev-pop tables of the `hao-li/AIDev` dataset; we used revision
    `b8dc67df93e7c11f6f20c84129db7232eb1ec253`:
    ```bash
@@ -327,15 +327,15 @@ Everything under `data/` except `data/splits/` is gitignored. In order:
        pr_review_comments.parquet pr_commits.parquet --repo-type dataset \
        --revision b8dc67df93e7c11f6f20c84129db7232eb1ec253 --local-dir data/raw/aidev
    ```
-4. **AIDev repositories.** `python scripts/data_aidev_select.py` sampled 120 candidates (seed 0),
+4. **AIDev repositories.** `python scripts/data/data_aidev_select.py` sampled 120 candidates (seed 0),
    cloned them and tested each in Docker (about 2 h). Its results are committed
    (`data/splits/aidev_repos.json`, `results/data_summary/aidev_filter.csv`), and a rerun skips
    candidates already in the CSV. To get only the clones the sweeps need, make a blobless clone
    (`git clone --filter=blob:none <clone_url>`, git LFS filters off) of each repository in
    `aidev_repos.json` at `data/raw/aidev/repos/<owner>__<name>`, and check that it still contains
    the recorded `head_sha`.
-5. **AIDev histories.** `python scripts/exp_replay.py` caches each repository's last 300
-   first-parent commits. Then `python scripts/data_aidev_scope.py --extend commaai/opendbc
+5. **AIDev histories.** `python scripts/experiments/v1/exp_replay.py` caches each repository's last 300
+   first-parent commits. Then `python scripts/data/data_aidev_scope.py --extend commaai/opendbc
    PytorchConnectomics/pytorch_connectomics` caches the longer scope histories of the two
    repositories with no agent commit in that window and writes `aidev_scope.csv`.
 6. **Mining and labels**, only for the ranker and detection experiments (commands above).
@@ -371,7 +371,7 @@ Everything under `data/` except `data/splits/` is gitignored. In order:
 - **LLM endpoint:** any OpenAI-compatible endpoint, set in a `.env` file at the repository root
   (never committed): `VOYAGER_API_KEY`, `VOYAGER_BASE_URL`, `VOYAGER_MODEL` (judge, repair,
   probes, one-shot, mining) and `VOYAGER_MODEL_ALT` (AIDev hidden tests).
-  `python scripts/voyager_ping.py` checks the connection. Without a key, sweeps run offline
+  `python scripts/tools/voyager_ping.py` checks the connection. Without a key, sweeps run offline
   (detectors and tests; no judge, repair or probe requests). Probe, one-shot and mining requests
   turn reasoning off with a provider option (`core.guard.probe_extra_body`,
   `exp.one_shot_extra_body`); adjust it for another provider. Requests time out after 600 s.
@@ -401,7 +401,7 @@ on meanwhile:
    one virtual environment across clones; on a laptop, keep the machine awake):
    ```bash
    set -m
-   nohup env PYTHONPATH="$PWD/src" python scripts/exp_swebench.py \
+   nohup env PYTHONPATH="$PWD/src" python scripts/experiments/v1/exp_swebench.py \
        --tier data/splits/swebench_tier2.json --out results/raw/swebench_t2 > job.out 2>&1 &
    disown
    ```
@@ -433,7 +433,7 @@ committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ab
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
 `scheduler_replay.csv`. On a clean checkout, `git status results/` shows no change afterwards.
-`tests/eval/test_reproduce_tables.py` runs it on a small fixture (`tests/fixtures/results_small/`)
+`tests/scripts/test_reproduce_tables.py` runs it on a small fixture (`tests/fixtures/results_small/`)
 and checks that every table comes out byte for byte. Set `PYTHON` to pick the interpreter.
 
 The per-run CSVs need the raw reports, clones, Docker or the LLM, so the script leaves them

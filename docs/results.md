@@ -71,7 +71,7 @@ Reviewer looks only at what the agent's patch wrote (`reviewer.scope`), and so d
 tools-only baseline. Hidden checks run in a fresh container: the instance's FAIL_TO_PASS and
 PASS_TO_PASS tests plus PatchDiff's generated tests for that patch (1 to 38 stable tests per
 patch), which the Guard never sees. 2026-10-26, judge `qwen36-35b-a3b`,
-`scripts/exp_swebench.py --tier data/splits/swebench_tier1.json --out results/raw/swebench_t1`.
+`scripts/experiments/v1/exp_swebench.py --tier data/splits/swebench_tier1.json --out results/raw/swebench_t1`.
 
 | Method | Items found | Edits applied | Files removed | Lines removed | Rolled back | Test runs | Hidden changed | Min per patch |
 |---|---|---|---|---|---|---|---|---|
@@ -108,7 +108,7 @@ agent-written code itself the detectors found no dead code, unused imports or du
 
 ## SWE-bench Tier 2
 
-**57 PatchDiff patches × 5 methods** (`scripts/exp_swebench.py --tier data/splits/swebench_tier2.json`
+**57 PatchDiff patches × 5 methods** (`scripts/experiments/v1/exp_swebench.py --tier data/splits/swebench_tier2.json`
 in a frozen clone of main, 2026-10-26 15:08 to 2026-10-27 21:39 with the reruns). Tier 2 has 60 patches, from 21
 instances in 11 repositories. The three `psf__requests-2317` patches were left out: `requests`'
 own tests call httpbin.org live, so two of them took 2.7 and 3.5 hours, and the third was stopped.
@@ -138,7 +138,7 @@ Mean per target and 95% bootstrap CI (2,000 resamples). "Answer keys" pools the 
 demo app (one target each). Invalid output = one-shot replies that couldn't be applied: they are
 left out of the means and counted apart (there were none). Flaky hidden = hidden changes that
 another method's identical edits did not repeat; they are left out of the hidden-changed mean.
-`scripts/exp_collect.py` then `scripts/exp_tables.py`; files in `results/summary/`.
+`scripts/experiments/v1/exp_collect.py` then `scripts/experiments/v1/exp_tables.py`; files in `results/summary/`.
 
 | target set | method | n | lines removed | edits | hidden changed | flaky hidden | test runs | minutes (median) |
 |---|---|---|---|---|---|---|---|---|
@@ -195,7 +195,7 @@ Paired against cleansweep in gatekeeper mode on SWE-bench (`paired_tests.md`):
 
 ## Why one-shot breaks things
 
-`scripts/exp_oneshot_breakages.py` (`results/summary/oneshot_breakages.{csv,md}`) applies each
+`scripts/experiments/v1/exp_oneshot_breakages.py` (`results/summary/oneshot_breakages.{csv,md}`) applies each
 one-shot diff that changed hidden behavior in its workspace (Docker, no LLM) and classifies what
 broke. There are 12 such runs, 3 on Tier 1 and 9 on Tier 2; the Tier 1 patches are also in
 Tier 2 and got the same diffs, so 9 are distinct.
@@ -215,7 +215,7 @@ Tier 2 and got the same diffs, so 9 are distinct.
 
 ## The Guard as a filter on one-shot edits
 
-`scripts/exp_guard_on_oneshot.py` (`results/summary/guard_on_oneshot.{csv,md}`) runs
+`scripts/experiments/v1/exp_guard_on_oneshot.py` (`results/summary/guard_on_oneshot.{csv,md}`) runs
 `verify(agent patch, agent patch + one-shot diff)` with the tests and then runner-mode probes,
 on every patch where one-shot applied edits. It ran in a frozen clone at 2ad7387 on
 2026-10-27, 23:54 to 00:40.
@@ -237,7 +237,7 @@ on every patch where one-shot applied edits. It ran in a frozen clone at 2ad7387
 ## Guard strength
 
 How often `verify` (tests, then probes) rejects a change that should be rejected
-(`scripts/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-27), with the
+(`scripts/experiments/v1/exp_guard_strength.py`, `results/summary/guard_strength.csv`, 2026-10-27), with the
 probes in direct and in runner mode (see [architecture.md](architecture.md#what-the-guard-checks)).
 
 | Target | Experiment | n | Direct: caught (tests / only probes) | Runner: caught (tests / only probes) |
@@ -291,7 +291,7 @@ kept if stable over 3 runs.
   first, unscoped runs are listed apart in `aidev_sweeps.md` and left out of the tables.
   Fu-Jie/openwebui-extensions got no usable hidden tests, so hidden rates are out of 19.
 - **The agent scope** covers a median 8% of a repository's Python lines (0.6% to 78%;
-  `results/data_summary/aidev_scope.csv`, `scripts/data_aidev_scope.py`).
+  `results/data_summary/aidev_scope.csv`, `scripts/data/data_aidev_scope.py`).
 - **Lines removed leaves out formatting and unused imports.** A `ruff format` edit can add more
   lines than it removes: each CleanSweep method's 126 format edits added 1,719 lines net.
 - **Integrity:** no test-run timeout or out-of-memory kill; 0 overload-suspect runs (first test
@@ -332,7 +332,7 @@ kept if stable over 3 runs.
 The runs above stay as run. Two Reviewer rules added after them are measured by re-scoring: the
 edits a rule would have kept in the suggest lane are taken out of each run's final diff, and the
 hidden checks rerun on the filtered diff with the same cached second-model tests
-(`scripts/exp_public_api_policy.py --policy public_api|framework|final --run`; Docker, no LLM).
+(`scripts/experiments/v1/exp_public_api_policy.py --policy public_api|framework|final --run`; Docker, no LLM).
 
 - **Public API** (`reviewer.keep_public_api: auto`): dead-code edits on public names in package
   modules stay in the suggest lane.
@@ -357,13 +357,13 @@ Files: `aidev_public_api_policy.md`, `aidev_framework_rule.md`, `aidev_final_pol
 
 shotgun is a Textual terminal app. 53 of the 85 detector-safe items in its runs are Textual
 callbacks (`compose`, `on_mount`, `watch_*`, `action_*`): the framework calls them by name, so
-nothing in the project does (`scripts/exp_framework_callbacks.py`, `framework_callbacks.csv`).
+nothing in the project does (`scripts/experiments/v1/exp_framework_callbacks.py`, `framework_callbacks.csv`).
 
 - **Gatekeeper:** the judge vetoed 49 of the 53; none was kept (1 rolled back, 3 could not be applied).
 - **Advisory and `guard_tests_only`:** all 53 reached the Guard; 35 were deleted with every test
   passing and 14 rolled back. Batches with callback edits failed 29 and 31 test runs (3.4 and 3.3
   of the runs' 11.0 and 13.0 hours).
-- **UI check** (`scripts/exp_shotgun_ui.py`, `shotgun_ui.csv`): each of shotgun's 44 Textual
+- **UI check** (`scripts/experiments/v1/exp_shotgun_ui.py`, `shotgun_ui.csv`): each of shotgun's 44 Textual
   screen and widget classes is mounted headless (`App.run_test`) in the AIDev container, for the
   base and for every final diff, and its widget tree is compared; 32 render. As run, 17 classes
   changed under advisory, 16 under `guard_tests_only` and 18 under `tools_only` (gatekeeper and
@@ -376,7 +376,7 @@ nothing in the project does (`scripts/exp_framework_callbacks.py`, `framework_ca
 Removing a line from `pyproject.toml` uninstalls nothing, so the tests were the only check on
 the 18 unused-dependency removals the sweeps applied. The Guard now reruns the tests with each
 removed package's installed files moved aside, unless another installed package still requires
-it (#2; `scripts/exp_dependency_check.py`, `aidev_dependency_check.csv`). Re-checked this way,
+it (#2; `scripts/experiments/v1/exp_dependency_check.py`, `aidev_dependency_check.csv`). Re-checked this way,
 **14 of 18 removals hold** (gatekeeper 13 of 15, advisory and `guard_tests_only` 14 of 18): 2 with
 the package gone, 1 never installed, 11 still required by another package. **4 break tests**:
 haliax `aqtp`, and Skill_Seekers `PyGithub`, `PyMuPDF` and `html5lib`. The hidden checks missed
@@ -387,7 +387,7 @@ removals "checked statically only".
 
 CleanSweep on a copy of its own repository at a439dcd: the whole repository except
 `tests/fixtures/`, `demo/`, `results/` and `data/`, with the offline test suite as the Guard's
-tests (`scripts/exp_self_sweep.py`, `results/summary/self_sweep.csv`). Both modes found 139
+tests (`scripts/experiments/v1/exp_self_sweep.py`, `results/summary/self_sweep.csv`). Both modes found 139
 items. The Guard kept all 124 format edits, 15 items stayed in the suggest lane in gatekeeper
 mode (7 by the judge), and in advisory mode the probes rolled back the one duplicate merge that
 reached the Guard (`kept_label` and `repos_label` print different text). We applied none of the
@@ -404,10 +404,10 @@ and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The 
 **20 of 21 runnable repos** (one is left out of our released data files;
 `results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
 total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository plus the last
-(`scripts/exp_replay.py`; the dashboard's Scheduler page shows the curves).
+(`scripts/experiments/v1/exp_replay.py`; the dashboard's Scheduler page shows the curves).
 
 **Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
-repositories; `scripts/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
+repositories; `scripts/experiments/v1/exp_scheduler_tradeoff.py`, `results/figures/scheduler_tradeoff.png`):
 
 | Policy | Slop-debt reduction vs. never sweeping | Test runs per repo (est.) | Sweeps per repo | Resurrection rate |
 |---|---|---|---|---|

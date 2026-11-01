@@ -143,7 +143,8 @@ SUMMARY = Path(__file__).resolve().parents[1] / "results" / "summary"
 
 
 def load_replay(folder: str | Path = SUMMARY) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
-    """The Scheduler replay table and curves (scripts/exp_replay.py), or None if missing."""
+    """The Scheduler replay table and curves (scripts/experiments/v1/exp_replay.py), or None
+    if missing."""
     folder = Path(folder)
     table, curves = folder / "scheduler_replay.csv", folder / "scheduler_curves.csv"
     return (
