@@ -81,6 +81,7 @@ def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> li
                 "what": f"{item.action}: {item.reason}",
                 "evidence": "; ".join(item.evidence[:3]),
                 "checked": _checked(result) if kind in ("applied", "tried") else "-",
+                "why": result.notes if kind == "tried" and result else "",
                 "outcome": status,
             }
         )
@@ -110,7 +111,8 @@ def write_sheet(name: str, safe: str, thorough: str | None) -> Path:
     ]
     for n, row in enumerate(rows, 1):
         cells = [str(n), row["mode"], row["kind"], f"`{_cell(row['item'], 120)}`"]
-        cells += [row["category"], _cell(row["what"]), _cell(row["evidence"]), row["checked"]]
+        checked = row["checked"] + (f"; not kept: {row['why']}" if row["why"] else "")
+        cells += [row["category"], _cell(row["what"]), _cell(row["evidence"]), _cell(checked)]
         cells += [row["outcome"], "", ""]
         lines.append("| " + " | ".join(cells) + " |")
     path = CASES / name / "review_sheet.md"
