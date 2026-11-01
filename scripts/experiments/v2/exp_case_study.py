@@ -87,7 +87,7 @@ def run_container(args, out: Path) -> dict:
     from cleansweep.core.io import save_json
     from cleansweep.workflow import run_sweep
 
-    cfg = load_config({"reviewer": {"scope": "repo"}})
+    cfg = load_config({"reviewer": {"scope": "repo"}, "core": {"agents": {"mode": args.mode}}})
     cfg["agent_out"] = str(out)
     out.mkdir(parents=True, exist_ok=True)
     report = run_sweep(args.path, cfg, method="agentic")
