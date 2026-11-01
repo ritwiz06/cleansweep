@@ -1,4 +1,4 @@
-from app.loaders import find_reports, load_report, plan_table, restore_command, slop_meter
+from app.dashboard.loaders import find_reports, load_report, plan_table, restore_command, slop_meter
 from tests.conftest import FIXTURES
 
 
@@ -30,7 +30,7 @@ def test_find_reports_skips_json_that_is_not_a_report(tmp_path):
 
 
 def test_judge_decision_reads_the_last_judge_line():
-    from app.loaders import judge_decision
+    from app.dashboard.loaders import judge_decision
 
     evidence = ["vulture: unused", "llm judge: keep (confidence 0.9)"]
     assert judge_decision(evidence) == ("keep", 0.9)
@@ -39,7 +39,7 @@ def test_judge_decision_reads_the_last_judge_line():
 
 
 def test_outcome_score_against_the_answer_key():
-    from app.loaders import outcome_score
+    from app.dashboard.loaders import outcome_score
 
     report = load_report(FIXTURES / "sample_report.json")
     score = outcome_score(report, FIXTURES / "toy_repo_expected.json")
@@ -54,7 +54,7 @@ def test_compare_reports_reads_hidden_results_from_logs(tmp_path):
     import json
     import shutil
 
-    from app.loaders import compare_reports
+    from app.dashboard.loaders import compare_reports
 
     shutil.copy(FIXTURES / "sample_report.json", tmp_path / "a.json")
     summary = {"behavior_changed": True, "visible_new_failures": 2}
@@ -69,7 +69,7 @@ def test_compare_reports_reads_hidden_results_from_logs(tmp_path):
 def test_guard_strength_table_and_false_alarms():
     import pandas as pd
 
-    from app.loaders import false_alarms, guard_strength_table
+    from app.dashboard.loaders import false_alarms, guard_strength_table
 
     rows = pd.DataFrame(
         [
@@ -90,7 +90,7 @@ def test_guard_strength_table_and_false_alarms():
 def test_rules_funnel_and_labels(tmp_path):
     import pandas as pd
 
-    from app.loaders import funnel_stages, load_csv, repos_label, top_rules
+    from app.dashboard.loaders import funnel_stages, load_csv, repos_label, top_rules
 
     rules = pd.DataFrame(
         {"antecedents": ["a", "b", "c"], "consequents": ["x", "y", "z"]}

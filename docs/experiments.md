@@ -23,7 +23,7 @@ README and in `results/summary/v1/`.
 
 | Experiment | Scripts | Code version | Committed summary |
 |---|---|---|---|
-| [Answer keys](#answer-keys-toy-repo-and-demo-app) | `app.live_runner` | main, 2026-10-26/27 (not recorded) | `main_results.csv` |
+| [Answer keys](#answer-keys-toy-repo-and-demo-app) | `app.dashboard.live_runner` | main, 2026-10-26/27 (not recorded) | `main_results.csv` |
 | [Judge model checks](#judge-model-checks) | `cleansweep sweep` | main, 2026-10-24 (not recorded) | `results/summary/v1/judge_*.md` |
 | [SWE-bench Tier 1](#swe-bench-tier-1) | `exp_swebench.py` | main at 9c536a5, plus reruns | `main_results.csv` |
 | [SWE-bench Tier 2](#swe-bench-tier-2) | `exp_swebench.py` | main at 07a4dad and 83e3b00 | `main_results.csv` |
@@ -51,7 +51,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
   `--run-id` dated 20261026 to 20261029; `exp_collect.py` reads only those recordings.
   ```bash
   bash demo/prepare_demo.sh --with-feature    # builds .cleansweep/demo/shop_app
-  python -m app.live_runner --target tests/fixtures/toy_repo --method cleansweep \
+  python -m app.dashboard.live_runner --target tests/fixtures/toy_repo --method cleansweep \
       --judge-mode advisory --run-id 20261026_toy_advisory_probes
   ```
   Recorded on both targets: `cleansweep` (gatekeeper and advisory), `guard_tests_only`,

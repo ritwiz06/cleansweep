@@ -22,8 +22,8 @@ import pandas as pd  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from app.live_runner import fold, list_runs, read_events  # noqa: E402
-from app.loaders import compare_reports, load_report, outcome_score  # noqa: E402
+from app.dashboard.live_runner import fold, list_runs, read_events  # noqa: E402
+from app.dashboard.loaders import compare_reports, load_report, outcome_score  # noqa: E402
 
 RAW = ROOT / "results" / "raw"
 HERE = Path(__file__).resolve().parent

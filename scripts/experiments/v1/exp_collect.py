@@ -50,8 +50,8 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from archive_paths import archived, check_defaults  # noqa: E402
 
-from app.live_runner import fold, read_events  # noqa: E402
-from app.loaders import outcome_score  # noqa: E402
+from app.dashboard.live_runner import fold, read_events  # noqa: E402
+from app.dashboard.loaders import outcome_score  # noqa: E402
 from cleansweep.core.io import load_json  # noqa: E402
 from cleansweep.core.models import SweepReport  # noqa: E402
 

@@ -5,9 +5,9 @@ from pathlib import Path
 
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from app.loaders import load_csv  # noqa: E402
+from app.dashboard.loaders import load_csv  # noqa: E402
 
 st.set_page_config(page_title="CleanSweep · Baselines", layout="wide")
 st.title("Baselines and ablations")

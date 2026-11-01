@@ -1,6 +1,6 @@
 """The live page runs run_sweep itself; its events must tell the same story as the report."""
 
-from app.live_runner import STAGES, fold, read_events, run_live
+from app.dashboard.live_runner import STAGES, fold, read_events, run_live
 from cleansweep.workflow import run_sweep
 
 

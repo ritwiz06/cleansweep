@@ -3,7 +3,7 @@ import types
 
 import pytest
 
-from app.live_runner import (
+from app.dashboard.live_runner import (
     STAGES,
     EventLog,
     fold,
@@ -152,7 +152,7 @@ def test_live_run_on_the_toy_repo(toy_repo, cfg, tmp_path):
 def test_capture_logs_puts_cleansweep_logs_in_the_events(tmp_path):
     import logging
 
-    from app.live_runner import capture_logs
+    from app.dashboard.live_runner import capture_logs
 
     log = EventLog(tmp_path / "events.jsonl")
     with capture_logs(log):
@@ -183,7 +183,7 @@ def test_probe_outcome_reaches_the_batch_cards(toy_repo, cfg, tmp_path):
 
 
 def test_shipped_recordings_replay_from_the_repository():
-    from app.live_runner import ROOT, shipped_runs
+    from app.dashboard.live_runner import ROOT, shipped_runs
 
     changed = {}
     for run_dir in shipped_runs():

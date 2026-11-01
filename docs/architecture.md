@@ -158,7 +158,7 @@ python -m cleansweep sweep --target T [--method M] [--out report.json] [--hidden
 python -m cleansweep show  report.json
 python -m cleansweep clean PATH [--mode safe|thorough] [--budget llm=N,minutes=N,tests=N]
                                 [--approve-plan] [--dry-run] [--out DIR] [--model M] [--no-llm]
-streamlit run app/dashboard.py
+streamlit run app/dashboard/dashboard.py
 ```
 
 The experiment scripts in `scripts/` are described in `docs/experiments.md`.

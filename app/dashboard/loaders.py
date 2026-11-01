@@ -9,7 +9,7 @@ import pandas as pd
 from cleansweep.core.io import load_json
 from cleansweep.core.models import SweepReport
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SAMPLE = ROOT / "tests" / "fixtures" / "sample_report.json"
 
 
@@ -139,7 +139,7 @@ def compare_reports(folder: str | Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-SUMMARY = Path(__file__).resolve().parents[1] / "results" / "summary" / "v1"
+SUMMARY = Path(__file__).resolve().parents[2] / "results" / "summary" / "v1"
 
 
 def load_replay(folder: str | Path = SUMMARY) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
