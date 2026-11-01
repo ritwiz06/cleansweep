@@ -21,7 +21,25 @@ WORDS = {
     "unused_import": ("unused import", "unused imports"),
     "unused_dependency": ("unused dependency", "unused dependencies"),
     "format": ("formatting change", "formatting changes"),
+    "unused_variable": ("unused local variable", "unused local variables"),
+    "debug_leftover": ("debug leftover", "debug leftovers"),
+    "commented_code": ("block of commented-out code", "blocks of commented-out code"),
+    "todo_note": ("leftover note", "leftover notes"),
+    "redundant_check": ("redundant check", "redundant checks"),
 }
+AST_SAME = {"format", "commented_code", "todo_note"}  # proven by AST equality
+# line-level edits: comment-only ones keep the AST (tier 0); the others change code
+LINE_TIERS = {
+    "commented_code": 0,
+    "todo_note": 0,
+    "unused_variable": 1,
+    "debug_leftover": 1,
+    "redundant_check": 2,
+}
+
+
+def tier(item: CleanupItem) -> int:
+    return LINE_TIERS.get(item.category, risk_tier(item))
 
 
 def goal(items: list[CleanupItem]) -> str:
@@ -50,11 +68,7 @@ def make_packages(rt, items: list[CleanupItem], start: int = 1) -> list[Package]
     size = max(1, int(rt.acfg.get("max_package", 4)))
     groups: dict[tuple, list[CleanupItem]] = defaultdict(list)
     for item in items:
-        key = (
-            (9, "format", "")
-            if item.category == "format"
-            else (risk_tier(item), item.unit.path, "")
-        )
+        key = (9, "format", "") if item.category == "format" else (tier(item), item.unit.path, "")
         groups[key].append(item)
     packages: list[Package] = []
     for key in sorted(groups):
@@ -64,7 +78,7 @@ def make_packages(rt, items: list[CleanupItem], start: int = 1) -> list[Package]
             pid = f"P{start + len(packages)}"
             files = sorted({i.unit.path for i in chunk})
             checks = ["compile", "tests"]
-            if all(i.category == "format" for i in chunk):
+            if all(i.category in AST_SAME for i in chunk):
                 checks.append("ast")
             else:
                 checks.append("probes")
