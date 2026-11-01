@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from app.loaders import outcome_score  # noqa: E402
+from app.dashboard.loaders import outcome_score  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.eval import run_hidden_checks  # noqa: E402

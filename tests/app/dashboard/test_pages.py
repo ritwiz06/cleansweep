@@ -1,9 +1,9 @@
 from streamlit.testing.v1 import AppTest
 
-from app.live_runner import SHIPPED_DIR
+from app.dashboard.live_runner import SHIPPED_DIR
 from tests.conftest import FIXTURES
 
-APP = FIXTURES.parents[1] / "app"
+APP = FIXTURES.parents[1] / "app" / "dashboard"
 DEMO_RUN = SHIPPED_DIR / "20261030_demo_feature_advisory_v1"
 
 

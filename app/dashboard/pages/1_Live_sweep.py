@@ -10,9 +10,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from app.live_runner import (  # noqa: E402
+from app.dashboard.live_runner import (  # noqa: E402
     LIVE_DIR,
     STAGE_LABELS,
     STAGES,
@@ -24,7 +24,7 @@ from app.live_runner import (  # noqa: E402
     run_live,
     shipped_runs,
 )
-from app.loaders import compare_reports, judge_decision, load_report, outcome_score  # noqa: E402
+from app.dashboard.loaders import compare_reports, judge_decision, load_report, outcome_score  # noqa: E402
 from cleansweep.core.models import METHODS  # noqa: E402
 
 RESULT_COLORS = {

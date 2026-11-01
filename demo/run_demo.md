@@ -19,7 +19,7 @@ leftover helper behind (`inventory._print_low_stock`).
 ## Before the talk (5 minutes, not timed)
 
 1. `.env` has the Voyager key; `VOYAGER_MODEL=qwen36-35b-a3b`.
-2. Terminal 1: `source .venv/bin/activate && streamlit run app/dashboard.py`, then open
+2. Terminal 1: `source .venv/bin/activate && streamlit run app/dashboard/dashboard.py`, then open
    **Live sweep** in the browser.
 3. Terminal 2: `bash demo/prepare_demo.sh`. It builds the app in `.cleansweep/demo/shop_app`
    (gitignored) and prints that path.
@@ -73,6 +73,6 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
 ## After the talk
 
 Recording a fresh run without the browser:
-`python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`. It goes to
+`python -m app.dashboard.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`. It goes to
 `results/raw/live/` (not in git). The shipped copies in `demo/replay/` store paths relative to
 the repository, and Replay scores them against `demo/shop_app_expected.json`.

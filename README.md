@@ -55,7 +55,7 @@ python -m cleansweep sweep --target tests/fixtures/toy_repo --method tools_only 
 python -m cleansweep show results/raw/quickstart/report.json
 
 # dashboard (lists the reports under results/raw/, falls back to the sample report)
-streamlit run app/dashboard.py
+streamlit run app/dashboard/dashboard.py
 ```
 
 `results/raw/` is git-ignored, and the dashboard lists every report saved under it. Without a
@@ -136,7 +136,7 @@ that also leaves a helper behind. The timed script is in `demo/run_demo.md`.
 
 ```bash
 bash demo/prepare_demo.sh --with-feature   # builds .cleansweep/demo/shop_app as a git repo
-streamlit run app/dashboard.py             # then open the "Live sweep" page
+streamlit run app/dashboard/dashboard.py             # then open the "Live sweep" page
 ```
 
 On **Live sweep**, pick a target (toy repo, prepared demo, `demo/shop_app` or any path), a
@@ -149,7 +149,7 @@ offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory ru
 defaults (outcome 7/7, hidden behavior unchanged). To record a run without the browser:
 
 ```bash
-python -m app.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory
+python -m app.dashboard.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory
 ```
 
 ## Reproduce
@@ -265,7 +265,8 @@ src/cleansweep/
   eval/        baselines, hidden checks, metrics, mutation testing, statistics
   data/        SWE-bench Verified, PatchDiff and AIDev loaders, tier splits
   mining/      review-comment mining: removal requests, taxonomy, rules
-app/           Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
+app/           dashboard/: Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
+               (studio/: CleanSweep Studio, Phase 5)
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
 docs/          architecture, agentic design, experiments, full results
 results/       summary/v1 and figures/v1 (v1 tables and figures), summary/v2 and figures/v2 (Phase 4),

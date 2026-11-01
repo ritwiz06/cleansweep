@@ -6,9 +6,9 @@ from pathlib import Path
 import plotly.graph_objects as go
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from app.loaders import load_csv, load_replay, policy_summary, repos_label  # noqa: E402
+from app.dashboard.loaders import load_csv, load_replay, policy_summary, repos_label  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 
 POLICY_COLOR, NONE_COLOR = "#2a78d6", "#eb6834"

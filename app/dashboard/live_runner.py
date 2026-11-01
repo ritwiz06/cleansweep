@@ -2,7 +2,7 @@
 
 The sweep is cleansweep.workflow.run_sweep; its on_event callback (translate) turns each step and
 Guard check into the page's events. Run from the repo root to record a run without the browser:
-    python -m app.live_runner --judge-mode gatekeeper
+    python -m app.dashboard.live_runner --judge-mode gatekeeper
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from cleansweep.eval import run_hidden_checks, summarize
 from cleansweep.workflow import run_sweep
 from cleansweep.workflow.sweep import make_llm
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LIVE_DIR = ROOT / "results" / "raw" / "live"
 SHIPPED_DIR = ROOT / "demo" / "replay"
 TOY_REPO = ROOT / "tests" / "fixtures" / "toy_repo"

@@ -1,4 +1,4 @@
-"""CleanSweep dashboard. Run with: streamlit run app/dashboard.py"""
+"""CleanSweep dashboard. Run with: streamlit run app/dashboard/dashboard.py"""
 
 import sys
 from pathlib import Path
@@ -6,8 +6,8 @@ from pathlib import Path
 import plotly.graph_objects as go
 import streamlit as st
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app.loaders import find_reports, load_report, plan_table, restore_command, slop_meter  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from app.dashboard.loaders import find_reports, load_report, plan_table, restore_command, slop_meter  # noqa: E402
 
 STATUS_COLORS = {
     "kept": "#2e7d32",

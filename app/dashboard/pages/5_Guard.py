@@ -5,9 +5,9 @@ from pathlib import Path
 
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from app.loaders import false_alarms, guard_strength_table, load_csv  # noqa: E402
+from app.dashboard.loaders import false_alarms, guard_strength_table, load_csv  # noqa: E402
 
 st.set_page_config(page_title="CleanSweep · Guard", layout="wide")
 st.title("Guard strength")

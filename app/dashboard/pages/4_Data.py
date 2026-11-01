@@ -6,9 +6,9 @@ from pathlib import Path
 import plotly.graph_objects as go
 import streamlit as st
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from app.loaders import DATA_SUMMARY, funnel_stages, load_csv, top_rules  # noqa: E402
+from app.dashboard.loaders import DATA_SUMMARY, funnel_stages, load_csv, top_rules  # noqa: E402
 
 BAR = "#2a78d6"
 
