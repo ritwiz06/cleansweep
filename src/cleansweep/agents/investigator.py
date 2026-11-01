@@ -231,7 +231,11 @@ def apply_verdict(item: CleanupItem, verdict: dict) -> None:
         item.action = "report_only"
     item.lane = lane
     if item.category != "format" and verdict.get("stop") != "rule":
-        item.reason = f"Investigator ({verdict['decision']}): {verdict['reason']}"
+        if verdict["decision"] == "safe" and lane == "suggest":
+            # the detector or a policy (public API, framework callback) keeps it a suggestion
+            item.reason = f"{item.reason} The Investigator found no use either: {verdict['reason']}"
+        else:
+            item.reason = f"Investigator ({verdict['decision']}): {verdict['reason']}"
     item.evidence += [
         f"{e.get('result')}: {e.get('says', '')}"[:200] for e in verdict.get("evidence", [])
     ]

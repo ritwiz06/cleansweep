@@ -79,7 +79,7 @@ class Runtime:
         if self.ablation and self.ablation not in ABLATIONS:
             raise ValueError(f"unknown ablation {self.ablation!r}")
         self.ws = ws
-        self.out = Path(out_dir)
+        self.out = Path(out_dir).resolve()  # commands run in the workspace: never relative
         self.out.mkdir(parents=True, exist_ok=True)
         self.dry_run = dry_run
         self.approve = approve
