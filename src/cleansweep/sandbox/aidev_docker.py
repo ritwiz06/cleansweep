@@ -248,7 +248,7 @@ def clone_dir(cfg: dict, full_name: str) -> Path:
 
 def open_aidev(target: str, cfg: dict | None = None) -> AidevWorkspace:
     """Open "aidev:<owner>/<name>@<sha>" from its blobless clone (made by
-    scripts/data_aidev_select.py): copy the tree at sha, start the container, install."""
+    scripts/data/data_aidev_select.py): copy the tree at sha, start the container, install."""
     cfg = cfg or {}
     spec = target.removeprefix("aidev:")
     full_name, _, sha = spec.partition("@")

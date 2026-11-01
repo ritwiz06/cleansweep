@@ -17,7 +17,10 @@ st.set_page_config(page_title="CleanSweep · Scheduler", layout="wide")
 st.title("Scheduler replay")
 replay, curves = load_replay()
 if replay is None:
-    st.info("No replay yet. Run `python scripts/exp_replay.py` after selecting AIDev repositories.")
+    st.info(
+        "No replay yet. Run `python scripts/experiments/v1/exp_replay.py` "
+        "after selecting AIDev repositories."
+    )
     st.stop()
 
 st.caption(

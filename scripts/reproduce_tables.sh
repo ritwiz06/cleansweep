@@ -18,6 +18,6 @@ if [ $# -gt 0 ]; then
   export CLEANSWEEP_RESULTS
 fi
 
-"$PYTHON" scripts/exp_tables.py > /dev/null
-"$PYTHON" scripts/exp_scheduler_tradeoff.py > /dev/null
+"$PYTHON" scripts/experiments/v1/exp_tables.py > /dev/null
+"$PYTHON" scripts/experiments/v1/exp_scheduler_tradeoff.py > /dev/null
 echo "reproduce_tables: rebuilt the tables and figures in ${CLEANSWEEP_RESULTS:-results}"

@@ -13,7 +13,10 @@ st.set_page_config(page_title="CleanSweep · Baselines", layout="wide")
 st.title("Baselines and ablations")
 table = load_csv("main_table.csv")
 if table is None:
-    st.info("No results yet. Run `python scripts/exp_collect.py && python scripts/exp_tables.py`.")
+    st.info(
+        "No results yet. Run `python scripts/experiments/v1/exp_collect.py && "
+        "python scripts/experiments/v1/exp_tables.py`."
+    )
     st.stop()
 
 st.caption(

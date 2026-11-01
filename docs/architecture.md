@@ -102,7 +102,7 @@ defaults otherwise, so detection and the edit always agree.
 ## Interfaces
 
 `core/contracts.py` lists the public names and parameters every package (real and stub) must
-expose. `scripts/check_contracts.py` checks them. Changes are additive: new parameters are
+expose. `scripts/tools/check_contracts.py` checks them. Changes are additive: new parameters are
 optional. The main ones:
 
 | Interface | Notes |

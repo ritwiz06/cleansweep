@@ -28,7 +28,7 @@ def results_dir(cfg: dict) -> Path:
     found = sorted(root.glob("**/results/RQ2_*_difftests.json"))
     if not found:
         raise FileNotFoundError(
-            f"no PatchDiff results under {root}; run scripts/data_fetch_patchdiff.py"
+            f"no PatchDiff results under {root}; run scripts/data/data_fetch_patchdiff.py"
         )
     return found[0].parent
 
@@ -103,7 +103,7 @@ def load_index(cfg: dict | None = None) -> dict:
     cfg = cfg or _cfg()
     path = data_path(cfg["index"])
     if not path.exists():
-        raise FileNotFoundError(f"{path} is missing; run scripts/data_fetch_patchdiff.py")
+        raise FileNotFoundError(f"{path} is missing; run scripts/data/data_fetch_patchdiff.py")
     return json.loads(path.read_text(encoding="utf-8"))
 
 

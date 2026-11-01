@@ -22,7 +22,7 @@ policies leave CleanSweep with 0 of 19 hidden changes. Details below and in
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && pip install -e .
 pytest -q -m "not llm and not docker and not network and not slow"   # offline tests
-python scripts/check_contracts.py
+python scripts/tools/check_contracts.py
 ```
 
 The offline set leaves out the tests marked `llm` (they need the key below), `docker` (a running
@@ -174,7 +174,7 @@ never sees) give a different result after the cleanup. Full tables in
 **SWE-bench Tier 2: 57 agent patches, the headline.** CleanSweep removes about as much as an
 unchecked one-shot LLM cleanup and breaks nothing; stronger one-shot variants close part of the
 gap (`oneshot_series.md`; McNemar and Wilcoxon against gatekeeper). `one_shot_compile` is a
-re-score of the `one_shot_llm` runs (`scripts/exp_collect.py`), not a `--method`:
+re-score of the `one_shot_llm` runs (`scripts/experiments/v1/exp_collect.py`), not a `--method`:
 
 | method | lines removed | hidden changed | McNemar p | Wilcoxon p |
 |---|---|---|---|---|
@@ -269,8 +269,8 @@ app/           Streamlit dashboard, Live sweep and Scheduler pages, step-by-step
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
 docs/          architecture, experiments, full results; report assets
 configs/       base.yaml (core), data.yaml, exp.yaml, reviewer.yaml
-scripts/       contract check, data fetch/splits, AIDev selection and mining, experiment runners and tables,
-               reproduce_tables.sh
+scripts/       data/ (fetch, splits, AIDev selection and mining), experiments/v1 and v2 (runners and tables),
+               report/ (report tables and figures), tools/ (contract check, LLM ping), reproduce_tables.sh
 tests/         one folder per package, plus fixtures/ (toy repo, answer key, hidden tests, sample report,
                small results set)
 ```

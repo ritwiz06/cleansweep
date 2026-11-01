@@ -19,7 +19,7 @@ st.header("SWE-bench Verified and PatchDiff")
 counts = load_csv("swebench_patchdiff.csv", DATA_SUMMARY)
 tiers = load_csv("tiers.csv", DATA_SUMMARY)
 if counts is None and tiers is None:
-    st.info("Run `python scripts/data_summary.py` to write the counts.")
+    st.info("Run `python scripts/data/data_summary.py` to write the counts.")
 left, right = st.columns(2)
 if counts is not None:
     left.subheader("Counts")

@@ -176,7 +176,8 @@ def agent_history(name: str, head_sha: str | None = None) -> tuple[set[str], str
 
 
 def load_removal_labels() -> pd.DataFrame:
-    """Labeled units from mined review comments (scripts/data_aidev_mine.py), kept repos only."""
+    """Labeled units from mined review comments (scripts/data/data_aidev_mine.py), kept repos
+    only."""
     path = data_path(_cfg()["labels"])
     if not path.exists():
         from cleansweep.core.models import FEATURE_COLUMNS
