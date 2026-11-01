@@ -230,7 +230,7 @@ def apply_verdict(item: CleanupItem, verdict: dict) -> None:
     if verdict["decision"] == "drop":
         item.action = "report_only"
     item.lane = lane
-    if item.category != "format":
+    if item.category != "format" and verdict.get("stop") != "rule":
         item.reason = f"Investigator ({verdict['decision']}): {verdict['reason']}"
     item.evidence += [
         f"{e.get('result')}: {e.get('says', '')}"[:200] for e in verdict.get("evidence", [])
@@ -242,7 +242,21 @@ def apply_verdict(item: CleanupItem, verdict: dict) -> None:
         item.llm_confidence = float(verdict["confidence"])
 
 
+LINE_LEVEL = {"unused_variable", "debug_leftover", "commented_code", "todo_note", "redundant_check"}
+LINE_REASON = "A line-level edit: the detector's lane stands, and the checks after the edit decide."
+
+
 def _fixed(item: CleanupItem) -> dict | None:
+    if item.category in LINE_LEVEL:
+        decision = "safe" if item.lane == "safe" else "suggest"
+        reason = LINE_REASON if decision == "safe" else item.reason
+        return {
+            "item_id": item.item_id,
+            "decision": decision,
+            "reason": reason,
+            "evidence": [],
+            "stop": "rule",
+        }
     if item.category == "format":
         return {
             "item_id": item.item_id,

@@ -4,9 +4,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 CATEGORIES = ["leftover_file", "dead_code", "duplicate", "wrapper",
-              "unused_import", "unused_dependency", "security", "format", "other"]
+              "unused_import", "unused_dependency", "security", "format", "other",
+              # v2 line-level categories (additive)
+              "unused_variable", "debug_leftover", "commented_code", "todo_note",
+              "redundant_check"]
 ACTIONS = ["delete_file", "delete_unit", "remove_import", "remove_dependency",
-           "replace_with", "apply_patch", "format", "report_only"]
+           "replace_with", "apply_patch", "format", "report_only",
+           "edit_lines"]  # v2 (additive): exact lines, found nearest their position
 LANES = ["safe", "suggest"]
 EDIT_STATUS = ["kept", "repaired", "rolled_back", "skipped"]
 METHODS = ["cleansweep", "guard_tests_only", "tools_only", "one_shot_llm",

@@ -169,3 +169,40 @@ def test_a_planted_secret_never_reaches_the_llm(mini, agent_cfg, tmp_path):
     assert key not in sent and "not-for-the-llm" not in sent and "[withheld" in sent
     assert key not in (out / "events.jsonl").read_text()
     assert all(key not in p.read_text() for p in (out / "cache").iterdir())
+
+
+def test_line_level_edits_go_through_the_team(mini, agent_cfg, tmp_path):
+    (mini / "shop" / "calc.py").write_text(
+        "def double(x):\n"
+        "    breakpoint()\n"
+        "    unused = x + 1\n"
+        "    # old = x * 3\n"
+        "    # return old\n"
+        "    # TODO: handle negatives\n"
+        "    if x > 0:\n"
+        "        return x * 2 > 0\n"
+        "    return x * 2\n\n\n"
+        "def positive(x):\n"
+        "    if x > 0:\n"
+        "        return True\n"
+        "    return False\n"
+    )
+    (mini / "tests" / "test_calc.py").write_text(
+        "from shop.calc import double, positive\n\n\n"
+        "def test_calc():\n    assert double(0) == 0 and positive(3) and not positive(-1)\n"
+    )
+    result = clean_project(str(mini), agent_cfg, out=str(tmp_path / "o"), use_llm=False)
+    status = {
+        i.category: r.status
+        for i in result["report"].plan.items
+        for r in result["report"].results
+        if r.item_id == i.item_id and i.unit.path == "shop/calc.py"
+    }
+    assert (
+        status["debug_leftover"] == status["unused_variable"] == status["commented_code"] == "kept"
+    )
+    assert status["redundant_check"] == "kept" and status["todo_note"] == "skipped"
+    text = (tmp_path / "o" / "workspace" / "shop" / "calc.py").read_text()
+    assert "breakpoint" not in text and "unused" not in text and "# old" not in text
+    assert "return bool(x > 0)" in text and "# TODO" in text
+    assert result["summary"]["verdict"] == "everything runs"

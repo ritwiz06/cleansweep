@@ -237,18 +237,24 @@ the file is a test", confidence 0.68, lift 2.0, says leftover files in such pull
 mostly test files); the Investigator and Planner use the framework table to keep framework
 callbacks out of packages.
 
-## 9. New line-level detectors (Phase 2)
+## 9. Line-level detectors (Phase 2)
 
-| Detector | Category (new) | Edit | Source |
+| Detector | Category (new) | Lane | Source |
 |---|---|---|---|
-| unused local variables | `unused_variable` | `delete_lines` | ruff F841 |
-| debug print and logging leftovers (`print(` outside CLI entry points, `breakpoint()`, `pdb.set_trace()`, `logging.debug("here")`-style lines) | `debug_leftover` | `delete_lines` | `ast` |
-| commented-out code blocks (consecutive comment lines that parse as Python) | `commented_code` | `delete_lines` | `tokenize` + `ast` |
-| TODO/FIXME lines the agent added | `todo_note` | `delete_lines` (suggest lane by default) | comments in the agent scope |
-| simple redundant checks (`if x == True`, `if c: return True else: return False`, a repeated identical condition) | `redundant_check` | `apply_patch` | `ast` |
+| unused local variables (the value is kept as a statement when it is a call; an unused `except ... as e` loses its name) | `unused_variable` | safe | ruff F841 |
+| debugger calls (`breakpoint()`, `pdb.set_trace()`) and debug prints (a string starting with "debug", ">>>", "here", or a self-documenting `f"{x=}"`) | `debug_leftover` | safe; other prints in library modules: suggest (they may be intended output); CLI modules are skipped | `ast` |
+| commented-out code: the longest runs of comment lines that parse as Python statements (prose next to them stays) | `commented_code` | safe | `tokenize` + `ast` |
+| TODO/FIXME/XXX/HACK comments on their own line | `todo_note` | suggest (a person decides) | `tokenize` |
+| `if c: return True else: return False` → `return bool(c)` (and the negation), a boolean test with the same operand twice | `redundant_check` | safe; `x == True` → `x`: suggest (not the same for non-bool values) | `ast` |
 
-These are additive contract changes: five categories and one action (`delete_lines`) appended
-to the lists in `core.models`. v1's detectors never produce them, so v1 plans are unchanged.
+Each edit is a zero-context diff with the new action `edit_lines`: the Engineer finds the exact
+old lines nearest their recorded position, so edits that moved them, even on the next line, do
+not matter, and nothing is written unless every hunk fits. Emptied blocks get `pass`. The
+detectors run as a second Auditor instance in the same scope as v1's (the agent's files and
+lines on SWE-bench and AIDev). Line-level items keep their detector's lane (the checks decide),
+so they cost no LLM requests. Comment-only packages (commented code, TODO notes, formatting) are
+proven by AST equality. These are additive contract changes: five categories and one action
+appended to the lists in `core.models`; v1's detectors never produce them.
 
 ## 10. Lessons
 
@@ -269,12 +275,19 @@ keeps them across runs.
 
 ## 11. Coverage-guided probes
 
-v1's Guard asks the LLM once for probe cases. The Validator keeps going: after each probe round
-it measures which changed and deleted lines the probes executed (on the version before the
-change, where the deleted lines still exist), and asks for cases that reach the lines still
-uncovered, quoting them with line numbers. It stops when the target coverage is reached (default
-90% of the changed lines), after 3 rounds, or when the budget ends, and records the coverage
-reached. Before and after are then compared on every case, as in v1.
+v1's Guard asks the LLM once for probe cases. The Validator keeps going
+(`agents/coverage_probes.py`): after each round, the probe harness runs under coverage.py on
+the version before the change (where deleted lines still exist), and the next request
+(`prompts/validator.txt`) shows the target's code with line numbers, the lines no probe has run
+and the cases so far, and asks for cases that reach them. The target lines are the changed
+statements inside functions that still exist, and the whole body of a removed duplicate or
+wrapper (its probes run against the replacement); deleted dead code is left out (nothing can
+call it; the module check covers it). It stops at 90% of the target lines, after 3 rounds, or
+when the budget ends, records the coverage reached, and compares before and after on every case,
+as v1 does. Coverage is measured in direct mode (local workspaces); runner mode (Docker) keeps
+one round. The `no_coverage` ablation runs v1's single round. A test shows the point: a behavior
+change in a branch the first round never runs passes v1's check and is caught by the second
+round.
 
 ## 12. Safety
 
@@ -370,11 +383,11 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 ## 17. Contract changes (all additive)
 
 - `METHODS` gains `agentic`; `CATEGORIES` gains the five line-level categories; `ACTIONS` gains
-  `delete_lines`.
+  `edit_lines`.
 - `run_sweep(..., method="agentic")` dispatches to the agent team.
 - A new `agents` entry in `core.contracts.INTERFACES` (the runtime, board, cache, `clean_project`).
 
-## 18. Built so far (Phase 1)
+## 18. Built so far (Phases 1 and 2)
 
 The runtime and a first version of every agent are in `src/cleansweep/agents/`:
 deterministic where the job allows it (brief facts, baseline, detectors, packaging, edits,
@@ -397,9 +410,13 @@ Details worth knowing:
 - Agent turns are timed per role; an agent that raises ends the run cautiously (its package is
   rolled back) and the run still ends with a report.
 
-Coverage-guided probes, the new line-level detectors, the UI snapshot check and the ablation
-switches other than `broadcast`, `inline_artifacts`, `no_lessons` and `no_research` come in
-Phase 2 and Phase 4.
+Phase 2 added the line-level detectors (section 9), coverage-guided probes (section 11), a
+prompt file per agent (`agents/prompts/`; the rule-based agents' files state their rules and are
+their profiles in the event log), the Fixer's own system prompt for repairs, and fixes from the
+first real-model runs (a thread-safe LLM reply cache, per-candidate isolation of investigations,
+budget charges that check only their own limit, the Investigator's first checks run before the
+LLM is asked, and a last-step nudge). The UI snapshot check and the `single_agent` ablation come
+in Phase 4.
 
 ## 19. Risks
 

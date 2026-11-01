@@ -8,10 +8,23 @@ from cleansweep.reviewer import propose_fix
 
 from .lessons import pattern_for
 from .llm import acting
+from .protocol import load_prompt
 from .runtime import Package
 
 NAME = "fixer"
 REPAIRABLE = ("compile", "tests", "probes")
+
+
+class WithSystem:
+    """An LLM whose requests start with the Fixer's own system prompt."""
+
+    def __init__(self, llm, system: str):
+        self.llm, self.system = llm, system
+
+    def chat(self, messages, temperature=0.0, seed=None, extra_body=None):
+        return self.llm.chat(
+            [{"role": "system", "content": self.system}, *messages], temperature, seed, extra_body
+        )
 
 
 def run(rt, pkg: Package) -> str:
@@ -26,7 +39,12 @@ def run(rt, pkg: Package) -> str:
         if rt.llm is not None and pkg.turns < turns and failure.get("stage") in REPAIRABLE:
             with acting(NAME, budget):
                 try:
-                    fix = propose_fix(item, failure.get("log", ""), rt.ws.path, rt.llm)
+                    fix = propose_fix(
+                        item,
+                        failure.get("log", ""),
+                        rt.ws.path,
+                        WithSystem(rt.llm, load_prompt(NAME)),
+                    )
                 except Exception:  # budget or LLM failure: no fix
                     fix = None
             if fix and rt.ws.apply_patch(fix):

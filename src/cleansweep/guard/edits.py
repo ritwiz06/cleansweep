@@ -161,7 +161,52 @@ def apply_edit(workspace, item: CleanupItem) -> bool:
         return _format(workspace, item)
     if action in ("replace_with", "apply_patch"):
         return bool(item.patch) and workspace.apply_patch(item.patch)
+    if action == "edit_lines":
+        return _edit_lines(workspace, item)
     return False
+
+
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+
+
+def parse_hunks(patch: str) -> list[tuple[int, list[str], list[str]]]:
+    """(old start line, old lines, new lines) of each hunk of a zero-context diff."""
+    hunks: list[tuple[int, list[str], list[str]]] = []
+    for line in patch.splitlines(keepends=True):
+        m = HUNK.match(line)
+        if m:
+            hunks.append((int(m.group(1)), [], []))
+        elif hunks and line.startswith("-") and not line.startswith("---"):
+            hunks[-1][1].append(line[1:])
+        elif hunks and line.startswith("+") and not line.startswith("+++"):
+            hunks[-1][2].append(line[1:])
+    return hunks
+
+
+def _find(lines: list[str], block: list[str], near: int) -> int | None:
+    for offset in range(len(lines) + 1):
+        for pos in (near - offset, near + offset):
+            if 0 <= pos <= len(lines) - len(block) and lines[pos : pos + len(block)] == block:
+                return pos
+    return None
+
+
+def _edit_lines(ws, item: CleanupItem) -> bool:
+    """Replace exact lines, found nearest their original position (so earlier edits that moved
+    them, even right next to them, do not matter). Nothing is written unless every hunk fits."""
+    path = Path(ws.path) / item.unit.path
+    if not item.patch or not path.is_file():
+        return False
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    for start, old, new in sorted(parse_hunks(item.patch), key=lambda h: -h[0]):
+        pos = _find(lines, old, start - 1) if old else None
+        if pos is None:
+            return False
+        lines[pos : pos + len(old)] = new
+    path.write_text("".join(lines), encoding="utf-8")
+    return True
 
 
 def changed_py_files(workspace, since: str) -> list[str]:
