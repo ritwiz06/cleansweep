@@ -82,17 +82,19 @@ def react(
     log=None,
     check_final: Callable[[dict, list[dict]], str | None] | None = None,
     extra_body: dict | None = None,
+    steps: list[dict] | None = None,
 ) -> ReactResult:
     """Run one agent's ReAct loop until it gives a valid final answer or a budget ends.
 
-    tools is a ToolSet (name -> schema, call). check_final(final, steps) can reject a final
+    tools is a ToolSet (name -> schema, call); `steps` are tool results already gathered (R1,
+    R2, ...), shown in the task. check_final(final, steps) can reject a final
     answer that is valid JSON but breaks a rule (e.g. cites no tool result); the agent gets one
     repair turn for it, as for any invalid reply."""
     messages = [
         {"role": "system", "content": f"{system}\n\nTools:\n{tools.describe()}\n\n{FORMAT}"},
         {"role": "user", "content": task},
     ]
-    steps: list[dict] = []
+    steps = list(steps or [])  # results gathered before the loop (cited like any other)
     repaired = False
     with acting(agent, budget):
         while True:
@@ -153,9 +155,12 @@ def react(
                     "result": result,
                 }
             )
+            note = ""
+            if budget.steps > 0 and budget.used_steps == budget.steps - 1:
+                note = "\n\nThis is your last step: give your final answer now."
             messages += [
                 {"role": "assistant", "content": text},
-                {"role": "user", "content": f"Observation {result_id}: {result}"},
+                {"role": "user", "content": f"Observation {result_id}: {result}{note}"},
             ]
 
 

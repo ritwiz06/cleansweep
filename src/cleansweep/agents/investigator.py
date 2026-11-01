@@ -83,20 +83,51 @@ def _checker(lessons: list[dict]):
     return check
 
 
+def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
+    """The checks every investigation starts with, run before the LLM is asked: references,
+    dynamic use and lessons. Their results are R1, R2, ... in the task."""
+    name = _short(item)
+    calls = [("find_references", {"name": name})]
+    if item.unit.name:
+        calls.append(("check_dynamic_use", {"name": name}))
+    if rt.ablation != "no_lessons":
+        calls.append(("query_lessons", {"pattern": name}))
+    steps = []
+    for tool_name, args in calls:
+        call = rt.log.emit("tool_call", agent=agent, payload={"tool": tool_name, "args": args})
+        result = rt.tools.call(tool_name, args)[:1500]
+        rid = f"R{len(steps) + 1}"
+        rt.log.emit(
+            "tool_result",
+            agent=agent,
+            parent=call["id"],
+            payload={"result_id": rid, "tool": tool_name, "result": result},
+        )
+        steps.append({"result_id": rid, "tool": tool_name, "args": args, "result": result})
+    return steps
+
+
 def investigate_llm(rt, item: CleanupItem, n: int) -> dict:
     agent = f"{NAME}#{n}"
     budget = rt.budget(NAME)
     lessons = rt.lessons.matching(item, _framework(rt, item)) if rt.ablation != "no_lessons" else []
+    first = first_checks(rt, item, agent)
+    task = (
+        task_text(rt, item, lessons)
+        + "\n\nResults of the first checks (cite them):\n"
+        + "\n".join(f"{s['result_id']} {s['tool']}: {s['result']}" for s in first)
+    )
     result = react(
         agent,
         rt.llm,
         load_prompt(NAME),
-        task_text(rt, item, lessons),
+        task,
         rt.tools,
         FINAL_SCHEMA,
         budget,
         rt.log,
         check_final=_checker(lessons),
+        steps=first,
     )
     rt.record_usage(agent, budget)
     if result.final is None:
@@ -232,6 +263,30 @@ def _fixed(item: CleanupItem) -> dict | None:
     return None
 
 
+def _isolated(fn):
+    """One candidate's failure is that candidate's "suggest", not the end of the phase."""
+
+    def run_one(rt, item: CleanupItem, n: int) -> dict:
+        try:
+            return fn(rt, item, n)
+        except Exception as exc:
+            rt.log.emit(
+                "log",
+                agent=f"{NAME}#{n}",
+                payload={"level": "ERROR", "message": f"{type(exc).__name__}: {exc}"},
+            )
+            return {
+                "item_id": item.item_id,
+                "decision": "suggest",
+                "reason": f"The investigation failed ({type(exc).__name__}); a person should look.",
+                "evidence": [],
+                "stop": "error",
+                "agent": f"{NAME}#{n}",
+            }
+
+    return run_one
+
+
 def run(rt) -> None:
     """INVESTIGATE: a verdict for every candidate, up to `parallel_llm` at once."""
     pending = [i for i in rt.items.values() if i.item_id not in rt.verdicts]
@@ -243,7 +298,7 @@ def run(rt) -> None:
             rt.verdicts[item.item_id] = fixed
         else:
             work.append((n, item))
-    fn = investigate_llm if use_llm else investigate_rules
+    fn = _isolated(investigate_llm if use_llm else investigate_rules)
     workers = int(rt.acfg.get("parallel_llm", 3)) if use_llm else 1
     with cf.ThreadPoolExecutor(max(1, workers)) as pool:
         for verdict in pool.map(lambda job: fn(rt, job[1], job[0]), work):

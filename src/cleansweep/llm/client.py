@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import sqlite3
+import threading
 import time
 from pathlib import Path
 
@@ -55,18 +56,24 @@ def parse_json_text(text: str) -> dict | list:
 
 
 class _Cache:
+    """SQLite reply cache; safe to share between threads (the agent team runs requests in
+    parallel)."""
+
     def __init__(self, path: str | Path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.db = sqlite3.connect(str(path))
+        self.db = sqlite3.connect(str(path), check_same_thread=False)
         self.db.execute("CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, reply TEXT)")
+        self._lock = threading.Lock()
 
     def get(self, key: str) -> str | None:
-        row = self.db.execute("SELECT reply FROM cache WHERE key = ?", (key,)).fetchone()
+        with self._lock:
+            row = self.db.execute("SELECT reply FROM cache WHERE key = ?", (key,)).fetchone()
         return row[0] if row else None
 
     def put(self, key: str, reply: str) -> None:
-        self.db.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (key, reply))
-        self.db.commit()
+        with self._lock:
+            self.db.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (key, reply))
+            self.db.commit()
 
 
 class LLMClient:
@@ -97,6 +104,7 @@ class LLMClient:
         self._cache = _Cache(cache_path) if cache_path else None
         self._seed_ok = True
         self._usage = {"llm_calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+        self._usage_lock = threading.Lock()
         self._events: list[dict] = []  # retries and failures, for the run stats
 
     def _event(self, kind: str, exc: Exception | None = None, attempt: int = 0) -> None:
@@ -155,10 +163,11 @@ class LLMClient:
             return hit
         resp = self._create(messages, temperature, seed, extra)
         reply = resp.choices[0].message.content or ""
-        self._usage["llm_calls"] += 1
-        if getattr(resp, "usage", None):
-            self._usage["prompt_tokens"] += resp.usage.prompt_tokens or 0
-            self._usage["completion_tokens"] += resp.usage.completion_tokens or 0
+        with self._usage_lock:
+            self._usage["llm_calls"] += 1
+            if getattr(resp, "usage", None):
+                self._usage["prompt_tokens"] += resp.usage.prompt_tokens or 0
+                self._usage["completion_tokens"] += resp.usage.completion_tokens or 0
         if self._cache:
             self._cache.put(key, reply)
         return reply

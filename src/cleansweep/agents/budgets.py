@@ -41,15 +41,23 @@ class Budget:
             return f"time budget ({self.seconds:.0f} s) used up"
         return None
 
+    def _out_of_time(self) -> str | None:
+        if self.seconds > 0 and time.time() - self.started >= self.seconds:
+            return f"time budget ({self.seconds:.0f} s) used up"
+        return None
+
     def charge_step(self) -> None:
-        why = self.exhausted()
-        if why:
+        """Take one step; each charge checks only its own limit and the time."""
+        if self.steps > 0 and self.used_steps >= self.steps:
+            raise BudgetExhausted(f"step budget ({self.steps}) used up")
+        if why := self._out_of_time():
             raise BudgetExhausted(why)
         self.used_steps += 1
 
     def charge_llm(self) -> None:
-        why = self.exhausted()
-        if why:
+        if self.llm_calls > 0 and self.used_llm >= self.llm_calls:
+            raise BudgetExhausted(f"LLM-call budget ({self.llm_calls}) used up")
+        if why := self._out_of_time():
             raise BudgetExhausted(why)
         self.used_llm += 1
 
