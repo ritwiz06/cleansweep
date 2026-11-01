@@ -8,6 +8,7 @@ from cleansweep.guard.difftest import probe_change
 from cleansweep.guard.guard import ast_unchanged, check_dependencies
 from cleansweep.reviewer.detectors import has_package_metadata, is_public_api
 
+from .coverage_probes import probe_with_coverage
 from .llm import acting
 
 NAME = "validator"
@@ -19,7 +20,9 @@ def check_package(rt, pkg) -> bool:
     items = [rt.items[i] for i in pkg.applied]
     checks: dict = {}
     try:
-        if all(i.action == "format" for i in items):
+        if all(
+            i.action == "format" or i.category in ("commented_code", "todo_note") for i in items
+        ):
             same = ast_unchanged(rt.ws, pkg.start)
             checks["ast_equal"] = same
             if not same:
@@ -48,11 +51,41 @@ def check_package(rt, pkg) -> bool:
             )
         guard_cfg = rt.cfg.get("core", {}).get("guard", {})
         if guard_cfg.get("diff_tests", True):
+            settings = rt.acfg.get(NAME) or {}
             with acting(NAME, budget):
-                outcome, note = probe_change(rt.ws, pkg.start, items, rt.graph, rt.llm, guard_cfg)
+                if rt.ablation == "no_coverage":
+                    outcome, note = probe_change(
+                        rt.ws, pkg.start, items, rt.graph, rt.llm, guard_cfg
+                    )
+                    info = {"coverage": None, "rounds": 1, "note": note}
+                else:
+                    outcome, info = probe_with_coverage(
+                        rt.ws,
+                        pkg.start,
+                        items,
+                        rt.graph,
+                        rt.llm,
+                        guard_cfg,
+                        rounds=int(settings.get("probe_rounds", 3)),
+                        target=float(settings.get("coverage_target", 0.9)),
+                    )
             checks["probes"] = to_dict(outcome) if outcome is not None else None
-            checks["probe_note"] = note
+            checks["probe_note"] = info.get("note", "")
+            checks["coverage"] = info.get("coverage")
+            checks["probe_rounds"] = info.get("rounds")
             pkg.verify["_probes"] = outcome
+            pkg.verify["coverage"] = info.get("coverage")
+            if info.get("coverage") is not None:
+                rt.log.emit(
+                    "check",
+                    agent=NAME,
+                    payload={
+                        "package": pkg.package_id,
+                        "check": "probe coverage",
+                        "coverage": info["coverage"],
+                        "rounds": info.get("rounds"),
+                    },
+                )
             if outcome is not None and not outcome.same:
                 log = "probes found a behavior change:\n" + "\n".join(outcome.mismatches[:20])
                 return _fail(rt, pkg, "probes", log, checks)
@@ -73,7 +106,7 @@ def _pass(rt, pkg, checks: dict) -> bool:
             "package": pkg.package_id,
             "ok": True,
             "probes": probes,
-            "coverage": None,
+            "coverage": checks.get("coverage"),
             "checks": _plain(checks),
         },
     )
@@ -91,7 +124,7 @@ def _fail(rt, pkg, stage: str, log: str, checks: dict) -> bool:
             "package": pkg.package_id,
             "ok": False,
             "probes": checks.get("probes"),
-            "coverage": None,
+            "coverage": checks.get("coverage"),
             "checks": _plain(checks),
         },
         artifacts=[art],

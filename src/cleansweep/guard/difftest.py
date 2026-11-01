@@ -365,9 +365,19 @@ def get_probes(
     return probes, ""
 
 
-def run_harness(ws, spec: dict, files: dict[str, str], cfg: dict, mode: str = "direct") -> dict:
+def run_harness(
+    ws,
+    spec: dict,
+    files: dict[str, str],
+    cfg: dict,
+    mode: str = "direct",
+    coverage_files: list[str] | None = None,
+) -> dict:
     """Write probe files and a spec under _probes/ in the workspace, run the harness (as a script,
-    or in runner mode through a generated test file and the project's test command), read JSON."""
+    or in runner mode through a generated test file and the project's test command), read JSON.
+
+    With coverage_files (direct mode only), the harness runs under coverage.py and the result
+    gains "coverage": {file: executed line numbers} for those workspace files."""
     run_id = uuid.uuid4().hex[:12]
     run_dir = Path(PROBE_DIR) / run_id
     folder = Path(ws.path) / run_dir
@@ -400,21 +410,61 @@ def run_harness(ws, spec: dict, files: dict[str, str], cfg: dict, mode: str = "d
             if hasattr(ws, "sync"):
                 ws.sync()
             python = getattr(ws, "python", sys.executable)
-            code, out = ws.run(
-                [python, str(run_dir / "harness.py"), str(run_dir / "spec.json")],
-                timeout=int(_setting(cfg, "probe_timeout_s")),
-            )
+            cmd = [python, str(run_dir / "harness.py"), str(run_dir / "spec.json")]
+            data = folder / ".coverage"
+            if coverage_files:
+                root = Path(ws.path).resolve()  # the harness imports by real path (/private/var)
+                include = ",".join(str(root / f) for f in coverage_files)
+                cmd = [
+                    python,
+                    "-m",
+                    "coverage",
+                    "run",
+                    f"--data-file={data}",
+                    f"--include={include}",
+                    *cmd[1:],
+                ]
+            code, out = ws.run(cmd, timeout=int(_setting(cfg, "probe_timeout_s")))
         if hasattr(ws, "fetch"):
             ws.fetch(str(run_dir / "out.json"))
         result_path = folder / "out.json"
         if not result_path.exists():
             what = "probe test run" if mode == "runner" else "harness"
             return {"error": f"{what} exit {code}: {out[-500:]}"}
-        return json.loads(result_path.read_text(encoding="utf-8"))
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        if coverage_files and mode != "runner":
+            result["coverage"] = _executed(ws, folder, coverage_files)
+        return result
     finally:
         shutil.rmtree(folder, ignore_errors=True)
         if test_file is not None:
             test_file.unlink(missing_ok=True)
+
+
+def _executed(ws, folder: Path, files: list[str]) -> dict[str, list[int]]:
+    """Executed line numbers per workspace file, from the harness's coverage data."""
+    report = folder / "cov.json"
+    python = getattr(ws, "python", sys.executable)
+    ws.run(
+        [python, "-m", "coverage", "json", f"--data-file={folder / '.coverage'}", "-o", str(report)]
+    )
+    if not report.exists():
+        return {}
+    data = json.loads(report.read_text(encoding="utf-8")).get("files", {})
+    root = Path(ws.path).resolve()
+    out: dict[str, list[int]] = {}
+    for name, info in data.items():
+        path = Path(name)
+        if not path.is_absolute():
+            rel = path.as_posix()  # coverage writes names relative to the workspace
+        else:
+            try:
+                rel = path.resolve().relative_to(root).as_posix()
+            except ValueError:
+                continue
+        if rel in files:
+            out[rel] = sorted(info.get("executed_lines", []))
+    return out
 
 
 def _short(text: str, n: int = 100) -> str:
