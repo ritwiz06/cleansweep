@@ -22,6 +22,7 @@ from . import (
     tester,
     validator,
 )
+from .protocol import load_prompt
 
 RECURSION_LIMIT = 20000
 
@@ -141,6 +142,7 @@ def run_team(rt) -> None:
             "budget": rt.run_budget.as_dict(),
         },
     )
+    rt.profiles = {name: load_prompt(name) for name in ["manager", *AGENTS]}
     rt.log.emit(
         "phase_change",
         agent="manager",
