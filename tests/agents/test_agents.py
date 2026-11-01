@@ -314,3 +314,57 @@ def test_rule_based_manager_never_asks_the_llm(rt):
     explorer.run(rt)
     llm = _manager_says("stop")
     assert manager.decide(_llm_rt(rt, llm)) == "tester" and llm.calls == [] and not _decisions(rt)
+
+
+def _near_duplicate():
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    return CleanupItem(
+        "d",
+        CodeUnit("shop/a.py", "function", "fmt"),
+        "duplicate",
+        "report_only",
+        "suggest",
+        "Near-duplicate of shop/b.py::fmt.",
+        keep_target="shop/b.py::fmt",
+    )
+
+
+def test_thorough_mode_takes_the_investigators_word_on_rewrites_only():
+    safe = {"decision": "safe", "reason": "same body", "evidence": []}
+    item = _near_duplicate()
+    investigator.apply_verdict(item, dict(safe))
+    assert item.lane == "suggest" and item.action == "report_only"  # safe mode: detector lane
+    item = _near_duplicate()
+    investigator.apply_verdict(item, dict(safe), "thorough")
+    assert item.lane == "safe" and item.action == "replace_with" and "thorough" in item.sources
+    assert "only if the probes run cases on it" in item.reason
+    dead = _near_duplicate()
+    dead.category = "dead_code"
+    investigator.apply_verdict(dead, dict(safe), "thorough")
+    assert dead.lane == "suggest"
+
+
+def test_thorough_rewrite_comes_from_exact_edits_in_one_file(rt):
+    import json
+    from pathlib import Path
+
+    from cleansweep.agents import engineer
+    from cleansweep.analysis import build_graph
+
+    root = Path(rt.ws.path)
+    body = "def fmt(x):\n    return f'{x:.2f}'\n"
+    (root / "shop" / "b.py").write_text(body)
+    (root / "shop" / "a.py").write_text(body + "\n\ndef show(x):\n    return fmt(x)\n")
+    rt.graph = build_graph(rt.ws.path)
+    item = _near_duplicate()
+    item.evidence = ["same normalized body"]
+    edits = [{"old": body, "new": "from shop.b import fmt\n"}]
+    good = ScriptedLLM([("Remove the duplicate `fmt`", json.dumps({"edits": edits}))])
+    patch = engineer.llm_rewrite(_llm_rt(rt, good), item, rt.budget("engineer"))
+    assert "+from shop.b import fmt" in patch and "-def fmt(x):" in patch
+    assert rt.ws.apply_patch(patch) and "fmt(x)" in (root / "shop" / "a.py").read_text()
+    rt.llm = None
+    missing = [{"old": "def nowhere():", "new": ""}]
+    bad = ScriptedLLM([("Remove the duplicate `fmt`", json.dumps({"edits": missing}))])
+    assert engineer.llm_rewrite(_llm_rt(rt, bad), item, rt.budget("engineer")) == ""

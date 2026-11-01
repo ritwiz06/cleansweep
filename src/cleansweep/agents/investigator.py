@@ -227,10 +227,26 @@ def investigate_rules(rt, item: CleanupItem, n: int) -> dict:
     }
 
 
-def apply_verdict(item: CleanupItem, verdict: dict) -> None:
-    """Update the item's lane: never riskier than the detector's lane."""
+THOROUGH = {"duplicate", "wrapper"}  # rewrites thorough mode applies when the probes verify them
+THOROUGH_NOTE = "thorough mode: applied as a rewrite only if the probes run cases on it"
+
+
+def apply_verdict(item: CleanupItem, verdict: dict, mode: str = "safe") -> None:
+    """Update the item's lane: never riskier than the detector's lane, except that thorough mode
+    takes the Investigator's word on duplicates and wrappers (the probes then have to verify
+    the rewrite on its own cases, or it is rolled back)."""
+    promote = (
+        mode == "thorough"
+        and verdict["decision"] == "safe"
+        and item.lane == "suggest"
+        and item.category in THOROUGH
+        and bool(item.keep_target or item.patch)
+    )
     if verdict["decision"] == "safe" and item.lane == "safe" and item.action != "report_only":
         lane = "safe"
+    elif promote:
+        lane, item.action = "safe", "replace_with"
+        item.sources.append("thorough")
     else:
         lane = "suggest"
     if verdict["decision"] == "drop":
@@ -239,7 +255,9 @@ def apply_verdict(item: CleanupItem, verdict: dict) -> None:
     if item.category == "format" and lane == "suggest":
         item.reason = verdict["reason"]
     elif item.category != "format" and verdict.get("stop") != "rule":
-        if verdict["decision"] == "safe" and lane == "suggest":
+        if promote:
+            item.reason = f"Investigator (safe): {verdict['reason']} ({THOROUGH_NOTE})"
+        elif verdict["decision"] == "safe" and lane == "suggest":
             # the detector or a policy (public API, framework callback) keeps it a suggestion
             item.reason = f"{item.reason} The Investigator found no use either: {verdict['reason']}"
         else:
@@ -340,7 +358,7 @@ def run(rt) -> None:
             list(item.evidence),
             list(item.sources),
         )
-        apply_verdict(item, verdict)
+        apply_verdict(item, verdict, rt.mode)
         rt.log.emit(
             "decision",
             agent=verdict.get("agent", NAME),
