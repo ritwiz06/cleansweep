@@ -421,6 +421,31 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
 `run_sweep(target, cfg, method="agentic", seed, on_event)` runs the same team for experiments and
 returns a normal `SweepReport`, so v1's collection and statistics scripts read it unchanged.
 
+### Watch mode (R9)
+
+```
+python -m cleansweep watch <repo> [--budget-tests N] [--interval S] [--once | --polls K]
+                                  [--out <dir>] [--mode safe|thorough] [--no-llm]
+```
+
+`agents/watch.py` follows a git repository: each poll looks at the newest commit, measures the
+slop there with the static detectors (the same measurement as v1's Scheduler replay: leftover
+files, dead code, unused imports, wrappers, safe lane), and decides:
+- wait when nothing is open, or when the test budget left can't pay for even one package (three
+  baseline runs, one run per package of four items, the final suite);
+- clean when the open slop is at least 2% of the Python lines (v1's adaptive threshold), when
+  the commits since the last clean added at least 3 items, or after 20 commits with slop open;
+  a budget too small for every open item caps the clean at the test runs left;
+- otherwise wait, with the share, the items open and new, and the commits since the last clean.
+
+A clean runs `clean` on a `git archive` copy of the commit (the repository is never written to);
+its items count as delivered until the next measurement no longer finds them merged. Every poll
+appends a line to `<out>/watch_log.jsonl` (commit, subject, slop by category, decision, reason,
+the clean's folder and outcome, test runs used); `watch_state.json` lets a watch resume.
+`simulate_watch` applies the same rule to a recorded history from the v1 replay's cached
+measurements (`scripts/experiments/v2/exp_watch.py simulate` → `results/summary/v2/watch_replay.csv`);
+`exp_watch.py demo` watches the demo app and commits `demo/feature.patch` as a new commit.
+
 ## 16. Ablation switches
 
 Each ablation is a config switch under `core.agents.ablation`, recorded in the report's stats:
