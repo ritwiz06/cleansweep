@@ -12,3 +12,10 @@ results/models/
 .ruff_cache/
 .coverage*
 .DS_Store
+htmlcov/
+coverage.xml
+node_modules/
+app/studio/**/dist/
+playwright-report/
+test-results/
+.cs_venv/
