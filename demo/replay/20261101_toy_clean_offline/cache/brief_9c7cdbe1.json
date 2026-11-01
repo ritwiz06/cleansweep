@@ -1,0 +1,52 @@
+{
+ "ci_files": [],
+ "config_files": [
+  "requirements.txt",
+  "pytest.ini"
+ ],
+ "dependencies": 0,
+ "entry_points": [
+  "debug_cart.py",
+  "shopcart/__main__.py",
+  "tests/test_cart.py",
+  "tests/test_cart.py::test_add_and_count",
+  "tests/test_cart.py::test_add_rejects_zero_quantity",
+  "tests/test_cart.py::test_checkout_with_code",
+  "tests/test_cart.py::test_checkout_with_tax",
+  "tests/test_cart.py::test_remove",
+  "tests/test_cli.py",
+  "tests/test_cli.py::test_add_and_total",
+  "tests/test_cli.py::test_export",
+  "tests/test_cli.py::test_unknown_command",
+  "tests/test_discounts.py",
+  "tests/test_discounts.py::test_known_code",
+  "tests/test_discounts.py::test_unknown_code",
+  "tests/test_pricing.py",
+  "tests/test_pricing.py::test_format_money_and_slugify",
+  "tests/test_pricing.py::test_round_price",
+  "tests/test_pricing.py::test_subtotal_and_tax",
+  "tests/test_pricing.py::test_total"
+ ],
+ "formatter": null,
+ "formatter_paths": null,
+ "frameworks": [
+  "pytest"
+ ],
+ "install_command": "pip install -r requirements-dev.txt && pip install -r requirements.txt",
+ "languages": {
+  "ini": 1,
+  "py": 17,
+  "txt": 2
+ },
+ "name": "toy_repo",
+ "notes": [],
+ "python_files": 17,
+ "secrets": {
+  "files": [],
+  "findings": []
+ },
+ "summary": "A Python project with 17 Python files.",
+ "test_command": "pytest",
+ "test_files": 5,
+ "ui_framework": null
+}

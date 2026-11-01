@@ -1,0 +1,1056 @@
+{
+  "repo_id": "local:toy_repo",
+  "method": "agentic",
+  "policy": "now",
+  "seed": 0,
+  "started_at": "2026-11-01T23:33:17+00:00",
+  "finished_at": "2026-11-01T23:33:33+00:00",
+  "plan": {
+    "repo_id": "local:toy_repo",
+    "created_at": "2026-11-01T23:33:17+00:00",
+    "items": [
+      {
+        "item_id": "e7256e167d",
+        "unit": {
+          "path": "debug_cart.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "file name matches 'debug*'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "knowledge base: 4% of mined maintainer removal requests are leftover_file",
+          "R1: no lessons match",
+          "quarantined at /private/tmp/cs-studio-rec/20261101_toy_clean_offline/quarantine/local_toy_repo/20261101T233324721211/debug_cart.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "2a30f69d9c",
+        "unit": {
+          "path": "reproduce_bug.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "file name matches 'reproduce*'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "knowledge base: 4% of mined maintainer removal requests are leftover_file",
+          "R1: no lessons match",
+          "quarantined at /private/tmp/cs-studio-rec/20261101_toy_clean_offline/quarantine/local_toy_repo/20261101T233325455590/reproduce_bug.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ad1ccca381",
+        "unit": {
+          "path": "shopcart/pricing_old.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "file name matches '*_old.py'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "knowledge base: 4% of mined maintainer removal requests are leftover_file",
+          "R1: no lessons match",
+          "quarantined at /private/tmp/cs-studio-rec/20261101_toy_clean_offline/quarantine/local_toy_repo/20261101T233327243322/shopcart/pricing_old.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "c8c5c12a31",
+        "unit": {
+          "path": "shopcart/utils.py",
+          "kind": "function",
+          "name": "format_money_v2",
+          "start_line": 15,
+          "end_line": 19
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "knowledge base: 80% of mined maintainer removal requests are dead_code",
+          "R1: shopcart/utils.py::format_money_v2: dynamic risk no; framework callback no; reachable from an entry point no; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "baad19ef2a",
+        "unit": {
+          "path": "shopcart/discounts.py",
+          "kind": "function",
+          "name": "_round_price",
+          "start_line": 4,
+          "end_line": 11
+        },
+        "category": "duplicate",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "identical body to shopcart/utils.py::round_price (similarity 1.00)",
+          "R1: shopcart/discounts.py::_round_price: dynamic risk no; framework callback no; reachable from an entry point yes; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "minhash",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": "shopcart/utils.py::round_price",
+        "patch": "--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n-\n-\n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n \n \n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\n",
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "0c1c0f4e23",
+        "unit": {
+          "path": "shopcart/storage.py",
+          "kind": "function",
+          "name": "_safe_round",
+          "start_line": 11,
+          "end_line": 18
+        },
+        "category": "duplicate",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "near-identical body to shopcart/utils.py::round_price (similarity 0.85)",
+          "R1: shopcart/storage.py::_safe_round: dynamic risk no; framework callback no; reachable from an entry point yes; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "minhash",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": "shopcart/utils.py::round_price",
+        "patch": "--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\n",
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ca07b09097",
+        "unit": {
+          "path": "shopcart/cart.py",
+          "kind": "function",
+          "name": "compute_total",
+          "start_line": 7,
+          "end_line": 8
+        },
+        "category": "wrapper",
+        "action": "replace_with",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "body is only `return pricing.total(...)` with the same arguments",
+          "called once, from shopcart/cart.py::Cart.checkout",
+          "knowledge base: 2% of mined maintainer removal requests are wrapper",
+          "R1: shopcart/cart.py::compute_total: dynamic risk no; framework callback no; reachable from an entry point yes; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "ast",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": "--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -2,10 +2,6 @@\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n-\n-\n-def compute_total(items):\n-    return pricing.total(items)\n \n \n class Cart:\n@@ -24,7 +20,7 @@\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\n",
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "48d108323e",
+        "unit": {
+          "path": "shopcart/cart.py",
+          "kind": "import",
+          "name": "os",
+          "start_line": 1,
+          "end_line": 1
+        },
+        "category": "unused_import",
+        "action": "remove_import",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "ruff F401 at line 1",
+          "knowledge base: 3% of mined maintainer removal requests are unused_import",
+          "R1: no lessons match"
+        ],
+        "sources": [
+          "ruff",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "5e8244a83f",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "import",
+          "name": "sys",
+          "start_line": 1,
+          "end_line": 1
+        },
+        "category": "unused_import",
+        "action": "remove_import",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "ruff F401 at line 1",
+          "knowledge base: 3% of mined maintainer removal requests are unused_import",
+          "R1: no lessons match"
+        ],
+        "sources": [
+          "ruff",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "73bf11c5ce",
+        "unit": {
+          "path": "requirements.txt",
+          "kind": "dependency",
+          "name": "requests",
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "unused_dependency",
+        "action": "remove_dependency",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "deptry DEP002: 'requests' defined as a dependency but not used in the codebase",
+          "requests is not mentioned in any config, CI or script file",
+          "R1: no lessons match"
+        ],
+        "sources": [
+          "deptry",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "c7fcf62991",
+        "unit": {
+          "path": "shopcart/pricing.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "format",
+        "action": "format",
+        "lane": "suggest",
+        "reason": "The project doesn't enforce a formatter (no ruff format or black in its CI config or .pre-commit-config.yaml), so reformatting is only suggested.",
+        "evidence": [
+          "ruff format --check would reformat this file"
+        ],
+        "sources": [
+          "ruff",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "350bb97300",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_add",
+          "start_line": 7,
+          "end_line": 11
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "Investigator (suggest): It may be used in ways the code graph can't see (dynamic use or a framework callback).",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)",
+          "knowledge base: 80% of mined maintainer removal requests are dead_code",
+          "R1: shopcart/commands.py::cmd_add: dynamic risk yes; framework callback no; reachable from an entry point no; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ebc74f012e",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_export",
+          "start_line": 19,
+          "end_line": 22
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "Investigator (suggest): It may be used in ways the code graph can't see (dynamic use or a framework callback).",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)",
+          "knowledge base: 80% of mined maintainer removal requests are dead_code",
+          "R1: shopcart/commands.py::cmd_export: dynamic risk yes; framework callback no; reachable from an entry point no; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "061d473160",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_load",
+          "start_line": 25,
+          "end_line": 28
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "Investigator (suggest): It may be used in ways the code graph can't see (dynamic use or a framework callback).",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)",
+          "knowledge base: 80% of mined maintainer removal requests are dead_code",
+          "R1: shopcart/commands.py::cmd_load: dynamic risk yes; framework callback no; reachable from an entry point no; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "ad149ec43a",
+        "unit": {
+          "path": "shopcart/commands.py",
+          "kind": "function",
+          "name": "cmd_total",
+          "start_line": 14,
+          "end_line": 16
+        },
+        "category": "dead_code",
+        "action": "delete_unit",
+        "lane": "suggest",
+        "reason": "Investigator (suggest): It may be used in ways the code graph can't see (dynamic use or a framework callback).",
+        "evidence": [
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph",
+          "may be used dynamically (getattr, string lookup or decorator)",
+          "knowledge base: 80% of mined maintainer removal requests are dead_code",
+          "R1: shopcart/commands.py::cmd_total: dynamic risk yes; framework callback no; reachable from an entry point no; in __all__ no\nstring or getattr mentions: 0 []",
+          "R2: no lessons match"
+        ],
+        "sources": [
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "5b73439d48",
+        "unit": {
+          "path": "shopcart/storage.py",
+          "kind": "function",
+          "name": "load_legacy",
+          "start_line": 39,
+          "end_line": 45
+        },
+        "category": "security",
+        "action": "report_only",
+        "lane": "suggest",
+        "reason": "Possible security problem: Use of possibly insecure function - consider using safer ast.literal_eval.",
+        "evidence": [
+          "bandit B307 (MEDIUM) at line 41",
+          "vulture: unused function (60% confidence)",
+          "not reachable from tests, __main__ or scripts in the call graph"
+        ],
+        "sources": [
+          "bandit",
+          "vulture",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "4285e25dc4",
+        "unit": {
+          "path": "reproduce_bug.py",
+          "kind": "lines",
+          "name": "L6-6",
+          "start_line": 6,
+          "end_line": 6
+        },
+        "category": "debug_leftover",
+        "action": "edit_lines",
+        "lane": "suggest",
+        "reason": "A print in library code; it may be leftover debugging or intended output.",
+        "evidence": [
+          "print at line 6"
+        ],
+        "sources": [
+          "ast",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": "--- a/reproduce_bug.py\n+++ b/reproduce_bug.py\n@@ -6 +5,0 @@\n-print(cart.checkout(\"SAVE10\"))\n",
+        "safe_score": null,
+        "llm_confidence": null
+      }
+    ]
+  },
+  "results": [
+    {
+      "item_id": "48d108323e",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.4400451183319092
+      },
+      "ast_equal": null,
+      "diff_check": {
+        "same": true,
+        "n_cases": 1,
+        "n_unstable": 0,
+        "mismatches": []
+      },
+      "diff": "diff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 7c41ce1..8e2b39b 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -1,4 +1,3 @@\n-import os\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n",
+      "notes": ""
+    },
+    {
+      "item_id": "5e8244a83f",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.44078993797302246
+      },
+      "ast_equal": null,
+      "diff_check": {
+        "same": true,
+        "n_cases": 1,
+        "n_unstable": 0,
+        "mismatches": []
+      },
+      "diff": "diff --git a/shopcart/commands.py b/shopcart/commands.py\nindex fb1f494..86ba806 100644\n--- a/shopcart/commands.py\n+++ b/shopcart/commands.py\n@@ -1,4 +1,3 @@\n-import sys\n \n from shopcart.storage import load_cart, save_cart\n from shopcart.utils import format_money, slugify\n",
+      "notes": ""
+    },
+    {
+      "item_id": "e7256e167d",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.4570491313934326
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/debug_cart.py b/debug_cart.py\ndeleted file mode 100644\nindex d84458c..0000000\n--- a/debug_cart.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.cart import Cart\n-from shopcart.pricing import subtotal, tax\n-\n-\n-def dump(cart):\n-    for item in cart.items:\n-        print(item)\n-    print(\"subtotal\", subtotal(cart.items), \"tax\", tax(cart.items))\n-\n-\n-if __name__ == \"__main__\":\n-    c = Cart()\n-    c.add(\"book\", 12.5, 2)\n-    dump(c)\n",
+      "notes": ""
+    },
+    {
+      "item_id": "2a30f69d9c",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.6038200855255127
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/reproduce_bug.py b/reproduce_bug.py\ndeleted file mode 100644\nindex 6f8fd99..0000000\n--- a/reproduce_bug.py\n+++ /dev/null\n@@ -1,6 +0,0 @@\n-# quick check for the discount rounding issue\n-from shopcart.cart import Cart\n-\n-cart = Cart()\n-cart.add(\"pen\", 1.99, 3)\n-print(cart.checkout(\"SAVE10\"))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "73bf11c5ce",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.558372974395752
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/requirements.txt b/requirements.txt\nindex 535409c..e69de29 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1 +0,0 @@\n-requests>=2.31\n",
+      "notes": "checked statically only: this workspace can't uninstall packages"
+    },
+    {
+      "item_id": "ad1ccca381",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.5682199001312256
+      },
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/pricing_old.py b/shopcart/pricing_old.py\ndeleted file mode 100644\nindex f4e8cf7..0000000\n--- a/shopcart/pricing_old.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.utils import round_price\n-\n-TAX_RATE = 0.075\n-\n-\n-def subtotal(items):\n-    result = 0\n-    for item in items:\n-        result = result + item[\"price\"] * item[\"qty\"]\n-    return round_price(result)\n-\n-\n-def total(items):\n-    return round_price(subtotal(items) * (1 + TAX_RATE))\n",
+      "notes": ""
+    },
+    {
+      "item_id": "ca07b09097",
+      "status": "rolled_back",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 8e2b39b..74f3484 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -3,10 +3,6 @@ from shopcart import pricing\n from shopcart.discounts import apply_discount\n \n \n-def compute_total(items):\n-    return pricing.total(items)\n-\n-\n class Cart:\n     def __init__(self):\n         self.items = []\n@@ -23,7 +19,7 @@ class Cart:\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\n",
+      "notes": "unverified failed: the probes ran no cases, so these rewrites are not verified: ['shopcart/cart.py::compute_total']"
+    },
+    {
+      "item_id": "baad19ef2a",
+      "status": "rolled_back",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/discounts.py b/shopcart/discounts.py\nindex 83f9d65..b4a4d61 100644\n--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n \n \n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n-\n-\n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\n",
+      "notes": "unverified failed: the probes ran no cases, so these rewrites are not verified: ['shopcart/discounts.py::_round_price']"
+    },
+    {
+      "item_id": "0c1c0f4e23",
+      "status": "rolled_back",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/shopcart/storage.py b/shopcart/storage.py\nindex cfded7b..2ded592 100644\n--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@ import json\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\n",
+      "notes": "unverified failed: the probes ran no cases, so these rewrites are not verified: ['shopcart/storage.py::_safe_round']"
+    },
+    {
+      "item_id": "c8c5c12a31",
+      "status": "kept",
+      "tests": {
+        "ok": true,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "failed_ids": [],
+        "duration_s": 0.5054531097412109
+      },
+      "ast_equal": null,
+      "diff_check": {
+        "same": true,
+        "n_cases": 1,
+        "n_unstable": 0,
+        "mismatches": []
+      },
+      "diff": "diff --git a/shopcart/utils.py b/shopcart/utils.py\nindex bcaacd7..41c386a 100644\n--- a/shopcart/utils.py\n+++ b/shopcart/utils.py\n@@ -12,12 +12,5 @@ def format_money(value):\n     return f\"${round_price(value):.2f}\"\n \n \n-def format_money_v2(value, currency=\"USD\"):\n-    amount = round_price(value)\n-    if currency == \"USD\":\n-        return f\"${amount:,.2f}\"\n-    return f\"{amount:,.2f} {currency}\"\n-\n-\n def slugify(name):\n     return \"-\".join(name.lower().split())\n",
+      "notes": ""
+    },
+    {
+      "item_id": "c7fcf62991",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "350bb97300",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "ebc74f012e",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "061d473160",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "ad149ec43a",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "5b73439d48",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    },
+    {
+      "item_id": "4285e25dc4",
+      "status": "skipped",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "",
+      "notes": "suggest lane: reported, not applied"
+    }
+  ],
+  "stats": {
+    "items_total": 17,
+    "items_safe": 10,
+    "items_kept": 7,
+    "items_repaired": 0,
+    "items_rolled_back": 3,
+    "lines_removed": 44,
+    "files_removed": 3,
+    "test_runs": 14,
+    "llm_calls": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "llm_retries": 0,
+    "llm_failures": 0,
+    "llm_events": [],
+    "wall_seconds": 15.67,
+    "n_checks": 10,
+    "final_diff": "diff --git a/debug_cart.py b/debug_cart.py\ndeleted file mode 100644\nindex d84458c..0000000\n--- a/debug_cart.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.cart import Cart\n-from shopcart.pricing import subtotal, tax\n-\n-\n-def dump(cart):\n-    for item in cart.items:\n-        print(item)\n-    print(\"subtotal\", subtotal(cart.items), \"tax\", tax(cart.items))\n-\n-\n-if __name__ == \"__main__\":\n-    c = Cart()\n-    c.add(\"book\", 12.5, 2)\n-    dump(c)\ndiff --git a/reproduce_bug.py b/reproduce_bug.py\ndeleted file mode 100644\nindex 6f8fd99..0000000\n--- a/reproduce_bug.py\n+++ /dev/null\n@@ -1,6 +0,0 @@\n-# quick check for the discount rounding issue\n-from shopcart.cart import Cart\n-\n-cart = Cart()\n-cart.add(\"pen\", 1.99, 3)\n-print(cart.checkout(\"SAVE10\"))\ndiff --git a/requirements.txt b/requirements.txt\nindex 535409c..e69de29 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1 +0,0 @@\n-requests>=2.31\ndiff --git a/shopcart/cart.py b/shopcart/cart.py\nindex 7c41ce1..8e2b39b 100644\n--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -1,4 +1,3 @@\n-import os\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\ndiff --git a/shopcart/commands.py b/shopcart/commands.py\nindex fb1f494..86ba806 100644\n--- a/shopcart/commands.py\n+++ b/shopcart/commands.py\n@@ -1,4 +1,3 @@\n-import sys\n \n from shopcart.storage import load_cart, save_cart\n from shopcart.utils import format_money, slugify\ndiff --git a/shopcart/pricing_old.py b/shopcart/pricing_old.py\ndeleted file mode 100644\nindex f4e8cf7..0000000\n--- a/shopcart/pricing_old.py\n+++ /dev/null\n@@ -1,14 +0,0 @@\n-from shopcart.utils import round_price\n-\n-TAX_RATE = 0.075\n-\n-\n-def subtotal(items):\n-    result = 0\n-    for item in items:\n-        result = result + item[\"price\"] * item[\"qty\"]\n-    return round_price(result)\n-\n-\n-def total(items):\n-    return round_price(subtotal(items) * (1 + TAX_RATE))\ndiff --git a/shopcart/utils.py b/shopcart/utils.py\nindex bcaacd7..41c386a 100644\n--- a/shopcart/utils.py\n+++ b/shopcart/utils.py\n@@ -12,12 +12,5 @@ def format_money(value):\n     return f\"${round_price(value):.2f}\"\n \n \n-def format_money_v2(value, currency=\"USD\"):\n-    amount = round_price(value)\n-    if currency == \"USD\":\n-        return f\"${amount:,.2f}\"\n-    return f\"{amount:,.2f} {currency}\"\n-\n-\n def slugify(name):\n     return \"-\".join(name.lower().split())\n",
+    "scope": {
+      "kind": "repo"
+    },
+    "agentic": {
+      "mode": "safe",
+      "ablation": null,
+      "verdict": "everything runs",
+      "phases": [
+        "ONBOARD",
+        "BASELINE",
+        "AUDIT",
+        "INVESTIGATE",
+        "PLAN",
+        "EXECUTE",
+        "FINAL_VERIFY",
+        "REPORT",
+        "DONE"
+      ],
+      "phase_seconds": {
+        "ONBOARD": 0.02,
+        "BASELINE": 4.71,
+        "AUDIT": 0.46,
+        "INVESTIGATE": 0.11,
+        "PLAN": 0.0,
+        "EXECUTE": 9.46,
+        "FINAL_VERIFY": 0.63,
+        "REPORT": 0.1,
+        "DONE": 0.1
+      },
+      "back_steps": {},
+      "agents": {
+        "explorer": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.0
+        },
+        "tester": {
+          "turns": 12,
+          "instances": 1,
+          "steps": 4,
+          "llm_calls": 0,
+          "seconds": 10.9
+        },
+        "auditor": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 2,
+          "llm_calls": 0,
+          "seconds": 0.5
+        },
+        "investigator": {
+          "turns": 1,
+          "instances": 14,
+          "steps": 22,
+          "llm_calls": 0,
+          "seconds": 0.1
+        },
+        "planner": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.0
+        },
+        "engineer": {
+          "turns": 17,
+          "instances": 1,
+          "steps": 10,
+          "llm_calls": 0,
+          "seconds": 1.5
+        },
+        "validator": {
+          "turns": 10,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 1.8
+        },
+        "fixer": {
+          "turns": 3,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.1
+        },
+        "reporter": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.1
+        }
+      },
+      "llm_by_agent": {},
+      "messages": 106,
+      "artifacts": 20,
+      "lessons": [
+        {
+          "lesson_id": "L1",
+          "pattern": {
+            "category": "wrapper",
+            "unit_kind": "function",
+            "file_glob": "shopcart/*.py",
+            "name_pattern": "compute_*"
+          },
+          "reason": "unverified failed after replace_with of shopcart/cart.py::compute_total: the probes ran no cases, so these rewrites are not verified: ['shopcart/cart.py::compute_total']",
+          "source": {
+            "package": "P7",
+            "item": "ca07b09097",
+            "check": "unverified"
+          }
+        },
+        {
+          "lesson_id": "L2",
+          "pattern": {
+            "category": "duplicate",
+            "unit_kind": "function",
+            "file_glob": "shopcart/*.py",
+            "name_pattern": "_round_*"
+          },
+          "reason": "unverified failed after replace_with of shopcart/discounts.py::_round_price: the probes ran no cases, so these rewrites are not verified: ['shopcart/discounts.py::_round_price']",
+          "source": {
+            "package": "P8",
+            "item": "baad19ef2a",
+            "check": "unverified"
+          }
+        },
+        {
+          "lesson_id": "L3",
+          "pattern": {
+            "category": "duplicate",
+            "unit_kind": "function",
+            "file_glob": "shopcart/*.py",
+            "name_pattern": "_safe_*"
+          },
+          "reason": "unverified failed after replace_with of shopcart/storage.py::_safe_round: the probes ran no cases, so these rewrites are not verified: ['shopcart/storage.py::_safe_round']",
+          "source": {
+            "package": "P9",
+            "item": "0c1c0f4e23",
+            "check": "unverified"
+          }
+        }
+      ],
+      "decisions": {
+        "safe": 10,
+        "suggest": 7,
+        "drop": 0
+      },
+      "budget_exhausted": 0,
+      "packages": [
+        {
+          "package": "P1",
+          "goal": "Remove 1 unused import in shopcart/cart.py",
+          "status": "kept",
+          "items": [
+            "48d108323e"
+          ],
+          "commit": "cd4818922054b57326245543ae30d416e3b3bec7",
+          "turns": 0
+        },
+        {
+          "package": "P2",
+          "goal": "Remove 1 unused import in shopcart/commands.py",
+          "status": "kept",
+          "items": [
+            "5e8244a83f"
+          ],
+          "commit": "f4550ca9395538ecf2a6cc9a8f081f3e8676f66d",
+          "turns": 0
+        },
+        {
+          "package": "P3",
+          "goal": "Remove 1 leftover file in debug_cart.py",
+          "status": "kept",
+          "items": [
+            "e7256e167d"
+          ],
+          "commit": "a9f9f9bffa78ccbf398eeafe9b387b4e904c5171",
+          "turns": 0
+        },
+        {
+          "package": "P4",
+          "goal": "Remove 1 leftover file in reproduce_bug.py",
+          "status": "kept",
+          "items": [
+            "2a30f69d9c"
+          ],
+          "commit": "297e4b2ac4d5fc5cf4bbbcd02022a7162f717a38",
+          "turns": 0
+        },
+        {
+          "package": "P5",
+          "goal": "Remove 1 unused dependency in requirements.txt",
+          "status": "kept",
+          "items": [
+            "73bf11c5ce"
+          ],
+          "commit": "aec853132fdd68d1fa926ceed4419a6151258d1a",
+          "turns": 0
+        },
+        {
+          "package": "P6",
+          "goal": "Remove 1 leftover file in shopcart/pricing_old.py",
+          "status": "kept",
+          "items": [
+            "ad1ccca381"
+          ],
+          "commit": "93fa739cc6cffe16f253cf8268a83ff3f20e122b",
+          "turns": 0
+        },
+        {
+          "package": "P7",
+          "goal": "Remove 1 one-use wrapper in shopcart/cart.py",
+          "status": "rolled_back",
+          "items": [
+            "ca07b09097"
+          ],
+          "commit": null,
+          "turns": 0
+        },
+        {
+          "package": "P8",
+          "goal": "Remove 1 duplicate in shopcart/discounts.py",
+          "status": "rolled_back",
+          "items": [
+            "baad19ef2a"
+          ],
+          "commit": null,
+          "turns": 0
+        },
+        {
+          "package": "P9",
+          "goal": "Remove 1 duplicate in shopcart/storage.py",
+          "status": "rolled_back",
+          "items": [
+            "0c1c0f4e23"
+          ],
+          "commit": null,
+          "turns": 0
+        },
+        {
+          "package": "P10",
+          "goal": "Remove 1 unused function or class in shopcart/utils.py",
+          "status": "kept",
+          "items": [
+            "c8c5c12a31"
+          ],
+          "commit": "ff736853fc3422bad661182a2da554a32efb15f2",
+          "turns": 0
+        }
+      ],
+      "baseline": {
+        "ok": true,
+        "runs": 3,
+        "passed": 15,
+        "failed": 0,
+        "errors": 0,
+        "flaky": [],
+        "failing": [],
+        "stable_pass": [
+          "tests.test_cart::test_add_and_count",
+          "tests.test_cart::test_add_rejects_zero_quantity",
+          "tests.test_cart::test_checkout_with_code",
+          "tests.test_cart::test_checkout_with_tax",
+          "tests.test_cart::test_remove",
+          "tests.test_cli::test_add_and_total",
+          "tests.test_cli::test_export",
+          "tests.test_cli::test_unknown_command",
+          "tests.test_discounts::test_known_code",
+          "tests.test_discounts::test_unknown_code",
+          "tests.test_pricing::test_format_money_and_slugify",
+          "tests.test_pricing::test_round_price",
+          "tests.test_pricing::test_subtotal_and_tax",
+          "tests.test_pricing::test_total",
+          "tests.test_storage::test_save_and_load"
+        ],
+        "duration_s": 0.46
+      },
+      "final": {
+        "ok": true,
+        "new_failures": [],
+        "tests_removed": [],
+        "passed": 15,
+        "baseline_passed": 15,
+        "result": {
+          "ok": true,
+          "passed": 15,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "failed_ids": [],
+          "duration_s": 0.6209359169006348
+        }
+      },
+      "stopped": null,
+      "secrets": {
+        "files": 0,
+        "findings": 0
+      },
+      "run_dir": "/private/tmp/cs-studio-rec/20261101_toy_clean_offline",
+      "branch": "cleansweep/cleanup-20261101-163332"
+    }
+  }
+}

@@ -253,8 +253,15 @@ def run_live(
 
 
 def shipped_runs(folder: str | Path = SHIPPED_DIR) -> list[Path]:
-    """Recordings that ship with the repository (demo/replay/), newest run id first."""
-    return sorted((p.parent for p in Path(folder).glob("*/events.jsonl")), reverse=True)
+    """v1 recordings that ship with the repository (demo/replay/), newest run id first.
+
+    v2 recordings (agent-team runs, for Studio) sit in the same folder and are left out."""
+    found = []
+    for path in Path(folder).glob("*/events.jsonl"):
+        with path.open(encoding="utf-8") as f:
+            if json.loads(f.readline() or "{}").get("v") != 2:
+                found.append(path.parent)
+    return sorted(found, reverse=True)
 
 
 def main(argv: list[str] | None = None) -> int:

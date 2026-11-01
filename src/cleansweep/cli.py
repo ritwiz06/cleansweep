@@ -142,6 +142,20 @@ def cmd_clean(args) -> int:
     return 0 if s["verdict"] in ("everything runs", "nothing applied") else 1
 
 
+def cmd_studio(args) -> int:
+    from cleansweep.core.config import REPO_ROOT
+
+    # Studio lives in the repository's app/ folder, next to the package
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    try:
+        from app.studio.server import serve
+    except ImportError as exc:
+        print(f"cleansweep studio: {exc}; install requirements/rev.txt", file=sys.stderr)
+        return 1
+    return serve(args.port, args.runs, open_browser=not args.no_browser)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="cleansweep")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -206,6 +220,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--quiet", action="store_true", help="print only the result")
     p.set_defaults(func=cmd_clean)
+    p = sub.add_parser(
+        "studio",
+        help="open CleanSweep Studio: launch, follow, replay and compare runs in the browser",
+    )
+    p.add_argument("--port", type=int, default=8765)
+    p.add_argument(
+        "--runs", help="folder for runs started from Studio (default results/raw/studio)"
+    )
+    p.add_argument("--no-browser", action="store_true", help="do not open a browser window")
+    p.set_defaults(func=cmd_studio)
     args = parser.parse_args(argv)
     return args.func(args)
 

@@ -1,0 +1,20 @@
+diff --git a/shopcart/pricing_old.py b/shopcart/pricing_old.py
+deleted file mode 100644
+index f4e8cf7..0000000
+--- a/shopcart/pricing_old.py
++++ /dev/null
+@@ -1,14 +0,0 @@
+-from shopcart.utils import round_price
+-
+-TAX_RATE = 0.075
+-
+-
+-def subtotal(items):
+-    result = 0
+-    for item in items:
+-        result = result + item["price"] * item["qty"]
+-    return round_price(result)
+-
+-
+-def total(items):
+-    return round_price(subtotal(items) * (1 + TAX_RATE))

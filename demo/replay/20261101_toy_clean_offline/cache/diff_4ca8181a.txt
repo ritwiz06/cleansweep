@@ -1,0 +1,12 @@
+diff --git a/reproduce_bug.py b/reproduce_bug.py
+deleted file mode 100644
+index 6f8fd99..0000000
+--- a/reproduce_bug.py
++++ /dev/null
+@@ -1,6 +0,0 @@
+-# quick check for the discount rounding issue
+-from shopcart.cart import Cart
+-
+-cart = Cart()
+-cart.add("pen", 1.99, 3)
+-print(cart.checkout("SAVE10"))
