@@ -2,6 +2,7 @@
 
     python scripts/experiments/v2/exp_case_study.py PATH --name NAME [--exclude FOLDER ...]
         [--test-args "..."] [--runs-dir ../case_studies/runs] [--mode safe|thorough]
+        [--budget llm=N,minutes=N,tests=N]
 
 The clean output (workspace with the branch, report files) goes to --runs-dir/NAME (outside
 the project). An "aidev:owner/name@sha" target (an untrusted repository) runs only inside its
@@ -29,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 from cleansweep.agents import clean_project  # noqa: E402
+from cleansweep.agents.budgets import parse_budget  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 
 COPY = ["CLEANUP_REPORT.md", "blueprint.md", "PR_DESCRIPTION.md", "report.json", "events.jsonl"]
@@ -81,13 +83,19 @@ def record(result: dict, seconds: float) -> dict:
     }
 
 
+def agent_cfg(args) -> dict:
+    """The agents' settings from the command line: the mode and the run budget."""
+    budget = parse_budget(args.budget) if args.budget else {}
+    return {"mode": args.mode, **({"budget": budget} if budget else {})}
+
+
 def run_container(args, out: Path) -> dict:
     """An untrusted repository runs only inside the AIDev container (network off for the
     tests): the agent team via run_sweep(method="agentic"), the whole project in scope."""
     from cleansweep.core.io import save_json
     from cleansweep.workflow import run_sweep
 
-    cfg = load_config({"reviewer": {"scope": "repo"}, "core": {"agents": {"mode": args.mode}}})
+    cfg = load_config({"reviewer": {"scope": "repo"}, "core": {"agents": agent_cfg(args)}})
     cfg["agent_out"] = str(out)
     out.mkdir(parents=True, exist_ok=True)
     report = run_sweep(args.path, cfg, method="agentic")
@@ -111,6 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-args")
     parser.add_argument("--mode", default="safe", choices=["safe", "thorough"])
     parser.add_argument("--runs-dir", default=str(ROOT.parent / "case_studies" / "runs"))
+    parser.add_argument("--budget", help="caps for the whole run, e.g. llm=150,minutes=120")
     args = parser.parse_args(argv)
     out = Path(args.runs_dir) / args.name
     dest = ROOT / "results" / "raw" / "case_studies" / args.name
@@ -150,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if summary["verdict"] in ("everything runs", "nothing applied") else 1
     result = clean_project(
         args.path,
-        load_config(),
+        load_config({"core": {"agents": agent_cfg(args)}}),
         out=str(out),
         mode=args.mode,
         on_event=lambda e: (
