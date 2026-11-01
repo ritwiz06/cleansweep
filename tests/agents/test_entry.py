@@ -16,6 +16,8 @@ def test_run_sweep_agentic_returns_a_v1_report_and_v1_events(mini, agent_cfg):
     assert (
         names[-2:] == ["guard", "report"] and names.count("check") == names.count("check_start") > 0
     )
+    run_dir = report.stats["agentic"]["run_dir"]
+    assert open(f"{run_dir}/final.diff").read() == report.stats["final_diff"]  # the deliverable
 
 
 def test_clean_help_lists_the_options(capsys):
@@ -42,3 +44,11 @@ def test_clean_dry_run_from_the_command_line(mini, tmp_path, capsys):
     assert main(["clean", str(mini), "--dry-run", "--no-llm", "--quiet", "--out", str(out)]) == 0
     printed = capsys.readouterr().out
     assert "Result: nothing applied" in printed and str(out / "blueprint.md") in printed
+
+
+def test_a_relative_run_folder_never_lands_in_the_workspace(mini, agent_cfg, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    agent_cfg["agent_out"] = "runs/r0"  # relative to where the command runs
+    agent_cfg["core"]["sandbox"]["keep_workspace"] = True
+    report = run_sweep(str(mini), agent_cfg, method="agentic")
+    assert report.stats["agentic"]["run_dir"] == str(tmp_path / "runs" / "r0")

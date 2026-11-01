@@ -54,7 +54,9 @@ def prepare(rt) -> dict:
         info["pythonpath"] = "src"
     setting = rt.acfg.get("install", "auto")
     commands = pip_commands((rt.brief or {}).get("install_command", ""))
-    if setting == "off" or not commands or ws.python != sys.executable:
+    if ws.python != sys.executable:
+        return {**info, "install": "the workspace's own environment (its container)"}
+    if setting == "off" or not commands:
         return info
     venv = rt.out / VENV  # outside the workspace, so no detector or diff ever sees it
     python = venv / "bin" / "python"

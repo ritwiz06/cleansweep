@@ -195,3 +195,19 @@ def test_manager_routes_by_phase_and_stops_on_budget(rt):
     tester.baseline(rt)
     assert manager.decide(rt) == "reporter" and rt.phases.phase == "REPORT"
     assert rt.stopped == "the run's time budget is used up"
+
+
+def test_a_policy_reason_survives_a_safe_verdict():
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    item = CleanupItem(
+        "i",
+        CodeUnit("pkg/a.py", "function", "api"),
+        "dead_code",
+        "delete_unit",
+        "suggest",
+        "Public API of a published package: a person decides.",
+    )
+    investigator.apply_verdict(item, {"decision": "safe", "reason": "no callers", "evidence": []})
+    assert item.lane == "suggest" and item.reason.startswith("Public API of a published package")
+    assert "found no use either: no callers" in item.reason

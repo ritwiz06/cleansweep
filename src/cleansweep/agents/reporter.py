@@ -147,7 +147,16 @@ def report_md(rt, s: dict, delivered: dict) -> str:
             f"| {agent} | {used['turns']} | {used['instances']} | {used['steps']} | "
             f"{used['llm_calls']} | {used['seconds']} |"
         )
-    if delivered.get("branch"):
+    if delivered.get("diff"):
+        lines += [
+            "",
+            "## Delivery",
+            "",
+            f"- An experiment run: the workspace is removed afterwards; the cleanup diff is "
+            f"`{delivered['diff']}` (also `final_diff` in report.json).",
+            "- Nothing was applied to the original.",
+        ]
+    elif delivered.get("branch"):
         lines += [
             "",
             "## Delivery",
@@ -192,9 +201,13 @@ def changelog_md(rt, s: dict) -> str:
 
 def run(rt, info: dict | None = None, patches: bool = True) -> None:
     """REPORT and DELIVER: the branch, then the report files."""
-    delivered = (
-        delivery.finish(rt, info or {}, patches=patches) if not rt.dry_run else {"branch": None}
-    )
+    if rt.dry_run:
+        delivered = {"branch": None}
+    elif patches:
+        delivered = delivery.finish(rt, info or {}, patches=True)
+    else:  # an experiment run: its workspace is deleted, so the diff is the deliverable
+        (rt.out / "final.diff").write_text(rt.ws.diff(rt.ws.base), encoding="utf-8")
+        delivered = {"branch": None, "diff": "final.diff"}
     s = summary(rt)
     files = {
         "CLEANUP_REPORT.md": report_md(rt, s, delivered),

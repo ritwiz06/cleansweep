@@ -79,6 +79,7 @@ def run_one(target: str, method: str, repeat: int, out: Path) -> dict:
             "core": {
                 "llm": {"cache_path": str(caches / "llm.sqlite")},
                 "guard": {"probe_cache_dir": str(caches / "probes")},
+                "agents": {"install": "off"},  # like v1's runs: the host interpreter
             }
         }
     )
