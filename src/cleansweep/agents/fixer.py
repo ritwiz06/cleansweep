@@ -12,7 +12,8 @@ from .protocol import load_prompt
 from .runtime import Package
 
 NAME = "fixer"
-REPAIRABLE = ("compile", "tests", "probes")
+REPAIRABLE = {"safe": ("compile", "tests"), "thorough": ("compile", "tests", "probes")}
+# safe mode: a behavior change the probes found means the edit is not a pure cleanup; roll back
 
 
 class WithSystem:
@@ -36,7 +37,7 @@ def run(rt, pkg: Package) -> str:
             return _split(rt, pkg)
         item = rt.items[pkg.applied[0]]
         turns = int((rt.acfg.get(NAME) or {}).get("turns", 2))
-        if rt.llm is not None and pkg.turns < turns and failure.get("stage") in REPAIRABLE:
+        if rt.llm is not None and pkg.turns < turns and failure.get("stage") in REPAIRABLE[rt.mode]:
             with acting(NAME, budget):
                 try:
                     fix = propose_fix(
