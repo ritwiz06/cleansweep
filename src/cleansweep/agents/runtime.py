@@ -106,6 +106,7 @@ class Runtime:
         # results of the phases
         self.brief: dict | None = None
         self.baseline: dict | None = None
+        self.ui_base: dict | None = None  # Textual apps: the screens before any package
         self.items: dict[str, CleanupItem] = {}
         self.verdicts: dict[str, dict] = {}
         self.investigated = False

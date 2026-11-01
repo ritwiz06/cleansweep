@@ -8,3 +8,4 @@ tomlkit>=0.12
 swebench>=5.0
 jsonschema>=4.20
 langgraph>=1.2,<2
+textual>=0.80

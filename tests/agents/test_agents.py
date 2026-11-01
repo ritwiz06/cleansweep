@@ -133,6 +133,48 @@ def test_validator_checks_the_ast_for_comment_only_packages(rt):
     assert validator.check_package(rt, pkg) and pkg.verify["checks_result"]["ast_equal"] is True
 
 
+CART_SCREEN = (
+    "from textual.screen import Screen\nfrom textual.widgets import Label\n\n\n"
+    "class CartScreen(Screen):\n    def compose(self):\n        yield Label('Your cart')\n"
+)
+
+
+def test_validator_ui_check_fails_a_package_that_changes_a_screen(mini, agent_cfg, tmp_path):
+    pytest.importorskip("textual")
+    from pathlib import Path
+
+    (mini / "shop" / "ui.py").write_text(CART_SCREEN)
+    ws, _ = prepare_workspace(mini, tmp_path / "ws", agent_cfg["core"]["sandbox"])
+    rt = Runtime(ws, agent_cfg, None, tmp_path / "out")
+    explorer.run(rt)
+    tester.baseline(rt)
+    assert rt.brief["ui_framework"] == "textual"
+    assert manager.decide(rt) == "validator"  # the UI baseline comes before AUDIT
+    validator.ui_baseline(rt)
+    msg = rt.board.messages[-1]
+    assert msg.type == "ui_baseline" and msg.body["classes"] == 1 and "manager" in msg.recipients
+    pkg = Package("P1", "g", [], ["shop/ui.py"])
+    record, log = validator._ui(rt, pkg, [])
+    assert record["ok"] and record["classes"] == 1 and log is None
+    ui = Path(ws.path) / "shop" / "ui.py"
+    ui.write_text(ui.read_text().replace("Your cart", "Your basket"))
+    record, log = validator._ui(rt, pkg, [])
+    assert not record["ok"] and record["changed"] == ["shop.ui.CartScreen"]
+    assert log.startswith("the UI check found a difference")
+
+
+def test_validator_ui_check_is_not_applicable_without_textual(rt):
+    pkg = Package("P1", "g", [], [])
+    rt.brief = {"ui_framework": None}
+    assert validator._ui(rt, pkg, []) == (
+        "not applicable: the project has no UI framework",
+        None,
+    )
+    rt.brief = {"ui_framework": "streamlit"}
+    record, log = validator._ui(rt, pkg, [])
+    assert record.startswith("not applicable: the project's UI uses streamlit") and log is None
+
+
 def test_fixer_splits_repairs_and_rolls_back(rt):
     _ready(rt)
     planner.run(rt)
