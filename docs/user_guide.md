@@ -1,7 +1,7 @@
 # User guide
 
 This is a short version. The full guide, with screenshots of Studio and watch mode, comes with
-v2.0.
+v2.0 (requirement R11 in [requirements.md](requirements.md)).
 
 ## Install
 

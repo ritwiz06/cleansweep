@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+Repository restructure; no change in behavior or results (#81–#86, tag `pre-tidy` before it).
+
+- `scripts/` by purpose: `data/`, `experiments/v1/`, `experiments/v2/`, `report/`, `tools/`;
+  `reproduce_tables.sh` stays at the top. Script names are unchanged.
+- `results/summary/v1/` and `results/figures/v1/` hold the v1 tables and figures, including the
+  report tables and figures that were in `docs/report/`; `v2/` folders are for the v2 results.
+- The dashboard is in `app/dashboard/`: `streamlit run app/dashboard/dashboard.py`,
+  `python -m app.dashboard.live_runner`.
+- New docs: `docs/index.md`, `docs/repo_layout.md`, a short `docs/user_guide.md`, and the v2.0
+  acceptance checklist `docs/requirements.md`.
+- Every regenerated table and figure is byte-identical to `pre-tidy`, and the offline v1 toy
+  sweep gives the same report.
+
 ## v1.0.3 (2026-10-31)
 
 Experiment scripts default to the archive; no change to the sweep or the results.
