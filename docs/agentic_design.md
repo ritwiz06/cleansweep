@@ -336,7 +336,13 @@ project's own modules are never stubbed. v1 never asks for this, so its probes a
   classes that differ between the two runs are left out; after each package a stable class that
   shows another widget tree or text, disappears without the package deleting it, or a module
   that stops importing fails the package; other UI frameworks are recorded as "not
-  applicable"). A failed package is repaired (at most 2 turns) or rolled back.
+  applicable"). Two rules from the Phase 3b case studies: a rewrite (a merged duplicate or an
+  inlined wrapper) is verified only by probe cases on its own target that return something
+  other than None (a method that only writes to a database looks the same either way), and a
+  removed dependency that carries a version specifier while another dependency requires it is a
+  version pin, not an unused dependency (the tests pass because it stays installed, but a fresh
+  install would resolve another version). A failed package is repaired (at most 2 turns) or
+  rolled back.
 - **Cautious defaults**: an exhausted budget, an invalid reply after the repair turn, or an LLM
   failure sends the candidate to `suggest`; a package that cannot be verified is rolled back.
 - A single LLM request that takes over 10 minutes is cancelled and logged (the client's timeout

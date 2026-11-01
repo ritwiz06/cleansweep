@@ -41,6 +41,19 @@ def test_remove_dependency(toy_ws):
     assert "requests" not in read(toy_ws, "requirements.txt")
 
 
+def test_remove_dependency_keeps_a_multiline_pyproject_list(tmp_path):
+    from types import SimpleNamespace
+
+    text = (
+        '[project]\nname = "x"\ndependencies = [\n    "colorama==0.4.6",\n'
+        '    "numpy==1.26.4",\n    "pandas==2.2.0",\n]\n'
+    )
+    (tmp_path / "pyproject.toml").write_text(text)
+    ws = SimpleNamespace(path=str(tmp_path))
+    assert apply_edit(ws, item("pyproject.toml", "dependency", "remove_dependency", "NumPy"))
+    assert read(ws, "pyproject.toml") == text.replace('    "numpy==1.26.4",\n', "")
+
+
 def test_format(toy_ws):
     assert apply_edit(toy_ws, item("shopcart/pricing.py", "file", "format"))
     assert "TAX_RATE = 0.08" in read(toy_ws, "shopcart/pricing.py")

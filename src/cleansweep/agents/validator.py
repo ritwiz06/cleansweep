@@ -4,6 +4,8 @@ the UI snapshot check."""
 
 from __future__ import annotations
 
+import re
+
 from cleansweep.core.io import to_dict
 from cleansweep.guard import ui_check
 from cleansweep.guard.guard import ast_unchanged, check_dependencies
@@ -38,6 +40,9 @@ def check_package(rt, pkg) -> bool:
             checks["dependencies"] = info.get("dependencies", {})
             if not ok:
                 return _fail(rt, pkg, "dependency", info.get("log", ""), checks)
+            pins = _pins(rt, pkg, items, checks["dependencies"])
+            if pins:
+                return _fail(rt, pkg, "dependency", "; ".join(pins), checks)
         public = [
             i.unit.key
             for i in items
@@ -95,12 +100,53 @@ def check_package(rt, pkg) -> bool:
                 # tests rarely cover what a merged duplicate or inlined wrapper does differently
                 log = f"the probes ran no cases, so these rewrites are not verified: {rewrites}"
                 return _fail(rt, pkg, "unverified", log, checks)
+            observed = info.get("observed_by_target", {})
+            blind = [
+                i.unit.key
+                for i in items
+                if i.action in REWRITES and not observed.get(i.unit.key, cases.get(i.unit.key))
+            ]
+            if blind:
+                log = (
+                    "every probe case on these rewrites returned None, so a changed side effect "
+                    f"would not show: {blind}"
+                )
+                return _fail(rt, pkg, "unverified", log, checks)
         checks["ui"], log = _ui(rt, pkg, items)
         if log:
             return _fail(rt, pkg, "ui", log, checks)
         return _pass(rt, pkg, checks)
     finally:
         rt.record_usage(NAME, budget)
+
+
+def pinned_spec(text: str, name: str) -> str | None:
+    """The requirement declared for name in a dependency file when it has a version
+    specifier (numpy==1.26.4, numpy>=1.2), else None."""
+    pattern = "[-_.]".join(map(re.escape, re.split(r"[-_.]", name)))
+    found = re.search(
+        rf"""(?i)(?:^|[\s"',\[])({pattern}\s*(?:\[[^\]]*\])?\s*[<>=!~][^"'\n,;#]*)""", text
+    )
+    return found.group(1).strip() if found else None
+
+
+def _pins(rt, pkg, items, states: dict) -> list[str]:
+    """Removed dependencies that pin the version of a package another dependency needs: the
+    tests still pass (it stays installed), but a fresh install would resolve another version."""
+    out = []
+    for item in items:
+        state = states.get(item.unit.name or "", "")
+        if item.action != "remove_dependency" or "required by" not in state:
+            continue
+        text = rt.ws._git("show", f"{pkg.start}:{item.unit.path}", check=False)
+        spec = pinned_spec(text, item.unit.name)
+        if spec:
+            users = state.split("required by", 1)[1].strip(" )")
+            out.append(
+                f"{spec} pins the version of a package that {users} needs; removing it changes "
+                "what a fresh install resolves"
+            )
+    return out
 
 
 def ui_baseline(rt) -> None:

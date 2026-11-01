@@ -133,6 +133,68 @@ def test_validator_checks_the_ast_for_comment_only_packages(rt):
     assert validator.check_package(rt, pkg) and pkg.verify["checks_result"]["ast_equal"] is True
 
 
+def _package(rt, item, start) -> Package:
+    rt.items[item.item_id] = item
+    pkg = Package("P1", "g", [item.item_id], [item.unit.path], start=start)
+    pkg.applied = [item.item_id]
+    return pkg
+
+
+def test_validator_rejects_a_rewrite_whose_probes_only_saw_none(rt, monkeypatch):
+    from cleansweep.core.models import CleanupItem, CodeUnit, DiffOutcome
+
+    item = CleanupItem(
+        "r1",
+        CodeUnit("shop/extra.py", "function", "used"),
+        "duplicate",
+        "replace_with",
+        "safe",
+        "r",
+    )
+    pkg = _package(rt, item, rt.ws.checkpoint("start"))
+    info = {
+        "cases_by_target": {item.unit.key: 3},
+        "observed_by_target": {item.unit.key: 0},
+        "note": "",
+        "coverage": None,
+    }
+    monkeypatch.setattr(
+        validator, "probe_with_coverage", lambda *a, **k: (DiffOutcome(True, 3), info)
+    )
+    assert not validator.check_package(rt, pkg)
+    assert pkg.failure["stage"] == "unverified" and "returned None" in pkg.failure["log"]
+    info["observed_by_target"][item.unit.key] = 1
+    assert validator.check_package(rt, pkg)
+
+
+def test_validator_keeps_a_version_pin_another_dependency_needs(rt, monkeypatch):
+    from pathlib import Path
+
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    (Path(rt.ws.path) / "requirements.txt").write_text("numpy==1.26.4\npandas==2.2.0\n")
+    start = rt.ws.checkpoint("deps")
+    unit = CodeUnit("requirements.txt", "dependency", "numpy")
+    item = CleanupItem("d1", unit, "unused_dependency", "remove_dependency", "safe", "r")
+    pkg = _package(rt, item, start)
+    rt.baseline = {"result": None}
+
+    def check(ws, baseline, names, info, state="verified: still installed (required by pandas)"):
+        info["dependencies"] = dict.fromkeys(names, state)
+        return True
+
+    monkeypatch.setattr(validator, "check_dependencies", check)
+    assert not validator.check_package(rt, pkg)
+    assert pkg.failure["stage"] == "dependency"
+    assert pkg.failure["log"].startswith("numpy==1.26.4 pins the version of a package that pandas")
+    monkeypatch.setattr(
+        validator,
+        "check_dependencies",
+        lambda ws, b, names, info: check(ws, b, names, info, "verified: not installed"),
+    )
+    assert validator.check_package(rt, pkg)
+
+
 CART_SCREEN = (
     "from textual.screen import Screen\nfrom textual.widgets import Label\n\n\n"
     "class CartScreen(Screen):\n    def compose(self):\n        yield Label('Your cart')\n"

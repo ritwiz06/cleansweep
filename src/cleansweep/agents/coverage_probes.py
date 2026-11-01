@@ -281,12 +281,16 @@ def probe_with_coverage(
     probed = sum(t.key in all_probes for t in targets)
     # cases each target's probes ran on the before version (follow-up rounds count for their
     # target): a rewrite is verified only by cases against its own target, not by module checks
+    # (observed: cases whose value is not None, so a changed side effect alone would not show)
     cases: dict[str, int] = {}
+    observed: dict[str, int] = {}
     with_probes = [t for t in all_targets if t.key in all_probes]
     for i, t in enumerate(with_probes):
         result = (first[0].get("probes", {}) if first else {}).get(f"t{i}") or {}
         key = t.key.split("#r")[0]
-        cases[key] = cases.get(key, 0) + (len(result.get("cases", {})) if result.get("ok") else 0)
+        values = list(result.get("cases", {}).values()) if result.get("ok") else []
+        cases[key] = cases.get(key, 0) + len(values)
+        observed[key] = observed.get(key, 0) + sum(v != "None" for v in values)
     loaded = (first[0].get("scripts") or {}) if first else {}
     stubbed = sorted({m for r in loaded.values() for m in r.get("stubbed", [])})
     if scripts:
@@ -303,6 +307,7 @@ def probe_with_coverage(
         "targets": len(targets),
         "target_lines": sum(len(s) for s in wanted.values()),
         "cases_by_target": cases,
+        "observed_by_target": observed,
         "note": f"{probed}/{len(targets)} targets probed, {len(checks)} module checks ({mode} mode)"
         + (f"; {note}" if note else ""),
     }
