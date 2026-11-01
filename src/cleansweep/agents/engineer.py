@@ -22,7 +22,7 @@ from .llm import acting
 from .protocol import REASONING_OFF, load_prompt
 
 NAME = "engineer"
-MAX_FILE_CHARS = 12000
+MAX_FILE_CHARS = 40000  # about 10k prompt tokens; the reply is only the edits
 REWRITE_SCHEMA = {
     "type": "object",
     "required": ["edits"],
