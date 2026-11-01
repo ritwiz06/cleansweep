@@ -121,6 +121,30 @@ def enforced_formatter(root: Path) -> str | None:
     return None
 
 
+SHELL_END = re.compile(r"&&|\|\||[;|#]")
+
+
+def formatter_paths(root: Path) -> list[str] | None:
+    """The folders and files the enforced formatter runs on ("ruff format --check src/ tests/"
+    gives ["src", "tests"]), or None when it covers the whole project (no paths, ".", or a
+    pre-commit hook)."""
+    found: set[str] = set()
+    for pattern in FORMATTER_FILES:
+        for path in sorted(root.glob(pattern)):
+            for line in path.read_text(errors="replace").splitlines():
+                for _, regex in FORMATTERS:
+                    m = regex.search(line)
+                    if not m:
+                        continue
+                    rest = SHELL_END.split(line[m.end() :], 1)[0]
+                    args = [a.strip("\"'") for a in rest.split() if not a.startswith("-")]
+                    args = [a.rstrip("/") for a in args if (root / a).exists()]
+                    if not args or any(a in (".", "") for a in args):
+                        return None
+                    found.update(args)
+    return sorted(found) or None
+
+
 def project_facts(repo_dir: str, graph) -> dict:
     """The deterministic part of the brief."""
     root = Path(repo_dir)
@@ -148,6 +172,7 @@ def project_facts(repo_dir: str, graph) -> dict:
         "test_command": "pytest",
         "ci_files": [c for c in CI_FILES if (root / c).exists()],
         "formatter": enforced_formatter(root),
+        "formatter_paths": formatter_paths(root),
         "config_files": [c for c in CONFIG_FILES if (root / c).exists()],
         "dependencies": len(project.get("dependencies", [])),
     }

@@ -334,6 +334,49 @@ def test_explorer_finds_the_formatter_a_project_enforces(tmp_path):
     assert enforced_formatter(tmp_path) == "ruff format (.pre-commit-config.yaml)"
 
 
+def test_the_formatter_scope_limits_safe_formatting(tmp_path):
+    from cleansweep.agents.explorer import formatter_paths
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    for folder in ("src", "tests", "examples"):
+        (tmp_path / folder).mkdir()
+    workflow = tmp_path / ".github" / "workflows" / "ci.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("steps:\n  - run: ruff format --check src/ tests/ && pytest\n")
+    assert formatter_paths(tmp_path) == ["src", "tests"]
+    brief = {
+        "formatter": "ruff format (.github/workflows/ci.yml)",
+        "formatter_paths": ["src", "tests"],
+    }
+    for path, lane in (("src/pkg/a.py", "safe"), ("examples/demo.py", "suggest")):
+        item = CleanupItem("f", CodeUnit(path, "file"), "format", "format", "safe", "x")
+        investigator.apply_verdict(item, investigator._fixed(item, brief))
+        assert item.lane == lane, path
+    assert item.reason.startswith("The project's formatter check runs only on src, tests")
+    (tmp_path / ".pre-commit-config.yaml").write_text("hooks:\n  - id: ruff-format\n")
+    assert formatter_paths(tmp_path) is None  # a pre-commit hook covers the whole project
+
+
+def test_a_package_data_file_is_only_suggested(tmp_path):
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    folder = tmp_path / "src" / "app" / "workflows"
+    folder.mkdir(parents=True)
+    (tmp_path / "src" / "app" / "__init__.py").write_text("")
+    for name in ("security", "testing", "backup-plan"):
+        (folder / f"{name}.yaml").write_text("name: x\n")
+    path = "src/app/workflows/backup-plan.yaml"
+    item = CleanupItem("l", CodeUnit(path, "file"), "leftover_file", "delete_file", "safe", "x")
+    verdict = investigator._fixed(item, {}, "enforced", str(tmp_path))
+    assert verdict["decision"] == "suggest"
+    assert "one of 3 .yaml files in src/app/workflows, inside the app package" in verdict["reason"]
+    (tmp_path / "notes.yaml").write_text("x: 1\n")
+    lone = CleanupItem(
+        "n", CodeUnit("notes.yaml", "file"), "leftover_file", "delete_file", "safe", "x"
+    )
+    assert investigator._fixed(lone, {}, "enforced", str(tmp_path)) is None
+
+
 def test_formatting_is_safe_only_where_a_formatter_is_enforced():
     from cleansweep.core.models import CleanupItem, CodeUnit
 

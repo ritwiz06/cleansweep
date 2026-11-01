@@ -33,6 +33,10 @@ FINAL_SCHEMA = {
     },
 }
 FORMAT_REASON = "Formatting only; the Validator checks that the code structure is unchanged."
+OUT_OF_SCOPE = (
+    "The project's formatter check runs only on {scope}, not on {path}, so reformatting it is "
+    "only suggested."
+)
 NO_FORMATTER = (
     "The project doesn't enforce a formatter (no ruff format or black in its CI config or "
     ".pre-commit-config.yaml), so reformatting is only suggested."
@@ -276,7 +280,38 @@ LINE_LEVEL = {"unused_variable", "debug_leftover", "commented_code", "todo_note"
 LINE_REASON = "A line-level edit: the detector's lane stands, and the checks after the edit decide."
 
 
-def _fixed(item: CleanupItem, brief: dict | None = None, policy: str = "enforced") -> dict | None:
+def _covered(path: str, scope: list[str] | None) -> bool:
+    return scope is None or any(path == s or path.startswith(s.rstrip("/") + "/") for s in scope)
+
+
+def package_data(repo_dir: str, path: str) -> str | None:
+    """Why a non-Python file is package data, or None: it sits in a folder of an importable
+    package with other files of its type, which code usually loads by name or by listing the
+    folder, so "nothing imports it" says nothing."""
+    file = Path(repo_dir) / path
+    if file.suffix == ".py" or not file.suffix:
+        return None
+    folder = file.parent
+    package = next((p for p in [folder, *folder.parents] if (p / "__init__.py").exists()), None)
+    if package is None or Path(repo_dir).resolve() not in package.resolve().parents:
+        return None
+    siblings = [f for f in folder.glob(f"*{file.suffix}") if f.name != file.name]
+    if len(siblings) < 2:
+        return None
+    where = folder.relative_to(repo_dir).as_posix()
+    return (
+        f"{path} is one of {len(siblings) + 1} {file.suffix} files in {where}, inside the "
+        f"{package.name} package: package data like this is usually loaded by name or by "
+        "listing the folder, so no import refers to it. A person should decide."
+    )
+
+
+def _fixed(
+    item: CleanupItem,
+    brief: dict | None = None,
+    policy: str = "enforced",
+    repo_dir: str | None = None,
+) -> dict | None:
     if item.category in LINE_LEVEL:
         decision = "safe" if item.lane == "safe" else "suggest"
         reason = LINE_REASON if decision == "safe" else item.reason
@@ -288,12 +323,30 @@ def _fixed(item: CleanupItem, brief: dict | None = None, policy: str = "enforced
             "stop": "rule",
         }
     if item.category == "format":
-        # safe only where the project enforces a formatter, unless the policy is "always"
-        enforced = policy == "always" or (brief or {}).get("formatter")
+        # safe only where the project enforces a formatter on this file, unless the policy
+        # is "always"
+        brief = brief or {}
+        scope = brief.get("formatter_paths")
+        enforced = policy == "always" or brief.get("formatter")
+        covered = policy == "always" or _covered(item.unit.path, scope)
+        reason = FORMAT_REASON
+        if not enforced:
+            reason = NO_FORMATTER
+        elif not covered:
+            reason = OUT_OF_SCOPE.format(path=item.unit.path, scope=", ".join(scope or []))
         return {
             "item_id": item.item_id,
-            "decision": "safe" if enforced else "suggest",
-            "reason": FORMAT_REASON if enforced else NO_FORMATTER,
+            "decision": "safe" if enforced and covered else "suggest",
+            "reason": reason,
+            "evidence": [],
+            "stop": "rule",
+        }
+    data = package_data(repo_dir, item.unit.path) if repo_dir else None
+    if item.category == "leftover_file" and data:
+        return {
+            "item_id": item.item_id,
+            "decision": "suggest",
+            "reason": data,
             "evidence": [],
             "stop": "rule",
         }
@@ -339,7 +392,7 @@ def run(rt) -> None:
     use_llm = rt.llm is not None and rt.ablation != "no_research"
     work = []
     for n, item in enumerate(pending, 1):
-        fixed = _fixed(item, rt.brief, rt.acfg.get("format_policy", "enforced"))
+        fixed = _fixed(item, rt.brief, rt.acfg.get("format_policy", "enforced"), rt.ws.path)
         if fixed is not None:
             rt.verdicts[item.item_id] = fixed
         else:

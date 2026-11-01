@@ -20,7 +20,9 @@ from cleansweep.core.models import CleanupItem, CodeUnit
 
 from .detectors import _tool, make_item
 
-DEBUG_MARK = re.compile(r"^\s*(debug|dbg|xxx|>>>|here\b|---)", re.IGNORECASE)
+DEBUG_MARK = re.compile(r"^\s*(debug|dbg|xxx|>>>|here\b)", re.IGNORECASE)
+# f"{x=}" in the source; a hand-written "x={x}" is ordinary output
+SELF_DOC = re.compile(r"\{[^{}!:=]+=\s*(?:![rsa])?\s*(?::[^{}]*)?\}")
 TODO = re.compile(r"#\s*(TODO|FIXME|XXX|HACK)\b", re.IGNORECASE)
 CODE_HINT = re.compile(
     r"(=|\(|\)|:\s*$|^\s*(import|from|return|def|class|for|while|if|elif|else|try|except|raise|print)\b)"
@@ -198,21 +200,14 @@ def _is_cli_module(path: str, text: str) -> bool:
     )
 
 
-def _self_documenting(values: list[ast.expr]) -> bool:
-    """True for f"{x=}": Python stores it as the text "x=" followed by the field x."""
-    for text, field in zip(values, values[1:], strict=False):
-        if (
-            isinstance(text, ast.Constant)
-            and isinstance(text.value, str)
-            and isinstance(field, ast.FormattedValue)
-        ):
-            source = ast.unparse(field.value)
-            if re.sub(r"\s", "", text.value).endswith(re.sub(r"\s", "", source) + "="):
-                return True
-    return False
+def _self_documenting(node: ast.JoinedStr, text: str) -> bool:
+    """True for f"{x=}". Python stores it like a hand-written "x={x}" (the text "x=" and the
+    field x), so the source decides."""
+    source = ast.get_source_segment(text, node) or ""
+    return bool(SELF_DOC.search(source))
 
 
-def _debug_print(node: ast.Call) -> bool:
+def _debug_print(node: ast.Call, text: str = "") -> bool:
     if not node.args:
         return False
     first = node.args[0]
@@ -223,7 +218,7 @@ def _debug_print(node: ast.Call) -> bool:
         lead_text = (
             lead.value if isinstance(lead, ast.Constant) and isinstance(lead.value, str) else ""
         )
-        return bool(DEBUG_MARK.match(lead_text)) or _self_documenting(first.values)
+        return bool(DEBUG_MARK.match(lead_text)) or _self_documenting(first, text)
     return False
 
 
@@ -248,7 +243,7 @@ def detect_debug_leftovers(repo_dir: str, paths: list[str] | None = None) -> lis
             name = _call_name(node.value)
             if name in ("breakpoint", "pdb.set_trace", "ipdb.set_trace", "pudb.set_trace"):
                 lane, why = "safe", f"A debugger call ({name}) was left in the code."
-            elif name == "print" and _debug_print(node.value):
+            elif name == "print" and _debug_print(node.value, text):
                 lane, why = "safe", "A debug print was left in the code."
             elif name == "print" and not cli:
                 lane, why = (
@@ -303,11 +298,39 @@ CODE_NODES = (
     ast.Try,
 )
 MAX_BLOCK = 40
+BULLET = re.compile(r"^\s*(?:[-*\u2022]|\d+[.)])\s")
+SPACED_CALL = re.compile(r"[A-Za-z_]\w*\s+[(\[]")
+BARE = (ast.Call, ast.Name, ast.Load, ast.Subscript, ast.Tuple, ast.Starred)
+
+
+def _prose(line: str) -> bool:
+    """A comment line that parses only by accident: a list item, a lone expression written
+    with a space before its parentheses ("Paragraph (default)", "Links [text](url)"), or a
+    call of a capitalized name on bare words ("Author(s)")."""
+    if BULLET.match(line):
+        return True
+    try:
+        tree = ast.parse(line.strip())
+    except SyntaxError:
+        return False
+    if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Expr):
+        return False
+    if SPACED_CALL.search(line):
+        return True
+    value = tree.body[0].value
+    return (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id[:1].isupper()
+        and all(isinstance(n, BARE) for n in ast.walk(value))
+    )
 
 
 def _parses_as_code(block: list[str]) -> bool:
     body = [re.sub(r"^#\s?", "", c) for c in block]
     if not all(b.strip() for b in body) or not any(CODE_HINT.search(b) for b in body):
+        return False
+    if any(_prose(b) for b in body):
         return False
     indented = "if True:\n" + "\n".join("    " + b for b in body)
     for source in ("\n".join(body), indented):

@@ -262,8 +262,8 @@ callbacks out of packages.
 | Detector | Category (new) | Lane | Source |
 |---|---|---|---|
 | unused local variables (the value is kept as a statement when it is a call; an unused `except ... as e` loses its name) | `unused_variable` | safe | ruff F841 |
-| debugger calls (`breakpoint()`, `pdb.set_trace()`) and debug prints (a string starting with "debug", ">>>", "here", or a self-documenting `f"{x=}"`) | `debug_leftover` | safe; other prints in library modules: suggest (they may be intended output); CLI modules are skipped | `ast` |
-| commented-out code: the longest runs of comment lines that parse as Python statements (prose next to them stays) | `commented_code` | safe | `tokenize` + `ast` |
+| debugger calls (`breakpoint()`, `pdb.set_trace()`) and debug prints (a string starting with "debug", ">>>", "here", or a self-documenting `f"{x=}"` as written in the source; a hand-written `"x={x}"` is output) | `debug_leftover` | safe; other prints in library modules: suggest (they may be intended output); CLI modules are skipped | `ast` |
+| commented-out code: the longest runs of comment lines that parse as Python statements (prose next to them stays; so does prose that parses by accident: list items such as `- name(a, b)`, a lone expression with a space before its parentheses such as `Paragraph (default)`, and a call of a capitalized name on bare words such as `Author(s)`) | `commented_code` | safe | `tokenize` + `ast` |
 | TODO/FIXME/XXX/HACK comments on their own line | `todo_note` | suggest (a person decides) | `tokenize` |
 | `if c: return True else: return False` → `return bool(c)` (and the negation), a boolean test with the same operand twice | `redundant_check` | safe; `x == True` → `x`: suggest (not the same for non-bool values) | `ast` |
 
@@ -452,8 +452,14 @@ Details worth knowing:
   brief whether `.pre-commit-config.yaml` or a CI config (GitHub workflows, GitLab, CircleCI,
   Azure) runs `ruff format` or `black`. Without one, formatting goes to the suggest lane with the
   reason "the project doesn't enforce a formatter" (a hand-formatted file is a choice, not
-  slop). `core.agents.format_policy: always` restores the old rule; the toy and demo runs use it,
+  slop). When the CI command names paths (`ruff format --check src/ tests/`), only files under
+  them are safe; others are suggested ("the project's formatter check runs only on src, tests").
+  `core.agents.format_policy: always` restores the old rule; the toy and demo runs use it,
   because their answer keys count the toy repo's formatting change as safe.
+- A leftover file that is package data (a non-Python file in a folder of an importable package,
+  next to at least two files of its type, such as one workflow preset among 68 YAML files) is
+  only suggested: such files are loaded by name or by listing the folder, so "nothing imports
+  it" proves nothing.
 - Work packages group a file's edits of the same risk tier (at most `max_package`, default 4);
   formatting goes last in its own package, checked by AST equality. A package that fails with
   several edits is split in half (as v1's bisection does); a single edit gets at most 2 repair
