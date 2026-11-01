@@ -23,7 +23,7 @@ Trained on 9,416 labeled units from 79 AIDev repositories; 262 of them are units
 | 0.043 | 0.031 |
 | 0.062 | 0.066 |
 
-Out-of-fold predictions have median 0.026 and maximum 0.202: close to calibrated, but the model barely separates units (results/figures/ranker_reliability.png).
+Out-of-fold predictions have median 0.026 and maximum 0.202: close to calibrated, but the model barely separates units (results/figures/v1/ranker_reliability.png).
 
 ## Most important features (permutation importance, mean AUC drop on held-out folds)
 

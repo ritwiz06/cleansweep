@@ -97,7 +97,7 @@ def report(labels: pd.DataFrame) -> str:
         "",
         f"Out-of-fold predictions have median {p.median():.3f} and maximum {p.max():.3f}: close "
         "to calibrated, but the model barely separates units "
-        "(results/figures/ranker_reliability.png).",
+        "(results/figures/v1/ranker_reliability.png).",
         "",
         "## Most important features (permutation importance, mean AUC drop on held-out folds)",
         "",
