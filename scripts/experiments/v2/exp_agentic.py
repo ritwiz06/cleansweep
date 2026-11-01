@@ -79,7 +79,9 @@ def run_one(target: str, method: str, repeat: int, out: Path) -> dict:
             "core": {
                 "llm": {"cache_path": str(caches / "llm.sqlite")},
                 "guard": {"probe_cache_dir": str(caches / "probes")},
-                "agents": {"install": "off"},  # like v1's runs: the host interpreter
+                # like v1's runs: the host interpreter; the answer keys count the toy repo's
+                # formatting change as safe, though the fixture has no formatter config
+                "agents": {"install": "off", "format_policy": "always"},
             }
         }
     )

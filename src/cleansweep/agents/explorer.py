@@ -4,6 +4,7 @@ test, CI and config files) and runs the secret scan's report."""
 from __future__ import annotations
 
 import ast
+import re
 import tomllib
 from collections import Counter
 from pathlib import Path
@@ -49,6 +50,21 @@ CONFIG_FILES = (
     "conftest.py",
 )
 SKIP = {".git", ".venv", "venv", "node_modules", "__pycache__", ".tox"}
+# where a project enforces its formatter: CI configs and pre-commit hooks
+FORMATTER_FILES = (
+    ".pre-commit-config.yaml",
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml",
+    ".gitlab-ci.yml",
+    ".circleci/config.yml",
+    "azure-pipelines.yml",
+)
+BLACK = r"(?:^|[\s\"'`;&|(/=])black(?:-pre-commit-mirror)?(?:[\s\"'`;&|)]|$)"
+FORMATTERS = (
+    ("ruff format", re.compile(r"\bruff[ -]format\b")),
+    # "black" as a command, hook id or repository name, not "black-box" or "blacklist"
+    ("black", re.compile(BLACK, re.M)),
+)
 FINAL_SCHEMA = {
     "type": "object",
     "required": ["summary"],
@@ -93,6 +109,18 @@ def install_command(root: Path, project: dict) -> str:
     return "none needed (no packaging or requirements files)"
 
 
+def enforced_formatter(root: Path) -> str | None:
+    """The formatter the project's CI or pre-commit hooks run, e.g. "ruff format
+    (.pre-commit-config.yaml)", or None when nothing enforces one."""
+    for pattern in FORMATTER_FILES:
+        for path in sorted(root.glob(pattern)):
+            text = path.read_text(errors="replace")
+            for name, regex in FORMATTERS:
+                if regex.search(text):
+                    return f"{name} ({path.relative_to(root)})"
+    return None
+
+
 def project_facts(repo_dir: str, graph) -> dict:
     """The deterministic part of the brief."""
     root = Path(repo_dir)
@@ -119,6 +147,7 @@ def project_facts(repo_dir: str, graph) -> dict:
         "install_command": install_command(root, project),
         "test_command": "pytest",
         "ci_files": [c for c in CI_FILES if (root / c).exists()],
+        "formatter": enforced_formatter(root),
         "config_files": [c for c in CONFIG_FILES if (root / c).exists()],
         "dependencies": len(project.get("dependencies", [])),
     }

@@ -33,6 +33,10 @@ FINAL_SCHEMA = {
     },
 }
 FORMAT_REASON = "Formatting only; the Validator checks that the code structure is unchanged."
+NO_FORMATTER = (
+    "The project doesn't enforce a formatter (no ruff format or black in its CI config or "
+    ".pre-commit-config.yaml), so reformatting is only suggested."
+)
 
 
 def _short(item: CleanupItem) -> str:
@@ -230,7 +234,9 @@ def apply_verdict(item: CleanupItem, verdict: dict) -> None:
     if verdict["decision"] == "drop":
         item.action = "report_only"
     item.lane = lane
-    if item.category != "format" and verdict.get("stop") != "rule":
+    if item.category == "format" and lane == "suggest":
+        item.reason = verdict["reason"]
+    elif item.category != "format" and verdict.get("stop") != "rule":
         if verdict["decision"] == "safe" and lane == "suggest":
             # the detector or a policy (public API, framework callback) keeps it a suggestion
             item.reason = f"{item.reason} The Investigator found no use either: {verdict['reason']}"
@@ -250,7 +256,7 @@ LINE_LEVEL = {"unused_variable", "debug_leftover", "commented_code", "todo_note"
 LINE_REASON = "A line-level edit: the detector's lane stands, and the checks after the edit decide."
 
 
-def _fixed(item: CleanupItem) -> dict | None:
+def _fixed(item: CleanupItem, brief: dict | None = None, policy: str = "enforced") -> dict | None:
     if item.category in LINE_LEVEL:
         decision = "safe" if item.lane == "safe" else "suggest"
         reason = LINE_REASON if decision == "safe" else item.reason
@@ -262,10 +268,12 @@ def _fixed(item: CleanupItem) -> dict | None:
             "stop": "rule",
         }
     if item.category == "format":
+        # safe only where the project enforces a formatter, unless the policy is "always"
+        enforced = policy == "always" or (brief or {}).get("formatter")
         return {
             "item_id": item.item_id,
-            "decision": "safe",
-            "reason": FORMAT_REASON,
+            "decision": "safe" if enforced else "suggest",
+            "reason": FORMAT_REASON if enforced else NO_FORMATTER,
             "evidence": [],
             "stop": "rule",
         }
@@ -311,7 +319,7 @@ def run(rt) -> None:
     use_llm = rt.llm is not None and rt.ablation != "no_research"
     work = []
     for n, item in enumerate(pending, 1):
-        fixed = _fixed(item)
+        fixed = _fixed(item, rt.brief, rt.acfg.get("format_policy", "enforced"))
         if fixed is not None:
             rt.verdicts[item.item_id] = fixed
         else:
