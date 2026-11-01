@@ -1,9 +1,11 @@
 """Validator: checks a package beyond the tests: the AST for formatting-only packages, the
-dependency-uninstall check, the public-API check and differential probes."""
+dependency-uninstall check, the public-API check, differential probes and, for Textual apps,
+the UI snapshot check."""
 
 from __future__ import annotations
 
 from cleansweep.core.io import to_dict
+from cleansweep.guard import ui_check
 from cleansweep.guard.guard import ast_unchanged, check_dependencies
 from cleansweep.reviewer.detectors import has_package_metadata, is_public_api
 
@@ -93,11 +95,66 @@ def check_package(rt, pkg) -> bool:
                 # tests rarely cover what a merged duplicate or inlined wrapper does differently
                 log = f"the probes ran no cases, so these rewrites are not verified: {rewrites}"
                 return _fail(rt, pkg, "unverified", log, checks)
-        if (rt.brief or {}).get("ui_framework"):
-            checks["ui"] = "not run: the UI snapshot check comes in a later version"
+        checks["ui"], log = _ui(rt, pkg, items)
+        if log:
+            return _fail(rt, pkg, "ui", log, checks)
         return _pass(rt, pkg, checks)
     finally:
         rt.record_usage(NAME, budget)
+
+
+def ui_baseline(rt) -> None:
+    """BASELINE, for a Textual app: snapshot every screen and widget twice."""
+    modules = ui_check.textual_modules(rt.ws.path)
+    try:
+        rt.ui_base = ui_check.baseline(rt.ws, modules)
+    except RuntimeError as exc:
+        rt.ui_base = {"error": str(exc)}
+    snap = rt.ui_base.get("snapshot") or {}
+    body = {"ok": "snapshot" in rt.ui_base}
+    if body["ok"]:
+        body |= {
+            "classes": len(snap["classes"]),
+            "unstable": len(rt.ui_base["unstable"]),
+            "import_errors": len(snap["import_errors"]),
+        }
+    else:
+        body["reason"] = rt.ui_base["error"][:300]
+    art = rt.artifact("ui_snapshot", rt.ui_base)
+    rt.board.post("ui_baseline", NAME, body, artifacts=[art])
+
+
+def _ui(rt, pkg, items) -> tuple[object, str | None]:
+    """The UI check's record for a package, and the failure log when it changed the UI."""
+    framework = (rt.brief or {}).get("ui_framework")
+    if framework != "textual":
+        why = (
+            f"the project's UI uses {framework}; the snapshot check supports Textual apps"
+            if framework
+            else "the project has no UI framework"
+        )
+        return f"not applicable: {why}", None
+    base = rt.ui_base or {}
+    if "snapshot" not in base:
+        return f"not run: {base.get('error', 'no baseline snapshot')[:300]}", None
+    try:
+        after = ui_check.snapshot(rt.ws, base["modules"])
+    except RuntimeError as exc:
+        return {
+            "ok": False,
+            "error": str(exc)[:300],
+        }, f"the UI harness failed after the package: {exc}"
+    result = ui_check.compare(base, after, ui_check.deleted_names(items))
+    rt.log.emit(
+        "check",
+        agent=NAME,
+        payload={"package": pkg.package_id, "check": "ui"}
+        | {k: result[k] for k in ("ok", "classes", "changed", "lost", "removed", "broken")},
+    )
+    if result["ok"]:
+        return result, None
+    found = [f"{k}: {result[k][:5]}" for k in ("changed", "lost", "broken") if result[k]]
+    return result, "the UI check found a difference: " + "; ".join(found)
 
 
 def _pass(rt, pkg, checks: dict) -> bool:

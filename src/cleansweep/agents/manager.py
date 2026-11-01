@@ -262,6 +262,18 @@ def decide(rt) -> str | None:
                     f"Run the test suite {runs} times for the baseline",
                     kind="baseline",
                 )
+            if (
+                rt.ui_base is None
+                and rt.baseline["ok"]
+                and not rt.dry_run
+                and (rt.brief or {}).get("ui_framework") == "textual"
+            ):
+                return _task(
+                    rt,
+                    "validator",
+                    "Snapshot every screen and widget for the UI check",
+                    kind="ui_baseline",
+                )
             if not rt.baseline["ok"]:
                 rt.plan_only = True
                 _decide(

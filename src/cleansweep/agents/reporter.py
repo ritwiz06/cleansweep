@@ -55,6 +55,23 @@ def summary(rt) -> dict:
     }
 
 
+def _ui_line(rt) -> str | None:
+    framework = (rt.brief or {}).get("ui_framework")
+    if not framework:
+        return None
+    if framework != "textual":
+        return (
+            f"- UI check: not applicable ({framework}; the snapshot check supports Textual apps)."
+        )
+    base = rt.ui_base or {}
+    if "snapshot" not in base:
+        return f"- UI check: not run ({base.get('error', 'no packages were applied')[:200]})."
+    return (
+        f"- UI check (Textual): {len(base['snapshot']['classes'])} screens and widgets mounted "
+        f"headless before and after each package ({len(base['unstable'])} unstable, left out)."
+    )
+
+
 def report_md(rt, s: dict, delivered: dict) -> str:
     brief = rt.brief or {}
     lines = [
@@ -83,6 +100,9 @@ def report_md(rt, s: dict, delivered: dict) -> str:
         f"{s['baseline']['passed']} passing in every run, "
         f"{s['baseline']['failed']} already failing, {s['baseline']['flaky']} flaky.",
     ]
+    ui = _ui_line(rt)
+    if ui:
+        lines.append(ui)
     if rt.final:
         lines.append(
             f"- After the cleanup: {s['final']['passed']} passing; new failures: "

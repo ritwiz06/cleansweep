@@ -83,6 +83,9 @@ SCHEMAS: dict[str, dict] = {
             "checks": {"type": "object"},
         },
     ),
+    "ui_baseline": _obj(
+        {"ok": B}, {"classes": INT, "unstable": INT, "import_errors": INT, "reason": S}
+    ),
     "failure": _obj({"package": S, "stage": S}),
     "repair": _obj(
         {"package": S, "outcome": {"enum": ["repaired", "rolled_back", "split", "retry"]}},
@@ -102,6 +105,7 @@ ROUTES: dict[str, list[str]] = {
     "package_applied": ["manager", "tester", "validator"],
     "test_result": ["manager", "validator", "fixer"],
     "validation": ["manager", "fixer", "reporter"],
+    "ui_baseline": ["manager", "reporter"],
     "failure": ["fixer"],
     "repair": ["manager", "engineer", "reporter"],
     "lesson": ["manager", "auditor", "investigator", "planner"],

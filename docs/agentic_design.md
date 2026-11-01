@@ -331,8 +331,12 @@ project's own modules are never stubbed. v1 never asks for this, so its probes a
   bypass it. Events and artifacts sent to the browser are redacted the same way.
 - **Checks on every package**: compile and import, related tests then the full suite against the
   baseline, coverage-guided probes, the public-API check, the dependency-uninstall check where
-  the workspace can uninstall, the UI snapshot check where a UI framework is detected. A failed
-  package is repaired (at most 2 turns) or rolled back.
+  the workspace can uninstall, and the UI snapshot check for Textual apps (`guard/ui_check.py`:
+  in BASELINE every screen and widget class is mounted headless twice with `App.run_test`, and
+  classes that differ between the two runs are left out; after each package a stable class that
+  shows another widget tree or text, disappears without the package deleting it, or a module
+  that stops importing fails the package; other UI frameworks are recorded as "not
+  applicable"). A failed package is repaired (at most 2 turns) or rolled back.
 - **Cautious defaults**: an exhausted budget, an invalid reply after the repair turn, or an LLM
   failure sends the candidate to `suggest`; a package that cannot be verified is rolled back.
 - A single LLM request that takes over 10 minutes is cancelled and logged (the client's timeout
@@ -462,8 +466,8 @@ prompt file per agent (`agents/prompts/`; the rule-based agents' files state the
 their profiles in the event log), the Fixer's own system prompt for repairs, and fixes from the
 first real-model runs (a thread-safe LLM reply cache, per-candidate isolation of investigations,
 budget charges that check only their own limit, the Investigator's first checks run before the
-LLM is asked, and a last-step nudge). The UI snapshot check and the `single_agent` ablation come
-in Phase 4.
+LLM is asked, and a last-step nudge). Phase 3b added the UI snapshot check for Textual apps;
+the `single_agent` ablation comes in Phase 4.
 
 ## 19. Risks
 

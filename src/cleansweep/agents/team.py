@@ -44,6 +44,9 @@ def _tester(rt) -> None:
 
 
 def _validator(rt) -> None:
+    if rt.phases.phase == "BASELINE":
+        validator.ui_baseline(rt)
+        return
     pkg = rt.package()
     if validator.check_package(rt, pkg):
         pkg.status = "repaired" if pkg.turns else "kept"
