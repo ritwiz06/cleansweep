@@ -1,13 +1,29 @@
 """Manager: runs the phases, assigns work, enforces the run budget and decides when the run is
-done. Rule-based on purpose: every decision is logged with the rule that made it."""
+done. The rules propose every step and log it with the rule that made it. With manager: llm (the
+default when an LLM is set), the Manager also asks the LLM at each phase boundary, and after a
+rolled-back package, whether to go on, go back, replan or stop; the hard rules still win."""
 
 from __future__ import annotations
+
+import json
+
+import jsonschema
 
 from cleansweep.core.io import to_dict
 from cleansweep.core.models import EditResult
 
+from .llm import acting
+from .protocol import REASONING_OFF, load_prompt
+
 NAME = "manager"
 MAX_TURNS = 5000
+LLM_STEP_BACKS = 2  # step-backs the LLM may ask for in one run
+UNDECIDED = {"budget", "invalid", "llm_error", "error"}  # verdicts with no decision
+CHOICE_SCHEMA = {
+    "type": "object",
+    "required": ["choice", "reason"],
+    "properties": {"choice": {"type": "string"}, "reason": {"type": "string", "minLength": 1}},
+}
 
 
 def _task(rt, agent: str, goal: str, **body) -> str:
@@ -23,11 +39,12 @@ def _decide(rt, rule: str, text: str, **payload) -> None:
     rt.log.emit("decision", agent=NAME, payload={"rule": rule, "text": text, **payload})
 
 
-def _stop(rt, why: str) -> None:
-    """Out of budget: skip the packages not started and move on safely."""
+def _stop(rt, why: str, rule: str = "budget") -> None:
+    """Out of budget (or told to stop): skip the packages not started and move on safely."""
     rt.stopped = why
-    _decide(rt, "budget", f"stopping early: {why}")
-    rt.log.emit("budget", agent=NAME, payload={"exhausted": why})
+    _decide(rt, rule, f"stopping early: {why}")
+    if rule == "budget":
+        rt.log.emit("budget", agent=NAME, payload={"exhausted": why})
     for pkg in rt.packages[rt.current :]:
         if pkg.stage == "apply":
             pkg.status, pkg.stage = "skipped", "done"
@@ -98,6 +115,111 @@ def finish_package(rt, pkg) -> None:
     )
 
 
+def _undecided(rt) -> list[str]:
+    return sorted(i for i, v in rt.verdicts.items() if v.get("stop") in UNDECIDED)
+
+
+def _choices(rt, proposed: str) -> dict[str, str]:
+    """The options at this point: the rules' step first, then what the hard rules allow."""
+    here = rt.phases.phase
+    out = {"continue": proposed}
+    backs_left = rt.llm_back_steps < LLM_STEP_BACKS
+    undecided = _undecided(rt)
+    if backs_left and undecided and here in ("INVESTIGATE", "PLAN"):
+        if here == "INVESTIGATE" or rt.phases.can_go_back("INVESTIGATE"):
+            out["go_back:INVESTIGATE"] = (
+                f"investigate again the {len(undecided)} candidates the Investigator could not "
+                "decide, with twice the steps"
+            )
+    if backs_left and here == "EXECUTE" and rt.phases.can_go_back("PLAN"):
+        out["replan"] = "go back to PLAN: re-plan the packages not started, with the lessons so far"
+    if here not in ("FINAL_VERIFY", "REPORT", "DONE"):
+        out["stop"] = "stop now: skip the work not started, verify what was applied, and report"
+    return out
+
+
+def _status(rt, proposed: str, why: str, options: dict[str, str]) -> str:
+    decisions: dict[str, int] = {}
+    for v in rt.verdicts.values():
+        decisions[v["decision"]] = decisions.get(v["decision"], 0) + 1
+    packages: dict[str, int] = {}
+    for pkg in rt.packages:
+        packages[pkg.status] = packages.get(pkg.status, 0) + 1
+    base = rt.baseline or {}
+    lines = [
+        f"Phase: {rt.phases.phase}. The rules propose: {proposed} ({why}).",
+        f"Mode: {rt.mode}. Candidates: {len(rt.items)}; verdicts {json.dumps(decisions)}; "
+        f"undecided: {len(_undecided(rt))}.",
+        f"Packages: {json.dumps(packages)}; lessons: {len(rt.lessons.lessons)}.",
+        f"Baseline: {base.get('passed', '?')} passing, {base.get('failed', '?')} failing, "
+        f"{len(base.get('flaky', []))} flaky.",
+        f"Run budget: LLM {rt.run_budget.used_llm}/{rt.run_budget.llm_calls or 'no cap'}, "
+        f"minutes {rt.run_budget.minutes or 'no cap'}. "
+        f"Step-backs left: {LLM_STEP_BACKS - rt.llm_back_steps}.",
+        "Options:",
+        *(f"- {k}: {v}" for k, v in options.items()),
+        'Reply with JSON only: {"choice": "<one option>", "reason": "<one sentence>"}',
+    ]
+    return "\n".join(lines)
+
+
+def _consult(rt, proposed: str, why: str) -> str:
+    """The LLM's pick at a decision point, checked against the options; "continue" (the
+    rules' step) whenever the Manager is rule-based or the reply is unusable."""
+    if rt.manager_mode != "llm" or rt.llm is None or rt.stopped is not None:
+        return "continue"
+    options = _choices(rt, proposed)
+    if len(options) == 1:
+        return "continue"
+    options["continue"] = f"go on as the rules propose: {proposed}"
+    messages = [
+        {"role": "system", "content": load_prompt(NAME)},
+        {"role": "user", "content": _status(rt, proposed, why, options)},
+    ]
+    try:
+        with acting(NAME, rt.manager_budget):
+            reply = rt.llm.chat_json(messages, temperature=0.0, extra_body=REASONING_OFF)
+        jsonschema.validate(reply, CHOICE_SCHEMA)
+        choice, reason = reply["choice"], reply["reason"]
+    except Exception as exc:  # out of budget, LLM error or a malformed reply: the rules decide
+        choice, reason = "continue", f"no usable reply ({type(exc).__name__}): the rules decide"
+    if choice not in options:
+        choice, reason = "continue", f"{choice!r} is not an option: the rules decide"
+    _decide(rt, "llm_manager", reason, choice=choice, proposed=proposed, options=sorted(options))
+    return choice
+
+
+def _reinvestigate(rt) -> None:
+    """Undo the verdicts that never decided, so the Investigator looks again with more steps."""
+    for iid in _undecided(rt):
+        item = rt.items[iid]
+        lane, action, reason, evidence, sources = rt.before_verdict[iid]
+        item.lane, item.action, item.reason = lane, action, reason
+        item.evidence, item.sources = list(evidence), list(sources)
+        del rt.verdicts[iid]
+        rt.retry.add(iid)
+    rt.investigated = False
+
+
+def _advance(rt, proposed: str, why: str) -> None:
+    """Take the rules' step, unless the LLM-guided Manager picks another allowed option."""
+    choice = _consult(rt, proposed, why)
+    if choice == "stop":
+        _stop(rt, "the Manager chose to stop", rule="llm_manager")
+    elif choice == "go_back:INVESTIGATE":
+        rt.llm_back_steps += 1
+        _reinvestigate(rt)
+        if rt.phases.phase != "INVESTIGATE":
+            rt.planned = False
+            _go(rt, "INVESTIGATE", "the Manager sends the undecided candidates back")
+    elif choice == "replan":
+        rt.llm_back_steps += 1
+        rt.planned = False
+        _go(rt, "PLAN", "the Manager re-plans the packages not started")
+    else:
+        _go(rt, proposed, why)
+
+
 def _needs_replan(rt, pkg) -> bool:
     if pkg.status != "rolled_back":
         return False
@@ -130,7 +252,7 @@ def decide(rt) -> str | None:
         if phase == "ONBOARD":
             if rt.brief is None:
                 return _task(rt, "explorer", "Write the project brief")
-            _go(rt, "BASELINE", "the brief is ready")
+            _advance(rt, "BASELINE", "the brief is ready")
         elif phase == "BASELINE":
             if rt.baseline is None:
                 runs = int(rt.acfg.get("baseline_runs", 3))
@@ -147,7 +269,7 @@ def decide(rt) -> str | None:
                     "baseline_failed",
                     "the tests could not run; the plan will be delivered as suggestions only",
                 )
-            _go(
+            _advance(
                 rt,
                 "AUDIT",
                 f"baseline: {rt.baseline['passed']} passing, {rt.baseline['failed']} failing, "
@@ -160,13 +282,13 @@ def decide(rt) -> str | None:
             if not rt.items:
                 _go(rt, "REPORT", "no cleanup candidates found")
             else:
-                _go(rt, "INVESTIGATE", f"{len(rt.items)} candidates")
+                _advance(rt, "INVESTIGATE", f"{len(rt.items)} candidates")
         elif phase == "INVESTIGATE":
             if not rt.investigated:
                 return _task(
                     rt, "investigator", "Investigate every candidate", items=sorted(rt.items)
                 )
-            _go(rt, "PLAN", f"{len(rt.safe_items())} items are safe to apply")
+            _advance(rt, "PLAN", f"{len(rt.safe_items())} items are safe to apply")
         elif phase == "PLAN":
             if not rt.planned:
                 return _task(
@@ -189,7 +311,7 @@ def decide(rt) -> str | None:
             elif rt.approve is not None and not rt.approved:
                 _go(rt, "REPORT", "the plan was not approved")
             else:
-                _go(rt, "EXECUTE", f"{len(rt.packages) - rt.current} work packages to apply")
+                _advance(rt, "EXECUTE", f"{len(rt.packages) - rt.current} work packages to apply")
         elif phase == "EXECUTE":
             nxt = _execute(rt)
             if nxt:
@@ -264,4 +386,12 @@ def _execute(rt) -> str | None:
             "PLAN",
             f"{pid} was rolled back; later packages depend on it or a new lesson fits them",
         )
+    elif pkg.status == "rolled_back" and rt.package() is not None:
+        choice = _consult(rt, "EXECUTE", f"{pid} was rolled back; go on with the next package")
+        if choice == "stop":
+            _stop(rt, "the Manager chose to stop", rule="llm_manager")
+        elif choice == "replan":
+            rt.llm_back_steps += 1
+            rt.planned = False
+            _go(rt, "PLAN", "the Manager re-plans the packages not started")
     return None

@@ -254,3 +254,63 @@ def test_a_project_without_a_formatter_gets_formatting_as_a_suggestion(rt):
     _ready(rt)
     fmt = [i for i in rt.items.values() if i.category == "format"]
     assert fmt and all(i.lane == "suggest" for i in fmt) and rt.brief["formatter"] is None
+
+
+def _manager_says(choice: str, reason: str = "because") -> ScriptedLLM:
+    import json
+
+    return ScriptedLLM([("The rules propose", json.dumps({"choice": choice, "reason": reason}))])
+
+
+def _decisions(rt) -> list[dict]:
+    return [
+        e["payload"]
+        for e in rt.log.events
+        if e["kind"] == "decision" and e["payload"].get("rule") == "llm_manager"
+    ]
+
+
+def test_llm_manager_goes_on_and_logs_its_reason(rt):
+    manager.decide(rt)
+    explorer.run(rt)  # offline: the brief from the facts
+    llm = _manager_says("continue", "the brief is complete")
+    assert manager.decide(_llm_rt(rt, llm)) == "tester" and rt.phases.phase == "BASELINE"
+    (logged,) = _decisions(rt)
+    assert logged["choice"] == "continue" and logged["text"] == "the brief is complete"
+    assert logged["proposed"] == "BASELINE" and logged["options"] == ["continue", "stop"]
+
+
+def test_llm_manager_can_stop_but_a_bad_choice_leaves_it_to_the_rules(rt):
+    manager.decide(rt)
+    explorer.run(rt)
+    llm = _manager_says("jump", "skip ahead")
+    assert manager.decide(_llm_rt(rt, llm)) == "tester"  # not an option: the rules decide
+    assert "not an option" in _decisions(rt)[-1]["text"]
+    tester.baseline(rt)
+    rt.llm = None
+    _llm_rt(rt, _manager_says("stop", "the tests barely run"))
+    assert manager.decide(rt) == "reporter" and rt.stopped == "the Manager chose to stop"
+
+
+def test_llm_manager_sends_undecided_candidates_back_at_most_twice(rt):
+    _ready(rt)
+    for phase in ("BASELINE", "AUDIT", "INVESTIGATE"):
+        rt.phases.go(phase, "test")
+    item = next(i for i in rt.items.values() if i.unit.name == "legacy_alpha")
+    rt.verdicts[item.item_id]["stop"] = "budget"  # the Investigator could not decide it
+    item.lane = "suggest"
+    _llm_rt(rt, _manager_says("go_back:INVESTIGATE", "two steps more may settle it"))
+    assert manager.decide(rt) == "investigator" and rt.phases.phase == "INVESTIGATE"
+    assert rt.retry == {item.item_id} and item.item_id not in rt.verdicts
+    assert item.lane == "safe"  # back to the detector's lane for the new look
+    rt.llm_back_steps = manager.LLM_STEP_BACKS
+    rt.verdicts[item.item_id] = {"decision": "suggest", "stop": "budget"}
+    assert "go_back:INVESTIGATE" not in manager._choices(rt, "PLAN")
+
+
+def test_rule_based_manager_never_asks_the_llm(rt):
+    rt.manager_mode = "rules"
+    manager.decide(rt)
+    explorer.run(rt)
+    llm = _manager_says("stop")
+    assert manager.decide(_llm_rt(rt, llm)) == "tester" and llm.calls == [] and not _decisions(rt)

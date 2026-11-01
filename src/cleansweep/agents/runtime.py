@@ -75,6 +75,9 @@ class Runtime:
         self.mode = mode or self.acfg.get("mode", "safe")
         if self.mode not in MODES:
             raise ValueError(f"mode must be safe or thorough, got {self.mode!r}")
+        self.manager_mode = self.acfg.get("manager", "llm")
+        if self.manager_mode not in ("llm", "rules"):
+            raise ValueError(f"manager must be llm or rules, got {self.manager_mode!r}")
         self.ablation = self.acfg.get("ablation")
         if self.ablation and self.ablation not in ABLATIONS:
             raise ValueError(f"unknown ablation {self.ablation!r}")
@@ -127,6 +130,11 @@ class Runtime:
         self.environment: dict = {}
         self.turns = 0
         self.stopped: str | None = None
+        # the LLM-guided Manager: its budget, the step-backs it took, and what it can undo
+        self.manager_budget = Budget.from_cfg(self.acfg.get("manager_budget"))
+        self.llm_back_steps = 0
+        self.before_verdict: dict[str, tuple] = {}  # an item as the Investigator found it
+        self.retry: set[str] = set()  # items to investigate again with twice the steps
 
     def budget(self, role: str) -> Budget:
         """A fresh budget for one instance of an agent."""

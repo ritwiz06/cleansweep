@@ -30,7 +30,7 @@ Section 5.4 and Figure 3).
 
 | AutoData | CleanSweep v2 | Why |
 |---|---|---|
-| Manager agent (MGR) orchestrates and tracks progress; message delivery does not trigger execution | **Manager**: owns the phase machine, assigns work, enforces budgets, decides when the run is done | Same role. Our Manager is rule-based (section 4): the phase order is known in advance, and rules keep its decisions fast, testable and explainable. Each decision is logged with the rule that made it. |
+| Manager agent (MGR) orchestrates and tracks progress; message delivery does not trigger execution | **Manager**: owns the phase machine, assigns work, enforces budgets, decides when the run is done | Same role. Rules propose every step (section 4): the phase order is known in advance, and rules keep the decisions fast, testable and explainable. At each phase boundary the LLM may choose another allowed option (go back, replan, stop); hard rules win. Each decision is logged with its rule or reason. `manager: rules` is the rule-based Manager (an ablation). |
 | Research squad: plan, web, tool, blueprint agents | **Explorer** (reads the project, like the web agent reads sources), **Auditor** (runs the detectors and the knowledge base, like the tool agent runs utilities), **Investigator** (a ReAct loop per finding), **Planner** (plan + blueprint agents in one: work packages and `blueprint.md`) | Code cleanup needs one more research step than data collection: each finding has to be investigated before anything is planned. AutoData's plan agent splits the goal up front; our phases already fix the steps, so the Planner's job is the blueprint. |
 | Development squad: engineering, test, validation agents | **Engineer**, **Tester**, **Validator**, plus **Fixer** and **Reporter** | AutoData's test agent both runs and debugs; we split debugging out into the Fixer, because a failed cleanup edit must be either repaired in at most 2 turns or rolled back, and every rollback teaches a lesson. The Reporter writes the deliverables. |
 | Oriented message hypergraph | **Message board**: messages are directed hyperedges (one sender, a set of recipients); an agent reads only its own inbox | Same idea. |
@@ -133,6 +133,26 @@ cannot run at all, `safe` mode stops after PLAN and delivers the plan as suggest
 
 Every step back is a `phase_change` event with its reason. Each back edge has a limit, so a run
 always ends.
+
+**The LLM-guided Manager** (`core.agents.manager: llm`, the default when an LLM is set; `rules`
+keeps the rule-based Manager, and is one of the ablations). The rules propose every step. At each
+phase boundary, and after a rolled-back package, the Manager also sends the LLM one short JSON
+request (reasoning off): the run's status (phase, candidates and verdicts, undecided candidates,
+packages, baseline, budget used, step-backs left), what the rules propose, and the options the
+hard rules allow, and it picks one, with a reason:
+- `continue`: the rules' step;
+- `go_back:INVESTIGATE`: investigate again the candidates the Investigator could not decide
+  (its budget ran out or its answer stayed invalid), with twice the steps; offered after
+  INVESTIGATE and PLAN when there are such candidates;
+- `replan`: back to PLAN for the packages not started (after a rolled-back package);
+- `stop`: skip the work not started, verify what was applied, and report.
+
+Hard rules still win: budgets (the Manager's own LLM budget, `manager_budget`, and the run's),
+never worse than the baseline (FINAL VERIFY and its revert are not up for decision; a stop after
+anything was applied still goes through FINAL VERIFY), and at most 2 step-backs chosen by the LLM
+per run. A reply that is not valid JSON, or names an option that is not offered, leaves the step
+to the rules. Every pick is a `decision` event (rule `llm_manager`) with its reason, the options
+and the rules' proposal. Points with only one option ask nothing.
 
 ## 5. The ten agents
 
@@ -395,6 +415,7 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 | `no_lessons` | the Fixer writes no lessons and nobody queries them |
 | `no_coverage` | the Validator runs one probe round, as v1 does |
 | `single_agent` | one ReAct agent with every tool and one context, under the same total budget |
+| `core.agents.manager: rules` | the rule-based Manager: no LLM decisions at phase boundaries (a separate setting, run as an ablation) |
 
 ## 17. Contract changes (all additive)
 
