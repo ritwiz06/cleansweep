@@ -289,6 +289,14 @@ one round. The `no_coverage` ablation runs v1's single round. A test shows the p
 change in a branch the first round never runs passes v1's check and is caught by the second
 round.
 
+Functions in standalone scripts are probed too. A file with no `__init__.py` beside it, or with a
+name that cannot be imported (`benchmark/compute-time.py`), gets an importable module name
+(`benchmark.compute_time`), and the harness loads it by path before the probes run: its
+`__name__` is not `"__main__"`, so its main block does not run; its folder goes on `sys.path` for
+sibling imports; and the third-party modules it imports that the project's environment lacks (a
+PEP 723 script's own dependencies, say) are replaced by stubs, which the probe note lists. The
+project's own modules are never stubbed. v1 never asks for this, so its probes are unchanged.
+
 ## 12. Safety
 
 - **Never touch the original.** `clean` copies the project into a scratch workspace (a git clone

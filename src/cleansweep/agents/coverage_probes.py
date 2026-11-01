@@ -3,13 +3,20 @@
 v1 asks the LLM once for probe cases. Here, after each round the probes run under coverage on
 the version before the change, and the next round asks for cases that reach the changed lines
 still uncovered. Target lines: the changed statements inside functions that still exist, and the
-whole body of a removed duplicate or wrapper (its probes run against the replacement)."""
+whole body of a removed duplicate or wrapper (its probes run against the replacement).
+
+Functions in standalone scripts (no __init__.py beside them, or a file name that cannot be
+imported) are probed too: the harness loads those files by path under an importable name, so
+their main block does not run, and stubs the third-party modules they import that the
+project's environment lacks (a PEP 723 script's own dependencies, say)."""
 
 from __future__ import annotations
 
 import ast
 import re
 import subprocess
+from dataclasses import replace
+from pathlib import Path
 
 from cleansweep.guard.difftest import (
     Target,
@@ -86,6 +93,57 @@ def target_statements(ws, start: str, changes: dict, targets: list[Target]) -> d
                     if stmt is not None:
                         wanted.setdefault(path, set()).add(stmt)
     return {p: s for p, s in wanted.items() if s}
+
+
+def script_module(path: str) -> str:
+    """An importable module name for a script path: benchmark/compute-time.py ->
+    benchmark.compute_time."""
+    parts = [re.sub(r"\W", "_", part) for part in path[:-3].split("/")]
+    return ".".join(f"_{p}" if p[:1].isdigit() else p for p in parts)
+
+
+def is_script(repo_dir: str, path: str) -> bool:
+    """A .py file the harness has to load by path: no __init__.py beside it, or a name that
+    cannot be imported."""
+    root = Path(repo_dir)
+    if not (root / path).is_file():
+        return False
+    folder = (root / path).parent
+    named = all(part.isidentifier() for part in path[:-3].split("/"))
+    return (
+        not named
+        or (folder != root and not (folder / "__init__.py").exists())
+        or (folder == root and path != "setup.py")
+    )
+
+
+def script_targets(repo_dir: str, targets: list[Target]) -> tuple[list[Target], dict[str, str]]:
+    """Targets in scripts get an importable module name (also in their swaps); returns the
+    targets and {module: path} for the harness to load by path."""
+    scripts: dict[str, str] = {}
+
+    def name_for(module: str) -> str:
+        path = module.replace(".", "/") + ".py"
+        if not is_script(repo_dir, path):
+            return module
+        scripts[script_module(path)] = path
+        return script_module(path)
+
+    out = []
+    for t in targets:
+        path = t.key.split("::")[0]
+        if not is_script(repo_dir, path):
+            out.append(t)
+            continue
+        module = script_module(path)
+        scripts[module] = path
+        swap = t.swap and {
+            **t.swap,
+            "module": module,
+            "source_module": name_for(t.swap["source_module"]),
+        }
+        out.append(replace(t, module=module, swap=swap))
+    return out, scripts
 
 
 def _spec(targets, checks, probes, paths) -> tuple[dict, dict]:
@@ -168,6 +226,7 @@ def probe_with_coverage(
     if not targets and not checks:
         info = {"coverage": None, "rounds": 0, "targets": 0, "cases_by_target": {}}
         return None, {**info, "note": "nothing to probe"}
+    targets, scripts = script_targets(ws.path, targets)
     mode = probe_mode(ws, cfg)
     probes, note = get_probes(targets, llm, cfg, mode)
     wanted = target_statements(ws, start, changes, targets)
@@ -179,6 +238,8 @@ def probe_with_coverage(
     def at(commit: str, coverage_files=None):
         def run(spec: dict, files: dict[str, str]) -> dict:
             ws.rollback(commit)
+            if scripts:
+                spec = {**spec, "scripts": scripts}
             return run_harness(ws, spec, files, cfg, mode, coverage_files=coverage_files)
 
         return run
@@ -226,8 +287,18 @@ def probe_with_coverage(
         result = (first[0].get("probes", {}) if first else {}).get(f"t{i}") or {}
         key = t.key.split("#r")[0]
         cases[key] = cases.get(key, 0) + (len(result.get("cases", {})) if result.get("ok") else 0)
+    loaded = (first[0].get("scripts") or {}) if first else {}
+    stubbed = sorted({m for r in loaded.values() for m in r.get("stubbed", [])})
+    if scripts:
+        ok = sum(bool(r.get("ok")) for r in loaded.values())
+        note = (
+            (note + "; " if note else "")
+            + f"{ok}/{len(scripts)} scripts loaded by path"
+            + (f" (stubbed: {', '.join(stubbed)})" if stubbed else "")
+        )
     info = {
         "coverage": reached,
+        "scripts": loaded,
         "rounds": used,
         "targets": len(targets),
         "target_lines": sum(len(s) for s in wanted.values()),

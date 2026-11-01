@@ -62,3 +62,37 @@ def test_the_extra_round_catches_a_change_the_first_round_misses(ws, tmp_path):
     assert info1["coverage"] == 0.0 and one_round.same  # what v1's single round would conclude
     guided, info = probe_with_coverage(ws, start, [], graph, _llm(), _cfg(tmp_path))
     assert info["coverage"] == 1.0 and not guided.same
+
+
+SCRIPT = (
+    "# /// script\n# requires-python = '>=3.10'\n# dependencies = ['chartlib_x']\n# ///\n"
+    "import chartlib_x\n\n\n"
+    "def title(n):\n    return f'{n} rows'\n\n\n"
+    "if __name__ == '__main__':\n    raise SystemExit(chartlib_x.plot())\n"
+)
+SCRIPT_TARGET = "bench/make-chart.py::title"
+SCRIPT_PROBE = (
+    "def make_cases():\n    from bench.make_chart import title\n"
+    "    return [('one', lambda: title(1)), ('many', lambda: title(12))]\n"
+)
+
+
+@pytest.mark.parametrize("new, same", [("str(n) + ' rows'", True), ("f'{n} row'", False)])
+def test_a_function_in_a_pep723_script_gets_probe_cases(tmp_path, new, same):
+    root = tmp_path / "proj"
+    (root / "bench").mkdir(parents=True)
+    (root / "bench" / "make-chart.py").write_text(SCRIPT)
+    ws = open_workspace(str(root), {"work_dir": str(tmp_path / "ws")})
+    try:
+        graph = build_graph(ws.path)
+        start = ws.checkpoint("before")
+        with open(f"{ws.path}/bench/make-chart.py", "w") as f:
+            f.write(SCRIPT.replace("f'{n} rows'", new))
+        reply = json.dumps({"probes": [{"target": SCRIPT_TARGET, "code": SCRIPT_PROBE}]})
+        llm = ScriptedLLM([(f"Target id: {SCRIPT_TARGET}", [reply])])
+        outcome, info = probe_with_coverage(ws, start, [], graph, llm, _cfg(tmp_path), rounds=1)
+    finally:
+        ws.close()
+    assert info["cases_by_target"] == {SCRIPT_TARGET: 2} and outcome.same is same
+    assert info["scripts"]["bench.make_chart"] == {"ok": True, "stubbed": ["chartlib_x"]}
+    assert "1/1 scripts loaded by path (stubbed: chartlib_x)" in info["note"]
