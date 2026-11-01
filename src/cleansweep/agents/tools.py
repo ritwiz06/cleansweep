@@ -225,7 +225,8 @@ def compare_functions(rt, a: str, b: str) -> str:
         same_ast = False
     ka, kb = _shingles(_normalized_tokens(sa)), _shingles(_normalized_tokens(sb))
     sim = len(ka & kb) / len(ka | kb) if ka | kb else 0.0
-    return f"bodies have the same AST: {'yes' if same_ast else 'no'}; token similarity {sim:.2f}"
+    ast_text = "IDENTICAL" if same_ast else "DIFFERENT (the code or its constants differ)"
+    return f"AST: {ast_text}; token similarity {sim:.2f} (names and literals ignored)"
 
 
 def query_lessons(rt, pattern: str) -> str:

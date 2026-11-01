@@ -36,7 +36,7 @@ def test_offline_clean_of_the_toy_repo_end_to_end(toy_repo, agent_cfg, tmp_path)
     assert summary["final"]["new_failures"] == [] and summary["files_removed"] == 3
     events = read_events(out / "events.jsonl")
     phases = [e["payload"]["to"] for e in events if e["kind"] == "phase_change"]
-    assert phases == ORDER
+    assert phases[:6] == ORDER[:6] and phases[-3:] == ORDER[-3:]  # steps back may come between
     # one commit per kept package on the delivered branch, plus the files
     kept = [
         p
@@ -66,6 +66,15 @@ def test_offline_clean_of_the_toy_repo_end_to_end(toy_repo, agent_cfg, tmp_path)
     ):
         assert by_key[key] == "kept", key
     assert by_key["shopcart/storage.py::load_legacy"] == "skipped"  # security: suggest only
+    # offline there are no probes, so merged duplicates and inlined wrappers are not verified
+    notes = {
+        i.unit.key: r.notes
+        for i in result["report"].plan.items
+        for r in result["report"].results
+        if r.item_id == i.item_id
+    }
+    for key in ("shopcart/discounts.py::_round_price", "shopcart/cart.py::compute_total"):
+        assert by_key[key] == "rolled_back" and "not verified" in notes[key], key
     # every agent and every message type took part
     agents = {(e["agent"] or "").split("#")[0] for e in events}
     assert {

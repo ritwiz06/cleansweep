@@ -146,3 +146,22 @@ def test_edit_lines_refuses_when_the_old_lines_are_gone(tmp_path):
     (tmp_path / "m.py").write_text("def f(x):\n    return x\n")
     assert not apply_edit(SimpleNamespace(path=repo), item)
     assert (tmp_path / "m.py").read_text() == "def f(x):\n    return x\n"
+
+
+def test_inline_script_metadata_is_not_commented_code(tmp_path):
+    repo = _repo(
+        tmp_path,
+        {
+            "bench.py": (
+                "# /// script\n"
+                '# requires-python = ">=3.11"\n'
+                '# dependencies = ["pandas", "seaborn"]\n'
+                "# ///\n"
+                "import sys\n\n"
+                "# old = sys.argv[1]\n"
+                "# print(old)\n"
+            )
+        },
+    )
+    items = detect_commented_code(repo)
+    assert [(i.unit.start_line, i.unit.end_line) for i in items] == [(7, 8)]

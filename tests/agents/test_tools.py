@@ -19,7 +19,7 @@ def test_investigation_tools_on_the_toy_repo(toy_ws):
     assert "graph callers: none" in refs and "text matches in code: 0" in refs
     used = tools.call("find_references", {"name": "compute_total"})
     assert "in tests: 0" not in used or "text matches in code: 0" not in used
-    assert "same AST: no" in tools.call(
+    assert "AST: DIFFERENT" in tools.call(
         "compare_functions",
         {"a": "shopcart/discounts.py::_round_price", "b": "shopcart/storage.py::_safe_round"},
     )

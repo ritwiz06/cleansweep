@@ -4,7 +4,6 @@ dependency-uninstall check, the public-API check and differential probes."""
 from __future__ import annotations
 
 from cleansweep.core.io import to_dict
-from cleansweep.guard.difftest import probe_change
 from cleansweep.guard.guard import ast_unchanged, check_dependencies
 from cleansweep.reviewer.detectors import has_package_metadata, is_public_api
 
@@ -12,6 +11,7 @@ from .coverage_probes import probe_with_coverage
 from .llm import acting
 
 NAME = "validator"
+REWRITES = ("replace_with", "apply_patch")  # code rewrites, not deletions
 
 
 def check_package(rt, pkg) -> bool:
@@ -53,22 +53,17 @@ def check_package(rt, pkg) -> bool:
         if guard_cfg.get("diff_tests", True):
             settings = rt.acfg.get(NAME) or {}
             with acting(NAME, budget):
-                if rt.ablation == "no_coverage":
-                    outcome, note = probe_change(
-                        rt.ws, pkg.start, items, rt.graph, rt.llm, guard_cfg
-                    )
-                    info = {"coverage": None, "rounds": 1, "note": note}
-                else:
-                    outcome, info = probe_with_coverage(
-                        rt.ws,
-                        pkg.start,
-                        items,
-                        rt.graph,
-                        rt.llm,
-                        guard_cfg,
-                        rounds=int(settings.get("probe_rounds", 3)),
-                        target=float(settings.get("coverage_target", 0.9)),
-                    )
+                outcome, info = probe_with_coverage(
+                    rt.ws,
+                    pkg.start,
+                    items,
+                    rt.graph,
+                    rt.llm,
+                    guard_cfg,
+                    rounds=int(settings.get("probe_rounds", 3)),
+                    target=float(settings.get("coverage_target", 0.9)),
+                    guided=rt.ablation != "no_coverage",  # off: one round, as v1's Guard
+                )
             checks["probes"] = to_dict(outcome) if outcome is not None else None
             checks["probe_note"] = info.get("note", "")
             checks["coverage"] = info.get("coverage")
@@ -89,6 +84,14 @@ def check_package(rt, pkg) -> bool:
             if outcome is not None and not outcome.same:
                 log = "probes found a behavior change:\n" + "\n".join(outcome.mismatches[:20])
                 return _fail(rt, pkg, "probes", log, checks)
+            cases = info.get("cases_by_target", {})
+            rewrites = [
+                i.unit.key for i in items if i.action in REWRITES and not cases.get(i.unit.key)
+            ]
+            if rewrites:
+                # tests rarely cover what a merged duplicate or inlined wrapper does differently
+                log = f"the probes ran no cases, so these rewrites are not verified: {rewrites}"
+                return _fail(rt, pkg, "unverified", log, checks)
         if (rt.brief or {}).get("ui_framework"):
             checks["ui"] = "not run: the UI snapshot check comes in a later version"
         return _pass(rt, pkg, checks)
