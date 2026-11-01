@@ -16,7 +16,12 @@ PHASES = [
     "DONE",
 ]
 # steps back and how often each may be taken in one run
-BACK = {("BASELINE", "ONBOARD"): 1, ("EXECUTE", "PLAN"): 2, ("FINAL_VERIFY", "EXECUTE"): 1}
+BACK = {
+    ("BASELINE", "ONBOARD"): 1,
+    ("PLAN", "INVESTIGATE"): 1,  # the LLM-guided Manager re-investigates undecided candidates
+    ("EXECUTE", "PLAN"): 2,
+    ("FINAL_VERIFY", "EXECUTE"): 1,
+}
 # v1 stage that starts with each phase, for v1 readers of the event log
 V1_STAGE = {
     "ONBOARD": "open",

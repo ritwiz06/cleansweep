@@ -114,6 +114,8 @@ def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
 def investigate_llm(rt, item: CleanupItem, n: int) -> dict:
     agent = f"{NAME}#{n}"
     budget = rt.budget(NAME)
+    if item.item_id in rt.retry:  # sent back by the Manager: twice the steps and LLM calls
+        budget.steps, budget.llm_calls = budget.steps * 2, budget.llm_calls * 2
     lessons = rt.lessons.matching(item, _framework(rt, item)) if rt.ablation != "no_lessons" else []
     first = first_checks(rt, item, agent)
     task = (
@@ -331,6 +333,13 @@ def run(rt) -> None:
             rt.verdicts[verdict["item_id"]] = verdict
     for item in pending:
         verdict = rt.verdicts[item.item_id]
+        rt.before_verdict[item.item_id] = (
+            item.lane,
+            item.action,
+            item.reason,
+            list(item.evidence),
+            list(item.sources),
+        )
         apply_verdict(item, verdict)
         rt.log.emit(
             "decision",

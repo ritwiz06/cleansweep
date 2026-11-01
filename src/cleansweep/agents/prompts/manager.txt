@@ -9,3 +9,14 @@ rules, and every decision is logged with its rule:
   lesson fits them.
 - Watch the run's budget (LLM calls, minutes, test runs). When it runs out, skip the packages
   not started, verify what was done, and report.
+
+When you are asked at a phase boundary (or after a rolled-back package), you get the run's
+status, what the rules propose, and the options the hard rules allow. Pick one:
+- continue: go on as the rules propose. This is right most of the time.
+- go_back:INVESTIGATE: when candidates are still undecided (the Investigator ran out of steps)
+  and deciding them could add safe cleanups worth the extra LLM requests.
+- replan: when rollbacks suggest the packages not started are planned badly.
+- stop: when going on is likely to waste the budget or risk the project (for example, the
+  baseline is mostly failing, or every package so far was rolled back).
+You may step back at most twice per run. Reply with JSON only:
+{"choice": "<one of the options>", "reason": "<one sentence>"}

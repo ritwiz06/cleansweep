@@ -32,6 +32,8 @@ core:
     repair: true
   agents:                  # v2 agent team (method=agentic, `cleansweep clean`); docs/agentic_design.md
     mode: safe             # safe: deterministic edits, anything uncertain is suggested | thorough
+    manager: llm           # llm: the Manager also asks the LLM at each phase boundary (hard rules win) | rules
+    manager_budget: {llm_calls: 12}  # the LLM-guided Manager's decisions; the run budget caps time
     ablation: null         # no_research | broadcast | inline_artifacts | no_lessons | no_coverage | single_agent
     parallel_llm: 3        # LLM requests at once (Investigators)
     baseline_runs: 3       # test runs for the baseline (flaky tests are those that change)
