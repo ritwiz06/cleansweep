@@ -5,10 +5,11 @@
 
 RUN is a case-study record folder under results/raw/case_studies/ (its report.json). The sheet,
 results/raw/case_studies/NAME/review_sheet.md, has one row per change applied in safe mode, per
-suggestion left in safe mode, and per change thorough mode applied beyond safe mode, each with
-its evidence and how it was checked, and an empty "decision" column for the reviewer: accept,
-reject or unsure. --score reads the filled sheet and writes review_scores.csv: acceptance rate
-(accepted / decided) by category and mode, with the unsure and blank counts.
+suggestion left in safe mode, and per change thorough mode made beyond safe mode (kept, or tried
+and rolled back by its checks), each with its evidence and how it was checked, and an empty
+"decision" column for the reviewer: accept, reject or unsure. --score reads the filled sheet
+and writes review_scores.csv: acceptance rate (accepted / decided) by category and mode, with
+the unsure and blank counts.
 """
 
 from __future__ import annotations
@@ -54,6 +55,8 @@ def _checked(result) -> str:
 
 
 def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> list[dict]:
+    """Rows of one run. Kinds: "applied" (kept), "suggestion", and "tried" (a change thorough
+    mode made beyond safe mode that its checks rolled back or could not apply)."""
     results = {r.item_id: r for r in report.results}
     rows = []
     for item in report.plan.items:
@@ -61,10 +64,12 @@ def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> li
         status = result.status if result else "-"
         if status in KEPT:
             kind = "applied"
+        elif "thorough" in item.sources:
+            kind = "tried"
         elif item.lane == "suggest":
             kind = "suggestion"
         else:
-            kind = f"applied, {status}" if result else "not applied"
+            kind = "not applied"
         if kind not in kinds or item.unit.key in skip:
             continue
         rows.append(
@@ -75,7 +80,7 @@ def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> li
                 "category": item.category,
                 "what": f"{item.action}: {item.reason}",
                 "evidence": "; ".join(item.evidence[:3]),
-                "checked": _checked(result) if kind == "applied" else "-",
+                "checked": _checked(result) if kind in ("applied", "tried") else "-",
                 "outcome": status,
             }
         )
@@ -88,7 +93,7 @@ def write_sheet(name: str, safe: str, thorough: str | None) -> Path:
     if thorough:
         report = load_json(SweepReport, CASES / thorough / "report.json")
         kept_safe = {r["item"] for r in rows if r["kind"] == "applied"}
-        rows += _rows(report, "thorough", {"applied"}, kept_safe)
+        rows += _rows(report, "thorough", {"applied", "tried"}, kept_safe)
     lines = [
         f"# Review sheet: {name}",
         "",
@@ -97,7 +102,8 @@ def write_sheet(name: str, safe: str, thorough: str | None) -> Path:
         "",
         "Fill in **decision** for every row: `accept` (you would keep this change, or act on",
         "this suggestion), `reject` (you would not), or `unsure`. **note** is optional. Rows with",
-        "mode `thorough` are the changes thorough mode applied beyond safe mode.",
+        "mode `thorough` are the changes thorough mode made beyond safe mode: `applied` (kept) or",
+        "`tried` (its checks rolled it back: say whether you would have wanted the change).",
         "",
         HEADER,
         "|" + "---|" * 11,
