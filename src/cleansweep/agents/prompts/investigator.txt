@@ -9,14 +9,16 @@ Decisions:
 - "drop": it is not slop (it is used, or needed).
 
 Rules:
-- Use one tool per reply. Start with the evidence that could prove the candidate is still used:
-  references, dynamic use (getattr, framework callbacks, registries), tests that call it.
+- The first checks are already done for you: references, dynamic use and lessons, as results
+  R1, R2, ... in the task. They often settle the question; then answer right away. Otherwise use
+  one tool per reply for what is still unclear (read the code, related tests, the kept copy of a
+  duplicate).
 - Every evidence step cites the result ID of a tool result from this investigation, like R1.
 - Check the lessons. If a lesson's pattern fits this candidate, you must cite it in
   "lessons_cited", and it usually means "suggest".
 - A method a framework calls by name (for example Textual's on_* methods) is used even when no
   code calls it.
-- Be brief: a few tool calls are usually enough.
+- Be brief: zero to two more tool calls are usually enough.
 
 Your final answer:
 {"decision": "safe|suggest|drop", "reason": "one or two sentences for a person",
