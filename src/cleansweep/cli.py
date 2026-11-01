@@ -4,6 +4,7 @@ import argparse
 import json
 import shlex
 import sys
+from pathlib import Path
 
 from cleansweep.core.config import load_config
 from cleansweep.core.io import load_json, save_json
@@ -142,6 +143,40 @@ def cmd_clean(args) -> int:
     return 0 if s["verdict"] in ("everything runs", "nothing applied") else 1
 
 
+def cmd_watch(args) -> int:
+    from cleansweep.agents import clean_project, watch
+    from cleansweep.agents.delivery import inside
+
+    cfg = load_config()
+    repo = Path(args.repo).expanduser().resolve()
+    if not (repo / ".git").exists():
+        print(f"cleansweep watch: {repo} is not a git repository", file=sys.stderr)
+        return 2
+    out = Path(args.out).expanduser().resolve() if args.out else repo.parent / f"{repo.name}-watch"
+    if inside(out, repo):
+        print("cleansweep watch: --out must be outside the repository", file=sys.stderr)
+        return 2
+
+    def clean(snapshot: str, run: str, test_runs: int | None) -> dict:
+        agents = cfg["core"].setdefault("agents", {})
+        if test_runs is not None:
+            agents["budget"] = {**agents.get("budget", {}), "test_runs": test_runs}
+        return clean_project(snapshot, cfg, out=run, mode=args.mode, use_llm=not args.no_llm)
+
+    def show(entry: dict) -> None:
+        print(f"{entry['commit'][:10]} {entry['decision']}: {entry['reason']}", flush=True)
+        if entry.get("outcome"):
+            print(f"  {entry['run']}: {entry['outcome']['verdict']}", flush=True)
+
+    w = watch.Watch(str(repo), str(out), budget_tests=args.budget_tests)
+    try:
+        w.run(clean, interval=args.interval, polls=1 if args.once else args.polls, on_entry=show)
+    except KeyboardInterrupt:
+        pass
+    print(f"watch log: {out / 'watch_log.jsonl'}")
+    return 0
+
+
 def cmd_studio(args) -> int:
     from cleansweep.core.config import REPO_ROOT
 
@@ -220,6 +255,26 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--quiet", action="store_true", help="print only the result")
     p.set_defaults(func=cmd_clean)
+    p = sub.add_parser(
+        "watch",
+        help="follow a git repository's commits and clean a copy when the slop is worth it",
+        description=(
+            "Poll a git repository for new commits, estimate the slop with the static detectors, "
+            "decide whether to clean now (each decision and its reason go to watch_log.jsonl), and "
+            "run `clean` on a copy of the commit when it does. The repository is never changed."
+        ),
+    )
+    p.add_argument("repo", help="the git repository to watch")
+    p.add_argument("--budget-tests", type=int, default=0, help="test runs all cleans may use")
+    p.add_argument("--interval", type=float, default=60, help="seconds between polls")
+    p.add_argument("--once", action="store_true", help="poll once and exit")
+    p.add_argument("--polls", type=int, help="stop after this many polls")
+    p.add_argument("--out", help="watch folder (default: <repo>-watch next to the repository)")
+    p.add_argument("--mode", choices=["safe", "thorough"], default=None)
+    p.add_argument(
+        "--no-llm", action="store_true", help="clean offline: the agents decide by rules"
+    )
+    p.set_defaults(func=cmd_watch)
     p = sub.add_parser(
         "studio",
         help="open CleanSweep Studio: launch, follow, replay and compare runs in the browser",
