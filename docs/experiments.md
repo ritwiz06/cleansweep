@@ -309,6 +309,26 @@ sees everything except fixtures, demo, results and data; the Guard runs the copy
   one request timed out after 600 s and was not retried). **Models:** judge, repair and probes
   `qwen36-35b-a3b`.
 
+### v2: case studies and LLM-reviewer acceptance
+
+Real-project case studies of `cleansweep clean` (v2), and an independent LLM's review of what
+they applied and suggested. The review is **LLM-reviewer acceptance (independent model,
+blinded)**, not a human evaluation.
+
+- **Run:** `python scripts/experiments/v2/exp_case_study.py TARGET --name NAME --mode safe|thorough
+  --budget minutes=120` (AIDev targets run in their container); `python
+  scripts/experiments/v2/exp_review_sheet.py NAME --safe RUN [--thorough RUN]` writes the review
+  sheet; `python scripts/experiments/v2/exp_llm_review.py sheet NAME` fills in its LLM-reviewer
+  columns, `... table` writes the summary, `... calibration` writes a 20-row sheet for a person
+  and `... kappa` compares them; `... mining` estimates the precision of the mined removal
+  requests the same way.
+- **Reviewer:** `VOYAGER_MODEL_ALT` (not the agents' model). It sees the code, the proposed change
+  and the facts (detector evidence, references, test and probe results), never the agents'
+  verdict, reasons, lane or mode; rows are shuffled (seed 572); 3 votes per row (seeds 0, 1, 2,
+  temperature 0.3, reasoning off), the majority decides.
+- **Outputs:** `results/raw/case_studies/<name>/` (report, diff, review sheet, `llm_review.json`);
+  `results/summary/v2/llm_review_acceptance.csv`, `results/summary/v2/mining_llm_precision.csv`.
+
 ## Getting the data
 
 Everything under `data/` except `data/splits/` is gitignored. In order:

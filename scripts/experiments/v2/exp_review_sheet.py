@@ -1,4 +1,4 @@
-"""Review sheets for the case studies, and their acceptance rates once a person has filled them in.
+"""Review sheets for the case studies, and their acceptance rates.
 
     python scripts/experiments/v2/exp_review_sheet.py NAME --safe RUN --thorough RUN
     python scripts/experiments/v2/exp_review_sheet.py NAME --score
@@ -6,16 +6,20 @@
 RUN is a case-study record folder under results/raw/case_studies/ (its report.json). The sheet,
 results/raw/case_studies/NAME/review_sheet.md, has one row per change applied in safe mode, per
 suggestion left in safe mode, and per change thorough mode made beyond safe mode (kept, or tried
-and rolled back by its checks), each with its evidence and how it was checked, and an empty
-"decision" column for the reviewer: accept, reject or unsure. --score reads the filled sheet
-and writes review_scores.csv: acceptance rate (accepted / decided) by category and mode, with
-the unsure and blank counts.
+and rolled back by its checks), each with its evidence and how it was checked. review_rows.json
+beside it locates each row's item in its run, for exp_llm_review.py.
+
+Two decision columns: "LLM reviewer" (with its votes and reason), filled in by
+exp_llm_review.py (an independent model, blinded: not a human evaluation), and "human
+decision", left for a person (accept, reject or unsure). --score writes review_scores.csv:
+acceptance (accepted / decided) by category and mode, for each column that has decisions.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import sys
 from collections import Counter
@@ -31,7 +35,9 @@ CASES = ROOT / "results" / "raw" / "case_studies"
 KEPT = ("kept", "repaired")
 DECISIONS = ("accept", "reject", "unsure")
 COLUMNS = ["#", "mode", "kind", "item", "category", "what", "evidence", "checked by", "outcome"]
-HEADER = "| " + " | ".join([*COLUMNS, "decision", "note"]) + " |"
+REVIEW = ["LLM reviewer", "votes", "LLM reviewer reason", "human decision", "note"]
+HEADER = "| " + " | ".join([*COLUMNS, *REVIEW]) + " |"
+LABEL = "LLM-reviewer acceptance (independent model, blinded)"
 
 
 def _cell(text: str, limit: int = 300) -> str:
@@ -54,7 +60,7 @@ def _checked(result) -> str:
     return "; ".join(parts) or "tests"
 
 
-def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> list[dict]:
+def _rows(report: SweepReport, run: str, mode: str, kinds: set[str], skip: set[str]) -> list:
     """Rows of one run. Kinds: "applied" (kept), "suggestion", and "tried" (a change thorough
     mode made beyond safe mode that its checks rolled back or could not apply)."""
     results = {r.item_id: r for r in report.results}
@@ -74,6 +80,8 @@ def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> li
             continue
         rows.append(
             {
+                "run": run,
+                "item_id": item.item_id,
                 "mode": mode,
                 "kind": kind,
                 "item": item.unit.key,
@@ -88,58 +96,111 @@ def _rows(report: SweepReport, mode: str, kinds: set[str], skip: set[str]) -> li
     return rows
 
 
-def write_sheet(name: str, safe: str, thorough: str | None) -> Path:
-    safe_report = load_json(SweepReport, CASES / safe / "report.json")
-    rows = _rows(safe_report, "safe", {"applied", "suggestion"}, set())
+def sheet_rows(safe: str, thorough: str | None) -> list[dict]:
+    """The rows of a sheet: safe-mode changes and suggestions, then thorough mode's extras."""
+    rows = _rows(
+        load_json(SweepReport, CASES / safe / "report.json"),
+        safe,
+        "safe",
+        {"applied", "suggestion"},
+        set(),
+    )
     if thorough:
         report = load_json(SweepReport, CASES / thorough / "report.json")
         kept_safe = {r["item"] for r in rows if r["kind"] == "applied"}
-        rows += _rows(report, "thorough", {"applied", "tried"}, kept_safe)
+        rows += _rows(report, thorough, "thorough", {"applied", "tried"}, kept_safe)
+    for n, row in enumerate(rows, 1):
+        row["n"] = n
+    return rows
+
+
+def _decisions(path: Path, column: str) -> dict[int, str]:
+    """A filled-in column of an existing sheet, by row number."""
+    if not path.exists():
+        return {}
+    lines = path.read_text(encoding="utf-8").splitlines()
+    header = next((ln for ln in lines if ln.startswith("| # |")), None)
+    if header is None:
+        return {}
+    names = [c.strip() for c in header.split("|")[1:-1]]
+    if column not in names:
+        return {}
+    index = names.index(column)
+    out = {}
+    for line in lines:
+        if re.match(r"^\| \d+ \|", line):
+            cells = [c.strip() for c in re.split(r"(?<!\\)\|", line)[1:-1]]
+            if cells[index]:
+                out[int(cells[0])] = cells[index]
+    return out
+
+
+def write_sheet(name: str, safe: str, thorough: str | None, reviews: dict | None = None) -> Path:
+    """Write the sheet and review_rows.json; reviews (row -> LLM review) fill the LLM columns.
+    A person's decisions and notes already in the sheet are kept."""
+    path = CASES / name / "review_sheet.md"
+    human, notes = _decisions(path, "human decision"), _decisions(path, "note")
+    rows = sheet_rows(safe, thorough)
     lines = [
         f"# Review sheet: {name}",
         "",
         f"Safe-mode run: `{safe}`" + (f"; thorough-mode run: `{thorough}`" if thorough else ""),
         "(records in `results/raw/case_studies/`). Nothing here was applied to the original.",
         "",
-        "Fill in **decision** for every row: `accept` (you would keep this change, or act on",
-        "this suggestion), `reject` (you would not), or `unsure`. **note** is optional. Rows with",
-        "mode `thorough` are the changes thorough mode made beyond safe mode: `applied` (kept) or",
-        "`tried` (its checks rolled it back: say whether you would have wanted the change).",
+        "Rows with mode `thorough` are the changes thorough mode made beyond safe mode: `applied`",
+        "(kept) or `tried` (its checks rolled it back).",
+        "",
+        f"**LLM reviewer** is an independent model ({LABEL}): a different model from the agents',",
+        "shown only the code, the proposed change and the facts, never the agents' verdict, lane,",
+        "mode or reasons; 3 votes per row, the majority decides. It is not a human evaluation.",
+        "**human decision** is for a person: `accept`, `reject` or `unsure`.",
         "",
         HEADER,
-        "|" + "---|" * 11,
+        "|" + "---|" * (len(COLUMNS) + len(REVIEW)),
     ]
-    for n, row in enumerate(rows, 1):
+    for row in rows:
+        n = row["n"]
+        review = (reviews or {}).get(n) or {}
         cells = [str(n), row["mode"], row["kind"], f"`{_cell(row['item'], 120)}`"]
         checked = row["checked"] + (f"; not kept: {row['why']}" if row["why"] else "")
         cells += [row["category"], _cell(row["what"]), _cell(row["evidence"]), _cell(checked)]
-        cells += [row["outcome"], "", ""]
+        cells += [row["outcome"], review.get("decision", ""), ", ".join(review.get("votes", []))]
+        cells += [_cell(review.get("reason", ""), 200), human.get(n, ""), notes.get(n, "")]
         lines.append("| " + " | ".join(cells) + " |")
-    path = CASES / name / "review_sheet.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    meta = {"name": name, "safe": safe, "thorough": thorough, "rows": rows}
+    (path.parent / "review_rows.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     return path
 
 
 def score(name: str) -> Path:
-    text = (CASES / name / "review_sheet.md").read_text(encoding="utf-8")
-    counts: dict[tuple[str, str], Counter] = {}
-    for line in text.splitlines():
-        if not re.match(r"^\| \d+ \|", line):
-            continue
-        cells = [c.strip() for c in re.split(r"(?<!\\)\|", line)[1:-1]]
-        mode, kind, category, decision = cells[1], cells[2], cells[4], cells[9].lower()
-        key = (category, f"{mode} {kind}")
-        counts.setdefault(key, Counter())[decision if decision in DECISIONS else "blank"] += 1
-    out = CASES / name / "review_scores.csv"
+    """review_scores.csv: per category and mode, the LLM reviewer's and the human's decisions."""
+    path = CASES / name / "review_sheet.md"
+    rows = json.loads((path.parent / "review_rows.json").read_text())["rows"]
+    columns = {"llm": _decisions(path, "LLM reviewer"), "human": _decisions(path, "human decision")}
+    counts: dict[tuple[str, str], dict[str, Counter]] = {}
+    for row in rows:
+        key = (row["category"], f"{row['mode']} {row['kind']}")
+        for who, decided in columns.items():
+            value = decided.get(row["n"], "").lower()
+            cell = counts.setdefault(key, {}).setdefault(who, Counter())
+            cell[value if value in DECISIONS else "blank"] += 1
+    out = path.parent / "review_scores.csv"
     with out.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["category", "mode", "rows", "accept", "reject", "unsure", "blank", "rate"])
-        for (category, mode), c in sorted(counts.items()):
-            decided = c["accept"] + c["reject"]
-            rate = round(c["accept"] / decided, 3) if decided else ""
-            row = [category, mode, sum(c.values()), c["accept"], c["reject"], c["unsure"]]
-            writer.writerow(row + [c["blank"], rate])
+        head = ["category", "mode", "rows"]
+        for who in ("llm", "human"):
+            head += [f"{who}_{k}" for k in (*DECISIONS, "blank", "rate")]
+        writer.writerow(head)
+        for (category, mode), by in sorted(counts.items()):
+            line = [category, mode, sum(by["llm"].values())]
+            for who in ("llm", "human"):
+                c = by[who]
+                decided = c["accept"] + c["reject"]
+                rate = round(c["accept"] / decided, 3) if decided else ""
+                line += [c["accept"], c["reject"], c["unsure"], c["blank"], rate]
+            writer.writerow(line)
     return out
 
 

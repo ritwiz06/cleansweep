@@ -80,6 +80,7 @@ def record(result: dict, seconds: float) -> dict:
         "agents": agentic["agents"],
         "branch": result["branch"],
         "workspace": result["workspace"],
+        "source_rev": result.get("source_rev"),
     }
 
 
@@ -157,6 +158,9 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0 if summary["verdict"] in ("everything runs", "nothing applied") else 1
+    rev = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=args.path, capture_output=True, text=True
+    ).stdout.strip()
     result = clean_project(
         args.path,
         load_config({"core": {"agents": agent_cfg(args)}}),
@@ -170,6 +174,7 @@ def main(argv: list[str] | None = None) -> int:
         test_args=shlex.split(args.test_args) if args.test_args else None,
         exclude=[e.rstrip("/") + "/" for e in args.exclude],
     )
+    result["source_rev"] = rev or None  # the project's commit, for reading its code later
     summary = record(result, time.time() - start)
     for name in COPY:
         if (out / name).exists():
