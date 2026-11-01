@@ -118,10 +118,15 @@ def _remove_dependency(ws, item: CleanupItem) -> bool:
         deps = doc.get("project", {}).get("dependencies")
         if deps is None:
             return False
-        keep = [d for d in deps if _norm(re.split(r"[<>=!~;\[ ]", d, maxsplit=1)[0]) != target]
-        if len(keep) == len(deps):
+        drop = [
+            i
+            for i, d in enumerate(deps)
+            if _norm(re.split(r"[<>=!~;\[ ]", d, maxsplit=1)[0]) == target
+        ]
+        if not drop:
             return False
-        doc["project"]["dependencies"] = keep
+        for i in reversed(drop):  # in place, so a multi-line list keeps its layout
+            del deps[i]
         path.write_text(tomlkit.dumps(doc))
         return True
     lines = path.read_text().splitlines(keepends=True)

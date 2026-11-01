@@ -53,6 +53,7 @@ def test_rounds_continue_until_the_changed_lines_are_covered(ws, tmp_path):
     outcome, info = probe_with_coverage(ws, start, [], graph, _llm(), _cfg(tmp_path))
     assert info["rounds"] == 2 and info["coverage"] == 1.0 and info["target_lines"] == 1
     assert info["cases_by_target"] == {TARGET: 3}  # 1 case in round 1, 2 in round 2
+    assert info["observed_by_target"] == {TARGET: 3}  # every case returned a value
     assert outcome is not None and outcome.same
 
 
