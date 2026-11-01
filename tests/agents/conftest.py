@@ -47,7 +47,7 @@ def mini(tmp_path) -> Path:
 
 @pytest.fixture
 def agent_cfg(tmp_path) -> dict:
-    """Config with the LLM off and every cache and workspace under tmp_path."""
+    """Config with the LLM off, no installs, and every cache and workspace under tmp_path."""
     return load_config(
         {
             "core": {
@@ -57,7 +57,7 @@ def agent_cfg(tmp_path) -> dict:
                 },
                 "llm": {"enabled": False, "cache_path": str(tmp_path / "llm.sqlite")},
                 "guard": {"probe_cache_dir": str(tmp_path / "probes")},
-                "agents": {"baseline_runs": 2},
+                "agents": {"baseline_runs": 2, "install": "off"},  # no pip in offline tests
             }
         }
     )

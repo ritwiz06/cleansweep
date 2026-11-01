@@ -182,6 +182,8 @@ def clean_project(
     on_event: Callable[[dict], None] | None = None,
     llm=None,
     use_llm: bool = True,
+    test_args: list[str] | None = None,
+    exclude: list[str] | None = None,
 ) -> dict:
     """`cleansweep clean <path>`: clean a scratch copy of a project and deliver a branch.
 
@@ -202,7 +204,11 @@ def clean_project(
     out_dir.mkdir(parents=True, exist_ok=True)
     started, t0 = _now(), time.time()
     cfg = clean_config(cfg, out_dir)
+    if exclude:
+        reviewer = cfg.setdefault("reviewer", {})
+        reviewer["exclude"] = [*reviewer.get("exclude", []), *exclude]
     ws, info = prepare_workspace(src, out_dir / "workspace", cfg["core"].get("sandbox"))
+    ws.pytest_args = list(test_args or [])
     client = (llm or _make_llm(cfg)) if use_llm else None
     rt = Runtime(
         ws,
@@ -223,6 +229,7 @@ def clean_project(
     return {
         "out": str(out_dir),
         "workspace": ws.path,
+        "base": ws.base,
         "branch": rt.branch,
         "summary": rt.summary,
         "files": [str(out_dir / f) for f in rt.files],

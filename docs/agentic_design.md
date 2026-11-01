@@ -117,7 +117,7 @@ share.
 | # | Phase | Agents | Produces | Next | May step back to |
 |---|---|---|---|---|---|
 | 1 | ONBOARD | Explorer | project brief (artifact), secret scan | BASELINE | — |
-| 2 | BASELINE | Tester | 3 test runs: passing, failing and flaky tests, coverage (artifacts) | AUDIT | ONBOARD, once: the install or test command failed, the Explorer revises the brief |
+| 2 | BASELINE | Tester | the project's environment (a venv in the run folder with the project installed; the copy's `src/` first on `PYTHONPATH`), then 3 test runs: passing, failing and flaky tests (artifacts) | AUDIT | ONBOARD, once: the install or test command failed, the Explorer revises the brief |
 | 3 | AUDIT | Auditor (one instance per category group) | candidates with detector evidence and knowledge-base priors | INVESTIGATE, or REPORT if there are none | — |
 | 4 | INVESTIGATE | Investigator (up to 3 in parallel) | a verdict per candidate: safe / suggest / drop, an evidence chain, cited lessons | PLAN | — |
 | 5 | PLAN | Planner | work packages and `blueprint.md`; with `--approve-plan`, the run pauses for approval | EXECUTE, or REPORT if nothing is safe | — |
@@ -359,6 +359,14 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
   `PR_DESCRIPTION.md`, `CHANGELOG_ENTRY.md`, the patch series, `events.jsonl`, the artifact cache
   and `report.json`. The LLM and probe caches go to `~/.cache/cleansweep/`, so nothing is written
   inside the project, whatever folder the command runs from.
+- `--exclude FOLDER` (repeatable) leaves folders alone; `--test-args "..."` passes pytest
+  arguments (e.g. a marker selection) to every test run; `--no-install` runs the tests with
+  CleanSweep's interpreter instead of installing the project into its own venv. The venv lives
+  in the output folder, never in the workspace, and falls back on CleanSweep's packages (pytest,
+  coverage), so the tests always exercise the cleaned copy, not an installed original.
+- Slow suites (`core.agents.full_suite_max_s`, default 120 s): each package runs its related
+  tests; the full suite runs once in FINAL VERIFY, and if that is worse than the baseline the
+  Manager reverts packages from the last one.
 - `--no-llm` runs offline: the Investigator gathers the same evidence with its tools and decides
   by rules (keep the detector lane unless a lesson fits or the code may be used dynamically).
 - Exit code 0 when the result is "everything runs" or nothing was applied, 1 otherwise or on an

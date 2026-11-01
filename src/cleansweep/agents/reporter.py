@@ -73,6 +73,12 @@ def report_md(rt, s: dict, delivered: dict) -> str:
         "",
         "## Tests",
         "",
+        f"- Environment: {(rt.environment or {}).get('install', 'not set up')}"
+        + (
+            f"; test arguments: {' '.join(rt.ws.pytest_args)}"
+            if getattr(rt.ws, "pytest_args", None)
+            else ""
+        ),
         f"- Baseline ({(rt.baseline or {}).get('runs', 0)} runs): "
         f"{s['baseline']['passed']} passing in every run, "
         f"{s['baseline']['failed']} already failing, {s['baseline']['flaky']} flaky.",
