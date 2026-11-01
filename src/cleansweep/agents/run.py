@@ -17,6 +17,7 @@ from cleansweep.sandbox import open_workspace
 from cleansweep.sandbox.local import default_work_dir
 
 from .delivery import default_out, inside, prepare_workspace
+from .llm import AgentLLM
 from .runtime import Runtime
 from .team import run_team
 
@@ -184,11 +185,13 @@ def clean_project(
     use_llm: bool = True,
     test_args: list[str] | None = None,
     exclude: list[str] | None = None,
+    manager_llm=None,
 ) -> dict:
     """`cleansweep clean <path>`: clean a scratch copy of a project and deliver a branch.
 
     Returns {"out", "workspace", "branch", "summary", "files", "report"}. The original folder is
-    never written to."""
+    never written to. manager_llm gives the Manager its own LLM (the scenario experiments run
+    the other agents without one)."""
     src = Path(path).expanduser().resolve()
     if not src.is_dir():
         raise FileNotFoundError(f"no such folder: {path}")
@@ -223,6 +226,8 @@ def clean_project(
     )
     rt.workspace_info = info
     rt.make_patches = True
+    if manager_llm is not None:
+        rt.manager_llm = AgentLLM(manager_llm, rt.redact, rt.log, rt.run_budget)
     run_team(rt)
     report = build_report(rt, started, t0)
     save_json(report, out_dir / "report.json")

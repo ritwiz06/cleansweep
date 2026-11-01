@@ -134,6 +134,9 @@ class Runtime:
         # the LLM-guided Manager: its budget, the step-backs it took, and what it can undo
         self.manager_budget = Budget.from_cfg(self.acfg.get("manager_budget"))
         self.llm_back_steps = 0
+        self.manager_llm = None  # the Manager's own LLM, when the other agents run without one
+        self.budget_warned = False  # the Manager was asked once at 85% of a run cap
+        self.revert_all = False  # FINAL VERIFY: undo every kept package, not just the last ones
         self.before_verdict: dict[str, tuple] = {}  # an item as the Investigator found it
         self.retry: set[str] = set()  # items to investigate again with twice the steps
 

@@ -97,6 +97,16 @@ class RunBudget:
     def out_of_tests(self, used: int) -> bool:
         return self.test_runs > 0 and used >= self.test_runs
 
+    def used(self, test_runs: int) -> tuple[float, str]:
+        """The largest share of a cap used so far, and its name (0 when nothing is capped)."""
+        minutes = (time.time() - self.started) / 60
+        shares = [
+            (self.used_llm / self.llm_calls if self.llm_calls else 0.0, "LLM-call"),
+            (minutes / self.minutes if self.minutes else 0.0, "time"),
+            (test_runs / self.test_runs if self.test_runs else 0.0, "test-run"),
+        ]
+        return max(shares)
+
     def as_dict(self) -> dict:
         return {"llm_calls": self.llm_calls, "minutes": self.minutes, "test_runs": self.test_runs}
 

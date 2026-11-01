@@ -6,6 +6,7 @@ rolled-back package, whether to go on, go back, replan or stop; the hard rules s
 from __future__ import annotations
 
 import json
+import time
 
 import jsonschema
 
@@ -18,6 +19,7 @@ from .protocol import REASONING_OFF, load_prompt
 NAME = "manager"
 MAX_TURNS = 5000
 LLM_STEP_BACKS = 2  # step-backs the LLM may ask for in one run
+BUDGET_WARNING = 0.85  # share of a run cap that makes the Manager ask whether to stop
 UNDECIDED = {"budget", "invalid", "llm_error", "error"}  # verdicts with no decision
 CHOICE_SCHEMA = {
     "type": "object",
@@ -133,7 +135,10 @@ def _choices(rt, proposed: str) -> dict[str, str]:
             )
     if backs_left and here == "EXECUTE" and rt.phases.can_go_back("PLAN"):
         out["replan"] = "go back to PLAN: re-plan the packages not started, with the lessons so far"
-    if here not in ("FINAL_VERIFY", "REPORT", "DONE"):
+    if here == "FINAL_VERIFY":
+        # the suite is worse than the baseline: both options undo packages; neither may stop
+        out["revert_all"] = "undo every kept package and deliver nothing"
+    elif here not in ("REPORT", "DONE"):
         out["stop"] = "stop now: skip the work not started, verify what was applied, and report"
     return out
 
@@ -154,7 +159,10 @@ def _status(rt, proposed: str, why: str, options: dict[str, str]) -> str:
         f"Baseline: {base.get('passed', '?')} passing, {base.get('failed', '?')} failing, "
         f"{len(base.get('flaky', []))} flaky.",
         f"Run budget: LLM {rt.run_budget.used_llm}/{rt.run_budget.llm_calls or 'no cap'}, "
-        f"minutes {rt.run_budget.minutes or 'no cap'}. "
+        f"minutes {(time.time() - rt.run_budget.started) / 60:.1f}/"
+        f"{rt.run_budget.minutes or 'no cap'}, "
+        f"test runs {rt.ws.test_runs}/{rt.run_budget.test_runs or 'no cap'}. "
+        f"Packages left: {sum(p.stage == 'apply' for p in rt.packages[rt.current :])}. "
         f"Step-backs left: {LLM_STEP_BACKS - rt.llm_back_steps}.",
         "Options:",
         *(f"- {k}: {v}" for k, v in options.items()),
@@ -166,7 +174,8 @@ def _status(rt, proposed: str, why: str, options: dict[str, str]) -> str:
 def _consult(rt, proposed: str, why: str) -> str:
     """The LLM's pick at a decision point, checked against the options; "continue" (the
     rules' step) whenever the Manager is rule-based or the reply is unusable."""
-    if rt.manager_mode != "llm" or rt.llm is None or rt.stopped is not None:
+    llm = rt.manager_llm or rt.llm
+    if rt.manager_mode != "llm" or llm is None or rt.stopped is not None:
         return "continue"
     options = _choices(rt, proposed)
     if len(options) == 1:
@@ -178,7 +187,7 @@ def _consult(rt, proposed: str, why: str) -> str:
     ]
     try:
         with acting(NAME, rt.manager_budget):
-            reply = rt.llm.chat_json(messages, temperature=0.0, extra_body=REASONING_OFF)
+            reply = llm.chat_json(messages, temperature=0.0, extra_body=REASONING_OFF)
         jsonschema.validate(reply, CHOICE_SCHEMA)
         choice, reason = reply["choice"], reply["reason"]
     except Exception as exc:  # out of budget, LLM error or a malformed reply: the rules decide
@@ -339,13 +348,13 @@ def decide(rt) -> str | None:
             if rt.final["ok"]:
                 _go(rt, "REPORT", "the final suite is at least as good as the baseline")
             elif rt.phases.can_go_back("EXECUTE"):
-                rt.reverting = True
-                _go(
-                    rt,
-                    "EXECUTE",
+                why = (
                     f"the final suite is worse than the baseline ({rt.final['new_failures'][:3]}): "
-                    "undo packages from the last one",
+                    "undo packages from the last one"
                 )
+                rt.reverting = True
+                rt.revert_all = _consult(rt, "go_back:EXECUTE", why) == "revert_all"
+                _go(rt, "EXECUTE", "undo every kept package" if rt.revert_all else why)
             else:
                 _go(rt, "REPORT", "the final suite is still worse than the baseline")
         elif phase == "REPORT":
@@ -360,7 +369,8 @@ def _execute(rt) -> str | None:
     if rt.reverting:
         if rt.final is None:
             return _task(rt, "tester", "Run the full suite after the revert", kind="final")
-        if rt.final["ok"] or not any(p.status in ("kept", "repaired") for p in rt.packages):
+        kept = any(p.status in ("kept", "repaired") for p in rt.packages)
+        if (rt.final["ok"] and not rt.revert_all) or not kept:
             rt.reverting = False
             _go(rt, "FINAL_VERIFY", "revert done")
             return None
@@ -398,8 +408,15 @@ def _execute(rt) -> str | None:
             "PLAN",
             f"{pid} was rolled back; later packages depend on it or a new lesson fits them",
         )
-    elif pkg.status == "rolled_back" and rt.package() is not None:
-        choice = _consult(rt, "EXECUTE", f"{pid} was rolled back; go on with the next package")
+    elif rt.package() is not None:
+        share, cap = rt.run_budget.used(rt.ws.test_runs)
+        why = None
+        if pkg.status == "rolled_back":
+            why = f"{pid} was rolled back; go on with the next package"
+        elif share >= BUDGET_WARNING and not rt.budget_warned:
+            rt.budget_warned = True
+            why = f"{share:.0%} of the run's {cap} budget is used; go on with the next package"
+        choice = _consult(rt, "EXECUTE", why) if why else "continue"
         if choice == "stop":
             _stop(rt, "the Manager chose to stop", rule="llm_manager")
         elif choice == "replan":

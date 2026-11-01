@@ -136,21 +136,25 @@ always ends.
 
 **The LLM-guided Manager** (`core.agents.manager: llm`, the default when an LLM is set; `rules`
 keeps the rule-based Manager, and is one of the ablations). The rules propose every step. At each
-phase boundary, and after a rolled-back package, the Manager also sends the LLM one short JSON
-request (reasoning off): the run's status (phase, candidates and verdicts, undecided candidates,
-packages, baseline, budget used, step-backs left), what the rules propose, and the options the
-hard rules allow, and it picks one, with a reason:
+phase boundary, after a rolled-back package, the first time a run cap (LLM calls, minutes or
+test runs) is 85% used with packages left, and when FINAL VERIFY finds the suite worse than the
+baseline, the Manager also sends the LLM one short JSON request (reasoning off): the run's status
+(phase, candidates and verdicts, undecided candidates, packages and packages left, baseline,
+budget used, step-backs left), what the rules propose, and the options the hard rules allow, and
+it picks one, with a reason:
 - `continue`: the rules' step;
 - `go_back:INVESTIGATE`: investigate again the candidates the Investigator could not decide
   (its budget ran out or its answer stayed invalid), with twice the steps; offered after
   INVESTIGATE and PLAN when there are such candidates;
 - `replan`: back to PLAN for the packages not started (after a rolled-back package);
-- `stop`: skip the work not started, verify what was applied, and report.
+- `stop`: skip the work not started, verify what was applied, and report;
+- `revert_all` (FINAL VERIFY only): undo every kept package instead of undoing packages from the
+  last one until the suite is back to the baseline.
 
 Hard rules still win: budgets (the Manager's own LLM budget, `manager_budget`, and the run's),
-never worse than the baseline (FINAL VERIFY and its revert are not up for decision; a stop after
-anything was applied still goes through FINAL VERIFY), and at most 2 step-backs chosen by the LLM
-per run. A reply that is not valid JSON, or names an option that is not offered, leaves the step
+never worse than the baseline (after a worse FINAL VERIFY both options undo packages and neither
+may stop; a stop after anything was applied still goes through FINAL VERIFY), and at most 2
+step-backs chosen by the LLM per run. A reply that is not valid JSON, or names an option that is not offered, leaves the step
 to the rules. Every pick is a `decision` event (rule `llm_manager`) with its reason, the options
 and the rules' proposal. Points with only one option ask nothing.
 
