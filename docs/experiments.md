@@ -329,6 +329,24 @@ blinded)**, not a human evaluation.
 - **Outputs:** `results/raw/case_studies/<name>/` (report, diff, review sheet, `llm_review.json`);
   `results/summary/v2/llm_review_acceptance.csv`, `results/summary/v2/mining_llm_precision.csv`.
 
+### v2: slop-injection benchmark
+
+Known slop planted into the toy repo and 10 AIDev repositories at fixed seeds, then each method
+cleans the whole project; the score is what it removed of the planted slop and of the traps.
+
+- **Run:** `python scripts/experiments/v2/exp_inject.py run [--repos toy owner/name ...]
+  [--seeds 1] [--methods agentic cleansweep one_shot_llm]`, then `... table`.
+- **Plants** (in three package modules chosen by the seed): a leftover file, a dead function, an
+  exact duplicate (both copies used), an unused import, a debug print (`f"{value=}"`), a
+  commented-out block and an unused dependency; traps: a near-duplicate (half-even vs half-up
+  rounding) and a framework callback (`ast.NodeVisitor.visit_Name`). A hidden test, kept outside
+  the project, checks the planted code's behavior before and after the method's final diff.
+- **Targets:** AIDev repositories become injected clones (`data/raw/aidev/injected/`, their head
+  plus one commit with the plants) and run only in their containers; the toy repo is a local copy.
+- **Outputs:** `results/raw/inject/<repo>-s<seed>/` (key, hidden test, one report per method with
+  its score); `results/summary/v2/injection.csv` and `injection_summary.csv` (recall, precision
+  against the traps, traps kept, hidden behavior changed).
+
 ## Getting the data
 
 Everything under `data/` except `data/splits/` is gitignored. In order:
