@@ -39,6 +39,8 @@ core:
     full_suite_max_s: 120  # slower suites: related tests per package, the full suite in FINAL VERIFY
     install: auto          # auto: install the project into .cs_venv when it has packaging files | off
     max_package: 4         # edits per work package
+    format_policy: enforced  # enforced: formatting is safe only if CI or pre-commit runs ruff format
+                           # or black, else a suggestion | always
     lessons_file: null     # keep lessons across runs in this JSON-lines file
     knowledge_dir: null    # mined results; null = results/data_summary
     budget:                # the whole run (`--budget llm=N,minutes=N,tests=N`)

@@ -405,6 +405,12 @@ Details worth knowing:
   applied only when the detector put it in the safe lane and the Investigator says "safe".
   Formatting items skip the investigation (the AST check decides), security items are always
   suggestions.
+- Formatting is safe only where the project enforces a formatter: the Explorer records in the
+  brief whether `.pre-commit-config.yaml` or a CI config (GitHub workflows, GitLab, CircleCI,
+  Azure) runs `ruff format` or `black`. Without one, formatting goes to the suggest lane with the
+  reason "the project doesn't enforce a formatter" (a hand-formatted file is a choice, not
+  slop). `core.agents.format_policy: always` restores the old rule; the toy and demo runs use it,
+  because their answer keys count the toy repo's formatting change as safe.
 - Work packages group a file's edits of the same risk tier (at most `max_package`, default 4);
   formatting goes last in its own package, checked by AST equality. A package that fails with
   several edits is split in half (as v1's bisection does); a single edit gets at most 2 repair

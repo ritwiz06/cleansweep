@@ -211,3 +211,46 @@ def test_a_policy_reason_survives_a_safe_verdict():
     investigator.apply_verdict(item, {"decision": "safe", "reason": "no callers", "evidence": []})
     assert item.lane == "suggest" and item.reason.startswith("Public API of a published package")
     assert "found no use either: no callers" in item.reason
+
+
+def test_explorer_finds_the_formatter_a_project_enforces(tmp_path):
+    from cleansweep.agents.explorer import enforced_formatter
+
+    assert enforced_formatter(tmp_path) is None
+    workflow = tmp_path / ".github" / "workflows" / "ci.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text("steps:\n  - run: ruff check .\n  - run: pytest\n")
+    assert enforced_formatter(tmp_path) is None  # linting is not formatting
+    workflow.write_text("steps:\n  - run: black --check .\n")
+    assert enforced_formatter(tmp_path) == "black (.github/workflows/ci.yml)"
+    (tmp_path / ".pre-commit-config.yaml").write_text(
+        "repos:\n  - repo: https://github.com/astral-sh/ruff-pre-commit\n"
+        "    hooks:\n      - id: ruff\n      - id: ruff-format\n"
+    )
+    assert enforced_formatter(tmp_path) == "ruff format (.pre-commit-config.yaml)"
+
+
+def test_formatting_is_safe_only_where_a_formatter_is_enforced():
+    from cleansweep.core.models import CleanupItem, CodeUnit
+
+    cases = [
+        ({"formatter": None}, "enforced", "suggest"),
+        ({"formatter": "black (.pre-commit-config.yaml)"}, "enforced", "safe"),
+        ({"formatter": None}, "always", "safe"),
+    ]
+    for brief, policy, lane in cases:
+        item = CleanupItem("f", CodeUnit("pkg/a.py", "file"), "format", "format", "safe", "x")
+        investigator.apply_verdict(item, investigator._fixed(item, brief, policy))
+        assert item.lane == lane, (brief, policy)
+        if lane == "suggest":
+            assert item.reason.startswith("The project doesn't enforce a formatter")
+
+
+def test_a_project_without_a_formatter_gets_formatting_as_a_suggestion(rt):
+    from pathlib import Path
+
+    (Path(rt.ws.path) / "shop" / "messy.py").write_text("def f( x ):\n    return x*2\n")
+    rt.ws.checkpoint("an unformatted file")
+    _ready(rt)
+    fmt = [i for i in rt.items.values() if i.category == "format"]
+    assert fmt and all(i.lane == "suggest" for i in fmt) and rt.brief["formatter"] is None
