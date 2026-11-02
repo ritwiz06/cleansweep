@@ -154,7 +154,7 @@ offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory ru
 defaults (outcome 7/7, hidden behavior unchanged). To record a run without the browser:
 
 ```bash
-python -m app.dashboard.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory
+python -m cleansweep.live --target .cleansweep/demo/shop_app --judge-mode advisory
 ```
 
 ## Studio

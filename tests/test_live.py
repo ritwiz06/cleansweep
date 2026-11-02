@@ -3,7 +3,9 @@ import types
 
 import pytest
 
-from app.dashboard.live_runner import (
+from cleansweep.core.io import load_json
+from cleansweep.core.models import CleanupItem, CodeUnit, EditResult, SweepReport
+from cleansweep.live import (
     STAGES,
     EventLog,
     fold,
@@ -13,8 +15,6 @@ from app.dashboard.live_runner import (
     run_live,
     translate,
 )
-from cleansweep.core.io import load_json
-from cleansweep.core.models import CleanupItem, CodeUnit, EditResult, SweepReport
 from cleansweep.llm import FakeLLM
 from cleansweep.reviewer.detectors import item_id
 from cleansweep.scheduler import apply_with_bisection
@@ -152,7 +152,7 @@ def test_live_run_on_the_toy_repo(toy_repo, cfg, tmp_path):
 def test_capture_logs_puts_cleansweep_logs_in_the_events(tmp_path):
     import logging
 
-    from app.dashboard.live_runner import capture_logs
+    from cleansweep.live import capture_logs
 
     log = EventLog(tmp_path / "events.jsonl")
     with capture_logs(log):
@@ -183,7 +183,7 @@ def test_probe_outcome_reaches_the_batch_cards(toy_repo, cfg, tmp_path):
 
 
 def test_shipped_recordings_replay_from_the_repository():
-    from app.dashboard.live_runner import ROOT, shipped_runs
+    from cleansweep.live import ROOT, shipped_runs
 
     changed = {}
     for run_dir in shipped_runs():

@@ -1,4 +1,4 @@
-// Fold a v1 live-sweep log (app/dashboard/live_runner.py) into the Live sweep screen's state;
+// Fold a v1 live-sweep log (src/cleansweep/live.py) into the Live sweep screen's state;
 // the same rules as cleansweep.runlog.fold.
 
 export const V1_STAGES = ["open", "analyze", "plan", "rank", "batch", "guard", "hidden", "done"];

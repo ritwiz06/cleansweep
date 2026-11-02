@@ -25,6 +25,7 @@ cleansweep/
 │   ├── eval/                             baselines, hidden checks, metrics, mutation, statistics
 │   ├── data/                             SWE-bench, PatchDiff and AIDev loaders, splits
 │   ├── mining/                           review-comment mining: requests, taxonomy, rules
+│   ├── live.py                           runs one v1 sweep and logs each step (Studio's v1 sweeps)
 │   ├── runlog.py                         reads recorded runs: v1 event logs, sweep reports, scores
 │   └── cli.py                            `cleansweep sweep | plan | show | clean | watch | studio`
 ├── app/

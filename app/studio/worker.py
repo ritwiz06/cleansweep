@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 
-from app.dashboard.live_runner import run_live
 from cleansweep.core.models import METHODS
+from cleansweep.live import run_live
 
 
 def main(argv: list[str] | None = None) -> int:
