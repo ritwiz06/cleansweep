@@ -39,6 +39,7 @@ export const SQUADS: Record<string, string> = {
   validator: "development",
   fixer: "development",
   reporter: "development",
+  solo: "single",
 };
 
 export const AGENTS = Object.keys(SQUADS);

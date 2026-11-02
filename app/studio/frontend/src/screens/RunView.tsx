@@ -95,7 +95,7 @@ function V2Run({ detail, live }: { detail: RunDetail; live: boolean }) {
                   ))}
                 </ul>
               ) : (
-                <p className="muted">No thoughts recorded (the agents run by rules without an LLM).</p>
+                <p className="muted">No thoughts yet; offline runs (--no-llm) decide by rules and record none.</p>
               )}
               {state.budgetNotes.map((b, i) => (
                 <p key={i} className="small warn-text">

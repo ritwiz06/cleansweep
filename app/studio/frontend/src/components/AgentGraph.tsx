@@ -25,6 +25,7 @@ const POS: Record<string, { x: number; y: number }> = {
   validator: { x: 500, y: 160 },
   fixer: { x: 500, y: 225 },
   reporter: { x: 500, y: 290 },
+  solo: { x: 245, y: 260 },
 };
 const GROUPS = [
   { id: "research", label: "Research squad", x: 8, y: 10, w: 182, h: 320 },
@@ -112,7 +113,10 @@ export function AgentGraph({ state, recent = 3 }: { state: RunState; recent?: nu
         draggable: false,
         zIndex: -1,
       })),
-      ...Object.entries(POS).map(([role, position]) => ({
+      // the single-agent ablation's one agent appears only in its own runs
+      ...Object.entries(POS)
+        .filter(([role]) => role !== "solo" || state.agents.solo?.lastT != null)
+        .map(([role, position]) => ({
         id: role,
         type: "agent",
         position,
