@@ -348,7 +348,9 @@ project's own modules are never stubbed. v1 never asks for this, so its probes a
   install would resolve another version). A failed package is repaired (at most 2 turns) or
   rolled back.
 - **Cautious defaults**: an exhausted budget, an invalid reply after the repair turn, or an LLM
-  failure sends the candidate to `suggest`; a package that cannot be verified is rolled back.
+  failure sends the candidate to `suggest`; a package that cannot be verified is rolled back; an
+  edit that raises (a file that does not parse, such as a template named `*.py`) is undone and
+  skipped, and the package goes on.
 - A single LLM request that takes over 10 minutes is cancelled and logged (the client's timeout
   is 600 s), and the step counts as failed.
 

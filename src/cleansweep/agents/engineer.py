@@ -132,13 +132,18 @@ def apply(rt, pkg) -> None:
             agent=NAME,
             payload={"tool": "apply_edit", "args": {"item": iid, "action": item.action}},
         )
-        ok = apply_edit(rt.ws, item)
+        why = "edit could not be applied"
+        try:
+            ok = apply_edit(rt.ws, item)
+        except (SyntaxError, ValueError, OSError) as exc:  # e.g. a template file named *.py
+            rt.ws.rollback(prev)
+            ok, why = False, f"{why}: {type(exc).__name__}: {exc}"
         if ok:
             rt.item_diffs[iid] = rt.ws.diff(prev)
             prev = rt.ws.checkpoint(f"edit {iid}")
             pkg.applied.append(iid)
         else:
-            rt.results[iid] = EditResult(iid, "skipped", notes="edit could not be applied")
+            rt.results[iid] = EditResult(iid, "skipped", notes=why)
         rt.log.emit(
             "tool_result",
             agent=NAME,
