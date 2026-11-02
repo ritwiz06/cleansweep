@@ -34,7 +34,8 @@ cleansweep/
 │       │                                 roots, redaction), runs.py, jobs.py, data.py, worker.py
 │       └── frontend/                     React + TypeScript (Vite): src/ (screens/, components/,
 │                                         state/ with the event folds and their vitest tests),
-│                                         e2e/ (Playwright); dist/ and node_modules/ are ignored
+│                                         e2e/ (Playwright; guide.spec.ts takes the user guide's
+│                                         screenshots); dist/ and node_modules/ are ignored
 ├── demo/                                 bookstore demo app (shop_app/), its answer key and hidden
 │                                         tests, feature.patch, prepare_demo.sh, run_demo.md,
 │                                         replay/ (recorded runs for offline Replay)
@@ -60,7 +61,8 @@ cleansweep/
 ├── data/splits/                          committed tier and repository splits (data/raw and
 │                                         data/processed are git-ignored)
 ├── docs/                                 index, user guide, architecture, agentic design,
-│                                         requirements, experiments, results, this file
+│                                         requirements, experiments, results, this file;
+│                                         images/studio/ (the user guide's screenshots)
 └── tests/                                mirrors the code: one folder per package (core/, llm/,
     │                                     sandbox/, analysis/, reviewer/, guard/, ranking/,
     │                                     scheduler/, workflow/, agents/, eval/, data/, mining/)

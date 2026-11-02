@@ -67,14 +67,48 @@ def _reviews(folder: Path) -> dict:
     return record.get("reviews") or {}
 
 
+def _review_links(base: Path) -> dict[str, Path]:
+    """Run folder name -> the folder whose review sheet names it as its safe or thorough run."""
+    links: dict[str, Path] = {}
+    for path in sorted(base.glob("*/review_rows.json")):
+        try:
+            meta = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for mode in ("safe", "thorough"):
+            if isinstance(meta, dict) and isinstance(meta.get(mode), str):
+                links.setdefault(meta[mode], path.parent)
+    return links
+
+
+def _review(base: Path, name: str, links: dict[str, Path]) -> tuple[Path | None, dict, dict]:
+    """A case study's review folder, rows and LLM reviews: its own sheet, else this run's rows
+    from the sheet that names it."""
+    own = base / name
+    if (own / "review_rows.json").is_file():
+        return own, files.read_json(own / "review_rows.json") or {}, _reviews(own)
+    folder = links.get(name)
+    if folder is None:
+        return None, {}, {}
+    meta = files.read_json(folder / "review_rows.json") or {}
+    rows = [r for r in meta.get("rows", []) if r.get("run") == name]
+    reviews = _reviews(folder)
+    return (
+        folder,
+        {**meta, "rows": rows},
+        {str(r.get("n")): reviews.get(str(r.get("n")), {}) for r in rows},
+    )
+
+
 def case_list(results: Path) -> list[dict]:
     """One row per case study: project, verdict, tests before/after, size of the change."""
     base = _cases_dir(results)
+    links = _review_links(base) if base.is_dir() else {}
     rows = []
     for path in sorted(base.glob("*/summary.json")) if base.is_dir() else []:
         s = files.read_json(path) or {}
-        reviews = _reviews(path.parent)
-        decisions = [r.get("decision") for r in reviews.values()]
+        folder, _, reviews = _review(base, path.parent.name, links)
+        decisions = [r.get("decision") for r in reviews.values() if r.get("decision")]
         rows.append(
             {
                 "name": path.parent.name,
@@ -87,7 +121,7 @@ def case_list(results: Path) -> list[dict]:
                 "files_removed": s.get("files_removed"),
                 "tests_before": (s.get("tests_before") or {}).get("passed"),
                 "tests_after": (s.get("tests_after") or {}).get("passed"),
-                "has_review": (path.parent / "review_sheet.md").is_file(),
+                "has_review": folder is not None and (folder / "review_sheet.md").is_file(),
                 "reviewed": len(decisions),
                 "accepted": decisions.count("accept"),
                 "rejected": decisions.count("reject"),
@@ -105,8 +139,10 @@ def case_detail(results: Path, name: str) -> dict:
     s.pop("workspace", None)
     brief = s.pop("brief", None) or {}
     docs = {n: files.read_text(folder / n)["text"] for n in CASE_DOCS if (folder / n).is_file()}
-    meta = files.read_json(folder / "review_rows.json") or {}
-    reviews = _reviews(folder)
+    base = _cases_dir(results)
+    review_folder, meta, reviews = _review(base, folder.name, _review_links(base))
+    if review_folder is not None and (review_folder / "review_sheet.md").is_file():
+        docs["review_sheet.md"] = files.read_text(review_folder / "review_sheet.md")["text"]
     rows = []
     for row in meta.get("rows", []):
         review = reviews.get(str(row.get("n")), {})
@@ -118,7 +154,7 @@ def case_detail(results: Path, name: str) -> dict:
                 "llm_reason": review.get("reason"),
             }
         )
-    record = files.read_json(folder / "llm_review.json") or {}
+    record = (files.read_json(review_folder / "llm_review.json") if review_folder else None) or {}
     return {
         "name": name,
         "summary": s,
