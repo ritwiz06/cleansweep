@@ -1,6 +1,11 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
 
+// charts skip their entry animation when the reader asks for reduced motion (and the
+// screenshots show finished charts)
+export const ANIMATE =
+  typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 export function Loading({ what = "Loading" }: { what?: string }) {
   return (
     <div className="state loading" role="status">
@@ -68,6 +73,7 @@ export const STATUS_TONE: Record<string, string> = {
   repaired: "info",
   rolled_back: "bad",
   "rolled back": "bad",
+  reverted: "bad",
   skipped: "neutral",
   failed: "bad",
   failing: "bad",
@@ -201,8 +207,9 @@ export function DataTable({
 export function seconds(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
   if (value < 60) return `${value.toFixed(value < 10 ? 1 : 0)} s`;
-  const m = Math.floor(value / 60);
-  return `${m} min ${Math.round(value - m * 60)} s`;
+  const total = Math.round(value); // 119.6 s is 2 min 0 s, not 1 min 60 s
+  const m = Math.floor(total / 60);
+  return `${m} min ${total - m * 60} s`;
 }
 
 export function percent(value: number | null | undefined): string {

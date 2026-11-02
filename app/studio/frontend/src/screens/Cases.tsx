@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, useApi } from "../api";
 import { CodeBlock, DiffView, Md } from "../components/Code";
-import { Async, Badge, Card, Empty, Stat, Status, Tabs, seconds } from "../components/common";
+import { ANIMATE, Async, Badge, Card, Empty, Stat, Status, Tabs, seconds } from "../components/common";
 
 export const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 const OUTCOMES = ["kept", "repaired", "rolled_back", "skipped"];
@@ -12,6 +12,8 @@ const OUTCOME_COLOR: Record<string, string> = {
   rolled_back: "var(--bad)",
   skipped: "var(--neutral-mark)",
 };
+// "skipped" results are the candidates left as suggestions or dropped
+const OUTCOME_LABEL: Record<string, string> = { skipped: "not applied" };
 
 interface CaseRow {
   name: string;
@@ -94,7 +96,7 @@ function CaseView({ name }: { name: string }) {
                           <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
                           <Legend />
                           {OUTCOMES.map((o) => (
-                            <Bar key={o} dataKey={o} name={o.replace("_", " ")} stackId="a" fill={OUTCOME_COLOR[o]} />
+                            <Bar key={o} dataKey={o} name={OUTCOME_LABEL[o] || o.replace("_", " ")} stackId="a" fill={OUTCOME_COLOR[o]} isAnimationActive={ANIMATE} />
                           ))}
                         </BarChart>
                       </ResponsiveContainer>

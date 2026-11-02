@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, useApi, type Table } from "../api";
-import { Async, Card, DataTable, Empty, Tabs } from "../components/common";
+import { ANIMATE, Async, Card, DataTable, Empty, Tabs } from "../components/common";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -94,8 +94,8 @@ export function SchedulerScreen() {
                         <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "open slop items", angle: -90, position: "insideLeft", fill: "var(--muted)" }} />
                         <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
                         <Legend verticalAlign="top" />
-                        <Line type="monotone" dataKey="never" name="never sweep" stroke="var(--series-2)" strokeWidth={2} dot={false} />
-                        <Line type="monotone" dataKey="policy" name={chosen} stroke="var(--series-1)" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="never" name="never sweep" stroke="var(--series-2)" strokeWidth={2} dot={false} isAnimationActive={ANIMATE} />
+                        <Line type="monotone" dataKey="policy" name={chosen} stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={ANIMATE} />
                         <Line dataKey="sweep" name="sweep" stroke="var(--series-1)" strokeWidth={0} dot={{ r: 4, fill: "var(--series-1)", strokeWidth: 0 }} legendType="circle" isAnimationActive={false} />
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -227,7 +227,7 @@ export function DataScreen() {
                         />
                         <YAxis type="category" dataKey="stage" width={220} tick={{ fill: "var(--muted)", fontSize: 12 }} />
                         <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-                        <Bar dataKey="count" name="repositories (log scale)" fill="var(--series-1)" label={{ position: "right", fill: "var(--text)", fontSize: 12 }} />
+                        <Bar dataKey="count" name="repositories (log scale)" fill="var(--series-1)" label={{ position: "right", fill: "var(--text)", fontSize: 12 }} isAnimationActive={ANIMATE} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

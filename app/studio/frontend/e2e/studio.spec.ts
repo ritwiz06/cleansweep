@@ -146,6 +146,7 @@ test("bad launch requests show the server's reason", async ({ page }) => {
 });
 
 test("every screen renders in both themes at 1280x720", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" }); // finished charts in the screenshots
   const routes = [
     "runs",
     "launch",
@@ -160,6 +161,8 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "baselines",
     "data",
     "guard",
+    "replay?root=replay&path=20261101_manager_conflict_step_back",
+    "replay?root=replay&path=20261102_demo_feature_agentic",
   ];
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");
@@ -171,6 +174,11 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
       await expect(page.locator("main h2").first()).toBeVisible();
       await expect(page.locator(".state.loading")).toHaveCount(0);
       await expect(page.locator(".state.error")).toHaveCount(0);
+      const end = page.getByRole("button", { name: "Jump to the end" });
+      if (await end.count()) {
+        await end.click(); // a replay is shown at its last event
+        await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
+      }
       const width = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(width, `${route} fits 1280 px`).toBeLessThanOrEqual(1280);
       await page.screenshot({ path: `test-results/screens/${theme}-${route.split("?")[0]}-${routes.indexOf(route)}.png` });

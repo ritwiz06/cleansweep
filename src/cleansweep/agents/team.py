@@ -142,7 +142,7 @@ def run_team(rt) -> None:
             "mode": rt.mode,
             "ablation": rt.ablation,
             "dry_run": rt.dry_run,
-            "model": getattr(rt.llm, "model", None),
+            "model": getattr(rt.llm if rt.llm is not None else rt.manager_llm, "model", None),
             "budget": rt.run_budget.as_dict(),
         },
     )

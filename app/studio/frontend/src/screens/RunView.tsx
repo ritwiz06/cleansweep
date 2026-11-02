@@ -95,7 +95,7 @@ function V2Run({ detail, live }: { detail: RunDetail; live: boolean }) {
                   ))}
                 </ul>
               ) : (
-                <p className="muted">No thoughts yet; offline runs (--no-llm) decide by rules and record none.</p>
+                <p className="muted">No thoughts yet. Agents record thoughts in their tool loops; runs without an LLM record none.</p>
               )}
               {state.budgetNotes.map((b, i) => (
                 <p key={i} className="small warn-text">
@@ -133,7 +133,7 @@ export function RunView({ root, path, live }: { root: string; path: string; live
         <Async res={res}>
           {(d) => (
             <span className="muted">
-              {d.kind} · {d.target || "?"} · {d.mode || ""} · model {d.model || "none"}
+              {d.kind} · {d.target || "?"} · {d.mode || ""} · model {d.model || (d.report?.stats?.llm_calls ? "not recorded" : "none")}
               {d.live && !live && (
                 <a className="link" href={`#/run?${new URLSearchParams({ root, path })}`}>
                   {" "}
