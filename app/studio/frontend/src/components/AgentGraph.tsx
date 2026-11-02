@@ -12,7 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { roleOf, type AgentStats, type Message, type RunState } from "../state/fold";
-import { seconds } from "./common";
+import { ANIMATE, seconds } from "./common";
 
 const POS: Record<string, { x: number; y: number }> = {
   manager: { x: 245, y: 150 },
@@ -49,7 +49,9 @@ function AgentNode({ data }: NodeProps<Node<AgentData>>) {
       <div className="agent-stats">
         <span title="tool steps">{s.steps} steps</span>
         <span title="LLM calls">{s.llmCalls} LLM</span>
-        <span title="busy time">{seconds(s.seconds)}</span>
+        <span title={`busy time: ${seconds(s.seconds)}`}>
+          {s.seconds < 60 ? seconds(s.seconds) : `${Math.round(s.seconds / 60)} min`}
+        </span>
       </div>
       <Handle type="source" position={Position.Right} className="hidden-handle" />
     </div>
@@ -65,7 +67,7 @@ function MessageEdge({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps
   return (
     <>
       <BaseEdge id={id} path={path} className={data?.fresh ? "msg-edge fresh" : "msg-edge"} />
-      {data?.fresh && (
+      {data?.fresh && ANIMATE && (
         <circle r="5" className="msg-dot">
           <animateMotion dur="0.9s" repeatCount="indefinite" path={path} />
         </circle>

@@ -123,8 +123,13 @@ describe("fold", () => {
     expect(parseMismatch("odd").target).toBe("odd");
   });
 
-  it("folds the shipped offline recording to its report's numbers", () => {
-    const dir = new URL("../../../../../demo/replay/20261101_toy_clean_offline/", import.meta.url);
+  it.each([
+    "20261101_toy_clean_offline",
+    "20261102_demo_feature_agentic",
+    "20261101_manager_conflict_step_back",
+    "20261101_skill_seekers_case_study",
+  ])("folds the shipped recording %s to its report's numbers", (name) => {
+    const dir = new URL(`../../../../../demo/replay/${name}/`, import.meta.url);
     const events = readFileSync(new URL("events.jsonl", dir), "utf8")
       .split("\n")
       .filter(Boolean)
@@ -132,10 +137,14 @@ describe("fold", () => {
     const report = JSON.parse(readFileSync(new URL("report.json", dir), "utf8"));
     const s = fold(events);
     expect(s.verdict).toBe(report.stats.agentic.verdict);
-    expect(s.testRuns).toBe(report.stats.test_runs);
+    // the events count test runs exactly only when run_end carries them (or no step ran tests
+    // without a message, as in the toy run); the screen shows the report's count
+    if (events.at(-1).payload.summary.test_runs !== undefined || name.includes("toy")) {
+      expect(s.testRuns).toBe(report.stats.test_runs);
+    }
     expect(s.candidates).toBe(report.stats.items_total);
     expect(s.agents.investigator.steps).toBe(report.stats.agentic.agents.investigator.steps);
-    const kept = Object.values(s.packages).filter((p) => p.status === "kept").length;
-    expect(kept).toBe(report.stats.agentic.packages.filter((p: { status: string }) => p.status === "kept").length);
+    const statuses = (pkgs: { status: string }[]) => pkgs.map((p) => p.status).sort();
+    expect(statuses(Object.values(s.packages))).toEqual(statuses(report.stats.agentic.packages));
   });
 });

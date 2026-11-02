@@ -392,6 +392,14 @@ export function step(folder: Folder, e: StudioEvent): void {
           if (stage === "kept" || stage === "repaired") s.applied += pkg.applied.length || pkg.items.length;
         }
       }
+      if (p.revert) {
+        // the Engineer undoes a kept package after a worse FINAL VERIFY
+        const pkg = pkgOf(s, p.revert);
+        if (pkg.status === "kept" || pkg.status === "repaired") s.applied -= pkg.applied.length || pkg.items.length;
+        pkg.status = "reverted";
+        pkg.end = e.t;
+        for (const id of pkg.items) if (s.items[id]) setStage(s.items[id], "rolled_back", e.t);
+      }
       break;
     case "check":
       if (p.package) {
@@ -455,6 +463,7 @@ export function step(folder: Folder, e: StudioEvent): void {
       s.summary = p.summary || null;
       s.verdict = p.summary?.verdict ?? null;
       if (typeof p.summary?.applied === "number") s.applied = p.summary.applied;
+      if (typeof p.summary?.test_runs === "number") s.testRuns = p.summary.test_runs;
       break;
   }
 }

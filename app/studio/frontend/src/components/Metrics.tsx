@@ -41,10 +41,12 @@ function Gauge({
 
 export function MetricsBar({ state, detail }: { state: RunState; detail: RunDetail | null }) {
   const stats = detail?.report?.stats || {};
-  const done = Object.values(state.packages).filter((p) => ["kept", "rolled_back", "repaired", "skipped"].includes(p.status));
+  const done = Object.values(state.packages).filter((p) => ["kept", "rolled_back", "repaired", "reverted", "skipped"].includes(p.status));
   const kept = done.filter((p) => p.status === "kept" || p.status === "repaired").length;
   const slop = state.candidates ? state.applied / state.candidates : 0;
   const tokens = state.finished && stats.prompt_tokens !== undefined ? stats.prompt_tokens + stats.completion_tokens : null;
+  // the events miss runs a step makes without a message; a finished run has the exact count
+  const testRuns = typeof stats.test_runs === "number" ? stats.test_runs : state.testRuns;
   const minutes = state.budget.minutes;
   return (
     <div className="metrics" aria-label="Run metrics">
@@ -65,7 +67,7 @@ export function MetricsBar({ state, detail }: { state: RunState; detail: RunDeta
         </div>
         <div className="gauge-label">package outcomes</div>
       </div>
-      <Gauge label="test runs" used={state.testRuns} limit={state.budget.test_runs} />
+      <Gauge label="test runs" used={testRuns} limit={state.budget.test_runs} />
       <Gauge label="probe cases" used={state.probes} />
       <Gauge label="probe coverage" used={state.coverage === null ? null : Math.round(state.coverage * 100)} unit="%" />
       <Gauge label="LLM calls" used={state.llmCalls} limit={state.budget.llm_calls} />

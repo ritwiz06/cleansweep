@@ -41,6 +41,7 @@ def summary(rt) -> dict:
         "lines_deleted": stats["lines_deleted"],
         "lines_added": stats["lines_added"],
         "files_removed": stats["files_removed"],
+        "test_runs": rt.ws.test_runs,
         "baseline": {k: base.get(k) for k in ("passed", "failed", "errors")}
         | {"flaky": len(base.get("flaky", []))},
         "final": {k: final.get(k) for k in ("ok", "passed", "baseline_passed")}

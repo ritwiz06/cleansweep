@@ -743,6 +743,7 @@ table.compare th {
   gap: 8px;
   color: var(--muted);
   font-size: 11px;
+  white-space: nowrap;
 }
 
 /* edges run between node centres; the nodes cover the ends */
@@ -1355,5 +1356,15 @@ details summary {
     height: auto;
     flex-direction: row;
     flex-wrap: wrap;
+  }
+}
+
+/* readers who ask for less motion get none (and screenshots show finished states) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

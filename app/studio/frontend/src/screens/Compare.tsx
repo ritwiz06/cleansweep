@@ -1,6 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type RunDetail, type RunRow } from "../api";
-import { Async, Card, Empty, Status, seconds } from "../components/common";
+import { ANIMATE, Async, Card, Empty, Status, seconds } from "../components/common";
 import { PHASES } from "../state/fold";
 import { useRuns } from "./Runs";
 
@@ -135,8 +135,8 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                     <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} />
                     <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
                     <Legend />
-                    <Bar dataKey="A" name={`A: ${left.data?.name || ""}`} fill={SERIES[0]} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="B" name={`B: ${right.data?.name || ""}`} fill={SERIES[1]} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="A" name={`A: ${left.data?.name || ""}`} fill={SERIES[0]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
+                    <Bar dataKey="B" name={`B: ${right.data?.name || ""}`} fill={SERIES[1]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

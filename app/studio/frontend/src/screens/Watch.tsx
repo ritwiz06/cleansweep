@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type Table } from "../api";
-import { Async, Card, DataTable, Empty, Stat, Status } from "../components/common";
+import { ANIMATE, Async, Card, DataTable, Empty, Stat, Status } from "../components/common";
 import { useRuns } from "./Runs";
 
 interface Entry {
@@ -68,7 +68,7 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
                       }}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="items" name="open slop items" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="items" name="open slop items" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive={ANIMATE} />
                     {data
                       .filter((d) => d.clean !== null)
                       .map((d) => (
@@ -77,7 +77,7 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
                           x={d.poll}
                           stroke="var(--series-3)"
                           strokeDasharray="4 3"
-                          label={{ value: "clean", position: "insideTopRight", fill: "var(--text-2)", fontSize: 12 }}
+                          label={{ value: "clean", position: "insideTopLeft", fill: "var(--text-2)", fontSize: 12 }}
                         />
                       ))}
                   </ComposedChart>
