@@ -59,3 +59,75 @@ answer keys,toy,cleansweep-advisory,2,,0,,13,13,65,50,3,10,0,1,0,6,10866,22063,1
 answer keys,toy,cleansweep-gatekeeper,0,,0,,13,13,65,50,3,10,0,0,0,5,10205,19769,4.86,5,,,,,0
 answer keys,toy,cleansweep-gatekeeper,1,,0,,13,13,65,50,3,10,0,0,0,5,10205,20107,4.61,5,,,,,0
 answer keys,toy,cleansweep-gatekeeper,2,,0,,13,13,65,50,3,10,0,0,0,5,10205,19358,4.7,5,,,,,0
+swebench_t1,django__django-11095__CodeStory,agentic,0,everything runs,0,,,,92,92,1,1,0,0,0,10,10276,2874,2.62,8,9,0,0,0,0
+swebench_t1,django__django-11095__LearnByInteract,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,4,3470,405,1.55,6,5,0,0,0,0
+swebench_t1,django__django-11095__OpenHands,agentic,0,everything runs,0,,,,177,313,10,10,0,0,0,36,56094,7143,4.27,17,50,0,0,0,0
+swebench_t1,pydata__xarray-3151__CodeStory,agentic,0,everything runs,0,,,,31,31,1,1,0,0,0,11,10804,802,1.01,8,13,0,0,0,0
+swebench_t1,pytest-dev__pytest-10081__CodeStory,agentic,0,everything runs,0,,,,14,14,1,1,0,0,0,10,9561,828,0.86,8,9,0,0,0,0
+swebench_t1,pytest-dev__pytest-10081__LearnByInteract,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,3,2443,285,0.56,6,5,0,0,0,0
+swebench_t1,pytest-dev__pytest-10081__OpenHands,agentic,0,everything runs,0,,,,0,34,3,3,0,0,0,14,15700,1235,0.98,10,19,0,0,0,0
+swebench_t1,sympy__sympy-11618__CodeStory,agentic,0,everything runs,0,,,,39,39,2,2,0,0,0,11,11211,1036,1.26,9,13,0,0,0,0
+swebench_t1,sympy__sympy-11618__LearnByInteract,agentic,0,everything runs,0,,,,22,22,1,1,0,0,0,13,18240,1352,1.35,8,14,0,0,0,0
+swebench_t1,sympy__sympy-11618__OpenHands,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,6,8404,587,1.0,6,7,0,0,0,0
+swebench_t2,astropy__astropy-13579__LearnByInteract,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,3,2361,289,0.82,6,5,0,0,0,0
+swebench_t2,astropy__astropy-14096__CodeStory,agentic,0,everything runs,0,,,,11,11,1,1,0,0,0,9,8682,803,1.32,8,9,0,0,0,0
+swebench_t2,matplotlib__matplotlib-22719__CodeStory,agentic,0,everything runs,0,,,,10,32,2,2,0,0,0,10,9437,1032,1.79,9,13,0,0,0,0
+swebench_t2,matplotlib__matplotlib-22719__LearnByInteract,agentic,0,everything runs,0,,,,21,21,2,2,0,0,0,12,14927,1042,1.76,9,16,0,0,0,0
+swebench_t2,matplotlib__matplotlib-22719__OpenHands,agentic,0,everything runs,0,,,,9,37,2,2,0,0,0,11,11848,1118,1.77,9,13,0,0,0,0
+swebench_t2,pallets__flask-5014__CodeStory,agentic,0,everything runs,0,,,,18,18,1,1,0,0,0,11,11935,1072,0.52,8,10,0,0,0,0
+swebench_t2,pallets__flask-5014__LearnByInteract,agentic,0,everything runs,0,,,,23,23,1,1,0,0,0,9,9193,831,0.45,8,9,0,0,0,0
+swebench_t2,pallets__flask-5014__OpenHands,agentic,0,everything runs,0,,,,12,43,2,2,0,0,0,11,11164,1048,0.56,9,13,0,0,0,0
+swebench_t2,pylint-dev__pylint-6903__CodeStory,agentic,0,everything runs,0,,,,51,51,1,1,0,0,0,9,8247,815,1.6,8,9,0,0,0,0
+swebench_t2,pylint-dev__pylint-6903__OpenHands,agentic,0,everything runs,0,,,,29,29,3,3,0,0,0,14,17548,1412,2.04,10,20,0,0,0,0
+swebench_t2,sphinx-doc__sphinx-10466__CodeStory,agentic,0,everything runs,0,,,,49,49,1,1,0,0,0,9,8737,894,0.99,8,9,0,0,0,0
+swebench_t2,sphinx-doc__sphinx-10466__LearnByInteract,agentic,0,everything runs,0,,,,0,25,1,1,0,0,0,7,5716,562,0.92,8,8,0,0,0,0
+swebench_t2,sphinx-doc__sphinx-10466__OpenHands,agentic,0,everything runs,0,,,,0,23,1,1,0,0,0,7,5711,579,0.9,8,8,0,0,0,0
+swebench_t2,sphinx-doc__sphinx-7454__LearnByInteract,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,4,3375,423,0.54,6,5,0,0,0,0
+swebench_t2,sympy__sympy-11618__CodeStory,agentic,0,everything runs,0,,,,39,39,2,2,0,0,0,11,10992,1089,1.28,9,13,0,0,0,0
+swebench_t2,sympy__sympy-11618__LearnByInteract,agentic,0,everything runs,0,,,,22,22,1,1,0,0,0,13,18240,1328,1.39,8,14,0,0,0,0
+swebench_t2,sympy__sympy-11618__OpenHands,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,6,8404,587,1.03,6,7,0,0,0,0
+swebench_t2,sympy__sympy-12096__CodeStory,agentic,0,everything runs,0,,,,9,41,2,2,0,0,0,13,12759,1124,1.28,9,15,0,0,0,0
+swebench_t2,sympy__sympy-12096__LearnByInteract,agentic,0,everything runs,0,,,,0,7,1,1,0,0,0,8,7235,717,1.17,8,9,0,0,0,0
+swebench_t2,sympy__sympy-12096__OpenHands,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,4,3752,397,1.02,6,6,0,0,0,0
+aidev,PytorchConnectomics__pytorch_connectomics,agentic,0,everything runs,0,,,,1,1,0,1,0,0,0,54,114317,20592,18.78,4,82,2,0,0,0
+aidev,gotalab__skillport,agentic,0,everything runs,0,,,,7,5,0,3,0,1,1,43,58954,11511,3.45,8,75,0,2,0,0
+aidev,shotgun-sh__shotgun,agentic,0,everything runs,0,,,,264,263,0,5,1,1,0,150,230971,28011,27.93,5,971,231,2,0,0
+aidev,thomasjjj__Telegram-Snowball-Sampling,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,24,38384,3015,0.96,3,38,1,0,0,0
+aidev,wkentaro__imgviz,agentic,0,nothing applied,0,,,,0,0,0,0,0,0,0,17,26581,3239,1.36,3,24,0,0,0,0
+aidev,yusufkaraaslan__Skill_Seekers,agentic,0,everything runs,0,,,,8,8,0,1,2,2,3,150,297645,27336,24.99,18,284,14,7,0,0
+aidev,PytorchConnectomics__pytorch_connectomics,cleansweep-gatekeeper,0,,0,,,,327,0,0,21,0,0,0,21,48109,97143,87.45,4,,,,,0
+aidev,gotalab__skillport,cleansweep-gatekeeper,0,,1,,,,139,0,0,36,0,0,0,18,40794,86042,69.58,7,,,,,0
+aidev,shotgun-sh__shotgun,cleansweep-gatekeeper,0,,0,,,,530,531,0,14,5,0,3,13,28825,63894,189.05,24,,,,,0
+aidev,thomasjjj__Telegram-Snowball-Sampling,cleansweep-gatekeeper,0,,1,,,,160,0,0,11,0,0,0,6,12268,27071,33.28,3,,,,,0
+aidev,wkentaro__imgviz,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,15,30487,74656,65.83,1,,,,,0
+aidev,yusufkaraaslan__Skill_Seekers,cleansweep-gatekeeper,0,,1,,,,381,0,1,54,1,0,0,30,87981,99847,94.45,12,,,,,0
+swebench_t1,django__django-11095__CodeStory,cleansweep-gatekeeper,0,,0,,,,92,92,1,1,0,0,0,1,1379,1421,4.23,5,,,,,0
+swebench_t1,django__django-11095__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,0,0,0,3.75,4,,,,,0
+swebench_t1,django__django-11095__OpenHands,cleansweep-gatekeeper,0,,0,,,,177,338,11,11,0,0,0,2,5507,4903,5.13,6,,,,,0
+swebench_t1,pydata__xarray-3151__CodeStory,cleansweep-gatekeeper,0,,0,,,,31,31,1,1,0,0,0,1,1191,1693,1.39,5,,,,,0
+swebench_t1,pytest-dev__pytest-10081__CodeStory,cleansweep-gatekeeper,0,,0,,,,14,14,1,1,0,0,0,1,945,1311,0.93,5,,,,,0
+swebench_t1,pytest-dev__pytest-10081__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,0,0,0,0.49,4,,,,,0
+swebench_t1,pytest-dev__pytest-10081__OpenHands,cleansweep-gatekeeper,0,,0,,,,0,34,3,3,0,0,0,1,1471,2206,1.09,5,,,,,0
+swebench_t1,sympy__sympy-11618__CodeStory,cleansweep-gatekeeper,0,,0,,,,39,39,2,2,0,0,0,1,1544,2167,1.76,5,,,,,0
+swebench_t1,sympy__sympy-11618__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,22,22,1,1,0,0,0,1,1185,1549,1.55,5,,,,,0
+swebench_t1,sympy__sympy-11618__OpenHands,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,0,0,0,1.19,4,,,,,0
+swebench_t2,astropy__astropy-13579__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,0,0,0,1.01,4,,,,,0
+swebench_t2,astropy__astropy-14096__CodeStory,cleansweep-gatekeeper,0,,0,,,,11,11,1,1,0,0,0,2,2829,7133,2.96,5,,,,,0
+swebench_t2,matplotlib__matplotlib-22719__CodeStory,cleansweep-gatekeeper,0,,0,,,,10,32,2,2,0,0,0,2,3176,6937,6.05,5,,,,,0
+swebench_t2,matplotlib__matplotlib-22719__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,21,21,2,2,0,0,0,2,3089,5561,3.03,5,,,,,0
+swebench_t2,matplotlib__matplotlib-22719__OpenHands,cleansweep-gatekeeper,0,,0,,,,9,37,2,2,0,0,0,2,3241,6565,3.12,5,,,,,0
+swebench_t2,pallets__flask-5014__CodeStory,cleansweep-gatekeeper,0,,0,,,,18,18,1,1,0,0,0,2,2876,3704,1.84,5,,,,,0
+swebench_t2,pallets__flask-5014__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,23,23,1,1,0,0,0,1,1109,1358,0.62,5,,,,,0
+swebench_t2,pallets__flask-5014__OpenHands,cleansweep-gatekeeper,0,,0,,,,12,43,2,2,0,0,0,1,1481,2034,0.77,5,,,,,0
+swebench_t2,pylint-dev__pylint-6903__CodeStory,cleansweep-gatekeeper,0,,0,,,,51,51,1,1,0,0,0,2,3568,4222,2.99,5,,,,,0
+swebench_t2,pylint-dev__pylint-6903__OpenHands,cleansweep-gatekeeper,0,,0,,,,29,29,3,3,0,0,0,2,3483,4847,2.45,5,,,,,0
+swebench_t2,sphinx-doc__sphinx-10466__CodeStory,cleansweep-gatekeeper,0,,0,,,,49,49,1,1,0,0,0,2,3556,7430,3.44,5,,,,,0
+swebench_t2,sphinx-doc__sphinx-10466__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,25,1,1,0,0,0,2,3160,10953,3.28,5,,,,,0
+swebench_t2,sphinx-doc__sphinx-10466__OpenHands,cleansweep-gatekeeper,0,,0,,,,0,23,1,1,0,0,0,2,3207,6202,2.25,5,,,,,0
+swebench_t2,sphinx-doc__sphinx-7454__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,1,1933,2918,1.24,4,,,,,0
+swebench_t2,sympy__sympy-11618__CodeStory,cleansweep-gatekeeper,0,,0,,,,39,39,2,2,0,0,0,0,0,0,1.58,5,,,,,0
+swebench_t2,sympy__sympy-11618__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,22,22,1,1,0,0,0,0,0,0,1.6,5,,,,,0
+swebench_t2,sympy__sympy-11618__OpenHands,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,0,0,0,1.24,4,,,,,0
+swebench_t2,sympy__sympy-12096__CodeStory,cleansweep-gatekeeper,0,,0,,,,9,41,2,2,0,0,0,2,3725,6917,3.38,5,,,,,0
+swebench_t2,sympy__sympy-12096__LearnByInteract,cleansweep-gatekeeper,0,,0,,,,0,7,1,1,0,0,0,1,957,1372,1.52,5,,,,,0
+swebench_t2,sympy__sympy-12096__OpenHands,cleansweep-gatekeeper,0,,0,,,,0,0,0,0,0,0,0,1,2084,4886,3.07,4,,,,,0

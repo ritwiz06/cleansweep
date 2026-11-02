@@ -26,7 +26,9 @@ table. `scripts/reproduce_tables.sh` rebuilds the aggregate tables offline.
 
 **[Results](results.md).** The full v1 results: SWE-bench Tier 1 and Tier 2, the AIDev
 repositories, Guard strength, the one-shot breakages, the Reviewer policies, the Scheduler and
-the ranker, with confidence intervals and paired tests. v2 results are added in Phase 4.
+the ranker, with confidence intervals and paired tests. Then v2: the agent team against v1 on
+every target set, the slop-injection benchmark, the ablations, probe strength, the Manager
+scenarios, the case studies with LLM-reviewer acceptance, detection and watch.
 
 **[Repository layout](repo_layout.md).** Every folder and what it is for: the package,
 Studio, the demo, the scripts by purpose, the committed results, the data splits and the
