@@ -3,9 +3,9 @@
 Start with the [README](../README.md): what CleanSweep does, how to install it, the quick start,
 the results in brief and the known limitations. The documents below go deeper.
 
-**[User guide](user_guide.md).** How to clean your own project with `cleansweep clean`, read its
-report and branch, and use Studio. A short version for now; the full guide with
-screenshots of Studio and watch mode comes with v2.0.
+**[User guide](user_guide.md).** How to clean your own project with `cleansweep clean`, read and
+apply its result, keep per-project settings in `.cleansweep.yaml`, watch a repository, and use
+Studio, with screenshots of its screens.
 
 **[Architecture](architecture.md).** CleanSweep v1, the sweep pipeline (`method=cleansweep`):
 open → analyze → plan → rank → batch → guard → report. What each package does, the contracts

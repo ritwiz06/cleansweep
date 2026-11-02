@@ -150,6 +150,25 @@ def test_case_studies_carry_the_reviewer_label(client):
     assert client.get("/api/cases/..%2F..%2Fsummary").status_code in (403, 404)
 
 
+def test_a_run_shows_its_rows_from_a_review_sheet_kept_apart(client, results):
+    cases = results / "raw" / "case_studies"
+    run, sheet = cases / "proj_b-safe", cases / "proj_b"
+    shutil.copytree(cases / "proj_a", run)
+    sheet.mkdir()
+    for name in ("review_rows.json", "llm_review.json", "review_sheet.md"):
+        (run / name).rename(sheet / name)
+    meta = json.loads((sheet / "review_rows.json").read_text())
+    meta.update(safe="proj_b-safe", thorough="proj_b-thorough")
+    meta["rows"][0]["run"] = meta["rows"][1]["run"] = "proj_b-safe"
+    meta["rows"].append({**meta["rows"][0], "n": 3, "run": "proj_b-thorough"})
+    (sheet / "review_rows.json").write_text(json.dumps(meta))
+    row = next(r for r in client.get("/api/cases").json() if r["name"] == "proj_b-safe")
+    assert row["has_review"] and (row["accepted"], row["rejected"]) == (1, 1)
+    case = client.get("/api/cases/proj_b-safe").json()
+    assert [r["llm_decision"] for r in case["review"]["rows"]] == ["accept", "reject"]
+    assert case["review"]["model"] and "review_sheet.md" in case["docs"]
+
+
 def test_watch_folder_and_replay_table(client):
     log = client.get("/api/watch", params={"root": "results", "path": "raw/watch_a"}).json()
     assert [e["decision"] for e in log["entries"]] == ["clean", "wait"]
