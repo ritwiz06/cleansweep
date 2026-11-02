@@ -26,7 +26,12 @@ python scripts/tools/check_contracts.py
 ```
 
 The offline set leaves out the tests marked `llm` (they need the key below), `docker` (a running
-Docker), `network` and `slow`; plain `pytest -q` runs them all.
+Docker), `network` and `slow`; plain `pytest -q` runs them all. It includes chaos tests (an LLM
+that is down or answers garbage, a crashed test run, a failing tool, an interrupted run:
+`tests/agents/test_chaos.py`) and property tests on seeded generated inputs
+(`tests/agents/test_properties.py`, `tests/guard/test_properties.py`).
+`bash scripts/tools/coverage.sh` reports the line coverage of `agents/` and `guard/` and fails
+under 80%.
 
 For the LLM features, put the settings of an OpenAI-compatible endpoint in `.env` (never commit
 it):

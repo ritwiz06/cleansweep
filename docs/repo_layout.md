@@ -47,7 +47,7 @@ cleansweep/
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
-│   │                                     make_recording.py (Studio recordings)
+│   │                                     make_recording.py (Studio recordings), coverage.sh
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)
