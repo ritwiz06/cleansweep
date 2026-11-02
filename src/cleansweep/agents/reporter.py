@@ -21,7 +21,7 @@ def summary(rt) -> dict:
     final = rt.final or {}
     if rt.dry_run or rt.plan_only or not rt.packages:
         verdict = "nothing applied"
-    elif final.get("ok"):
+    elif final.get("ok") and base.get("passed"):  # tests ran, and nothing got worse
         verdict = "everything runs"
     else:
         verdict = "not verified"

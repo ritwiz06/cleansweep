@@ -44,7 +44,7 @@ def baseline(rt) -> None:
     flaky = sorted(set(ids) - set(stable) - set(failing))
     crashed = all(any(f.startswith("<pytest exit") for f in r.failed_ids) for r in results)
     rt.baseline = {
-        "ok": not crashed,
+        "ok": not crashed and bool(ids),  # no test gave a result: nothing can be verified
         "runs": runs,
         "passed": len(stable),
         "failed": len(failing),

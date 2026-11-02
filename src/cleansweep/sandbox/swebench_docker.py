@@ -107,6 +107,15 @@ def command_for(command: str, test_files: list[str], test_paths: list[str] | Non
     return shlex.join([*tokens[:cut], *(style(p) for p in test_paths)])
 
 
+# swebench log-parser states in the JUnit reader's names, which the agent team's Tester compares
+PLAIN_STATES = {"PASSED": "passed", "XFAIL": "passed", "SKIPPED": "skipped", "ERROR": "error"}
+
+
+def plain_statuses(status: dict[str, str]) -> dict[str, str]:
+    """Test id -> passed / failed / error / skipped, from a swebench status map."""
+    return {test: PLAIN_STATES.get(state, "failed") for test, state in status.items()}
+
+
 def to_result(status: dict[str, str], flaky: set[str], seconds: float) -> RunResult:
     """A RunResult from a swebench status map, ignoring tests known to be flaky."""
     if not status:
@@ -227,6 +236,7 @@ class SwebenchWorkspace(Workspace):
         self.last_test_output = out
         section = out.split(START, 1)[-1].split(END, 1)[0]
         status = self.parser(section, self.spec) or self.parser(out, self.spec)
+        self.last_statuses = plain_statuses(status or {})
         return to_result(status, self.flaky, time.time() - start)
 
     def find_flaky(self, runs: int = 3) -> set[str]:

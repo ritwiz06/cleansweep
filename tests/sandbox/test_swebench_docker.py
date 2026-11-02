@@ -11,6 +11,7 @@ from cleansweep.sandbox.swebench_docker import (
     drop_files,
     eval_lines,
     patch_files,
+    plain_statuses,
     to_result,
 )
 
@@ -68,6 +69,17 @@ def test_to_result_ignores_flaky_tests():
     assert (result.passed, result.failed, result.errors, result.skipped) == (1, 1, 1, 1)
     assert result.failed_ids == ["b", "c"] and not result.ok
     assert to_result({}, set(), 0.0).failed_ids == ["<no test results>"]
+
+
+def test_plain_statuses_use_the_junit_names():
+    status = {"a": "PASSED", "b": "FAILED", "c": "ERROR", "d": "SKIPPED", "e": "XFAIL"}
+    assert plain_statuses(status) == {
+        "a": "passed",
+        "b": "failed",
+        "c": "error",
+        "d": "skipped",
+        "e": "passed",
+    }
 
 
 def _tier1_targets(n: int) -> list[str]:
