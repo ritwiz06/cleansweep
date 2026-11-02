@@ -25,11 +25,17 @@ cleansweep/
 │   ├── eval/                             baselines, hidden checks, metrics, mutation, statistics
 │   ├── data/                             SWE-bench, PatchDiff and AIDev loaders, splits
 │   ├── mining/                           review-comment mining: requests, taxonomy, rules
-│   └── cli.py                            `cleansweep sweep | plan | show | clean`
+│   ├── runlog.py                         reads recorded runs: v1 event logs, sweep reports, scores
+│   └── cli.py                            `cleansweep sweep | plan | show | clean | watch | studio`
 ├── app/
 │   ├── dashboard/                        Streamlit dashboard: dashboard.py, pages/ (Live sweep,
 │   │                                     Scheduler, Baselines, Data, Guard), live_runner.py, loaders.py
-│   └── studio/                           CleanSweep Studio (Phase 5; replaces the dashboard, R16)
+│   └── studio/                           CleanSweep Studio (replaces the dashboard, R16): server.py
+│       │                                 (FastAPI app, `cleansweep studio`), files.py (allowed
+│       │                                 roots, redaction), runs.py, jobs.py, data.py, worker.py
+│       └── frontend/                     React + TypeScript (Vite): src/ (screens/, components/,
+│                                         state/ with the event folds and their vitest tests),
+│                                         e2e/ (Playwright); dist/ and node_modules/ are ignored
 ├── demo/                                 bookstore demo app (shop_app/), its answer key and hidden
 │                                         tests, feature.patch, prepare_demo.sh, run_demo.md,
 │                                         replay/ (recorded runs for offline Replay)
@@ -58,11 +64,13 @@ cleansweep/
 └── tests/                                mirrors the code: one folder per package (core/, llm/,
     │                                     sandbox/, analysis/, reviewer/, guard/, ranking/,
     │                                     scheduler/, workflow/, agents/, eval/, data/, mining/)
-    ├── app/                              dashboard/ (page AppTests, loaders, live runner) and the
-    │                                     demo app test
+    ├── app/                              dashboard/ (page AppTests, loaders, live runner), studio/
+    │                                     (API tests; the frontend checks under the slow marker)
+    │                                     and the demo app test
     ├── scripts/                          data/, experiments/v1/, test_reproduce_tables.py
     └── fixtures/                         toy repo, its answer key and hidden tests, sample report
-                                          and plan, a small results set
+                                          and plan, a small results set, studio/ (a case study
+                                          and a watch folder)
 ```
 
 Where things go:

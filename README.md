@@ -152,6 +152,31 @@ defaults (outcome 7/7, hidden behavior unchanged). To record a run without the b
 python -m app.dashboard.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory
 ```
 
+## Studio
+
+CleanSweep Studio is the v2 web UI: it starts runs, follows them live, replays recordings and
+shows the results. It needs node 20 or later once, to build the frontend.
+
+```bash
+cleansweep studio                  # builds app/studio/frontend if needed, opens http://127.0.0.1:8765
+cleansweep studio --port 8800 --runs ../studio-runs --no-browser
+```
+
+Without npm, build the frontend by hand: `cd app/studio/frontend && npm ci && npm run build`.
+Runs started from Studio go to `results/raw/studio/` (or `--runs`); Studio reads only that folder,
+`results/` and `demo/replay/`, never serves `.env` or other hidden or secret files, and masks
+anything that looks like a key. Replay works offline: `demo/replay/20261101_toy_clean_offline`
+is an agent-team run of the toy repo recorded with `--no-llm`.
+
+Screens: **Runs** (every recording), **Launch** (clean, sweep or watch a project), **Live run** and
+**Replay** (phase timeline with step-backs and the Manager's decisions, the agent graph, the
+message board, the item board, work packages with diffs, tests, probes and checks, metrics and
+budget gauges; Replay adds play/pause, step, 1–50x, a scrubber and "next decision"), **Compare**,
+**Case studies** (health before and after, diffs, report, review sheet with the
+"LLM-reviewer acceptance (independent model, blinded)" decisions), **Watch** (commit stream, slop
+over time, decisions with reasons) and **Results**, plus the dashboard's pages (Live sweep and
+Replay of v1 runs, Scheduler, Baselines, Data, Guard). The user guide describes each screen.
+
 ## Reproduce
 
 ```bash
@@ -270,6 +295,7 @@ src/cleansweep/
   data/        SWE-bench Verified, PatchDiff and AIDev loaders, tier splits
   mining/      review-comment mining: removal requests, taxonomy, rules
 app/dashboard/ Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
+app/studio/    CleanSweep Studio: FastAPI server (`cleansweep studio`) and React frontend
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
 scripts/       data/, experiments/v1 and v2/, report/, tools/, reproduce_tables.sh
 results/       summary/v1 and figures/v1 (v1 tables and figures; v2 in Phase 4), data_summary/
