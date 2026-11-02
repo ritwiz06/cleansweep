@@ -1,0 +1,16 @@
+{
+ "runs": [
+  {
+   "tests.test_compat::test_one_old_module_remains": "passed",
+   "tests.test_core::test_area": "passed"
+  },
+  {
+   "tests.test_compat::test_one_old_module_remains": "passed",
+   "tests.test_core::test_area": "passed"
+  },
+  {
+   "tests.test_compat::test_one_old_module_remains": "passed",
+   "tests.test_core::test_area": "passed"
+  }
+ ]
+}

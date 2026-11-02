@@ -1,0 +1,279 @@
+{
+  "repo_id": "local:conflict",
+  "method": "agentic",
+  "policy": "now",
+  "seed": 0,
+  "started_at": "2026-11-02T04:17:10+00:00",
+  "finished_at": "2026-11-02T04:17:18+00:00",
+  "plan": {
+    "repo_id": "local:conflict",
+    "created_at": "2026-11-02T04:17:10+00:00",
+    "items": [
+      {
+        "item_id": "8deec8dd37",
+        "unit": {
+          "path": "pkg2/colors_old.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "file name matches '*_old.py'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "knowledge base: 4% of mined maintainer removal requests are leftover_file",
+          "R1: no lessons match",
+          "quarantined at demo/replay/20261101_manager_conflict_step_back/quarantine/local_conflict/20261102T041715594434/pkg2/colors_old.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      },
+      {
+        "item_id": "0c5569d900",
+        "unit": {
+          "path": "pkg2/shapes_old.py",
+          "kind": "file",
+          "name": null,
+          "start_line": null,
+          "end_line": null
+        },
+        "category": "leftover_file",
+        "action": "delete_file",
+        "lane": "safe",
+        "reason": "Investigator (safe): No evidence that it is still used; the checks after the edit will confirm.",
+        "evidence": [
+          "file name matches '*_old.py'",
+          "no other file imports it",
+          "not mentioned in project config files",
+          "knowledge base: 4% of mined maintainer removal requests are leftover_file",
+          "R1: no lessons match",
+          "quarantined at demo/replay/20261101_manager_conflict_step_back/quarantine/local_conflict/20261102T041715888528/pkg2/shapes_old.py"
+        ],
+        "sources": [
+          "patterns",
+          "graph",
+          "investigator"
+        ],
+        "keep_target": null,
+        "patch": null,
+        "safe_score": null,
+        "llm_confidence": null
+      }
+    ]
+  },
+  "results": [
+    {
+      "item_id": "8deec8dd37",
+      "status": "kept",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/pkg2/colors_old.py b/pkg2/colors_old.py\ndeleted file mode 100644\nindex afa6c12..0000000\n--- a/pkg2/colors_old.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-PRIMARY = 3\n",
+      "notes": ""
+    },
+    {
+      "item_id": "0c5569d900",
+      "status": "rolled_back",
+      "tests": null,
+      "ast_equal": null,
+      "diff_check": null,
+      "diff": "diff --git a/pkg2/shapes_old.py b/pkg2/shapes_old.py\ndeleted file mode 100644\nindex 1b3cc2e..0000000\n--- a/pkg2/shapes_old.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-SIDES = 4\n",
+      "notes": "reverted in FINAL VERIFY: the full suite was worse than the baseline"
+    }
+  ],
+  "stats": {
+    "items_total": 2,
+    "items_safe": 2,
+    "items_kept": 1,
+    "items_repaired": 0,
+    "items_rolled_back": 1,
+    "lines_removed": 1,
+    "files_removed": 1,
+    "test_runs": 5,
+    "llm_calls": 6,
+    "prompt_tokens": 3868,
+    "completion_tokens": 192,
+    "llm_retries": 0,
+    "llm_failures": 0,
+    "llm_events": [],
+    "wall_seconds": 7.7,
+    "n_checks": 2,
+    "final_diff": "diff --git a/pkg2/colors_old.py b/pkg2/colors_old.py\ndeleted file mode 100644\nindex afa6c12..0000000\n--- a/pkg2/colors_old.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-PRIMARY = 3\n",
+    "scope": {
+      "kind": "repo"
+    },
+    "agentic": {
+      "mode": "safe",
+      "ablation": null,
+      "verdict": "everything runs",
+      "phases": [
+        "ONBOARD",
+        "BASELINE",
+        "AUDIT",
+        "INVESTIGATE",
+        "PLAN",
+        "EXECUTE",
+        "FINAL_VERIFY",
+        "EXECUTE",
+        "FINAL_VERIFY",
+        "REPORT",
+        "DONE"
+      ],
+      "phase_seconds": {
+        "ONBOARD": 0.02,
+        "BASELINE": 2.32,
+        "AUDIT": 1.19,
+        "INVESTIGATE": 0.63,
+        "PLAN": 0.73,
+        "EXECUTE": 1.21,
+        "FINAL_VERIFY": 1.37,
+        "REPORT": 0.11,
+        "DONE": 0.07
+      },
+      "back_steps": {
+        "FINAL_VERIFY->EXECUTE": 1
+      },
+      "agents": {
+        "explorer": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.0
+        },
+        "tester": {
+          "turns": 5,
+          "instances": 1,
+          "steps": 3,
+          "llm_calls": 0,
+          "seconds": 2.6
+        },
+        "auditor": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 2,
+          "llm_calls": 0,
+          "seconds": 0.4
+        },
+        "investigator": {
+          "turns": 1,
+          "instances": 2,
+          "steps": 2,
+          "llm_calls": 0,
+          "seconds": 0.0
+        },
+        "planner": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.0
+        },
+        "engineer": {
+          "turns": 5,
+          "instances": 1,
+          "steps": 2,
+          "llm_calls": 0,
+          "seconds": 0.4
+        },
+        "validator": {
+          "turns": 2,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.1
+        },
+        "reporter": {
+          "turns": 1,
+          "instances": 1,
+          "steps": 0,
+          "llm_calls": 0,
+          "seconds": 0.1
+        }
+      },
+      "llm_by_agent": {
+        "manager": 6
+      },
+      "messages": 32,
+      "artifacts": 9,
+      "lessons": [],
+      "decisions": {
+        "safe": 2,
+        "suggest": 0,
+        "drop": 0
+      },
+      "budget_exhausted": 0,
+      "packages": [
+        {
+          "package": "P1",
+          "goal": "Remove 1 leftover file in pkg2/colors_old.py",
+          "status": "kept",
+          "items": [
+            "8deec8dd37"
+          ],
+          "commit": "d188512c5fe30f591914b1b56366822a52c5d326",
+          "turns": 0
+        },
+        {
+          "package": "P2",
+          "goal": "Remove 1 leftover file in pkg2/shapes_old.py",
+          "status": "reverted",
+          "items": [
+            "0c5569d900"
+          ],
+          "commit": "243b8a779c0ad0ddb9fe9953fdb5528c89b7fab2",
+          "turns": 0
+        }
+      ],
+      "baseline": {
+        "ok": true,
+        "runs": 3,
+        "passed": 2,
+        "failed": 0,
+        "errors": 0,
+        "flaky": [],
+        "failing": [],
+        "stable_pass": [
+          "tests.test_compat::test_one_old_module_remains",
+          "tests.test_core::test_area"
+        ],
+        "duration_s": 0.48
+      },
+      "final": {
+        "ok": true,
+        "new_failures": [],
+        "tests_removed": [],
+        "passed": 2,
+        "baseline_passed": 2,
+        "result": {
+          "ok": true,
+          "passed": 2,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "failed_ids": [],
+          "duration_s": 0.5037961006164551
+        }
+      },
+      "stopped": null,
+      "secrets": {
+        "files": 0,
+        "findings": 0
+      },
+      "run_dir": "demo/replay/20261101_manager_conflict_step_back",
+      "branch": "cleansweep/cleanup-20261101-211718"
+    }
+  }
+}

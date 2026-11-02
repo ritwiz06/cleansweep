@@ -1,0 +1,1 @@
+- Cleanup: removed 1 leftover file (1 lines, 1 files); tests unchanged.

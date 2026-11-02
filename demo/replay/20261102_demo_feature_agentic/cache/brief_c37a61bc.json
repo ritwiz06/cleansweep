@@ -1,0 +1,50 @@
+{
+ "ci_files": [],
+ "config_files": [
+  "pytest.ini"
+ ],
+ "dependencies": 0,
+ "entry_points": [
+  "bookshelf/__main__.py",
+  "tests/test_cli.py",
+  "tests/test_cli.py::test_add_and_report",
+  "tests/test_cli.py::test_order_and_unknown_command",
+  "tests/test_cli.py::test_restock",
+  "tests/test_inventory.py",
+  "tests/test_inventory.py::test_add_merges_copies",
+  "tests/test_inventory.py::test_bad_isbn",
+  "tests/test_inventory.py::test_find_and_stock_value",
+  "tests/test_inventory.py::test_remove_never_goes_below_zero",
+  "tests/test_lowstock.py",
+  "tests/test_lowstock.py::test_lowstock_lists_titles_at_or_below_threshold",
+  "tests/test_orders_reports.py",
+  "tests/test_orders_reports.py::make",
+  "tests/test_orders_reports.py::test_order_total_with_tax",
+  "tests/test_orders_reports.py::test_stock_report",
+  "tests/test_utils.py",
+  "tests/test_utils.py::test_normalize_isbn",
+  "tests/test_utils.py::test_round_money_and_money"
+ ],
+ "formatter": null,
+ "formatter_paths": null,
+ "frameworks": [
+  "pytest"
+ ],
+ "install_command": "pip install -r requirements-dev.txt",
+ "languages": {
+  "ini": 1,
+  "py": 16,
+  "txt": 1
+ },
+ "name": "shop_app",
+ "notes": [],
+ "python_files": 16,
+ "secrets": {
+  "files": [],
+  "findings": []
+ },
+ "summary": "A Python project with 16 Python files.",
+ "test_command": "pytest",
+ "test_files": 5,
+ "ui_framework": null
+}

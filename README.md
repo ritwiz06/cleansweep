@@ -165,8 +165,14 @@ cleansweep studio --port 8800 --runs ../studio-runs --no-browser
 Without npm, build the frontend by hand: `cd app/studio/frontend && npm ci && npm run build`.
 Runs started from Studio go to `results/raw/studio/` (or `--runs`); Studio reads only that folder,
 `results/` and `demo/replay/`, never serves `.env` or other hidden or secret files, and masks
-anything that looks like a key. Replay works offline: `demo/replay/20261101_toy_clean_offline`
-is an agent-team run of the toy repo recorded with `--no-llm`.
+anything that looks like a key. Replay works offline on the agent-team recordings in `demo/replay/`:
+`20261101_toy_clean_offline` (the toy repo, recorded with `--no-llm`),
+`20261102_demo_feature_agentic` (the demo app with the feature patch, real model),
+`20261101_manager_conflict_step_back` (the Manager goes back from FINAL VERIFY to EXECUTE and
+undoes only the package that broke a test) and `20261101_skill_seekers_case_study` (the
+Skill_Seekers case study in safe mode; two product names in that project's code are replaced by
+"Assistant" and "Vendor"). `scripts/tools/make_recording.py` copies a run folder into a
+recording with relative paths and refuses one with a secret left in it.
 
 Screens: **Runs** (every recording), **Launch** (clean, sweep or watch a project), **Live run** and
 **Replay** (phase timeline with step-backs and the Manager's decisions, the agent graph, the

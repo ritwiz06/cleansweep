@@ -1,0 +1,34 @@
+{
+ "ci_files": [],
+ "config_files": [
+  "pytest.ini"
+ ],
+ "dependencies": 0,
+ "entry_points": [
+  "tests/__init__.py",
+  "tests/test_compat.py",
+  "tests/test_compat.py::_loads",
+  "tests/test_compat.py::test_one_old_module_remains",
+  "tests/test_core.py",
+  "tests/test_core.py::test_area"
+ ],
+ "formatter": null,
+ "formatter_paths": null,
+ "frameworks": [],
+ "install_command": "none needed (no packaging or requirements files)",
+ "languages": {
+  "ini": 1,
+  "py": 7
+ },
+ "name": "conflict",
+ "notes": [],
+ "python_files": 7,
+ "secrets": {
+  "files": [],
+  "findings": []
+ },
+ "summary": "A Python project with 7 Python files.",
+ "test_command": "pytest",
+ "test_files": 3,
+ "ui_framework": null
+}

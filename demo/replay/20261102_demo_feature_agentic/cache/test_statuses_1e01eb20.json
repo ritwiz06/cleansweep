@@ -1,0 +1,46 @@
+{
+ "runs": [
+  {
+   "tests.test_cli::test_add_and_report": "passed",
+   "tests.test_cli::test_order_and_unknown_command": "passed",
+   "tests.test_cli::test_restock": "passed",
+   "tests.test_inventory::test_add_merges_copies": "passed",
+   "tests.test_inventory::test_bad_isbn": "passed",
+   "tests.test_inventory::test_find_and_stock_value": "passed",
+   "tests.test_inventory::test_remove_never_goes_below_zero": "passed",
+   "tests.test_lowstock::test_lowstock_lists_titles_at_or_below_threshold": "passed",
+   "tests.test_orders_reports::test_order_total_with_tax": "passed",
+   "tests.test_orders_reports::test_stock_report": "passed",
+   "tests.test_utils::test_normalize_isbn": "passed",
+   "tests.test_utils::test_round_money_and_money": "passed"
+  },
+  {
+   "tests.test_cli::test_add_and_report": "passed",
+   "tests.test_cli::test_order_and_unknown_command": "passed",
+   "tests.test_cli::test_restock": "passed",
+   "tests.test_inventory::test_add_merges_copies": "passed",
+   "tests.test_inventory::test_bad_isbn": "passed",
+   "tests.test_inventory::test_find_and_stock_value": "passed",
+   "tests.test_inventory::test_remove_never_goes_below_zero": "passed",
+   "tests.test_lowstock::test_lowstock_lists_titles_at_or_below_threshold": "passed",
+   "tests.test_orders_reports::test_order_total_with_tax": "passed",
+   "tests.test_orders_reports::test_stock_report": "passed",
+   "tests.test_utils::test_normalize_isbn": "passed",
+   "tests.test_utils::test_round_money_and_money": "passed"
+  },
+  {
+   "tests.test_cli::test_add_and_report": "passed",
+   "tests.test_cli::test_order_and_unknown_command": "passed",
+   "tests.test_cli::test_restock": "passed",
+   "tests.test_inventory::test_add_merges_copies": "passed",
+   "tests.test_inventory::test_bad_isbn": "passed",
+   "tests.test_inventory::test_find_and_stock_value": "passed",
+   "tests.test_inventory::test_remove_never_goes_below_zero": "passed",
+   "tests.test_lowstock::test_lowstock_lists_titles_at_or_below_threshold": "passed",
+   "tests.test_orders_reports::test_order_total_with_tax": "passed",
+   "tests.test_orders_reports::test_stock_report": "passed",
+   "tests.test_utils::test_normalize_isbn": "passed",
+   "tests.test_utils::test_round_money_and_money": "passed"
+  }
+ ]
+}

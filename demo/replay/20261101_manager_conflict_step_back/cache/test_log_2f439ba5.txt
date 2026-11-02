@@ -1,0 +1,14 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_________________________ test_one_old_module_remains __________________________
+
+    def test_one_old_module_remains():
+>       assert _loads("shapes" + "_old") or _loads("colors" + "_old")
+E       AssertionError: assert (False or False)
+E        +  where False = _loads(('shapes' + '_old'))
+E        +  and   False = _loads(('colors' + '_old'))
+
+tests/test_compat.py:13: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_compat.py::test_one_old_module_remains - AssertionError: as...
+1 failed, 1 passed in 0.05s

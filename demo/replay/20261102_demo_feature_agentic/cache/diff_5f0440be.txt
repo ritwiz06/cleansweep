@@ -1,0 +1,25 @@
+diff --git a/bookshelf/reports.py b/bookshelf/reports.py
+index 2d8e52c..08cc3d7 100644
+--- a/bookshelf/reports.py
++++ b/bookshelf/reports.py
+@@ -1,18 +1,9 @@
+ from bookshelf.utils import money
+-
+-
+-def _clean_isbn(raw):
+-    """Strip dashes and spaces from an ISBN and check its length."""
+-    if raw is None:
+-        raise ValueError("missing ISBN")
+-    digits = raw.replace("-", "").replace(" ", "")
+-    if len(digits) not in (10, 13):
+-        raise ValueError(f"bad ISBN: {raw}")
+-    return digits.upper()
++from bookshelf.utils import normalize_isbn
+ 
+ 
+ def stock_line(inventory, isbn):
+-    book = inventory.books[_clean_isbn(isbn)]
++    book = inventory.books[normalize_isbn(isbn)]
+     return f"{book['title']}: {book['copies']} x {money(book['price'])}"
+ 
+ 

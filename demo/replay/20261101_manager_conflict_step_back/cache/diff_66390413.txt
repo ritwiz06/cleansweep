@@ -1,0 +1,7 @@
+diff --git a/pkg2/shapes_old.py b/pkg2/shapes_old.py
+deleted file mode 100644
+index 1b3cc2e..0000000
+--- a/pkg2/shapes_old.py
++++ /dev/null
+@@ -1 +0,0 @@
+-SIDES = 4

@@ -1,0 +1,15 @@
+diff --git a/bookshelf/utils.py b/bookshelf/utils.py
+index ebdaa36..f460c46 100644
+--- a/bookshelf/utils.py
++++ b/bookshelf/utils.py
+@@ -20,10 +20,3 @@ def round_money(value):
+ 
+ def money(value):
+     return f"${round_money(value):,.2f}"
+-
+-
+-def isbn_checksum_ok(digits):
+-    if len(digits) != 13:
+-        return False
+-    total = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits[:12]))
+-    return (10 - total % 10) % 10 == int(digits[12])
