@@ -1,0 +1,306 @@
+// The Streamlit dashboard's result pages (Scheduler, Baselines, Data, Guard) with the same data.
+import { useState } from "react";
+import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { api, useApi, type Table } from "../api";
+import { Async, Card, DataTable, Empty, Tabs } from "../components/common";
+import { Figure } from "./Results";
+
+interface Scheduler {
+  replay: Table | null;
+  repos_count?: number;
+  excluded?: number;
+  means?: Table;
+  tradeoff?: Table | null;
+  figure?: string | null;
+  repos?: string[];
+  repo?: string;
+  policies?: string[];
+  curves?: Table | null;
+}
+
+function records(t: Table | null | undefined): Record<string, any>[] {
+  if (!t) return [];
+  return t.rows.map((r) => Object.fromEntries(t.columns.map((c, i) => [c, r[i]])));
+}
+
+function reposLabel(repos: number, excluded = 0) {
+  return excluded ? `${repos} of ${repos + excluded} runnable repos (${excluded} excluded)` : `${repos} runnable repos`;
+}
+
+export function SchedulerScreen() {
+  const [repo, setRepo] = useState<string | undefined>(undefined);
+  const [policy, setPolicy] = useState<string | undefined>(undefined);
+  const res = useApi<Scheduler>(`scheduler:${repo || ""}`, () => api("/api/parity/scheduler", { repo }));
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Scheduler replay</h2>
+      </header>
+      <Async res={res} what="Loading the replay" empty={(d) => (d.replay ? null : "No replay yet. Run python scripts/experiments/v1/exp_replay.py after selecting AIDev repositories.")}>
+        {(d) => {
+          const chosen = policy && d.policies?.includes(policy) ? policy : d.policies?.[0];
+          const curves = records(d.curves);
+          const byIndex = new Map<number, Record<string, any>>();
+          for (const c of curves) {
+            if (c.policy !== "none" && c.policy !== chosen) continue;
+            const row = byIndex.get(c.index) || { index: c.index };
+            row[c.policy === "none" ? "never" : "policy"] = c.open_slop;
+            if (c.policy !== "none" && c.swept) row.sweep = c.open_slop;
+            byIndex.set(c.index, row);
+          }
+          const series = [...byIndex.values()].sort((a, b) => a.index - b.index);
+          return (
+            <>
+              <p className="muted small">
+                Static detectors only, measured at up to 40 commits of each repository's last 300 first-parent commits. Slop debt = open slop
+                items summed over commits; a sweep removes all open slop. Resurrection = removed code that a later commit started using.
+              </p>
+              <Card title={`Policies over ${reposLabel(d.repos_count || 0, d.excluded)} (means)`}>
+                <DataTable table={d.means} label="Policy means" />
+              </Card>
+              {d.tradeoff && (
+                <Card title="Trade-off: test runs vs. slop-debt reduction">
+                  <p className="muted small">
+                    Per repository, reduction = 1 - slop debt / slop debt when never sweeping; means and 95% bootstrap CIs across repositories.
+                  </p>
+                  <DataTable table={d.tradeoff} label="Trade-off" />
+                  <Figure path={d.figure} caption="scheduler_tradeoff.png" />
+                </Card>
+              )}
+              <Card
+                title={d.repo}
+                actions={
+                  <>
+                    <select value={d.repo} onChange={(e) => setRepo(e.target.value)} aria-label="Repository">
+                      {d.repos?.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                    <select value={chosen} onChange={(e) => setPolicy(e.target.value)} aria-label="Policy">
+                      {d.policies?.map((p) => (
+                        <option key={p}>{p}</option>
+                      ))}
+                    </select>
+                  </>
+                }
+              >
+                <DataTable table={d.replay} label="Repository replay" />
+                {series.length ? (
+                  <div className="chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ComposedChart data={series} margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
+                        <XAxis dataKey="index" tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "commit (oldest to newest)", position: "insideBottom", offset: -8, fill: "var(--muted)" }} />
+                        <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "open slop items", angle: -90, position: "insideLeft", fill: "var(--muted)" }} />
+                        <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+                        <Legend verticalAlign="top" />
+                        <Line type="monotone" dataKey="never" name="never sweep" stroke="var(--series-2)" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="policy" name={chosen} stroke="var(--series-1)" strokeWidth={2} dot={false} />
+                        <Line dataKey="sweep" name="sweep" stroke="var(--series-1)" strokeWidth={0} dot={{ r: 4, fill: "var(--series-1)", strokeWidth: 0 }} legendType="circle" isAnimationActive={false} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <Empty>No curves for this repository.</Empty>
+                )}
+              </Card>
+            </>
+          );
+        }}
+      </Async>
+    </div>
+  );
+}
+
+export function BaselinesScreen() {
+  const res = useApi<{ main: Table | null; paired: Table | null; ablation: Table | null; figure: string | null }>("baselines", () =>
+    api("/api/parity/baselines"),
+  );
+  const [sets, setSets] = useState<string[] | null>(null);
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Baselines and ablations</h2>
+      </header>
+      <Async res={res} what="Loading the tables" empty={(d) => (d.main ? null : "No results yet. Run exp_collect.py and exp_tables.py.")}>
+        {(d) => {
+          const col = d.main!.columns.indexOf("target set");
+          const all = [...new Set(d.main!.rows.map((r) => String(r[col])))];
+          const chosen = sets || all;
+          const inSets = (t: Table | null) => (row: unknown[]) => !t || t.columns.indexOf("target set") < 0 || chosen.includes(String(row[t.columns.indexOf("target set")]));
+          return (
+            <>
+              <p className="muted small">
+                Mean per target and 95% bootstrap CI (2,000 resamples). Answer keys pool the toy repo and the demo app (one target each). Hidden
+                changed = the share of targets whose hidden checks changed. Invalid output counts one-shot replies that could not be applied;
+                they are left out of the means.
+              </p>
+              <div className="filters">
+                Target sets:
+                {all.map((s) => (
+                  <label key={s} className="check">
+                    <input
+                      type="checkbox"
+                      checked={chosen.includes(s)}
+                      onChange={(e) => setSets(e.target.checked ? [...chosen, s] : chosen.filter((x) => x !== s))}
+                    />{" "}
+                    {s}
+                  </label>
+                ))}
+              </div>
+              <Card title="Main table">
+                <DataTable table={d.main} filter={inSets(d.main)} label="Main table" />
+                <Figure path={d.figure} caption="Lines removed per target (mean, 95% CI)" />
+              </Card>
+              {d.paired && (
+                <Card title="Paired tests against cleansweep in gatekeeper mode">
+                  <p className="muted small">Same targets for both methods. McNemar (exact) on hidden changes, Wilcoxon signed-rank on lines removed.</p>
+                  <DataTable table={d.paired} filter={inSets(d.paired)} label="Paired tests" />
+                </Card>
+              )}
+              {d.ablation && (
+                <Card title="Ablations: what each part adds">
+                  <DataTable table={d.ablation} filter={inSets(d.ablation)} label="Ablations" />
+                </Card>
+              )}
+            </>
+          );
+        }}
+      </Async>
+    </div>
+  );
+}
+
+interface DataPage {
+  counts: Table | null;
+  tiers: Table | null;
+  funnel: Table | null;
+  drop_reasons: Table | null;
+  taxonomy: Table | null;
+  rules: Table | null;
+  detection: Table | null;
+}
+
+export function DataScreen() {
+  const res = useApi<DataPage>("data", () => api("/api/parity/data"));
+  const [level, setLevel] = useState<"category" | "cluster">("category");
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Data</h2>
+      </header>
+      <Async res={res} what="Loading the data summaries">
+        {(d) => {
+          const funnel = records(d.funnel);
+          const levelCol = d.detection ? d.detection.columns.indexOf("level") : -1;
+          return (
+            <>
+              <h3>SWE-bench Verified and PatchDiff</h3>
+              {!d.counts && !d.tiers && <Empty>Run python scripts/data/data_summary.py to write the counts.</Empty>}
+              <div className="grid two">
+                {d.counts && (
+                  <Card title="Counts">
+                    <DataTable table={d.counts} label="Counts" />
+                  </Card>
+                )}
+                {d.tiers && (
+                  <Card title="Tiers">
+                    <p className="muted small">Differ = PatchDiff says the patch behaves differently from the developer's fix.</p>
+                    <DataTable table={d.tiers} label="Tiers" />
+                  </Card>
+                )}
+              </div>
+              <h3>AIDev</h3>
+              {funnel.length > 0 && (
+                <Card title="Selection funnel">
+                  <div className="chart">
+                    <ResponsiveContainer width="100%" height={Math.max(200, funnel.length * 30 + 40)}>
+                      <BarChart data={funnel} layout="vertical" margin={{ top: 4, right: 48, bottom: 4, left: 24 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" horizontal={false} />
+                        <XAxis
+                          type="number"
+                          scale="log"
+                          domain={[1, 100000]}
+                          ticks={[1, 10, 100, 1000, 10000, 100000]}
+                          allowDataOverflow
+                          tick={{ fill: "var(--muted)", fontSize: 12 }}
+                        />
+                        <YAxis type="category" dataKey="stage" width={220} tick={{ fill: "var(--muted)", fontSize: 12 }} />
+                        <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+                        <Bar dataKey="count" name="repositories (log scale)" fill="var(--series-1)" label={{ position: "right", fill: "var(--text)", fontSize: 12 }} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {funnel
+                    .filter((f) => f.note)
+                    .map((f) => (
+                      <p key={f.stage} className="muted small">
+                        {f.stage}: {f.note}
+                      </p>
+                    ))}
+                  <h4>Why candidates were dropped</h4>
+                  <DataTable table={d.drop_reasons} label="Drop reasons" />
+                </Card>
+              )}
+              {d.taxonomy && (
+                <Card title="Kinds of removal requests (taxonomy clusters)">
+                  <p className="muted small">TF-IDF on the request text (without @-mentions), KMeans with k by silhouette.</p>
+                  <DataTable table={d.taxonomy} label="Taxonomy" />
+                </Card>
+              )}
+              {d.rules && (
+                <Card title="Top association rules (by lift)">
+                  <DataTable table={d.rules} label="Association rules" />
+                </Card>
+              )}
+              {d.detection && (
+                <Card
+                  title="Reviewer detection by kind of request"
+                  actions={<Tabs tabs={[{ key: "category", label: "category" }, { key: "cluster", label: "cluster" }]} value={level} onChange={setLevel} />}
+                >
+                  <p className="muted small">
+                    Requested units = units reviewers asked agents to remove; flagged = what the static detectors report in the same commented
+                    files. Flagged as = the detector categories that do flag requested units.
+                  </p>
+                  <DataTable table={d.detection} filter={(row) => row[levelCol] === level} label="Detection by category" />
+                </Card>
+              )}
+              {!funnel.length && !d.taxonomy && !d.rules && !d.detection && <Empty>No AIDev summaries yet.</Empty>}
+            </>
+          );
+        }}
+      </Async>
+    </div>
+  );
+}
+
+export function GuardScreen() {
+  const res = useApi<{ strength: Table | null; false_alarms: Table | null; figure: string | null }>("guard", () => api("/api/parity/guard"));
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Guard strength</h2>
+      </header>
+      <Async res={res} what="Loading the measurement" empty={(d) => (d.strength ? null : "No measurement yet. Run python scripts/experiments/v1/exp_guard_strength.py.")}>
+        {(d) => (
+          <>
+            <p className="muted small">
+              Mutants: one small change per function (flip a comparison, swap + and -, add 1 to an int, swap and/or, return None); caught if the
+              Guard's verify fails. PatchDiff recall: the agent patch against the developer's fix, for patches PatchDiff says behave differently.
+              Probe mode: direct runs the probes as a script; runner runs them inside the project's own test command (Django settings,
+              conftest.py).
+            </p>
+            <Card title="Caught by the tests vs. only by the probes">
+              <DataTable table={d.strength} label="Guard strength" />
+              <Figure path={d.figure} caption="Share of mutants caught, by target set and probe mode" />
+            </Card>
+            <Card title="False alarms">
+              <p className="muted small">verify on two identical copies, probing up to 10 touched functions although nothing changed: any rejection is a false alarm.</p>
+              <DataTable table={d.false_alarms} label="False alarms" />
+            </Card>
+          </>
+        )}
+      </Async>
+    </div>
+  );
+}

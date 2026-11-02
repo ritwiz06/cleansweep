@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { api, imageUrl, useApi, type Table } from "../api";
+import { Md } from "../components/Code";
+import { Async, Card, DataTable, Empty, Tabs } from "../components/common";
+
+interface Index {
+  v1: { tables: string[]; notes: string[]; figures: string[] };
+  v2: { tables: string[]; notes: string[]; figures: string[] };
+}
+
+const HEADLINE: Record<string, string> = { v1: "main_table.csv", v2: "llm_review_acceptance.csv" };
+
+export function Figure({ path, caption }: { path: string | null | undefined; caption?: string }) {
+  if (!path) return null;
+  return (
+    <figure className="figure">
+      <img src={imageUrl("results", path)} alt={caption || path} loading="lazy" />
+      {caption && <figcaption>{caption}</figcaption>}
+    </figure>
+  );
+}
+
+function TableView({ version, name }: { version: string; name: string }) {
+  const res = useApi<Table>(`table:${version}/${name}`, () => api("/api/table", { root: "results", path: `summary/${version}/${name}` }));
+  return <Async res={res} what={`Loading ${name}`}>{(t) => <DataTable table={t} label={name} maxHeight={520} />}</Async>;
+}
+
+function NoteView({ version, name }: { version: string; name: string }) {
+  const res = useApi<{ text: string }>(`note:${version}/${name}`, () => api("/api/file", { root: "results", path: `summary/${version}/${name}` }));
+  return <Async res={res}>{(d) => <Md text={d.text} />}</Async>;
+}
+
+export function Results() {
+  const res = useApi<Index>("results", () => api("/api/results"));
+  const [version, setVersion] = useState<"v1" | "v2">("v1");
+  const [table, setTable] = useState<string>("");
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Results</h2>
+        <span className="muted">The committed tables and figures (results/summary/, results/figures/).</span>
+      </header>
+      <Tabs
+        tabs={[
+          { key: "v1", label: "v1" },
+          { key: "v2", label: "v2" },
+        ]}
+        value={version}
+        onChange={(v) => {
+          setVersion(v);
+          setTable("");
+        }}
+      />
+      <Async res={res} what="Loading the results index">
+        {(index) => {
+          const files = index[version];
+          const chosen = table || (files.tables.includes(HEADLINE[version]) ? HEADLINE[version] : files.tables[0]);
+          const note = chosen?.replace(/\.csv$/, ".md");
+          return (
+            <>
+              <Card
+                title="Tables"
+                actions={
+                  files.tables.length > 0 && (
+                    <select value={chosen} onChange={(e) => setTable(e.target.value)} aria-label="Table">
+                      {files.tables.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  )
+                }
+              >
+                {chosen ? <TableView version={version} name={chosen} /> : <Empty>No {version} tables yet.</Empty>}
+                {note && files.notes.includes(note) && (
+                  <details>
+                    <summary>{note}</summary>
+                    <NoteView version={version} name={note} />
+                  </details>
+                )}
+              </Card>
+              <Card title="Figures">
+                {files.figures.length ? (
+                  <div className="gallery">
+                    {files.figures.map((f) => (
+                      <Figure key={f} path={`figures/${version}/${f}`} caption={f} />
+                    ))}
+                  </div>
+                ) : (
+                  <Empty>No {version} figures yet.</Empty>
+                )}
+              </Card>
+            </>
+          );
+        }}
+      </Async>
+    </div>
+  );
+}
