@@ -8,8 +8,9 @@ Repository restructure; no change in behavior or results (#81–#86, tag `pre-ti
   `reproduce_tables.sh` stays at the top. Script names are unchanged.
 - `results/summary/v1/` and `results/figures/v1/` hold the v1 tables and figures, including the
   report tables and figures that were in `docs/report/`; `v2/` folders are for the v2 results.
-- The dashboard is in `app/dashboard/`: `streamlit run app/dashboard/dashboard.py`,
-  `python -m app.dashboard.live_runner`.
+- CleanSweep Studio (`cleansweep studio`) replaces the Streamlit dashboard, which is removed
+  (git history keeps it): every dashboard page has a Studio screen with the same data, and the
+  live runner is `python -m cleansweep.live`.
 - New docs: `docs/index.md`, `docs/repo_layout.md`, a short `docs/user_guide.md`, and the v2.0
   acceptance checklist `docs/requirements.md`.
 - Every regenerated table and figure is byte-identical to `pre-tidy`, and the offline v1 toy

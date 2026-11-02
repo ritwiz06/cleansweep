@@ -29,9 +29,7 @@ cleansweep/
 │   ├── runlog.py                         reads recorded runs: v1 event logs, sweep reports, scores
 │   └── cli.py                            `cleansweep sweep | plan | show | clean | watch | studio`
 ├── app/
-│   ├── dashboard/                        Streamlit dashboard: dashboard.py, pages/ (Live sweep,
-│   │                                     Scheduler, Baselines, Data, Guard), live_runner.py, loaders.py
-│   └── studio/                           CleanSweep Studio (replaces the dashboard, R16): server.py
+│   └── studio/                           CleanSweep Studio (replaced the dashboard, R16): server.py
 │       │                                 (FastAPI app, `cleansweep studio`), files.py (allowed
 │       │                                 roots, redaction), runs.py, jobs.py, data.py, worker.py
 │       └── frontend/                     React + TypeScript (Vite): src/ (screens/, components/,
@@ -66,9 +64,8 @@ cleansweep/
 └── tests/                                mirrors the code: one folder per package (core/, llm/,
     │                                     sandbox/, analysis/, reviewer/, guard/, ranking/,
     │                                     scheduler/, workflow/, agents/, eval/, data/, mining/)
-    ├── app/                              dashboard/ (page AppTests, loaders, live runner), studio/
-    │                                     (API tests; the frontend checks under the slow marker)
-    │                                     and the demo app test
+    ├── app/                              studio/ (API tests; the frontend checks under the slow
+    │                                     marker) and the demo app test
     ├── scripts/                          data/, experiments/v1/, test_reproduce_tables.py
     └── fixtures/                         toy repo, its answer key and hidden tests, sample report
                                           and plan, a small results set, studio/ (a case study

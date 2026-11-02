@@ -1,6 +1,6 @@
 """Recorded runs: v1 event logs (read, fold, list), saved sweep reports and answer-key scores.
 
-The experiment scripts, the dashboard and Studio all read runs through these helpers.
+The experiment scripts and Studio read runs through these helpers.
 """
 
 from __future__ import annotations

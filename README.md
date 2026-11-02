@@ -58,16 +58,14 @@ python -m cleansweep sweep --target tests/fixtures/toy_repo --method tools_only 
 
 # print a saved report
 python -m cleansweep show results/raw/quickstart/report.json
-
-# dashboard (lists the reports under results/raw/, falls back to the sample report)
-streamlit run app/dashboard/dashboard.py
 ```
 
-`results/raw/` is git-ignored, and the dashboard lists every report saved under it. Without a
-key, the toy sweep applies the planted near-duplicate `_safe_round`, which passes every visible
-test, so the hidden checks print `"behavior_changed": true`. Catching it is the job of the judge
-and the probes, which need the LLM; with a key, the toy repo's outcome is 13/13 and hidden
-behavior is unchanged (Results summary below).
+`results/raw/` is git-ignored; Studio's **Saved reports** screen (`cleansweep studio`, below)
+shows every report saved under it. Without a key, the toy sweep applies the planted
+near-duplicate `_safe_round`, which passes every visible test, so the hidden checks print
+`"behavior_changed": true`. Catching it is the job of the judge and the probes, which need the
+LLM; with a key, the toy repo's outcome is 13/13 and hidden behavior is unchanged (Results
+summary below).
 
 Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_shot_retry`,
 `no_ranker`, `no_batching`. Every package has a stub with the same interface;
@@ -141,16 +139,16 @@ that also leaves a helper behind. The timed script is in `demo/run_demo.md`.
 
 ```bash
 bash demo/prepare_demo.sh --with-feature   # builds .cleansweep/demo/shop_app as a git repo
-streamlit run app/dashboard/dashboard.py             # then open the "Live sweep" page
+cleansweep studio                           # then open Launch
 ```
 
-On **Live sweep**, pick a target (toy repo, prepared demo, `demo/shop_app` or any path), a
-method and a judge mode, and press **Run**. The page shows each stage as it finishes, the
-Reviewer's plan, one card per Guard check (including bisection splits), the diffs, the
-hidden-check verdict, the score against the answer key, and the run log. Every run is saved
-under `results/raw/live/<run_id>/`, and **Replay** plays a saved run back at 1–50x without
-calling the LLM or running tests. Three demo recordings ship in `demo/replay/`, so Replay works
-offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory run with the v1.0
+On **Launch**, choose **Sweep (v1 pipeline)**, a target (toy repo, demo app, prepared demo or
+any folder), a method and a judge mode, and press **Start**. The live run shows each stage as
+it finishes, the Reviewer's plan, one card per Guard check (including bisection splits), the
+diffs, the hidden-check verdict, the score against the answer key, and the run log. Studio
+saves its runs under `results/raw/studio/`, and **Replay** on **Live sweep and replay** plays a
+saved run back at 1–50x without calling the LLM or running tests. Three v1 demo recordings ship
+in `demo/replay/`, so Replay works offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory run with the v1.0
 defaults (outcome 7/7, hidden behavior unchanged). To record a run without the browser:
 
 ```bash
@@ -305,7 +303,6 @@ src/cleansweep/
   eval/        baselines, hidden checks, metrics, mutation testing, statistics
   data/        SWE-bench Verified, PatchDiff and AIDev loaders, tier splits
   mining/      review-comment mining: removal requests, taxonomy, rules
-app/dashboard/ Streamlit dashboard, Live sweep and Scheduler pages, step-by-step live runner
 app/studio/    CleanSweep Studio: FastAPI server (`cleansweep studio`) and React frontend
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
 scripts/       data/, experiments/v1 and v2/, report/, tools/, reproduce_tables.sh
@@ -321,7 +318,7 @@ tests/         mirrors src/, app/ and scripts/, plus fixtures/ (toy repo, answer
 
 Roles follow the proposal, except that the Reviewer moved from the Software architect to the
 Project manager. Ritik Agarwal (Project manager, UI lead) built a cross-area prototype on the
-first day, then the Reviewer, the toy repository and demo app, the dashboard and the report
+first day, then the Reviewer, the toy repository and demo app, the v1 dashboard and the report
 assets. Because no other member had joined the repository before the milestones, the Project
 manager also built the critical path in the other areas, as recorded in our decision log: the
 differential probes and their runner mode, the SWE-bench and PatchDiff loaders and Docker

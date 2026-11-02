@@ -404,7 +404,7 @@ and runs ≥5 tests with ≥90% passing in under 10 minutes: **21 of 120**. The 
 **20 of 21 runnable repos** (one is left out of our released data files;
 `results/data_summary/aidev_funnel.csv`, drop reasons in `aidev_filter.csv`). The replay uses each repository's last 300 first-parent commits (4,695 in
 total, 626 from agent PRs) and the static detectors, measured at up to 40 commits per repository plus the last
-(`scripts/experiments/v1/exp_replay.py`; the dashboard's Scheduler page shows the curves).
+(`scripts/experiments/v1/exp_replay.py`; Studio's Scheduler screen shows the curves).
 
 **Scheduler trade-off** (20 of 21 runnable repos; mean and 95% bootstrap CI across
 repositories; `scripts/experiments/v1/exp_scheduler_tradeoff.py`, `results/figures/v1/scheduler_tradeoff.png`):
