@@ -51,9 +51,9 @@ cleansweep/
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)
-│   ├── summary/v2/                       v2 tables (Phase 4)
+│   ├── summary/v2/                       committed v2 tables (CSV and Markdown)
 │   ├── figures/v1/                       committed v1 figures
-│   ├── figures/v2/                       v2 figures (Phase 4)
+│   ├── figures/v2/                       v2 figures (empty: the v2 results are tables)
 │   ├── data_summary/                     mined-data summaries (taxonomy, rules, funnel, detection);
 │   │                                     the v2 knowledge base reads them
 │   └── raw/                              per-run reports (git-ignored; archived copies in

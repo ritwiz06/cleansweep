@@ -222,14 +222,148 @@ Live sweep and Replay of v1 runs, Scheduler, Baselines, Data, Guard). The user g
 bash scripts/reproduce_tables.sh
 ```
 
-rebuilds the aggregate tables and figures (`results/summary/v1/`, `results/figures/v1/`) offline
-from the committed per-run CSVs; on a clean checkout `git status results/` shows no change afterwards.
+rebuilds the aggregate tables and figures (`results/summary/v1/` and `v2/`, `results/figures/v1/`)
+offline from the committed per-run CSVs; on a clean checkout `git status results/` shows no change
+afterwards.
 [docs/experiments.md](docs/experiments.md) has, for every experiment, the command, the commit it
 ran at, its inputs and outputs, runtime and models, how to download the data (SWE-bench
 Verified, PatchDiff, AIDev), and the Docker and disk needs (about 65 GB for all images and
 data).
 
-## Results summary
+## v2 results: the agent team
+
+`cleansweep clean` and `method=agentic` (the agent team, safe mode, `qwen36-35b-a3b`) against
+v1's sweep (`method=cleansweep`, gatekeeper). Hidden changed = the hidden checks (tests no agent
+sees) give a different result after the cleanup. Code lines removed counts lines removed from
+non-test Python files in the final diff, measured the same way for both versions (v1 from its
+archived reports). Means per target with 95% bootstrap CIs; full tables, per-target rows and
+how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
+
+| target set | runs | team: everything runs / nothing applied / not verified | team: code lines removed | team: hidden changed | v1: code lines removed | v1: hidden changed | LLM requests, team vs v1 | minutes, team vs v1 (median) |
+|---|---|---|---|---|---|---|---|---|
+| answer keys (toy, demo ×3) | 6 | 6 / 0 / 0 (60/60 planted items) | 57.0 [51.7, 62.3] | 0/6 | 57.0 [51.7, 62.3] | 0/6 | 41.5 vs 5.5 | 1.7 vs 4.8 |
+| SWE-bench Tier 1 | 10 | 7 / 3 / 0 | 37.5 [9.2, 73.1] | 0/10 | 37.5 [9.2, 73.1] | 0/10 | 11.8 vs 0.8 | 1.1 vs 1.5 |
+| SWE-bench Tier 2 subset | 20 | 16 / 4 / 0 | 15.2 [8.2, 22.8] | 0/20 | 15.2 [8.2, 22.8] | 0/20 | 9.1 vs 1.4 | 1.1 vs 2.4 |
+| AIDev | 6 | 4 / 2 / 0 | 46.7 [1.3, 134.5] | 0/6 | 256.2 [116.8, 400.7] | 3/6 | 73.0 vs 17.2 | 11.1 vs 78.5 |
+
+- On the answer keys and SWE-bench the two versions remove exactly the same code (342, 375 and
+  303 lines in total). On SWE-bench that is the scratch files the coding agents left at the
+  repository root (`reproduce_error.py`, a whole `test_app/` Django project); we read every diff (LLM-judged: by the coding assistant that ran
+  the evaluation, not a person).
+- On AIDev, v1 as it ran removed more and changed hidden behavior on 3 of the 6 repositories,
+  each time by deleting a function nothing in the project calls that the hidden tests use as
+  public API (paired: McNemar p = 0.25, Wilcoxon p = 0.063, n = 6). The team kept those functions
+  because its Auditor runs v1's detectors with the v1.0 public-API rule, which v1's recorded runs
+  predate; re-scored with that rule, v1 changes 0 of 19 (v1 results below). The six were chosen
+  from v1's results (its three hidden changes, the near-duplicate and framework-callback cases,
+  one clean repository), so they lean toward v1's hardest cases.
+- Reading every diff of the team's (LLM-judged, as above) found one wrong edit the hidden checks
+  cannot see: on pytorch_connectomics it removed a `pdb.set_trace()` under `if self.debug_on_nan:`,
+  an opt-in debugger. A debugger call behind a condition is only a suggestion since #124, after
+  these runs.
+- The team spends more LLM requests (41.5 against 5.5 on the answer keys) and fewer minutes; the
+  ablations below show where the requests go.
+- The first SWE-bench runs saw no tests (the workspace never stored test statuses) and are not
+  reported; the reruns above have baselines of 5 to 428 passing tests (#118).
+
+**Slop-injection benchmark** (`injection_summary.csv`, seed 1): seven kinds of slop and two traps
+(a near-duplicate that rounds differently, a framework callback) planted in the toy repository and
+9 AIDev repositories; each method cleans the whole project. Planted items removed, of 10 per kind:
+
+| | leftover file | dead code | exact duplicate | unused import | debug print | commented-out code | unused dependency | all (of 70) | traps removed (of 20) | hidden changed |
+|---|---|---|---|---|---|---|---|---|---|---|
+| team | 9 | 9 | 0 | 7 | 9 | 9 | 7 | 50 (0.71) | 0 | 0/8 |
+| v1 | 10 | 10 | 0 | 8 | 0 | 0 | 10 | 38 (0.54) | 0 | 0/8 |
+| one-shot LLM (toy repo only) | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 6 (0.09) | 2 | 1/8 |
+
+The team finds the debug prints and commented-out code v1 has no detector for. Seven of its 20
+misses are one project where the run stopped on a template file named `*.py` (an edit that
+raises is skipped since #125, after these runs); neither version's detectors flagged a planted
+duplicate. The benchmark has flaws we report rather than hide: on openwebui-extensions it
+planted into that template file, so its hidden test cannot run, and on imgviz the hidden test
+failed before every cleanup (hidden changed counts the other 8); the one-shot baseline, as in
+v1, sees only lines agent pull requests wrote, an empty scope in the injected AIDev clones, so
+its row is the toy repository alone.
+
+**Ablations** (`ablations.md`): one part of the team switched off, on the answer keys (6 runs
+each) and the injected set (one run on each of the 10 projects).
+
+| variant | answer keys: planted found (of 60) | hidden changed (of 6) | LLM requests | injected: planted removed (of 70) | traps removed (of 20) | hidden changed (of 8) | LLM requests |
+|---|---|---|---|---|---|---|---|
+| team (LLM Manager) | 60 | 0 | 41.5 | 50 | 0 | 0 | 92.1 |
+| rule-based Manager | 60 | 0 | 37.2 | 50 | 0 | 0 | 87.0 |
+| no research squad | 60 | 0 | 11.7 | 53 | 0 | 0 | 9.8 |
+| broadcast messages | 60 | 0 | 43.7 | 50 | 0 | 0 | 90.8 |
+| artifacts inlined | 60 | 0 | 41.7 | 49 | 0 | 0 | 90.8 |
+| no lessons | 57 | 0 | 43.2 | 47 | 0 | 0 | 93.3 |
+| no coverage guidance | 60 | 0 | 42.8 | 50 | 0 | 0 | 90.7 |
+| single agent | 54 | 4 | 36.2 | 35 | 5 | 4 | 83.6 |
+
+- **Checking apart from editing is what keeps the cleanup safe.** The single agent (one LLM with
+  every tool, keeping or reverting its own edits) changed hidden behavior in 4 of 6 answer-key
+  runs and on 4 of the 8 injected projects, by merging the near-duplicate or deleting the
+  framework callback, and called 3 of those 4 injected projects "everything runs".
+- **The research squad costs requests without adding recall or safety here.** Without it the
+  team found the same on the answer keys at about a quarter of the requests, and 3 more on the
+  injected set at about a tenth: 2 on CORAL, where the full team's 150 requests ran out before the Investigator
+  decided, and the planted `tabulate` on imgviz, which the Investigator kept because a script
+  imports it (the flaw in the key above). Whether investigation pays off on real projects is
+  open: no ablation ran there.
+- The rule-based Manager, broadcast messages, inlined artifacts and no coverage guidance match
+  the team within one item. Without lessons the team missed 3 on the answer keys (two of those runs
+  ran out of test runs) and 3 on the injected set, in runs where no package rolled back, so no
+  lesson was missing (one run each).
+
+**Probe strength** (`probe_strength.csv`): v1's mutants and PatchDiff patches, checked by the
+tests and then the coverage-guided probes. On the 163 mutants and patches both versions checked,
+the two catch the same ones except one toy mutant that v1's probes caught
+(`probe_strength_vs_v1.csv`).
+
+| target set | mutants caught | caught by the tests | only by the probes | PatchDiff recall |
+|---|---|---|---|---|
+| toy repo | 19/20 | 15 | 4 | |
+| demo app | 18/20 | 15 | 3 | |
+| SWE-bench Tier 1 | 36/39 | 30 | 6 | 0/3 |
+| SWE-bench Tier 2 subset | 53/81 | 52 | 1 | 3/18 (all by the probes) |
+
+**Manager scenarios** (`manager_scenarios.csv`, 3 runs each): the LLM-guided Manager against the
+same rules without the LLM.
+
+| scenario | right answer | LLM Manager | rules |
+|---|---|---|---|
+| conflict | go back to EXECUTE and undo only the package that broke a test | 3/3 | 3/3 |
+| budget | stop at 85% of the test-run cap and deliver the verified packages | 3/3 | 0/3 (went on) |
+| no baseline | change nothing and say why | 3/3 | 3/3 |
+| rollbacks | go back to INVESTIGATE or replan after half the packages roll back | 0/3 (went on) | 0/3 (went on) |
+
+Every run of both ended no worse than its baseline.
+
+**Case studies** (`results/raw/case_studies/`, local; safe mode unless noted). Each review
+sheet was scored by an independent model shown only the code and the change, never the agents'
+verdict: "LLM-reviewer acceptance (independent model, blinded)", 3 votes per row
+(`llm_review_acceptance.csv`). It is an LLM's judgment, not a human review.
+
+| project | tests before → after | lines removed | result | LLM-reviewer acceptance: applied | suggestions |
+|---|---|---|---|---|---|
+| this repository | 335 → 335 | 0 (its one package rolled back) | everything runs | | 9 accept, 16 reject, 3 unsure |
+| slop-guard | 182 | 0 | nothing applied (thorough: everything runs, its one package rolled back) | | 12 / 18 / 5 |
+| Skill_Seekers | 4,442 → 4,442 | 11 | everything runs | 6 / 0 / 1 | 14 / 21 / 5 |
+| shotgun | 2,254 → 2,256 | 298 | everything runs | 6 / 0 / 2 | 2 / 37 / 1 |
+| Telegram-Snowball-Sampling | 27 → 27 | 6 | everything runs | 0 / 1 / 0 | 21 / 10 / 2 |
+
+"Everything runs" means the tests ran and nothing got worse, also when every package rolled
+back (this repository, slop-guard in thorough mode).
+
+**Detection** (`detection.csv`): of 163 removals human reviewers asked for in 116 AIDev pull
+requests, v1's static detectors flag 19 (recall 0.117) and the team's Auditor (v1's detectors
+plus the line-level ones) 24 (0.147).
+
+**Watch** (`watch_replay.csv`, 20 AIDev histories, static detectors): the watch rule leaves a
+mean slop debt of 41 open items summed over the commits, against 693 for a daily sweep and
+9,863 for never sweeping, at 68.7 estimated test runs against 27.7; held to the adaptive
+policy's test budget it does worse than every policy but never sweeping (8,841).
+
+## v1 results summary
 
 Means per target with 95% bootstrap CIs; hidden changed = the hidden checks (tests the Guard
 never sees) give a different result after the cleanup. Full tables in
@@ -336,7 +470,7 @@ src/cleansweep/
 app/studio/    CleanSweep Studio: FastAPI server (`cleansweep studio`) and React frontend
 demo/          bookstore demo app, answer key, hidden tests, feature patch, demo script, Replay recordings
 scripts/       data/, experiments/v1 and v2/, report/, tools/, reproduce_tables.sh
-results/       summary/v1 and figures/v1 (v1 tables and figures; v2 in Phase 4), data_summary/
+results/       summary/v1, summary/v2 and figures/v1 (tables and figures), data_summary/
 data/splits/   committed tier and repository splits
 docs/          index, user guide, architecture, agentic design, experiments, results, layout
 configs/       base.yaml (core and agents), data.yaml, exp.yaml, reviewer.yaml

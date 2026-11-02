@@ -3,14 +3,14 @@
 This page lists the experiments behind the CleanSweep results: how to run each one, which code
 version produced the reported numbers, what it reads and writes, how long it took and which LLMs
 it used. The pipeline is described in [architecture.md](architecture.md); the results are in the
-README and in `results/summary/v1/`.
+README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/`.
 
 - **Code version** is the commit the reported runs used. Long runs ran in a separate clone frozen
   at that commit ("main at 07a4dad"); runs made from a working branch name its pull request.
   "Not recorded" means our run log does not say.
 - Per-run reports go to `results/raw/<folder>/` (gitignored). Files in `results/summary/v1/`,
-  `results/data_summary/` and `results/figures/v1/` are committed.
-- The frozen clones are gone; their reports and caches are kept outside the repository in
+  `results/summary/v2/`, `results/data_summary/` and `results/figures/v1/` are committed.
+- v1's frozen clones are gone; their reports and caches are kept outside the repository in
   `../cleansweep-archive/` (`raw/<clone>/results_raw/<folder>/`, `llm_caches/<clone>/`). The raw
   reports are not published because they contain third-party code. Scripts that read them
   default to the archive folders (`scripts/experiments/v1/archive_paths.py`); their folder flags override that,
@@ -37,6 +37,13 @@ README and in `results/summary/v1/`.
 | [Framework callbacks, UI check](#framework-callbacks-and-shotgun-ui-check) | `exp_framework_callbacks.py`, `exp_shotgun_ui.py` | PR #64 (merged as ff98c90) | `framework_callbacks.csv`, `shotgun_ui.csv` |
 | [Dependency re-check](#dependency-re-check) | `exp_dependency_check.py` | PR #62 branch (a5e3353, merged as a439dcd) | `aidev_dependency_check.csv` |
 | [Self-sweep](#self-sweep) | `exp_self_sweep.py` | main at a439dcd | `self_sweep.csv` |
+| [v2 case studies](#v2-case-studies-and-llm-reviewer-acceptance) | `exp_case_study.py`, `exp_llm_review.py` | 39ba2e2, 81da3ea, 1b2f899 | `llm_review_acceptance.csv`, `mining_llm_precision.csv` |
+| [v2 Manager scenarios](#v2-manager-scenarios) | `exp_manager_scenarios.py` | main at 015a98f | `manager_scenarios.csv` |
+| [v2 team vs v1, ablations](#v2-agentic-vs-v1-and-the-ablations) | `exp_eval.py`, `exp_collect_v2.py`, `exp_tables_v2.py` | main at c68fcdc and 7237ccc | `eval_runs.csv`, `eval_table`, `eval_paired`, `ablations` |
+| [v2 probe strength](#v2-probe-strength-patchdiff-recall-mutation-score) | `exp_probe_strength.py` | main at f84d568 | `probe_strength.csv`, `probe_strength_vs_v1.csv` |
+| [v2 detection](#v2-detection-by-category-on-aidev) | `exp_detection.py` | PR #112 (merged as c003ca0) | `detection.csv` |
+| [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568 | `injection.csv`, `injection_summary.csv`, `ablations` |
+| [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
 ## Experiments
 
@@ -328,6 +335,27 @@ blinded)**, not a human evaluation.
   temperature 0.3, reasoning off), the majority decides.
 - **Outputs:** `results/raw/case_studies/<name>/` (report, diff, review sheet, `llm_review.json`);
   `results/summary/v2/llm_review_acceptance.csv`, `results/summary/v2/mining_llm_precision.csv`.
+- **Code version:** this repository and slop-guard at 39ba2e2 (#92) and 81da3ea (#93, slop-guard
+  in thorough mode); Telegram-Snowball-Sampling, Skill_Seekers and shotgun at 1b2f899 (after #98
+  and #99, which fixed the harmful edits found in their first runs at 2d234e9).
+- **Runtime:** this repository 15 min (safe) and 26 min (thorough); slop-guard and Telegram 2–4
+  min each; Skill_Seekers 42 and 33 min; shotgun 36 min. The LLM review took 98–149 requests per
+  sheet. **Models:** agents `qwen36-35b-a3b`; reviewer `glm-5-3`.
+
+### v2: Manager scenarios
+
+Four small projects (`tests/fixtures/scenarios/`) built so that one Manager decision is right:
+rollbacks, conflict, budget and no baseline (the right answers are written in the script). The
+other agents run without an LLM, so every run reaches the same decision point.
+
+- **Run:** `python scripts/experiments/v2/exp_manager_scenarios.py [--repeats 3] [--managers llm
+  rules]`; `--table` rebuilds the table from the runs.
+- **Code version:** main at 015a98f (#106). The first run, at 843e98f, stopped on a script bug
+  after 18 runs; it is kept as `results/raw/manager_scenarios_first/` and not reported.
+- **Outputs:** `results/raw/manager_scenarios/<scenario>/<manager>-r<k>/`,
+  `results/summary/v2/manager_scenarios.csv`.
+- **Runtime:** a few minutes for the 24 runs. **Model:** the LLM Manager uses
+  `qwen36-35b-a3b` with a fresh reply cache per repeat.
 
 ### v2: agentic vs v1, and the ablations
 
@@ -338,6 +366,19 @@ blinded)**, not a human evaluation.
   Method labels (`scripts/experiments/v2/methods_v2.py`): `agentic`, `agentic-<ablation>`
   (no_research, broadcast, inline_artifacts, no_lessons, no_coverage, single_agent),
   `agentic-rules` (the rule-based Manager) and v1's methods. Each repeat has its own caches.
+- **Targets:** toy repo and demo app ×3 with every method above and v1's gatekeeper and
+  advisory; SWE-bench Tier 1 (10) and the Tier 2 subset (20) with `agentic`; six AIDev
+  repositories with `agentic`, chosen from v1's results before the runs: skillport,
+  Telegram-Snowball-Sampling and Skill_Seekers (where v1 changed hidden behavior),
+  pytorch_connectomics and shotgun (where its probes and judge mattered) and imgviz (where it
+  applied nothing).
+- **Code version:** the answer keys and AIDev at c68fcdc; SWE-bench at 7237ccc, after #118 (the
+  SWE-bench workspace now stores per-test results). The first SWE-bench runs at c68fcdc
+  (`results/raw/v2_eval/tier1_first`, `tier2_first`: every baseline had 0 passing tests) and
+  five Tier 1 reruns made before the fix reached the clone (`tier1_unfixed_rerun`) are kept and
+  not reported.
+- **Runtime:** answer keys 3 h 36 min (60 runs); AIDev 3 h 27 min; Tier 1 28 min; Tier 2 subset
+  32 min. **Model:** `qwen36-35b-a3b`.
 - **Outputs:** `<out>/<target>__<method>__r<k>.json` and `<out>/runs.csv` (hidden behavior
   changed, code lines removed, rollbacks by tests and by probes, LLM requests and tokens,
   minutes, test runs, agent steps, exhausted budgets, lessons, step-backs).
@@ -362,8 +403,13 @@ blinded)**, not a human evaluation.
   coverage-guided probes the v2 Validator runs check what they miss. Same mutants (seed and
   limits) as v1, so the two compare mutant by mutant. No false-alarm run: v2's probes only
   probe changed code.
+- **Compare:** `python scripts/experiments/v2/exp_probe_strength.py --compare` matches each
+  record with v1's in `results/raw/guard_strength/` (same target, unit, mutant operator and
+  line, or the same PatchDiff patch) and counts, per target set, the items both catch, only one catches
+  and neither catches.
 - **Outputs:** `results/raw/probe_strength/` (v1's record format),
-  `results/summary/v2/probe_strength.csv`.
+  `results/summary/v2/probe_strength.csv`, `results/summary/v2/probe_strength_vs_v1.csv`.
+- **Code version:** main at f84d568. **Runtime:** 60 min. **Model:** `qwen36-35b-a3b`.
 
 ### v2: detection by category on AIDev
 
@@ -375,14 +421,17 @@ blinded)**, not a human evaluation.
   agents to remove (precision and recall, overall and per category). The Investigator's LLM
   verdicts are not part of it.
 - **Output:** `results/summary/v2/detection.csv`.
+- **Code version:** PR #112 branch (merged as c003ca0).
 
 ### v2: slop-injection benchmark
 
-Known slop planted into the toy repo and 10 AIDev repositories at fixed seeds, then each method
+Known slop planted into the toy repo and AIDev repositories at fixed seeds, then each method
 cleans the whole project; the score is what it removed of the planted slop and of the traps.
 
 - **Run:** `python scripts/experiments/v2/exp_inject.py run [--repos toy owner/name ...]
-  [--seeds 1] [--methods agentic cleansweep one_shot_llm]`, then `... table`.
+  [--seeds 1] [--methods agentic cleansweep one_shot_llm]`, then `... table`. The ablations on
+  the injected set: `--methods agentic-rules agentic-single_agent agentic-no_research
+  agentic-broadcast agentic-inline_artifacts agentic-no_lessons agentic-no_coverage`.
 - **Plants** (in three package modules chosen by the seed): a leftover file, a dead function, an
   exact duplicate (both copies used), an unused import, a debug print (`f"{value=}"`), a
   commented-out block and an unused dependency; traps: a near-duplicate (half-even vs half-up
@@ -390,10 +439,27 @@ cleans the whole project; the score is what it removed of the planted slop and o
   the project, checks the planted code's behavior before and after the method's final diff.
 - **Targets:** AIDev repositories become injected clones (`data/raw/aidev/injected/`, their head
   plus one commit with the plants) and run only in their containers; the toy repo is a local copy.
+  Of the 10 AIDev repositories in the script, skillport has fewer than three importable modules
+  to plant in and is skipped, so seed 1 has 10 targets.
 - **Outputs:** `results/raw/inject/<repo>-s<seed>/` (key, hidden test, one report per method with
   its score); `results/summary/v2/injection.csv` (one row per plant and method) and
   `injection_summary.csv` (recall, precision against the traps, traps removed, hidden behavior
   changed, per method and category; `exp_tables_v2.py` rebuilds it from `injection.csv`).
+- **Code version:** main at f84d568. **Runtime:** the team, v1 and one-shot on seed 1 took 8 h
+  25 min, partly beside the answer-key and AIDev runs (v1 alone took 138 min on CORAL); the ablations
+  took 9 h 54 min for their 70 runs (CORAL about an hour each). **Model:** `qwen36-35b-a3b`.
+
+### v2: watch mode
+
+- **Run:** `python scripts/experiments/v2/exp_watch.py demo [--no-llm]` and
+  `python scripts/experiments/v2/exp_watch.py simulate`.
+- **demo:** prepares the demo app as a git repository, polls it, commits `demo/feature.patch`
+  and polls again; each poll records its decision and reason, and a "clean" runs `clean` on a
+  copy of the commit. **simulate:** replays the 20 kept AIDev histories (the 300 commits and
+  cached slop measurements of v1's Scheduler replay) under the watch rule, with no test budget
+  and with the test runs v1's adaptive policy spent, beside v1's policies.
+- **Outputs:** `results/raw/watch_demo/`, `results/summary/v2/watch_replay.csv`.
+- **Code version:** PR #103 branch (merged as 12caf01). Static: no LLM, no Docker.
 
 ## Getting the data
 
@@ -546,6 +612,11 @@ alone:
 | `v1/self_sweep.csv` | `exp_self_sweep.py --table` | `results/raw/self_sweep/` reports |
 | `v2/eval_runs.csv` | `exp_collect_v2.py` | `results/raw/v2_eval/` reports, v1's archived reports |
 | `v2/injection.csv` | `exp_inject.py table` | `results/raw/inject/` reports |
+| `v2/probe_strength.csv`, `v2/probe_strength_vs_v1.csv` | `exp_probe_strength.py` (`--compare`) | `results/raw/probe_strength/` (Docker, probe requests), `results/raw/guard_strength/` |
+| `v2/manager_scenarios.csv` | `exp_manager_scenarios.py` | the LLM |
+| `v2/llm_review_acceptance.csv`, `v2/mining_llm_precision.csv` | `exp_llm_review.py` | case-study review sheets, the reviewer model |
+| `v2/detection.csv` | `exp_detection.py` | AIDev clones, mined labels |
+| `v2/watch_replay.csv` | `exp_watch.py simulate` | AIDev histories, cached measurements |
 
 The files in `results/data_summary/` come from the data scripts: `data_summary.py`
 (`swebench_patchdiff.csv`, `tiers.csv`, `aidev_funnel.csv`), `data_aidev_select.py`
