@@ -39,11 +39,11 @@ from exp_agentic import prepare  # noqa: E402
 from exp_swebench import missing_history, targets  # noqa: E402
 from methods_v2 import LABELS, resolve  # noqa: E402
 
-from app.dashboard.loaders import outcome_score  # noqa: E402
 from cleansweep.analysis.graph import is_test_file  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.eval import run_hidden_checks  # noqa: E402
+from cleansweep.runlog import outcome_score  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 FIELDS = [
