@@ -457,7 +457,7 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 | `inline_artifacts` | artifacts are pasted into messages and prompts |
 | `no_lessons` | the Fixer writes no lessons and nobody queries them |
 | `no_coverage` | the Validator runs one probe round, as v1 does |
-| `single_agent` | one ReAct agent with every tool and one context, under the same total budget |
+| `single_agent` | one ReAct agent (`agents/solo.py`, agent `solo`) with every tool and one context, under the same total budget: it lists the detectors' candidates, investigates with the Investigator's tools, applies edits, runs the tests and the coverage-guided probes, and keeps or reverts each edit itself; no Manager, phases, board, packages or lessons. The baseline and the final suite are measured for the report, not enforced |
 | `core.agents.manager: rules` | the rule-based Manager: no LLM decisions at phase boundaries (a separate setting, run as an ablation) |
 
 ## 17. Contract changes (all additive)
@@ -508,7 +508,7 @@ their profiles in the event log), the Fixer's own system prompt for repairs, and
 first real-model runs (a thread-safe LLM reply cache, per-candidate isolation of investigations,
 budget charges that check only their own limit, the Investigator's first checks run before the
 LLM is asked, and a last-step nudge). Phase 3b added the UI snapshot check for Textual apps;
-the `single_agent` ablation comes in Phase 4.
+Phase 4 the `single_agent` ablation.
 
 ## 19. Risks
 

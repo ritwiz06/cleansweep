@@ -1,0 +1,122 @@
+[
+  {
+    "instance_id": "astropy__astropy-13579",
+    "agent": "LearnByInteract",
+    "repo": "astropy/astropy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "astropy__astropy-14096",
+    "agent": "CodeStory",
+    "repo": "astropy/astropy",
+    "differs_from_oracle": false
+  },
+  {
+    "instance_id": "matplotlib__matplotlib-22719",
+    "agent": "CodeStory",
+    "repo": "matplotlib/matplotlib",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "matplotlib__matplotlib-22719",
+    "agent": "LearnByInteract",
+    "repo": "matplotlib/matplotlib",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "matplotlib__matplotlib-22719",
+    "agent": "OpenHands",
+    "repo": "matplotlib/matplotlib",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "pallets__flask-5014",
+    "agent": "CodeStory",
+    "repo": "pallets/flask",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "pallets__flask-5014",
+    "agent": "LearnByInteract",
+    "repo": "pallets/flask",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "pallets__flask-5014",
+    "agent": "OpenHands",
+    "repo": "pallets/flask",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "pylint-dev__pylint-6903",
+    "agent": "CodeStory",
+    "repo": "pylint-dev/pylint",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "pylint-dev__pylint-6903",
+    "agent": "OpenHands",
+    "repo": "pylint-dev/pylint",
+    "differs_from_oracle": false
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-10466",
+    "agent": "CodeStory",
+    "repo": "sphinx-doc/sphinx",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-10466",
+    "agent": "LearnByInteract",
+    "repo": "sphinx-doc/sphinx",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-10466",
+    "agent": "OpenHands",
+    "repo": "sphinx-doc/sphinx",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-7454",
+    "agent": "LearnByInteract",
+    "repo": "sphinx-doc/sphinx",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-11618",
+    "agent": "CodeStory",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-11618",
+    "agent": "LearnByInteract",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-11618",
+    "agent": "OpenHands",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-12096",
+    "agent": "CodeStory",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-12096",
+    "agent": "LearnByInteract",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  },
+  {
+    "instance_id": "sympy__sympy-12096",
+    "agent": "OpenHands",
+    "repo": "sympy/sympy",
+    "differs_from_oracle": true
+  }
+]

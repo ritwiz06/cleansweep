@@ -2,7 +2,7 @@
 method on it, and score what it removed.
 
     python scripts/experiments/v2/exp_inject.py run [--repos toy owner/name ...] [--seeds 1]
-        [--methods agentic cleansweep one_shot_llm]
+        [--methods agentic cleansweep one_shot_llm agentic-<ablation> ...]
     python scripts/experiments/v2/exp_inject.py table
 
 Plants (one each, in three of the project's own package modules chosen by the seed):
@@ -44,6 +44,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from methods_v2 import LABELS, resolve  # noqa: E402
+
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
@@ -65,8 +68,7 @@ REPOS = [
     "curvedinf/wove",
     "Human-Agent-Society/CORAL",
 ]
-METHODS = {"agentic": ("agentic", None), "cleansweep": ("cleansweep", "gatekeeper")}
-METHODS["one_shot_llm"] = ("one_shot_llm", None)
+METHODS = ["agentic", "cleansweep", "one_shot_llm"]  # the default comparison
 WORDS = ["amber", "basil", "cedar", "delta", "ember", "fjord", "garnet", "harbor", "indigo"]
 STDLIB = ["textwrap", "fnmatch", "zlib", "sched", "colorsys", "netrc"]
 DEPS = ["tabulate", "toolz", "humanize", "termcolor"]
@@ -386,7 +388,9 @@ def run_one(repo: str, seed: int, method: str, cfg: dict) -> dict:
     from cleansweep.data.swebench import data_path
 
     tree = folder / "repo" if repo == "toy" else data_path(CLONES) / name
-    label, judge = METHODS[method]
+    label, judge, agents = resolve("cleansweep-gatekeeper" if method == "cleansweep" else method)
+    if agents:
+        cfg = {**cfg, "core": {**cfg["core"], "agents": {**cfg["core"]["agents"], **agents}}}
     if judge:
         os.environ["CLEANSWEEP_JUDGE_MODE"] = judge
     else:
@@ -484,7 +488,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("what", choices=["run", "table"])
     parser.add_argument("--repos", nargs="+", default=REPOS)
     parser.add_argument("--seeds", nargs="+", type=int, default=[1])
-    parser.add_argument("--methods", nargs="+", default=list(METHODS), choices=list(METHODS))
+    parser.add_argument("--methods", nargs="+", default=METHODS, choices=["cleansweep", *LABELS])
     args = parser.parse_args(argv)
     if args.what == "table":
         print(*table(), sep="\n")
