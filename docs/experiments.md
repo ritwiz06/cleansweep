@@ -342,6 +342,18 @@ blinded)**, not a human evaluation.
   changed, code lines removed, rollbacks by tests and by probes, LLM requests and tokens,
   minutes, test runs, agent steps, exhausted budgets, lessons, step-backs).
 
+### v2: probe strength (PatchDiff recall, mutation score)
+
+- **Run:** `python scripts/experiments/v2/exp_probe_strength.py --local tests/fixtures/toy_repo
+  .cleansweep/demo/shop_app --tier data/splits/swebench_tier1.json --tier
+  data/splits/swebench_tier2_v2subset.json [--resume]`.
+- v1's guard-strength experiment with one change: after v1's compile and test checks, the
+  coverage-guided probes the v2 Validator runs check what they miss. Same mutants (seed and
+  limits) as v1, so the two compare mutant by mutant. No false-alarm run: v2's probes only
+  probe changed code.
+- **Outputs:** `results/raw/probe_strength/` (v1's record format),
+  `results/summary/v2/probe_strength.csv`.
+
 ### v2: slop-injection benchmark
 
 Known slop planted into the toy repo and 10 AIDev repositories at fixed seeds, then each method
