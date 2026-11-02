@@ -93,14 +93,17 @@ def _ask_approval(blueprint: str) -> bool:
 def cmd_clean(args) -> int:
     import os
 
-    from cleansweep.agents import clean_project
+    from cleansweep.agents import clean_project, project_config
     from cleansweep.agents.budgets import parse_budget
 
     cfg = load_config()
     agents = cfg["core"].setdefault("agents", {})
     try:
-        if args.budget:
-            agents["budget"] = {**agents.get("budget", {}), **parse_budget(args.budget)}
+        settings = project_config.find(args.path, args.config)
+        project = project_config.load(settings) if settings else {}
+        budget = {**project.get("budget", {}), **(parse_budget(args.budget) if args.budget else {})}
+        if budget:
+            agents["budget"] = {**agents.get("budget", {}), **budget}
     except ValueError as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
         return 2
@@ -112,21 +115,28 @@ def cmd_clean(args) -> int:
         return 2
     if args.no_install:
         agents["install"] = "off"
-    if args.model:
-        os.environ["CLEANSWEEP_MODEL"] = args.model
+    elif "install" in project:
+        agents["install"] = project["install"]
+    model = args.model or project.get("model")
+    if model:
+        os.environ["CLEANSWEEP_MODEL"] = model
         cfg["core"]["llm"]["model_env"] = "CLEANSWEEP_MODEL"
+    test_args = args.test_args or project.get("test_args")
+    exclude = [*project.get("exclude", []), *(args.exclude or [])]
+    if settings and not args.quiet:
+        print(f"Settings: {settings}", flush=True)
     try:
         result = clean_project(
             args.path,
             cfg,
             out=args.out,
-            mode=args.mode,
+            mode=args.mode or project.get("mode"),
             dry_run=args.dry_run,
             approve=_ask_approval if args.approve_plan else None,
             on_event=None if args.quiet else _progress,
             use_llm=not args.no_llm,
-            test_args=shlex.split(args.test_args) if args.test_args else None,
-            exclude=[e.rstrip("/") + "/" for e in args.exclude or []],
+            test_args=shlex.split(test_args) if test_args else None,
+            exclude=[e.rstrip("/") + "/" for e in exclude],
         )
     except (FileNotFoundError, FileExistsError, ValueError, RuntimeError) as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
@@ -252,6 +262,11 @@ def main(argv: list[str] | None = None) -> int:
         "--no-install",
         action="store_true",
         help="run the tests with this interpreter instead of installing the project into a venv",
+    )
+    p.add_argument(
+        "--config",
+        metavar="FILE",
+        help="settings file (default: the project's .cleansweep.yaml, if any); options override it",
     )
     p.add_argument("--quiet", action="store_true", help="print only the result")
     p.set_defaults(func=cmd_clean)
