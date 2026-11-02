@@ -120,6 +120,21 @@ def test_engineer_applies_commits_and_reverts(rt):
     assert missing.status in ("applied", "skipped")
 
 
+def test_an_edit_that_raises_is_skipped_and_the_package_goes_on(rt, monkeypatch):
+    _ready(rt)
+    planner.run(rt)
+    pkg = rt.packages[0]
+    (iid,) = pkg.items
+
+    def broken(ws, item):
+        raise SyntaxError("invalid syntax (<unknown>, line 36)")
+
+    monkeypatch.setattr(engineer, "apply_edit", broken)
+    engineer.apply(rt, pkg)
+    assert pkg.status == "skipped" and rt.ws.diff(pkg.start) == ""
+    assert "SyntaxError" in rt.results[iid].notes
+
+
 def test_validator_checks_the_ast_for_comment_only_packages(rt):
     from pathlib import Path
 
