@@ -87,6 +87,22 @@ def test_debug_leftovers(tmp_path):
     )  # the emptied body keeps a statement
 
 
+def test_a_debugger_call_behind_a_switch_is_only_suggested(tmp_path):
+    repo = _repo(
+        tmp_path,
+        {
+            "pkg/hooks.py": (
+                "import pdb\n\n\nclass Hook:\n    def __call__(self, x):\n"
+                "        if self.debug_on_nan:\n            print('Entering debugger...')\n"
+                "            pdb.set_trace()\n        return x\n\n\n"
+                "def g(x):\n    pdb.set_trace()\n    return x\n"
+            )
+        },
+    )
+    calls = [i for i in detect_debug_leftovers(repo) if "set_trace" in i.reason]
+    assert {i.unit.start_line: i.lane for i in calls} == {8: "suggest", 13: "safe"}
+
+
 def test_commented_code_but_not_prose(tmp_path):
     repo = _repo(
         tmp_path,

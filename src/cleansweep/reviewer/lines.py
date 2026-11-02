@@ -208,6 +208,9 @@ def _self_documenting(node: ast.JoinedStr, text: str) -> bool:
     return bool(SELF_DOC.search(source))
 
 
+DEBUGGERS = ("breakpoint", "pdb.set_trace", "ipdb.set_trace", "pudb.set_trace")
+
+
 def _debug_print(node: ast.Call, text: str = "") -> bool:
     if not node.args:
         return False
@@ -223,9 +226,20 @@ def _debug_print(node: ast.Call, text: str = "") -> bool:
     return False
 
 
+def _inside_if(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
+    """True when the statement sits under an `if` in its own function or module."""
+    parent = parents.get(node)
+    while parent is not None and not isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(parent, ast.If):
+            return True
+        parent = parents.get(parent)
+    return False
+
+
 def detect_debug_leftovers(repo_dir: str, paths: list[str] | None = None) -> list[CleanupItem]:
-    """breakpoint(), pdb/ipdb.set_trace() and debug prints: safe; other prints in library
-    modules: suggested only (they may be intended output)."""
+    """breakpoint(), pdb/ipdb.set_trace() and debug prints: safe; a debugger call under an `if`
+    (an opt-in switch such as `if self.debug_on_nan:`) and other prints in library modules:
+    suggested only (a debugging feature or intended output)."""
     items = []
     for path in _py_files(repo_dir, paths):
         lines = _lines(repo_dir, path)
@@ -242,7 +256,13 @@ def detect_debug_leftovers(repo_dir: str, paths: list[str] | None = None) -> lis
             if not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)):
                 continue
             name = _call_name(node.value)
-            if name in ("breakpoint", "pdb.set_trace", "ipdb.set_trace", "pudb.set_trace"):
+            if name in DEBUGGERS and _inside_if(node, parents):
+                lane, why = (
+                    "suggest",
+                    f"A debugger call ({name}) behind a condition; it may be an opt-in debugging "
+                    "feature.",
+                )
+            elif name in DEBUGGERS:
                 lane, why = "safe", f"A debugger call ({name}) was left in the code."
             elif name == "print" and _debug_print(node.value, text):
                 lane, why = "safe", "A debug print was left in the code."
