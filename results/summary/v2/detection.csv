@@ -1,0 +1,28 @@
+detectors,pull_requests,scope,requested,flagged,both,precision,recall
+v1 (static detectors),116,all categories,163,803,19,0.024,0.117
+v1 (static detectors),116,requests: dead_code,77,803,6,0.007,0.078
+v1 (static detectors),116,requests: duplicate,15,803,0,0.0,0.0
+v1 (static detectors),116,requests: leftover_file,2,803,0,0.0,0.0
+v1 (static detectors),116,requests: other,52,803,9,0.011,0.173
+v1 (static detectors),116,requests: wrapper,19,803,4,0.005,0.211
+v1 (static detectors),116,flagged: dead_code,163,346,8,0.023,0.049
+v1 (static detectors),116,flagged: duplicate,163,297,10,0.034,0.061
+v1 (static detectors),116,flagged: leftover_file,163,68,0,0.0,0.0
+v1 (static detectors),116,flagged: unused_import,163,89,0,0.0,0.0
+v1 (static detectors),116,flagged: wrapper,163,3,1,0.333,0.006
+v2 Auditor (v1 + line-level detectors),116,all categories,163,904,24,0.027,0.147
+v2 Auditor (v1 + line-level detectors),116,requests: dead_code,77,904,9,0.01,0.117
+v2 Auditor (v1 + line-level detectors),116,requests: duplicate,15,904,2,0.002,0.133
+v2 Auditor (v1 + line-level detectors),116,requests: leftover_file,2,904,0,0.0,0.0
+v2 Auditor (v1 + line-level detectors),116,requests: other,52,904,9,0.01,0.173
+v2 Auditor (v1 + line-level detectors),116,requests: wrapper,19,904,4,0.004,0.211
+v2 Auditor (v1 + line-level detectors),116,flagged: commented_code,163,33,1,0.03,0.006
+v2 Auditor (v1 + line-level detectors),116,flagged: dead_code,163,346,8,0.023,0.049
+v2 Auditor (v1 + line-level detectors),116,flagged: debug_leftover,163,7,1,0.143,0.006
+v2 Auditor (v1 + line-level detectors),116,flagged: duplicate,163,297,10,0.034,0.061
+v2 Auditor (v1 + line-level detectors),116,flagged: leftover_file,163,68,0,0.0,0.0
+v2 Auditor (v1 + line-level detectors),116,flagged: redundant_check,163,26,1,0.038,0.006
+v2 Auditor (v1 + line-level detectors),116,flagged: todo_note,163,56,3,0.054,0.018
+v2 Auditor (v1 + line-level detectors),116,flagged: unused_import,163,89,0,0.0,0.0
+v2 Auditor (v1 + line-level detectors),116,flagged: unused_variable,163,13,2,0.154,0.012
+v2 Auditor (v1 + line-level detectors),116,flagged: wrapper,163,3,1,0.333,0.006

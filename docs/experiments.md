@@ -354,6 +354,17 @@ blinded)**, not a human evaluation.
 - **Outputs:** `results/raw/probe_strength/` (v1's record format),
   `results/summary/v2/probe_strength.csv`.
 
+### v2: detection by category on AIDev
+
+- **Run:** `python scripts/experiments/v2/exp_detection.py` (static: files are extracted and
+  parsed, never run; about 2 minutes).
+- On the commented commits v1's mining processed, the v2 line-level detectors run on the
+  commented files and each line item counts for the innermost function or class around it.
+  v2's Auditor flags v1's units plus these; both are scored against the units reviewers asked
+  agents to remove (precision and recall, overall and per category). The Investigator's LLM
+  verdicts are not part of it.
+- **Output:** `results/summary/v2/detection.csv`.
+
 ### v2: slop-injection benchmark
 
 Known slop planted into the toy repo and 10 AIDev repositories at fixed seeds, then each method

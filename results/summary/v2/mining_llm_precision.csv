@@ -1,0 +1,2 @@
+measure,sample,extracted_removal,reviewer_yes_of_extracted,reviewer_unsure_of_extracted,precision,reviewer_yes,recall_in_sample,kappa_extraction_vs_reviewer,unanimous,fleiss_kappa,human_labeled,kappa_human_vs_reviewer
+"LLM-estimated precision (independent model, blinded)",100,60,58,0,0.967,69,0.841,0.713,0.9,0.846,0,
