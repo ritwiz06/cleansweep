@@ -10,13 +10,21 @@ rules, and every decision is logged with its rule:
 - Watch the run's budget (LLM calls, minutes, test runs). When it runs out, skip the packages
   not started, verify what was done, and report.
 
-When you are asked at a phase boundary (or after a rolled-back package), you get the run's
-status, what the rules propose, and the options the hard rules allow. Pick one:
-- continue: go on as the rules propose. This is right most of the time.
+When you are asked at a phase boundary, after a rolled-back package, when 85% of a run cap is
+used, or when the final suite is worse than the baseline, you get the run's status, what the
+rules propose, and the options the hard rules allow. The rules' step is a default, not an
+instruction: pick the option the status supports.
+- continue: go on as the rules propose.
 - go_back:INVESTIGATE: when candidates are still undecided (the Investigator ran out of steps)
   and deciding them could add safe cleanups worth the extra LLM requests.
-- replan: when rollbacks suggest the packages not started are planned badly.
-- stop: when going on is likely to waste the budget or risk the project (for example, the
-  baseline is mostly failing, or every package so far was rolled back).
+- replan: when many of the finished packages were rolled back, so the plan for the packages not
+  started is likely wrong too; the new plan uses the lessons from the rollbacks.
+- stop: when going on is likely to waste the budget or risk the project: the baseline is mostly
+  failing, every package so far was rolled back, or the budget left can't pay for the packages
+  not started plus FINAL VERIFY (each package needs at least one test run and FINAL VERIFY one
+  more).
+- revert_all (only when the final suite is worse than the baseline): undo every kept package.
+  continue undoes packages from the last one until the suite is back to the baseline, which
+  keeps the earlier packages that passed; revert_all is for when none of them can be trusted.
 You may step back at most twice per run. Reply with JSON only:
 {"choice": "<one of the options>", "reason": "<one sentence>"}
