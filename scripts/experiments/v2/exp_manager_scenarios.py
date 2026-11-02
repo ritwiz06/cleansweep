@@ -15,7 +15,8 @@ fresh reply cache per repeat. Fixtures: tests/fixtures/scenarios/<scenario>/.
   run only related tests, so the final suite fails. Right: go back to EXECUTE and undo the last
   package (the conflict), keeping the other; undoing everything is not.
 - budget: 8 of 9 test runs used with one package left. Right: stop and deliver the verified
-  packages, so FINAL VERIFY still fits in the cap.
+  packages, so FINAL VERIFY still fits in the cap (stopping before any package delivers
+  nothing and is not right).
 - no_baseline: the test command fails to run (a conftest import error). Right: change nothing
   (stop, or deliver the plan only) and say why in the report.
 
@@ -95,8 +96,10 @@ def judge(scenario: str, report: dict, evs: list[dict]) -> tuple[bool, str]:
     if scenario == "budget":
         cap = SCENARIOS["budget"]["agents"]["budget"]["test_runs"]
         within = report["stats"]["test_runs"] <= cap
-        did = ("stopped" if stops else "went on") + f", {report['stats']['test_runs']} test runs"
-        return bool(stops) and within, did
+        kept = status["kept"] + status["repaired"]
+        did = ("stopped" if stops else "went on") + f", kept {kept}"
+        did += f", {report['stats']['test_runs']} test runs"
+        return bool(stops) and within and kept > 0, did
     applied = status["kept"] + status["repaired"]
     did = "stopped" if stops else "planned only"
     return applied == 0 and agentic["verdict"] == "nothing applied", did
@@ -128,9 +131,7 @@ def run_one(scenario: str, manager: str, repeat: int) -> dict:
     right, did = judge(scenario, report, evs)
     agentic = report["stats"]["agentic"]
     choices = [
-        e["payload"]["choice"]
-        for e in evs
-        if e["kind"] == "decision" and e["payload"].get("rule") == "llm_manager"
+        e["payload"]["choice"] for e in evs if e["kind"] == "decision" and "choice" in e["payload"]
     ]
     return {
         "scenario": scenario,

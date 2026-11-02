@@ -150,19 +150,29 @@ def _status(rt, proposed: str, why: str, options: dict[str, str]) -> str:
     packages: dict[str, int] = {}
     for pkg in rt.packages:
         packages[pkg.status] = packages.get(pkg.status, 0) + 1
+    finished = sum(packages.get(s, 0) for s in ("kept", "repaired", "rolled_back", "reverted"))
+    left = sum(p.stage == "apply" for p in rt.packages[rt.current :])
+    runs_left = rt.run_budget.test_runs - rt.ws.test_runs
+    tests_left = (
+        f"{runs_left} test runs left: enough for {max(0, min(left, runs_left - 1))} of the "
+        f"{left} packages left (at least one run each) plus FINAL VERIFY (one run)"
+        if rt.run_budget.test_runs
+        else "no test-run cap"
+    )
     base = rt.baseline or {}
     lines = [
         f"Phase: {rt.phases.phase}. The rules propose: {proposed} ({why}).",
         f"Mode: {rt.mode}. Candidates: {len(rt.items)}; verdicts {json.dumps(decisions)}; "
         f"undecided: {len(_undecided(rt))}.",
-        f"Packages: {json.dumps(packages)}; lessons: {len(rt.lessons.lessons)}.",
+        f"Packages: {json.dumps(packages)}; rolled back {packages.get('rolled_back', 0)} of "
+        f"{finished} finished; lessons: {len(rt.lessons.lessons)}.",
         f"Baseline: {base.get('passed', '?')} passing, {base.get('failed', '?')} failing, "
         f"{len(base.get('flaky', []))} flaky.",
         f"Run budget: LLM {rt.run_budget.used_llm}/{rt.run_budget.llm_calls or 'no cap'}, "
         f"minutes {(time.time() - rt.run_budget.started) / 60:.1f}/"
         f"{rt.run_budget.minutes or 'no cap'}, "
         f"test runs {rt.ws.test_runs}/{rt.run_budget.test_runs or 'no cap'}. "
-        f"Packages left: {sum(p.stage == 'apply' for p in rt.packages[rt.current :])}. "
+        f"Packages left: {left}; {tests_left}. "
         f"Step-backs left: {LLM_STEP_BACKS - rt.llm_back_steps}.",
         "Options:",
         *(f"- {k}: {v}" for k, v in options.items()),
@@ -192,6 +202,8 @@ def _consult(rt, proposed: str, why: str) -> str:
         choice, reason = reply["choice"], reply["reason"]
     except Exception as exc:  # out of budget, LLM error or a malformed reply: the rules decide
         choice, reason = "continue", f"no usable reply ({type(exc).__name__}): the rules decide"
+    if choice == proposed and choice not in options:
+        choice = "continue"  # the rules' step, named the way the status names it
     if choice not in options:
         choice, reason = "continue", f"{choice!r} is not an option: the rules decide"
     _decide(rt, "llm_manager", reason, choice=choice, proposed=proposed, options=sorted(options))
