@@ -1,0 +1,61 @@
+target_set,target,method,repeat,verdict,hidden_changed,hidden_note,hits,total,code_lines_removed,lines_removed,files_removed,kept,rolled_back_tests,rolled_back_probes,rolled_back_other,llm_calls,prompt_tokens,completion_tokens,minutes,test_runs,agent_steps,budgets_exhausted,lessons,back_steps,hidden_flaky
+answer keys,demo,agentic-broadcast,0,everything runs,0,,7,7,49,47,2,5,0,1,0,46,52492,9547,2.22,10,64,0,1,0,0
+answer keys,demo,agentic-broadcast,1,everything runs,0,,7,7,49,47,2,5,0,1,0,45,53889,8976,1.82,10,64,0,1,0,0
+answer keys,demo,agentic-broadcast,2,everything runs,0,,7,7,49,47,2,5,0,1,0,43,51287,8717,1.74,10,64,0,1,0,0
+answer keys,demo,agentic-inline_artifacts,0,everything runs,0,,7,7,49,47,2,5,0,1,0,40,46091,8641,1.69,10,61,0,1,0,0
+answer keys,demo,agentic-inline_artifacts,1,everything runs,0,,7,7,49,47,2,5,0,1,0,38,42393,8493,1.99,10,61,0,1,0,0
+answer keys,demo,agentic-inline_artifacts,2,everything runs,0,,7,7,49,47,2,5,0,1,0,38,41983,8522,1.77,10,61,0,1,0,0
+answer keys,demo,agentic-no_coverage,0,everything runs,0,,7,7,49,47,2,5,0,1,0,39,45803,8154,1.6,10,62,0,1,0,0
+answer keys,demo,agentic-no_coverage,1,everything runs,0,,7,7,49,47,2,5,0,1,0,40,47223,8400,1.64,10,63,0,1,0,0
+answer keys,demo,agentic-no_coverage,2,everything runs,0,,7,7,49,47,2,5,0,1,0,37,43040,7866,1.6,10,62,0,1,0,0
+answer keys,demo,agentic-no_lessons,0,everything runs,0,,6,7,38,38,2,4,0,0,0,43,57113,6602,1.18,8,53,1,0,0,0
+answer keys,demo,agentic-no_lessons,1,everything runs,0,,7,7,49,47,2,5,0,1,0,44,52170,10117,2.13,10,51,0,0,0,0
+answer keys,demo,agentic-no_lessons,2,everything runs,0,,6,7,38,38,2,4,0,0,0,43,58093,6817,1.22,8,53,1,0,0,0
+answer keys,demo,agentic-no_research,0,everything runs,0,,7,7,49,47,2,5,0,1,0,11,8090,4491,1.23,10,35,0,1,0,0
+answer keys,demo,agentic-no_research,1,everything runs,0,,7,7,49,47,2,5,0,1,0,11,8090,4538,1.19,10,35,0,1,0,0
+answer keys,demo,agentic-no_research,2,everything runs,0,,7,7,49,47,2,5,0,1,0,12,12260,8043,2.4,10,35,0,1,0,0
+answer keys,demo,agentic-rules,0,everything runs,0,,7,7,49,47,2,5,0,1,0,38,49519,8754,1.73,10,63,0,1,0,0
+answer keys,demo,agentic-rules,1,everything runs,0,,7,7,49,47,2,5,0,1,0,34,38272,8408,1.99,10,59,0,1,0,0
+answer keys,demo,agentic-rules,2,everything runs,0,,7,7,49,47,2,5,0,1,0,36,45021,8226,1.71,10,63,0,1,0,0
+answer keys,demo,agentic-single_agent,0,not verified,1,,5,7,97,93,2,13,0,0,0,32,149769,1642,10.8,5,0,0,0,0,0
+answer keys,demo,agentic-single_agent,1,not verified,1,,6,7,71,67,2,8,0,0,5,41,273473,4003,11.77,7,0,0,0,0,0
+answer keys,demo,agentic-single_agent,2,not verified,0,,7,7,60,58,2,7,0,0,3,39,220518,3359,11.28,7,0,0,0,0,0
+answer keys,demo,agentic,0,everything runs,0,,7,7,49,47,2,5,0,1,0,38,42064,8363,2.03,10,61,0,1,0,0
+answer keys,demo,agentic,1,everything runs,0,,7,7,49,47,2,5,0,1,0,36,39366,7988,1.67,10,59,0,1,0,0
+answer keys,demo,agentic,2,everything runs,0,,7,7,49,47,2,5,0,1,0,39,42139,8755,2.18,10,60,0,1,0,0
+answer keys,demo,cleansweep-advisory,0,,0,,7,7,49,47,2,5,0,1,0,7,12534,31393,8.9,6,,,,,0
+answer keys,demo,cleansweep-advisory,1,,0,,7,7,49,47,2,5,0,1,0,7,12627,30472,7.6,6,,,,,0
+answer keys,demo,cleansweep-advisory,2,,0,,7,7,49,47,2,5,0,1,0,6,10597,21312,15.64,7,,,,,0
+answer keys,demo,cleansweep-gatekeeper,0,,0,,7,7,49,47,2,5,0,0,0,6,11694,21664,4.8,4,,,,,0
+answer keys,demo,cleansweep-gatekeeper,1,,0,,7,7,49,47,2,5,0,0,0,6,11694,22051,5.93,4,,,,,0
+answer keys,demo,cleansweep-gatekeeper,2,,0,,7,7,49,47,2,5,0,0,0,6,11694,21429,5.47,4,,,,,0
+answer keys,toy,agentic-broadcast,0,everything runs,0,,13,13,65,50,3,10,0,1,0,41,45060,9067,1.85,15,69,0,1,0,0
+answer keys,toy,agentic-broadcast,1,everything runs,0,,13,13,65,50,3,10,0,1,0,45,50188,9429,2.22,15,71,0,1,0,0
+answer keys,toy,agentic-broadcast,2,everything runs,0,,13,13,65,50,3,10,0,1,0,42,45608,9046,2.02,15,68,0,1,0,0
+answer keys,toy,agentic-inline_artifacts,0,everything runs,0,,13,13,65,50,3,10,0,0,0,44,54574,8681,1.58,14,73,1,0,0,0
+answer keys,toy,agentic-inline_artifacts,1,everything runs,0,,13,13,65,50,3,10,0,0,0,47,58771,8227,4.49,14,74,0,0,0,0
+answer keys,toy,agentic-inline_artifacts,2,everything runs,0,,13,13,65,50,3,10,0,1,0,43,48313,9567,4.42,15,70,0,1,0,0
+answer keys,toy,agentic-no_coverage,0,everything runs,0,,13,13,65,50,3,10,0,0,0,50,68377,9391,1.56,14,76,0,0,0,0
+answer keys,toy,agentic-no_coverage,1,everything runs,0,,13,13,65,50,3,10,0,0,0,45,59571,9464,1.63,14,75,1,0,0,0
+answer keys,toy,agentic-no_coverage,2,everything runs,0,,13,13,65,50,3,10,0,1,0,46,58905,9714,1.85,15,74,0,1,0,0
+answer keys,toy,agentic-no_lessons,0,everything runs,0,,12,13,54,41,3,9,0,0,0,43,54423,8065,1.44,13,60,1,0,0,0
+answer keys,toy,agentic-no_lessons,1,everything runs,0,,13,13,65,50,3,10,0,0,0,44,51690,7816,1.59,14,56,0,0,0,0
+answer keys,toy,agentic-no_lessons,2,everything runs,0,,13,13,65,50,3,10,0,0,0,42,47942,8374,1.87,14,58,0,0,0,0
+answer keys,toy,agentic-no_research,0,everything runs,0,,13,13,65,50,3,10,0,1,0,12,8140,4863,1.32,15,38,0,1,0,0
+answer keys,toy,agentic-no_research,1,everything runs,0,,13,13,65,50,3,10,0,1,0,12,8140,4863,1.31,15,38,0,1,0,0
+answer keys,toy,agentic-no_research,2,everything runs,0,,13,13,65,50,3,10,0,1,0,12,8140,4863,1.33,15,38,0,1,0,0
+answer keys,toy,agentic-rules,0,everything runs,0,,13,13,65,50,3,10,0,0,0,42,56026,8489,1.59,14,74,0,0,0,0
+answer keys,toy,agentic-rules,1,everything runs,0,,13,13,65,50,3,10,0,1,0,34,39150,9176,1.79,15,69,0,1,0,0
+answer keys,toy,agentic-rules,2,everything runs,0,,13,13,65,50,3,10,0,1,0,39,46554,9414,1.83,15,71,0,1,0,0
+answer keys,toy,agentic-single_agent,0,everything runs,1,,12,13,76,59,3,11,0,0,0,42,261971,3812,1.26,7,0,0,0,0,0
+answer keys,toy,agentic-single_agent,1,everything runs,1,,12,13,76,59,3,11,0,0,1,35,195317,3533,1.16,7,0,0,0,0,0
+answer keys,toy,agentic-single_agent,2,everything runs,0,,12,13,59,57,3,9,0,0,1,28,131055,2459,0.82,6,0,0,0,0,0
+answer keys,toy,agentic,0,everything runs,0,,13,13,65,50,3,10,0,0,0,48,61213,8517,1.58,14,73,1,0,0,0
+answer keys,toy,agentic,1,everything runs,0,,13,13,65,50,3,10,0,0,0,45,55446,8566,1.58,14,73,0,0,0,0
+answer keys,toy,agentic,2,everything runs,0,,13,13,65,50,3,10,0,0,0,43,50132,8068,1.75,14,70,0,0,0,0
+answer keys,toy,cleansweep-advisory,0,,0,,13,13,65,50,3,10,0,1,0,6,10866,19688,14.84,9,,,,,0
+answer keys,toy,cleansweep-advisory,1,,0,,13,13,65,50,3,10,0,1,0,7,11406,24646,6.17,9,,,,,0
+answer keys,toy,cleansweep-advisory,2,,0,,13,13,65,50,3,10,0,1,0,6,10866,22063,16.21,9,,,,,0
+answer keys,toy,cleansweep-gatekeeper,0,,0,,13,13,65,50,3,10,0,0,0,5,10205,19769,4.86,5,,,,,0
+answer keys,toy,cleansweep-gatekeeper,1,,0,,13,13,65,50,3,10,0,0,0,5,10205,20107,4.61,5,,,,,0
+answer keys,toy,cleansweep-gatekeeper,2,,0,,13,13,65,50,3,10,0,0,0,5,10205,19358,4.7,5,,,,,0

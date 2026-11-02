@@ -1,0 +1,6 @@
+| target set | method | n | verdicts: everything runs / nothing applied / not verified | planted found | hidden changed (mean, 95% CI) | code lines removed (mean, 95% CI) | lines removed (mean, 95% CI) | test runs (mean) | LLM requests (mean) | tokens (mean) | minutes (median) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| answer keys | agentic | 6 | 6 / 0 / 0 | 60/60 | 0.00 [0.00, 0.00] | 57.0 [51.7, 62.3] | 48.5 [47.5, 49.5] | 12.0 | 41.5 | 56770 | 1.7 |
+| answer keys | agentic-rules | 6 | 6 / 0 / 0 | 60/60 | 0.00 [0.00, 0.00] | 57.0 [51.7, 62.3] | 48.5 [47.5, 49.5] | 12.3 | 37.2 | 54502 | 1.8 |
+| answer keys | cleansweep-gatekeeper | 6 | -- | 60/60 | 0.00 [0.00, 0.00] | 57.0 [51.7, 62.3] | 48.5 [47.5, 49.5] | 4.5 | 5.5 | 31679 | 4.8 |
+| answer keys | cleansweep-advisory | 6 | -- | 60/60 | 0.00 [0.00, 0.00] | 57.0 [51.7, 62.3] | 48.5 [47.5, 49.5] | 7.7 | 6.5 | 36412 | 11.9 |

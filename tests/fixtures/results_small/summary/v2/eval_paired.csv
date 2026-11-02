@@ -1,0 +1,4 @@
+target set,method vs v1 gatekeeper,pairs,hidden changed only with method,hidden changed only with v1,McNemar exact p,"code lines removed, method vs v1 (total)",Wilcoxon W,Wilcoxon p
+answer keys,agentic,4,0,0,1.0,228 vs 228,0.0,1.0
+answer keys,agentic-rules,4,0,0,1.0,228 vs 228,0.0,1.0
+swebench_t1,agentic,3,0,0,1.0,14 vs 14,0.0,1.0
