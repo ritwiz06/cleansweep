@@ -45,9 +45,8 @@ def run(rt) -> None:
     rt.record_usage(NAME, budget)
 
 
-def line_items(rt) -> list:
+def line_items(rt, agent: str = f"{NAME}#lines") -> list:
     """The line-level detectors (a second Auditor instance), in the same scope as v1's."""
-    agent = f"{NAME}#lines"
     scope = review_scope(rt.ws.repo_id, rt.ws.path, rt.graph, rt.cfg)
     paths = sorted(f for f in scope.files if f.endswith(".py")) if scope is not None else None
     rt.log.emit(

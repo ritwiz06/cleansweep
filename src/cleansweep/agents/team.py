@@ -19,6 +19,7 @@ from . import (
     manager,
     planner,
     reporter,
+    solo,
     tester,
     validator,
 )
@@ -151,7 +152,10 @@ def run_team(rt) -> None:
         agent="manager",
         payload={"from": None, "to": "ONBOARD", "reason": "start", "back": False},
     )
-    build(rt).invoke({"next": None, "turns": 0}, {"recursion_limit": RECURSION_LIMIT})
+    if rt.ablation == "single_agent":
+        solo.run(rt)  # one agent with every tool instead of the team
+    else:
+        build(rt).invoke({"next": None, "turns": 0}, {"recursion_limit": RECURSION_LIMIT})
     rt.log.emit(
         "run_end",
         agent="manager",
