@@ -187,12 +187,17 @@ class JobManager:
         with self._lock:
             return self.jobs.get(job_id)
 
-    def running(self, folder: Path) -> bool:
-        """True while a job of this server writes to that folder."""
+    def job_for(self, folder: Path) -> Job | None:
+        """The job of this server that writes to that folder, if any."""
         with self._lock:
             jobs = list(self.jobs.values())
         real = os.path.realpath(folder)
-        return any(os.path.realpath(j.folder) == real and j.status() == "running" for j in jobs)
+        return next((j for j in jobs if os.path.realpath(j.folder) == real), None)
+
+    def running(self, folder: Path) -> bool:
+        """True while a job of this server writes to that folder."""
+        job = self.job_for(folder)
+        return job is not None and job.status() == "running"
 
     def stop(self, job_id: str) -> Job | None:
         job = self.get(job_id)

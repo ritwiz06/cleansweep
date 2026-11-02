@@ -75,6 +75,10 @@ def create_app(
         found = folder(root, path)
         out = runs.detail(root, path, found)
         out["live"] = manager.running(found)
+        job = manager.job_for(found)
+        if job is not None:
+            # before the first event the folder is empty; the job knows what it will hold
+            out["kind"] = {"clean": "v2", "sweep": "v1", "watch": "watch"}[job.kind]
         return out
 
     @app.get("/api/run/events")
