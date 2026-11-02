@@ -1,0 +1,7 @@
+diff --git a/pkg2/colors_old.py b/pkg2/colors_old.py
+deleted file mode 100644
+index afa6c12..0000000
+--- a/pkg2/colors_old.py
++++ /dev/null
+@@ -1 +0,0 @@
+-PRIMARY = 3

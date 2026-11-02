@@ -44,7 +44,9 @@ commands (`cd app/studio/frontend && npm ci && npm run build`). Studio listens o
 It reads three folders: its runs folder (`results/raw/studio/`, or `--runs`), `results/` and
 `demo/replay/`. Hidden files, `.env` and other secret files are never served, and every text it
 sends is passed through the same redactor the agents use. Everything except Launch works
-offline.
+offline; `demo/replay/` ships four agent-team recordings beside v1's (the toy repo, the demo app
+with the feature patch, a Manager step-back scenario and the Skill_Seekers case study; see the
+README).
 
 - **Runs**: every recorded run (agent-team cleanups, v1 sweeps, watch folders) with its target,
   mode, model and result. Open one in Replay, follow a live one, or send it to Compare.

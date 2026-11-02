@@ -1,0 +1,434 @@
+[
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches '*_old.py'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "0244c217c4",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "bookshelf/inventory_old.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "bookshelf/inventory_old.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches 'scratch*'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "108be9bb84",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "scratch_restock.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "scratch_restock.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "e0b5c5e287",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "_print_low_stock is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 37,
+   "kind": "function",
+   "name": "_print_low_stock",
+   "path": "bookshelf/inventory.py",
+   "start_line": 34
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "d755a43eca",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "isbn_checksum_ok is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 29,
+   "kind": "function",
+   "name": "isbn_checksum_ok",
+   "path": "bookshelf/utils.py",
+   "start_line": 25
+  }
+ },
+ {
+  "action": "replace_with",
+  "category": "duplicate",
+  "evidence": [
+   "near-identical body to bookshelf/utils.py::round_money (similarity 0.85)"
+  ],
+  "item_id": "ffa82dd64e",
+  "keep_target": "bookshelf/utils.py::round_money",
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": "--- a/bookshelf/orders.py\n+++ b/bookshelf/orders.py\n@@ -1,24 +1,15 @@\n from decimal import ROUND_HALF_UP, Decimal\n \n from bookshelf.utils import normalize_isbn\n+from bookshelf.utils import round_money\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _round_money(value):\n-    \"\"\"Round an amount to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"amount cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def order_total(inventory, lines, tax_rate=0.0):\n     subtotal = sum(\n         inventory.books[normalize_isbn(isbn)][\"price\"] * qty for isbn, qty in lines\n     )\n-    return _round_money(subtotal * (1 + tax_rate))\n+    return round_money(subtotal * (1 + tax_rate))\n",
+  "reason": "_round_money repeats round_money; use the existing function instead.",
+  "safe_score": null,
+  "sources": [
+   "minhash",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 17,
+   "kind": "function",
+   "name": "_round_money",
+   "path": "bookshelf/orders.py",
+   "start_line": 10
+  }
+ },
+ {
+  "action": "replace_with",
+  "category": "duplicate",
+  "evidence": [
+   "identical body to bookshelf/utils.py::normalize_isbn (similarity 1.00)"
+  ],
+  "item_id": "1f2a33dce7",
+  "keep_target": "bookshelf/utils.py::normalize_isbn",
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": "--- a/bookshelf/reports.py\n+++ b/bookshelf/reports.py\n@@ -1,18 +1,9 @@\n from bookshelf.utils import money\n-\n-\n-def _clean_isbn(raw):\n-    \"\"\"Strip dashes and spaces from an ISBN and check its length.\"\"\"\n-    if raw is None:\n-        raise ValueError(\"missing ISBN\")\n-    digits = raw.replace(\"-\", \"\").replace(\" \", \"\")\n-    if len(digits) not in (10, 13):\n-        raise ValueError(f\"bad ISBN: {raw}\")\n-    return digits.upper()\n+from bookshelf.utils import normalize_isbn\n \n \n def stock_line(inventory, isbn):\n-    book = inventory.books[_clean_isbn(isbn)]\n+    book = inventory.books[normalize_isbn(isbn)]\n     return f\"{book['title']}: {book['copies']} x {money(book['price'])}\"\n \n \n",
+  "reason": "_clean_isbn repeats normalize_isbn; use the existing function instead.",
+  "safe_score": null,
+  "sources": [
+   "minhash",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 11,
+   "kind": "function",
+   "name": "_clean_isbn",
+   "path": "bookshelf/reports.py",
+   "start_line": 4
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "ef64f04ac9",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_add is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 10,
+   "kind": "function",
+   "name": "cmd_add",
+   "path": "bookshelf/commands.py",
+   "start_line": 7
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "1eab3021fa",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_load is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 41,
+   "kind": "function",
+   "name": "cmd_load",
+   "path": "bookshelf/commands.py",
+   "start_line": 39
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "846b1eee61",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_lowstock is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 22,
+   "kind": "function",
+   "name": "cmd_lowstock",
+   "path": "bookshelf/commands.py",
+   "start_line": 19
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "afc15b2ea9",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_order is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 31,
+   "kind": "function",
+   "name": "cmd_order",
+   "path": "bookshelf/commands.py",
+   "start_line": 29
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "af3f858d92",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_report is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 26,
+   "kind": "function",
+   "name": "cmd_report",
+   "path": "bookshelf/commands.py",
+   "start_line": 25
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "40862a72d0",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_restock is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 16,
+   "kind": "function",
+   "name": "cmd_restock",
+   "path": "bookshelf/commands.py",
+   "start_line": 13
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "548906e225",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_save is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 36,
+   "kind": "function",
+   "name": "cmd_save",
+   "path": "bookshelf/commands.py",
+   "start_line": 34
+  }
+ },
+ {
+  "action": "report_only",
+  "category": "security",
+  "evidence": [
+   "bandit B307 (MEDIUM) at line 20",
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph"
+  ],
+  "item_id": "75e6cf43aa",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "Possible security problem: Use of possibly insecure function - consider using safer ast.literal_eval.",
+  "safe_score": null,
+  "sources": [
+   "bandit",
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 24,
+   "kind": "function",
+   "name": "load_legacy",
+   "path": "bookshelf/storage.py",
+   "start_line": 18
+  }
+ },
+ {
+  "action": "edit_lines",
+  "category": "debug_leftover",
+  "evidence": [
+   "print at line 37"
+  ],
+  "item_id": "b919d48ad3",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": "--- a/bookshelf/inventory.py\n+++ b/bookshelf/inventory.py\n@@ -37 +37 @@\n-        print(\"LOW:\", title)\n+        pass\n",
+  "reason": "A print in library code; it may be leftover debugging or intended output.",
+  "safe_score": null,
+  "sources": [
+   "ast"
+  ],
+  "unit": {
+   "end_line": 37,
+   "kind": "lines",
+   "name": "L37-37",
+   "path": "bookshelf/inventory.py",
+   "start_line": 37
+  }
+ },
+ {
+  "action": "edit_lines",
+  "category": "debug_leftover",
+  "evidence": [
+   "print at line 8"
+  ],
+  "item_id": "8b4f6bf1e9",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": "--- a/scratch_restock.py\n+++ b/scratch_restock.py\n@@ -8 +8 @@\n-    print(run(inv, f\"restock 978-0-13-468599-1 {n}\"))\n+    pass\n",
+  "reason": "A print in library code; it may be leftover debugging or intended output.",
+  "safe_score": null,
+  "sources": [
+   "ast"
+  ],
+  "unit": {
+   "end_line": 8,
+   "kind": "lines",
+   "name": "L8-8",
+   "path": "scratch_restock.py",
+   "start_line": 8
+  }
+ }
+]

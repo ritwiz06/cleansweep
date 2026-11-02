@@ -46,7 +46,8 @@ cleansweep/
 │   │                                     shotgun_ui_harness.py
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
-│   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py
+│   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
+│   │                                     make_recording.py (Studio recordings)
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)

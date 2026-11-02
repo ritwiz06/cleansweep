@@ -1,0 +1,14 @@
+diff --git a/bookshelf/inventory.py b/bookshelf/inventory.py
+index a4434ef..ffcaa25 100644
+--- a/bookshelf/inventory.py
++++ b/bookshelf/inventory.py
+@@ -29,9 +29,3 @@ class Inventory:
+     def low_stock(self, threshold=2):
+         low = [b["title"] for b in self.books.values() if b["copies"] <= threshold]
+         return sorted(low)
+-
+-
+-def _print_low_stock(inventory, threshold=2):
+-    # quick check while building the low-stock command
+-    for title in inventory.low_stock(threshold):
+-        print("LOW:", title)

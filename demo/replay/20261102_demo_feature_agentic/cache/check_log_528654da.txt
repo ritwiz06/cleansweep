@@ -1,0 +1,5 @@
+probes found a behavior change:
+bookshelf/orders.py::_round_money vs bookshelf.utils.round_money [normal]: before 10.56, after 10.55
+bookshelf/orders.py::_round_money vs bookshelf.utils.round_money [half_up_0125]: before 0.13, after 0.12
+bookshelf/orders.py::_round_money vs bookshelf.utils.round_money [half_up_2675]: before 2.68, after 2.67
+bookshelf/orders.py::_round_money vs bookshelf.utils.round_money [half_up_1005]: before 1.01, after 1.0

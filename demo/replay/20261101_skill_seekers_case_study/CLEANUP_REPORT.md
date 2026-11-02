@@ -1,0 +1,1109 @@
+# Cleanup report: skill-seekers
+
+**Result: everything runs.** 7 cleanup edits applied in 7 work packages; 11 lines and 0 files removed.
+
+Skill Seekers is a Python tool that converts documentation from websites, GitHub repositories, and PDFs into AI skills, primarily for Assistant AI. It provides a FastAPI backend for configuration management and numerous CLI scripts for various skill-related operations like generation, enhancement, and synchronization.
+
+## Tests
+
+- Environment: the workspace's own environment (its container)
+- Baseline (3 runs): 4442 passing in every run, 6 already failing, 95 flaky.
+- After the cleanup: 4442 passing; new failures: none.
+
+## Work packages
+
+| Package | Goal | Outcome | Commit |
+|---|---|---|---|
+| P1 | Remove 1 unused import in examples/faiss-example/1_generate_skill.py | kept | 520b38711e |
+| P2 | Remove 1 unused import in examples/faiss-example/2_build_faiss_index.py | kept | 3acffc1c04 |
+| P3 | Remove 1 unused import in examples/llama-index-query-engine/quickstart.py | kept | 79352cd7aa |
+| P4 | Remove 1 unused import in examples/qdrant-example/1_generate_skill.py | kept | f8de875b14 |
+| P5 | Remove 1 unused import in examples/qdrant-example/2_upload_to_qdrant.py | kept | 01ee39b3d7 |
+| P6 | Remove 1 block of commented-out code in src/skill_seekers/cli/enhance_status.py | kept | 32fc591175 |
+| P7 | Remove 4 unused dependencies in pyproject.toml | split |  |
+| P7a | Remove 4 unused dependencies in pyproject.toml (part a) | split |  |
+| P7aa | Remove 4 unused dependencies in pyproject.toml (part a) (part a) | rolled back |  |
+| P7ab | Remove 4 unused dependencies in pyproject.toml (part a) (part b) | rolled back |  |
+| P7b | Remove 4 unused dependencies in pyproject.toml (part b) | split |  |
+| P7ba | Remove 4 unused dependencies in pyproject.toml (part b) (part a) | rolled back |  |
+| P7bb | Remove 4 unused dependencies in pyproject.toml (part b) (part b) | rolled back |  |
+| P8 | Remove 1 unused dependency in pyproject.toml | skipped |  |
+| P9 | Remove 1 duplicate in src/skill_seekers/cli/arguments/pptx.py | rolled back |  |
+| P10 | Remove 1 duplicate in src/skill_seekers/cli/arguments/scrape.py | rolled back |  |
+| P11 | Remove 1 duplicate in src/skill_seekers/cli/config_manager.py | rolled back |  |
+| P12 | Remove 1 unused function or class in src/skill_seekers/cli/create_command.py | skipped |  |
+| P13 | Remove 1 duplicate in src/skill_seekers/cli/html_scraper.py | rolled back |  |
+| P14 | Remove 1 unused function or class in src/skill_seekers/cli/parsers/create_parser.py | skipped |  |
+| P15 | Remove 1 unused function or class in src/skill_seekers/cli/parsers/extractors/base_parser.py | kept | 3f25f8ccf7 |
+| P16 | Remove 4 duplicates in src/skill_seekers/mcp/server_fastmcp.py | rolled back |  |
+| P17 | Remove 1 duplicate in src/skill_seekers/mcp/server_fastmcp.py | rolled back |  |
+| P18 | Remove 1 duplicate in src/skill_seekers/mcp/tools/workflow_tools.py | rolled back |  |
+
+## Rolled back
+
+- `pyproject.toml::click`: dependency failed: click>=8.3.0 pins the version of a package that nltk, uvicorn needs; removing it changes what a fresh install resolves
+- `pyproject.toml::jsonschema`: dependency failed: jsonschema>=4.25.1 pins the version of a package that mcp needs; removing it changes what a fresh install resolves
+- `pyproject.toml::pydantic-settings`: dependency failed: pydantic-settings>=2.11.0 pins the version of a package that mcp needs; removing it changes what a fresh install resolves
+- `pyproject.toml::python-dotenv`: dependency failed: python-dotenv>=1.1.1 pins the version of a package that pydantic-settings needs; removing it changes what a fresh install resolves
+- `src/skill_seekers/cli/arguments/pptx.py::add_pptx_arguments`: unverified failed: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/arguments/pptx.py::add_pptx_arguments']
+- `src/skill_seekers/cli/arguments/scrape.py::get_scrape_argument_count`: tests failed: ests/test_issue_219_e2e.py::TestIssue219Problem2CLIFlags::test_create_command_has_enhancement_flags
+- `src/skill_seekers/cli/config_manager.py::_get_progress_dir`: unverified failed: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/config_manager.py::_get_progress_dir']
+- `src/skill_seekers/cli/html_scraper.py::infer_description_from_html`: unverified failed: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/html_scraper.py::infer_description_from_html']
+- `src/skill_seekers/mcp/server_fastmcp.py::delete_workflow`: unverified failed: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/mcp/server_fastmcp.py::delete_workflow']
+- `src/skill_seekers/mcp/server_fastmcp.py::push_config`: unverified failed: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/mcp/server_fastmcp.py::push_config']
+- `src/skill_seekers/mcp/tools/workflow_tools.py::_read_bundled`: tests failed: kflow_tools.py::TestDeleteWorkflowTool::test_deletes_user_yml_extension
+
+## Suggestions (not applied)
+
+- `src/skill_seekers/workflows/backup-disaster-recovery.yaml` (leftover_file): src/skill_seekers/workflows/backup-disaster-recovery.yaml looks like a leftover file (scratch, debug or old copy) and nothing imports it.
+- `examples/pinecone-upsert/quickstart.py::create_embeddings` (dead_code): Investigator (suggest): The function is referenced in the project's README, indicating it is part of the documented example usage and public API, so it should not be removed without human review.
+- `src/skill_seekers/cli/create_command.py::_split_lines` (dead_code): Investigator (safe): The function _split_lines is private, has no callers, no dynamic references, and is flagged as unused by vulture. It is safe to delete.
+- `src/skill_seekers/cli/parsers/create_parser.py::_split_lines` (dead_code): Investigator (safe): The function _split_lines has no callers, no dynamic references, and is not part of any public API or framework callback. It is dead code.
+- `src/skill_seekers/cli/adaptors/__init__.py::get_upload_platforms` (duplicate): Investigator (drop): The function is actively imported and used in CLI arguments, web routes, and tests, so it is not dead code despite being a duplicate implementation.
+- `src/skill_seekers/cli/arguments/asciidoc.py::add_asciidoc_arguments` (duplicate): Investigator (drop): The function is not a true duplicate; it adds AsciiDoc-specific arguments distinct from PDF arguments. Replacing it with the PDF function would break AsciiDoc parsing functionality.
+- `src/skill_seekers/cli/arguments/chat.py::add_chat_arguments` (duplicate): Investigator (drop): The function is not a duplicate; it implements Chat-specific argument parsing distinct from PDF-specific parsing, using different argument definitions and help text. Removing it would break the chat CLI command.
+- `src/skill_seekers/cli/arguments/common.py::add_behavior_arguments` (duplicate): Investigator (drop): add_behavior_arguments adds a distinct set of arguments (BEHAVIOR_ARGUMENTS) compared to add_common_arguments (COMMON_ARGUMENTS), so it is not a duplicate.
+- `src/skill_seekers/cli/arguments/common.py::add_rag_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `src/skill_seekers/cli/arguments/confluence.py::add_confluence_arguments` (duplicate): Investigator (drop): The function is explicitly used in confluence_parser.py and differs from add_pdf_arguments in its AST (likely specific arguments/help), so it is not a redundant duplicate.
+- `src/skill_seekers/cli/arguments/epub.py::add_epub_arguments` (duplicate): Investigator (drop): add_epub_arguments is explicitly called by the epub parser and differs in AST from add_pdf_arguments, indicating it handles EPUB-specific logic; replacing it would break functionality.
+- `src/skill_seekers/cli/arguments/html.py::add_html_arguments` (duplicate): Investigator (drop): The function add_html_arguments is explicitly imported and used in html_parser.py (R1), so it is not dead code or removable slop despite being a duplicate of add_pdf_arguments.
+- `src/skill_seekers/cli/arguments/jupyter.py::add_jupyter_arguments` (duplicate): Investigator (suggest): The function is actively used in jupyter_parser.py (R1). While it is a duplicate of add_pdf_arguments, replacing it requires verifying that the arguments are semantically equivalent, which is not guaranteed by 0.94 similarity.
+- `src/skill_seekers/cli/arguments/manpage.py::add_manpage_arguments` (duplicate): Investigator (drop): The function is explicitly imported and used in manpage_parser.py, so it is not dead code or removable slop despite being a duplicate of add_pdf_arguments.
+- `src/skill_seekers/cli/arguments/notion.py::add_notion_arguments` (duplicate): Investigator (drop): The function is explicitly imported and used in notion_parser.py, so it is not dead code. Although similar to add_pdf_arguments, it serves a distinct semantic purpose for the Notion parser and is not a redundant duplicate.
+- `src/skill_seekers/cli/arguments/openapi.py::add_openapi_arguments` (duplicate): Investigator (drop): The function is actively called by openapi_parser.py (R1) and is needed for OpenAPI argument parsing; replacing it with the PDF variant would break functionality.
+- `src/skill_seekers/cli/arguments/rss.py::add_rss_arguments` (duplicate): Investigator (drop): The function is explicitly imported and used in rss_parser.py, so it is not dead code. Despite the structural similarity to add_pdf_arguments, it serves a distinct purpose for RSS arguments and cannot be safely replaced by the PDF version.
+- `src/skill_seekers/cli/arguments/video.py::add_video_arguments` (duplicate): Investigator (drop): The functions are parallel implementations for different domains (video vs pdf) with different argument names, as evidenced by the AST difference despite high token similarity. They are actively used in the parser and tests, so removing one would break functionality.
+- `src/skill_seekers/cli/codebase_scraper.py::walk_markdown_files` (duplicate): Investigator (drop): The function is explicitly called by process_markdown_docs and referenced in tests, so it is in active use and cannot be removed.
+- `src/skill_seekers/cli/doctor.py::check_optional_deps` (duplicate): Investigator (drop): The functions check different dependency sets (CORE_DEPS vs OPTIONAL_DEPS) and have different semantics (critical/fail vs non-critical/warn). Replacing one with the other would break the logic.
+- `src/skill_seekers/cli/enhancement_workflow.py::list_bundled_workflows` (duplicate): Investigator (drop): The function is actively called in 6 code locations and 4 tests, so it is not dead code despite being a duplicate of _bundled_names.
+- `src/skill_seekers/cli/utils.py::retry_with_backoff_async` (duplicate): Investigator (drop): retry_with_backoff_async is the necessary async counterpart to the sync retry_with_backoff, using await for operations and asyncio.sleep. It is actively used in production code and tests, so it is not a duplicate.
+- `src/skill_seekers/cli/video_metadata.py::resolve_playlist` (duplicate): Investigator (suggest): resolve_playlist is actively called by video_scraper.py, so it is not dead code. However, it is flagged as a near-duplicate of resolve_channel; replacing it requires verifying that resolve_channel handles playlist-specific logic correctly, which needs human review.
+- `src/skill_seekers/cli/video_setup.py::_check_nvidia` (duplicate): Investigator (suggest): _check_nvidia is called by detect_gpu, so it is used. However, it is flagged as a near-duplicate of _check_amd_rocm; merging them requires verifying that NVIDIA-specific logic is identical to AMD/ROCm logic, which is a non-trivial safety check.
+- `src/skill_seekers/cli/video_setup.py::_rocm_version_to_index_url` (duplicate): Investigator (drop): The function is explicitly called by _check_amd_rocm and has dedicated tests, indicating it handles ROCm-specific logic distinct from the CUDA function, despite structural similarity.
+- `src/skill_seekers/cli/video_setup.py::get_venv_python` (duplicate): Investigator (drop): The functions are not duplicates; get_venv_python returns the Python executable path, while get_venv_activate_cmd returns the activation shell command. They serve distinct purposes and are both used.
+- `src/skill_seekers/cli/video_visual.py::_frame_type_from_regions` (duplicate): Investigator (drop): The function is actively called by _process_frame and has a different AST from classify_frame, so it is not dead code or a simple duplicate that can be safely replaced without further analysis.
+- `src/skill_seekers/cli/word_scraper.py::infer_description_from_word` (duplicate): Investigator (drop): The function is not a duplicate; it handles .docx files specifically with different fallback text ('documentation' vs 'presentation') and file extension checks (.docx vs .pptx). It is actively used by WordToSkillConverter and has tests.
+- `src/skill_seekers/mcp/server_fastmcp.py::detect_patterns` (duplicate): Investigator (drop): The function detect_patterns in server_fastmcp.py is actively called by ConfigExtractor and has associated tests, so it is not dead code or a removable duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::estimate_pages` (duplicate): Investigator (drop): The function is referenced in tests and other server modules, indicating it is part of the active API, not a dead duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::export_to_chroma` (duplicate): Investigator (safe): export_to_chroma is unused (no callers, only string references in config/docs) and is a near-duplicate of add_config_source. It can be safely removed as dead code.
+- `src/skill_seekers/mcp/server_fastmcp.py::export_to_faiss` (duplicate): Investigator (drop): The function is referenced dynamically in app.py as a tool name in the UI configuration, making it part of the public API. It cannot be safely replaced or removed without breaking the UI integration.
+- `src/skill_seekers/mcp/server_fastmcp.py::export_to_qdrant` (duplicate): Investigator (drop): export_to_qdrant is used dynamically in src/skill_seekers/web/app.py as a configuration key for dispatch, making it a public API entry point. Removing it would break this dynamic lookup.
+- `src/skill_seekers/mcp/server_fastmcp.py::export_to_weaviate` (duplicate): Investigator (safe): export_to_weaviate is unused (no callers, only doc/test mentions) and is a duplicate of the used add_config_source. It can be safely removed.
+- `src/skill_seekers/mcp/server_fastmcp.py::extract_config_patterns` (duplicate): Investigator (drop): extract_config_patterns is actively called in 26 code locations and tests, while the proposed duplicate build_how_to_guides has no callers. The detector likely misidentified which function is the duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::extract_test_examples` (duplicate): Investigator (suggest): extract_test_examples is a duplicate of build_how_to_guides but is referenced externally in codebase_scraper.py, create_command.py, and tests. Removing it requires updating all external callers to use build_how_to_guides, which is a refactor, not a simple deletion.
+- `src/skill_seekers/mcp/server_fastmcp.py::fetch_config` (duplicate): Investigator (drop): fetch_config is referenced in 25 code locations and 15 test files, indicating it is actively used and not a dead duplicate; replacing it would break existing callers.
+- `src/skill_seekers/mcp/server_fastmcp.py::generate_config` (duplicate): Investigator (drop): generate_config is actively used and tested (R1) and has different AST logic from build_how_to_guides despite similar structure (R4), so it is not a duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::generate_router` (duplicate): Investigator (drop): generate_router is actively imported and tested across multiple modules and test files, indicating it is a distinct, necessary function rather than a duplicate of add_config_source.
+- `src/skill_seekers/mcp/server_fastmcp.py::get_workflow` (duplicate): Investigator (safe): get_workflow is a duplicate of create_workflow with no actual callers; the only references are static strings in a config list and documentation, not dynamic invocations.
+- `src/skill_seekers/mcp/server_fastmcp.py::install_skill` (duplicate): Investigator (suggest): The Investigator could not decide: its answer stayed invalid (unknown tool None; tools: check_dependency_usage, check_dynamic_use, compare_functions, find_references, find_related_te).
+- `src/skill_seekers/mcp/server_fastmcp.py::list_config_sources` (duplicate): Investigator (drop): The function is not a duplicate; it has a different AST and is actively tested and referenced, unlike the proposed replacement create_workflow.
+- `src/skill_seekers/mcp/server_fastmcp.py::list_marketplaces` (duplicate): Investigator (drop): The function is actively used by multiple callers (marketplace_tools, web app, tests) and is not a duplicate of create_workflow, which has different functionality.
+- `src/skill_seekers/mcp/server_fastmcp.py::list_workflows` (duplicate): Investigator (drop): The function is called by create_app and documented, so it is part of the public API and not dead code.
+- `src/skill_seekers/mcp/server_fastmcp.py::package_skill` (duplicate): Investigator (drop): The function is explicitly called by CLI entry points (package_multi.py and package_skill.py) and is reachable, so it is not dead code or a removable duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::publish_to_marketplace` (duplicate): Investigator (suggest): The function has no static callers but is referenced via string/getattr in web/app.py, indicating dynamic usage. Removing it might break runtime dispatch, so a human should verify if these dynamic calls can be switched to add_marketplace.
+- `src/skill_seekers/mcp/server_fastmcp.py::remove_config_source` (duplicate): Investigator (drop): The function is used in tests and has dynamic references; the similarity score of 0.00 indicates it is not a duplicate of create_workflow, so it should be kept.
+- `src/skill_seekers/mcp/server_fastmcp.py::remove_marketplace` (duplicate): Investigator (drop): The functions are not duplicates (R4) and remove_marketplace is actively used with multiple callers, tests, and entry points (R1, R2).
+- `src/skill_seekers/mcp/server_fastmcp.py::scrape_codebase` (duplicate): Investigator (suggest): The function is explicitly called in tests and referenced in other source files, so removing it would break existing code. Although it appears to be a duplicate of build_how_to_guides, the test usage suggests it may be intentionally kept or required for specific test scenarios.
+- `src/skill_seekers/mcp/server_fastmcp.py::scrape_docs` (duplicate): Investigator (drop): scrape_docs is actively referenced in 23 locations across code, tests, and docs, and is dynamically used by multiple modules, indicating it is a required public API rather than a dead duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::scrape_generic` (duplicate): Investigator (drop): scrape_generic is used in tests and dynamically referenced in app.py, so it is not dead code.
+- `src/skill_seekers/mcp/server_fastmcp.py::scrape_pdf` (duplicate): Investigator (drop): scrape_pdf is distinct from scrape_github (different AST) and is explicitly tested, indicating it is a necessary, used function for PDF scraping, not a redundant duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::split_config` (duplicate): Investigator (drop): The function is actively imported and tested (R1), has a distinct name and likely distinct purpose from build_how_to_guides, and is not a simple duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::submit_config` (duplicate): Investigator (drop): The functions are not identical duplicates (AST differs) and submit_config is actively referenced in tests and other modules, unlike scrape_github.
+- `src/skill_seekers/mcp/server_fastmcp.py::sync_config` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `src/skill_seekers/mcp/server_fastmcp.py::update_workflow` (duplicate): Investigator (suggest): update_workflow is a duplicate of create_workflow but is explicitly listed in the public API metadata in web/app.py (R4) and referenced dynamically (R2). Removing it would break the API contract, so a human should decide whether to keep the redundant endpoint or refactor the dispatcher.
+- `src/skill_seekers/mcp/server_fastmcp.py::upload_skill` (duplicate): Investigator (drop): upload_skill is referenced in 24 code locations and 18 test locations, proving it is actively used and not dead code or an unused duplicate.
+- `src/skill_seekers/mcp/server_fastmcp.py::validate_config` (duplicate): Investigator (drop): validate_config is actively referenced in tests and other modules (R1) and is not a duplicate of create_workflow (similarity 0.00 implies no code similarity, likely a detector error). It is a used utility function.
+- `pyproject.toml::PyGithub` (unused_dependency): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `pyproject.toml::PyMuPDF` (unused_dependency): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `pyproject.toml::Pygments` (unused_dependency): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `pyproject.toml::atlassian-python-api` (unused_dependency): Investigator (drop): The dependency is used: the code imports the 'atlassian' module (provided by atlassian-python-api) and references the package name in error messages and docstrings. The detector's claim of 'unused' is incorrect.
+- `pyproject.toml::azure-storage-blob` (unused_dependency): Investigator (drop): The dependency is actively imported and used in src/skill_seekers/cli/storage/azure_storage.py (R4), so it is not unused.
+- `pyproject.toml::google-cloud-storage` (unused_dependency): Investigator (drop): The google-cloud-storage package is imported in src/skill_seekers/cli/storage/gcs_storage.py (R6), so it is used despite the detector's false positive.
+- `pyproject.toml::google-generativeai` (unused_dependency): Investigator (drop): The dependency is used dynamically in the Gemini adaptor and doctor modules, as evidenced by string/getattr mentions, so it is not unused.
+- `pyproject.toml::html5lib` (unused_dependency): Investigator (drop): html5lib is used as a string identifier in PARSER_CHAIN for BeautifulSoup's parser selection, which is a valid dynamic usage pattern for optional dependencies. Removing it would break the fallback mechanism if the library is installed.
+- `pyproject.toml::httpx-sse` (unused_dependency): Investigator (suggest): The Investigator could not decide: its budget ran out (step budget (6) used up).
+- `pyproject.toml::opencv-python-headless` (unused_dependency): Investigator (drop): The dependency opencv-python-headless provides the cv2 module, which is actively imported and used in the codebase (e.g., video_scraper.py, video_visual.py). The detector's claim of non-use is incorrect because it only looked for the package name, not the module it provides.
+- `pyproject.toml::python-docx` (unused_dependency): Investigator (drop): The dependency python-docx is actively used in src/skill_seekers/cli/word_scraper.py (imported as docx) for Word document processing. The detector's claim of 'never imported' refers only to the package name string, not the actual module usage.
+- `pyproject.toml::sse-starlette` (unused_dependency): Investigator (safe): No code references, dynamic uses, or config mentions of sse-starlette were found outside of lock files and the dependency declaration itself, indicating it is unused.
+- `pyproject.toml::weaviate-client` (unused_dependency): Investigator (drop): The dependency 'weaviate-client' provides the 'weaviate' module, which is imported and used in src/skill_seekers/cli/adaptors/weaviate.py (R5) and referenced in src/skill_seekers/cli/doctor.py (R1, R2). The detector incorrectly flagged it as unused.
+- `examples/chroma-example/1_generate_skill.py` (format): The project's formatter check runs only on src, tests, not on examples/chroma-example/1_generate_skill.py, so reformatting it is only suggested.
+- `examples/chroma-example/2_upload_to_chroma.py` (format): The project's formatter check runs only on src, tests, not on examples/chroma-example/2_upload_to_chroma.py, so reformatting it is only suggested.
+- `examples/chroma-example/3_query_example.py` (format): The project's formatter check runs only on src, tests, not on examples/chroma-example/3_query_example.py, so reformatting it is only suggested.
+- `examples/cline-django-assistant/generate_clinerules.py` (format): The project's formatter check runs only on src, tests, not on examples/cline-django-assistant/generate_clinerules.py, so reformatting it is only suggested.
+- `examples/continue-dev-universal/context_server.py` (format): The project's formatter check runs only on src, tests, not on examples/continue-dev-universal/context_server.py, so reformatting it is only suggested.
+- `examples/continue-dev-universal/quickstart.py` (format): The project's formatter check runs only on src, tests, not on examples/continue-dev-universal/quickstart.py, so reformatting it is only suggested.
+- `examples/cursor-react-skill/generate_cursorrules.py` (format): The project's formatter check runs only on src, tests, not on examples/cursor-react-skill/generate_cursorrules.py, so reformatting it is only suggested.
+- `examples/faiss-example/1_generate_skill.py` (format): The project's formatter check runs only on src, tests, not on examples/faiss-example/1_generate_skill.py, so reformatting it is only suggested.
+- `examples/faiss-example/2_build_faiss_index.py` (format): The project's formatter check runs only on src, tests, not on examples/faiss-example/2_build_faiss_index.py, so reformatting it is only suggested.
+- `examples/faiss-example/3_query_example.py` (format): The project's formatter check runs only on src, tests, not on examples/faiss-example/3_query_example.py, so reformatting it is only suggested.
+- `examples/haystack-pipeline/quickstart.py` (format): The project's formatter check runs only on src, tests, not on examples/haystack-pipeline/quickstart.py, so reformatting it is only suggested.
+- `examples/langchain-rag-pipeline/quickstart.py` (format): The project's formatter check runs only on src, tests, not on examples/langchain-rag-pipeline/quickstart.py, so reformatting it is only suggested.
+- `examples/llama-index-query-engine/quickstart.py` (format): The project's formatter check runs only on src, tests, not on examples/llama-index-query-engine/quickstart.py, so reformatting it is only suggested.
+- `examples/pinecone-upsert/quickstart.py` (format): The project's formatter check runs only on src, tests, not on examples/pinecone-upsert/quickstart.py, so reformatting it is only suggested.
+- `examples/qdrant-example/1_generate_skill.py` (format): The project's formatter check runs only on src, tests, not on examples/qdrant-example/1_generate_skill.py, so reformatting it is only suggested.
+- `examples/qdrant-example/2_upload_to_qdrant.py` (format): The project's formatter check runs only on src, tests, not on examples/qdrant-example/2_upload_to_qdrant.py, so reformatting it is only suggested.
+- `examples/qdrant-example/3_query_example.py` (format): The project's formatter check runs only on src, tests, not on examples/qdrant-example/3_query_example.py, so reformatting it is only suggested.
+- `examples/weaviate-example/1_generate_skill.py` (format): The project's formatter check runs only on src, tests, not on examples/weaviate-example/1_generate_skill.py, so reformatting it is only suggested.
+- `examples/weaviate-example/2_upload_to_weaviate.py` (format): The project's formatter check runs only on src, tests, not on examples/weaviate-example/2_upload_to_weaviate.py, so reformatting it is only suggested.
+- `examples/weaviate-example/3_query_example.py` (format): The project's formatter check runs only on src, tests, not on examples/weaviate-example/3_query_example.py, so reformatting it is only suggested.
+- `examples/windsurf-fastapi-context/generate_windsurfrules.py` (format): The project's formatter check runs only on src, tests, not on examples/windsurf-fastapi-context/generate_windsurfrules.py, so reformatting it is only suggested.
+- `scripts/translate_doc.py` (format): The project's formatter check runs only on src, tests, not on scripts/translate_doc.py, so reformatting it is only suggested.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::StreamingAdaptorMixin.estimate_chunks` (dead_code): Investigator (suggest): estimate_chunks is a public method on StreamingAdaptorMixin, which is used by multiple adaptors. Although it has no internal callers, it is part of the public API surface and removing it could break external subclasses or users.
+- `src/skill_seekers/cli/ai_enhancer.py::AIAnalysis` (dead_code): AIAnalysis is never called anywhere in the project. The Investigator found no use either: AIAnalysis is a dataclass defined in ai_enhancer.py but never imported, instantiated, or referenced anywhere in the codebase, tests, or configs. No dynamic access or framework callbacks exist. It is dead code.
+- `src/skill_seekers/cli/ai_enhancer.py::TestExampleEnhancer.generate_tutorials` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The method belongs to a class named 'TestExampleEnhancer', indicating it is a test utility. It has no callers in code or tests (R1), no dynamic use (R2), and references are only in generated docs/models, confirming it is dead code.
+- `src/skill_seekers/cli/arguments/analyze.py::get_analyze_argument_names` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused: no callers, no dynamic references, not in __all__, and not reachable from entry points. It is dead code.
+- `src/skill_seekers/cli/arguments/common.py::get_argument_help` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused in code, tests, or configs, and is not a framework callback or dynamic entry point. It appears to be dead code.
+- `src/skill_seekers/cli/arguments/common.py::get_behavior_argument_names` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function get_behavior_argument_names has no callers in code, tests, or configs, no dynamic references, and is not part of the public API (__all__). It is dead code.
+- `src/skill_seekers/cli/arguments/common.py::get_common_argument_names` (dead_code): Investigator (suggest): The Investigator could not decide: its answer stayed invalid (unknown tool None; tools: check_dependency_usage, check_dynamic_use, compare_functions, find_references, find_related_te).
+- `src/skill_seekers/cli/arguments/common.py::get_rag_argument_names` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function get_rag_argument_names is completely unused: no callers, no references in tests or docs, no dynamic use, and not exported in __all__. It is dead code.
+- `src/skill_seekers/cli/arguments/github.py::get_github_argument_count` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused: no callers, no dynamic references, not exported in __all__, and not reachable from any entry point. It is dead code.
+- `src/skill_seekers/cli/arguments/github.py::get_github_argument_names` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused with no callers, no dynamic references, and no presence in __all__ or entry points, confirming it is dead code.
+- `src/skill_seekers/cli/arguments/scrape.py::get_scrape_argument_names` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused (no callers, no imports, no dynamic references) and not part of any public API (not in __all__). It is dead code.
+- `src/skill_seekers/cli/asciidoc_scraper.py::AsciiDocToSkillConverter` (dead_code): Investigator (drop): AsciiDocToSkillConverter is registered in CONVERTER_REGISTRY which is actively used for dynamic dispatch in skill_converter.py and unified_scraper.py, so the class is used.
+- `src/skill_seekers/cli/codebase_scraper.py::CodebaseAnalyzer` (dead_code): Investigator (drop): CodebaseAnalyzer is registered in CONVERTER_REGISTRY and instantiated dynamically via importlib in get_converter, so it is actively used by the framework.
+- `src/skill_seekers/cli/config_enhancer.py::EnhancedConfigFile` (dead_code): EnhancedConfigFile is never called anywhere in the project. The Investigator found no use either: The class EnhancedConfigFile has no references in code, tests, or documentation, and no dynamic usage patterns (getattr, __all__, framework callbacks) are present. It is dead code.
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.delete_progress` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The method `delete_progress` has no callers in the codebase, no dynamic references, and is not a framework callback. It is dead code and can be safely removed.
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.is_first_run` (dead_code): Investigator (suggest): The method is public but has no callers within the project, tests, or dynamic references. It may be part of a public API for external consumers, so manual review is needed before deletion.
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.mark_first_run_complete` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The method is completely unused: no callers in code, tests, or documentation, no dynamic references, and it is not a framework callback or part of the public API (__all__).
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.save_progress` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The method has no callers in code or tests and is only referenced in UML documentation artifacts. It is dead code that can be safely deleted.
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.set_default_enhance_level` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The method has no static or dynamic references, is not part of __all__, and is not a framework callback. It is dead code.
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.should_show_welcome` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function is completely unused with no callers, dynamic references, or framework callbacks. It is safe to delete as dead code.
+- `src/skill_seekers/cli/confluence_scraper.py::ConfluenceToSkillConverter` (dead_code): Investigator (drop): The class is used dynamically via string/getattr in skill_converter.py, so it is not dead code.
+- `src/skill_seekers/cli/defaults.py::get_default` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: The function `get_default` is only referenced in its own module docstring (lines 9 and 15) and has no callers in code, tests, or dynamic usage. It is not exported in `__all__`, making it dead code.
+- `src/skill_seekers/cli/detect_command.py::DetectCommand` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/enhancement_workflow.py::WorkflowEngine.save_history` (dead_code): public name with no caller in the project; may be public API The Investigator found no use either: No callers found in code, tests, or dynamic contexts. The method is unused dead code.
+- `src/skill_seekers/cli/incremental_updater.py::UpdateMetadata` (dead_code): UpdateMetadata is never called anywhere in the project. The Investigator found no use either: UpdateMetadata is a dataclass with no callers, no dynamic references, and no framework integration. It is dead code.
+- `src/skill_seekers/cli/minimax_config.py::resolve_minimax_thinking` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/notion_scraper.py::NotionToSkillConverter` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/analyze_parser.py::AnalyzeParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/asciidoc_parser.py::AsciiDocParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/chat_parser.py::ChatParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/confluence_parser.py::ConfluenceParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/epub_parser.py::EpubParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/base_parser.py::BaseParser.can_parse` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/quality_scorer.py::QualityScorer.score_content_block` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/unified_structure.py::Document.find_blocks_by_type` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/unified_structure.py::Document.find_code_by_language` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/unified_structure.py::Document.find_tables_by_caption` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/unified_structure.py::Document.get_section_content` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/github_parser.py::GitHubParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/html_parser.py::HtmlParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/jupyter_parser.py::JupyterParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/manpage_parser.py::ManPageParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/notion_parser.py::NotionParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/openapi_parser.py::OpenAPIParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/pdf_parser.py::PDFParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/pptx_parser.py::PptxParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/rss_parser.py::RssParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/scrape_parser.py::ScrapeParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/unified_parser.py::UnifiedParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/video_parser.py::VideoParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/word_parser.py::WordParser` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pdf_scraper.py::infer_description_from_pdf` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/setup_wizard.py::check_first_run` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/storage/base_storage.py::BaseStorageAdaptor.get_file_size` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_asciidoc` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_chat` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_confluence` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_documentation` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_github` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_local` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_manpage` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_openapi` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_rss` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_video` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_chat` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_confluence` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_manpage` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_openapi` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_rss` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/video_metadata.py::resolve_channel` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/video_models.py::SegmentationStrategy` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/video_scraper.py::VideoToSkillConverter._enhance_reference_files` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/server.py::cache_stats` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/server.py::clear_cache` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/server.py::embed_batch` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/server.py::embed_skill` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/server.py::embed_text` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/agent_detector.py::AgentDetector.get_agent_info` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/agent_detector.py::AgentDetector.get_all_config_paths` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/agent_detector.py::AgentDetector.is_agent_installed` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/server_fastmcp.py::create_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/server_fastmcp.py::scrape_video` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::api_not_found` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::archived_skills` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::build_config` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::cancel_job` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::delete_project` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::download_artifact` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::fetch_official` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::fetch_source` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::get_capabilities` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::get_skill_content` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::install_from_marketplace` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::library` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::list_jobs` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::list_skills` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::local_access` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::mcp_status` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::mcp_tools` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::port_skills` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::publish_to_marketplace` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::reprobe` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::retry_job` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::save_skill_content` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::set_defaults` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::set_key` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::spa` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/app.py::sync_marketplaces` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/installer.py::installed_clis_for` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/configs.py::config_detail` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/configs.py::estimate_config` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/configs.py::push_config` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/configs.py::set_sync` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/configs.py::sync_check` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/environment.py::install_agent_route` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/environment.py::rerun_doctor` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/environment.py::start_server` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/environment.py::stop_server` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/skill_detail.py::quality_skill` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/skill_detail.py::skill_enhance_status` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/skill_detail.py::skill_history` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/skill_detail.py::translate_skill` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/skill_detail.py::update_skill` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/workflows.py::copy_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/workflows.py::delete_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/workflows.py::get_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/workflows.py::save_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/web/routes/workflows.py::validate_workflow` (dead_code): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `examples/continue-dev-universal/quickstart.py::run_command` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `examples/weaviate-example/1_generate_skill.py::main` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `examples/weaviate-example/2_upload_to_weaviate.py::load_skill_data` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `examples/windsurf-fastapi-context/generate_windsurfrules.py::run_command` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/chroma.py::ChromaAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/chroma.py::ChromaAdaptor.format_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/chroma.py::ChromaAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/gemini.py::GeminiAdaptor._build_enhancement_prompt` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/gemini.py::GeminiAdaptor.format_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/haystack.py::HaystackAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/haystack.py::HaystackAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/langchain.py::LangChainAdaptor._convert_chunks_to_platform_format` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/langchain.py::LangChainAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/langchain.py::LangChainAdaptor.format_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/langchain.py::LangChainAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/llama_index.py::LlamaIndexAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/llama_index.py::LlamaIndexAdaptor.format_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/llama_index.py::LlamaIndexAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/markdown.py::MarkdownAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/markdown.py::MarkdownAdaptor.format_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/openai.py::OpenAIAdaptor._build_enhancement_prompt` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/openai_compatible.py::OpenAICompatibleAdaptor._build_enhancement_prompt` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::PineconeAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::PineconeAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/qdrant.py::QdrantAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/qdrant.py::QdrantAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/weaviate.py::WeaviateAdaptor.enhance` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/adaptors/weaviate.py::WeaviateAdaptor.package` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/ai_enhancer.py::TestExampleEnhancer.enhance_examples` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/architectural_pattern_detector.py::ArchitecturalPatternDetector._detect_service_layer` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/arguments/github.py::add_github_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/arguments/unified.py::add_unified_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/arguments/upload.py::add_upload_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/arguments/word.py::add_word_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/code_analyzer.py::CodeAnalyzer._extract_java_methods` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/code_analyzer.py::CodeAnalyzer._extract_php_comments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.set_local_batch_size` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_manager.py::ConfigManager.set_local_parallel_workers` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_epub_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_html_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_jupyter_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_openapi_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_pdf_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_pptx_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/config_validator.py::UniSkillConfigValidator._validate_word_source` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/dependency_analyzer.py::DependencyAnalyzer._extract_kotlin_imports` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/dependency_analyzer.py::DependencyAnalyzer._extract_ruby_imports` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/doc_scraper.py::_run_enhancement` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/document_skill_builder.py::DocumentSkillBuilder._sanitize_filename` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/document_skill_builder.py::DocumentSkillBuilder.load_extracted_data` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/epub_scraper.py::EpubToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/github_scraper.py::GitHubScraper._extract_code_structure` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/guide_enhancer.py::GuideEnhancer._enhance_via_api` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/guide_enhancer.py::GuideEnhancer.enhance_troubleshooting` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/guide_enhancer.py::GuideEnhancer.enhance_use_cases` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/html_scraper.py::HtmlToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/html_scraper.py::HtmlToSkillConverter._html_to_text` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/jupyter_scraper.py::JupyterToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/jupyter_scraper.py::JupyterToSkillConverter._format_key_concepts` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/jupyter_scraper.py::JupyterToSkillConverter._section_text` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/man_scraper.py::ManPageToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/notion_scraper.py::NotionToSkillConverter.build_skill` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/notion_scraper.py::NotionToSkillConverter.load_extracted_data` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/openapi_scraper.py::OpenAPIToSkillConverter._sanitize_filename` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/base_parser.py::BaseParser._extract_tables` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/extractors/formatters.py::MarkdownFormatter._format_field_list` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/multilang_parser.py::MultilangParser.add_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/resume_parser.py::ResumeParser.add_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/parsers/update_parser.py::UpdateParser.add_arguments` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pattern_recognizer.py::ChainOfResponsibilityDetector.detect_surface` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pattern_recognizer.py::CommandDetector.detect_surface` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pattern_recognizer.py::SingletonDetector.detect_surface` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pattern_recognizer.py::StrategyDetector.detect_surface` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pdf_scraper.py::PDFToSkillConverter._format_key_concepts` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pptx_scraper.py::PptxToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pptx_scraper.py::PptxToSkillConverter._format_key_concepts` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pptx_scraper.py::PptxToSkillConverter._generate_skill_md` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/pptx_scraper.py::PptxToSkillConverter._write_index_statistics` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/rss_scraper.py::RssToSkillConverter._sanitize_filename` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/rss_scraper.py::RssToSkillConverter.load_extracted_data` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/run_tests.py::ColoredTextTestResult.addFailure` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/run_tests.py::ColoredTextTestResult.addSkip` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/run_tests.py::ColoredTextTestResult.addSuccess` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/signal_flow_analyzer.py::SignalFlowAnalyzer._extract_emissions` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/storage/gcs_storage.py::GCSStorageAdaptor.delete_file` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/storage/gcs_storage.py::GCSStorageAdaptor.file_exists` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/storage/gcs_storage.py::GCSStorageAdaptor.list_files` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/streaming_ingest.py::StreamingIngester.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/sync_cli.py::main` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_epub` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_html` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_jupyter` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_notion` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_pdf` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_pptx` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._load_cached_word` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_asciidoc` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_epub` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_html` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_jupyter` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_notion` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_pptx` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_scraper.py::UnifiedScraper._scrape_word` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/unified_skill_builder.py::UnifiedSkillBuilder._synthesize_github_pdf` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/utils.py::validate_skill_directory` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/word_scraper.py::WordToSkillConverter.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/generator.py::EmbeddingGenerator._generate_voyage_batch` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/embedding/generator.py::EmbeddingGenerator.generate` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/server_legacy.py::fetch_config_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/config_tools.py::validate_config` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/marketplace_tools.py::list_marketplaces_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/marketplace_tools.py::remove_marketplace_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/scraping_tools.py::extract_test_examples_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/source_tools.py::_get_with_retry` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/source_tools.py::add_config_source_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/source_tools.py::list_config_sources_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/source_tools.py::remove_config_source_tool` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/vector_db_tools.py::export_to_faiss_impl` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/vector_db_tools.py::export_to_qdrant_impl` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/mcp/tools/vector_db_tools.py::export_to_weaviate_impl` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/marketplace_manager.py::MarketplaceManager.get_marketplace` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/marketplace_manager.py::MarketplaceManager.list_marketplaces` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/marketplace_manager.py::MarketplaceManager.remove_marketplace` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/marketplace_manager.py::MarketplaceManager.update_marketplace` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/source_manager.py::SourceManager.__init__` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/source_manager.py::SourceManager._read_registry` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/services/source_manager.py::SourceManager._write_registry` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/sync/monitor.py::SyncMonitor._trigger_update` (duplicate): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/code_analyzer.py::CodeAnalyzer._extract_cpp_comments` (wrapper): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/execution_context.py::ExecutionContext.get_raw` (wrapper): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `src/skill_seekers/cli/html_scraper.py::HtmlToSkillConverter._extract_tables` (wrapper): Investigator (suggest): The Investigator could not decide: its budget ran out (run LLM-call budget (300) used up).
+- `api/main.py` (security): Possible security problem: Possible binding to all interfaces.
+- `src/skill_seekers/cli/adaptors/base.py::SkillAdaptor._generate_deterministic_id` (security): Possible security problem: Use of weak MD5 hash for security. Consider usedforsecurity=False
+- `src/skill_seekers/cli/adaptors/gemini.py::GeminiAdaptor.upload` (security): Possible security problem: tarfile.extractall used without any validation. Please check and discard dangerous members.
+- `src/skill_seekers/cli/adaptors/qdrant.py::QdrantAdaptor.upload` (security): Possible security problem: Possible SQL injection vector through string-based query construction.
+- `src/skill_seekers/cli/confluence_scraper.py::ConfluenceToSkillConverter._parse_entities_xml` (security): Possible security problem: Using xml.etree.ElementTree.parse to parse untrusted XML data is known to be vulnerable to XML attacks. Replace xml.etree.ElementTree.parse with its defusedxml equivalent function or make sure defusedxml.defuse_stdlib() is called
+- `src/skill_seekers/cli/doc_scraper.py::DocToSkillConverter._try_sitemap` (security): Possible security problem: Using xml.etree.ElementTree.fromstring to parse untrusted XML data is known to be vulnerable to XML attacks. Replace xml.etree.ElementTree.fromstring with its defusedxml equivalent function or make sure defusedxml.defuse_stdlib() is called
+- `src/skill_seekers/cli/doc_scraper.py::DocToSkillConverter.save_page` (security): Possible security problem: Use of weak MD5 hash for security. Consider usedforsecurity=False
+- `src/skill_seekers/cli/embedding_pipeline.py::LocalEmbeddingProvider.generate_embeddings` (security): Possible security problem: Use of weak MD5 hash for security. Consider usedforsecurity=False
+- `src/skill_seekers/cli/enhance_skill_local.py::LocalSkillEnhancer.run` (security): Possible security problem: Chmod setting a permissive mask 0o755 on file (script_file).
+- `src/skill_seekers/cli/how_to_guide_builder.py::HowToGuideBuilder._create_guide` (security): Possible security problem: Use of weak MD5 hash for security. Consider usedforsecurity=False
+- `src/skill_seekers/cli/streaming_ingest.py::StreamingIngester._generate_chunk_id` (security): Possible security problem: Use of weak MD5 hash for security. Consider usedforsecurity=False
+- `src/skill_seekers/embedding/server.py::main` (security): Possible security problem: Possible binding to all interfaces.
+- `api/config_analyzer.py::L140-140` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `api/config_analyzer.py::L143-143` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `api/config_analyzer.py::L75-75` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/benchmark/runner.py::L87-87` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/benchmark/runner.py::L113-113` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/benchmark/runner.py::L117-117` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/benchmark/runner.py::L330-330` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L41-41` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L263-263` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L270-270` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L272-272` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L285-285` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L286-286` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L316-316` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L669-669` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L698-698` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L35-35` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L267-267` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L278-278` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L280-280` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L302-302` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L313-313` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L297-297` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L517-517` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L676-676` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/base.py::L447-447` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L223-223` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L224-224` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L229-229` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L230-230` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L238-238` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L443-443` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L444-444` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L445-445` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L446-446` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L240-240` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L325-325` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L381-381` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L382-382` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L288-288` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L344-344` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L292-292` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L309-309` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L331-331` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L356-356` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/chroma.py::L375-375` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L244-244` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L245-245` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L250-250` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L251-251` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L252-252` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L260-260` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L459-459` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L460-460` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L461-461` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L462-462` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/faiss_helpers.py::L262-262` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L203-203` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L204-204` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L208-208` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L216-216` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L353-353` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L354-354` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L355-355` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L356-356` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/haystack.py::L218-218` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L195-195` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L196-196` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L200-200` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L208-208` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L335-335` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L336-336` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L337-337` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L338-338` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/langchain.py::L210-210` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L224-224` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L225-225` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L229-229` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L237-237` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L376-376` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L377-377` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L378-378` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L379-379` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/llama_index.py::L239-239` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/markdown.py::L229-229` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/markdown.py::L230-230` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L313-313` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L314-314` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L317-317` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L318-318` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L319-319` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L320-320` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L328-328` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L488-488` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L489-489` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L490-490` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L491-491` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L330-330` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L449-449` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L456-456` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L421-423` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L430-430` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L432-432` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/pinecone_adaptor.py::L454-454` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L297-297` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L298-298` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L303-303` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L304-304` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L305-305` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L306-306` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L314-314` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L539-539` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L540-540` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L541-541` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L542-542` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/qdrant.py::L316-316` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L63-63` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L64-64` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L65-65` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L66-66` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L89-89` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L90-90` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L91-91` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L92-92` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L93-93` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L96-96` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L114-114` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L115-115` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/streaming_adaptor.py::L75-79` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L321-321` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L322-322` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L329-329` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L330-330` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L331-331` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L339-339` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L531-531` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L532-532` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L533-533` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L534-534` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L341-341` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L405-405` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L468-468` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L378-378` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L386-386` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L408-408` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L421-421` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L456-456` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L436-436` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L452-452` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/adaptors/weaviate.py::L465-465` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L141-141` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L152-152` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L215-215` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L217-220` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L546-546` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L550-550` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L555-555` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L607-607` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L614-614` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L619-619` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L625-625` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L626-626` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L680-680` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L716-716` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L563-563` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L609-609` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L840-840` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L572-572` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/asciidoc_scraper.py::L574-574` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L363-363` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L365-370` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L389-389` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L447-447` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L525-525` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L578-578` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L648-648` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L789-789` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L1509-1509` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L1655-1655` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L299-299` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L320-320` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L396-396` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L449-449` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L523-523` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L575-575` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L787-787` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L900-900` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L305-305` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L627-627` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L639-639` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/chat_scraper.py::L636-636` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L170-170` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L187-187` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L308-308` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L507-507` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L508-508` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L509-509` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L510-510` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L514-514` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L525-525` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L530-530` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L543-543` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L546-546` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L547-547` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L548-548` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L549-549` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L554-554` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L555-555` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L556-556` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L557-557` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L154-154` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L172-172` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L406-406` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L523-523` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L541-541` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L562-562` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L104-104` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L105-105` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L135-135` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L225-225` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L518-518` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L521-521` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L564-564` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L520-520` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/config_manager.py::L567-567` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L371-371` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L373-377` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L461-461` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L533-533` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L601-601` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L652-652` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1287-1287` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1295-1295` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1316-1316` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1387-1387` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1432-1432` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1443-1443` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1456-1456` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1457-1457` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1596-1596` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1646-1646` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1813-1813` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L279-279` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L280-280` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L450-450` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L526-526` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L1389-1389` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L283-283` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/confluence_scraper.py::L581-581` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L53-53` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L55-55` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L56-56` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L57-57` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L59-59` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L61-61` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L63-63` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L36-36` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/detect_command.py::L38-38` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L94-94` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L100-100` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L138-138` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L202-202` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L212-212` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L223-223` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L236-236` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L237-237` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L254-254` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L366-366` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L521-521` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L151-151` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L152-152` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/document_skill_builder.py::L204-204` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L140-140` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L168-168` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L169-169` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L170-170` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L180-180` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L227-227` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/epub_scraper.py::L229-233` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L166-166` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L169-169` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L172-172` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L175-175` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L177-177` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L178-178` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L180-180` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L263-263` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_fetcher.py::L365-365` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/github_scraper.py::L31-31` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L195-195` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L198-198` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L251-251` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L252-252` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L293-293` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L295-299` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1101-1101` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1189-1189` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L227-227` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1134-1134` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1191-1191` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1117-1117` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1118-1118` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/html_scraper.py::L1136-1136` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L266-266` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L278-278` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L350-350` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L352-355` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L658-658` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L741-741` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L839-839` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L943-943` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L311-314` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L669-669` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L670-670` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L743-743` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/jupyter_scraper.py::L292-292` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/llms_txt_downloader.py::L81-81` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/llms_txt_downloader.py::L86-86` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/llms_txt_downloader.py::L95-95` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/llms_txt_downloader.py::L96-96` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/llms_txt_downloader.py::L99-101` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L198-198` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L248-248` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L250-254` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L305-305` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L848-848` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L926-926` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L1049-1049` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L1092-1092` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L1245-1245` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L346-346` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L892-892` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L928-928` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L281-281` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/man_scraper.py::L894-894` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L126-126` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L156-156` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L157-157` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L165-165` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L171-171` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L180-180` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L191-191` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L222-222` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L226-226` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L232-232` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L233-233` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L261-261` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L276-276` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L343-343` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L388-388` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L767-767` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L789-789` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L193-193` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/notion_scraper.py::L386-386` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L110-110` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L135-135` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L150-150` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L254-254` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L345-345` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L494-494` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L127-127` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L166-166` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L167-167` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pdf_scraper.py::L256-256` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L266-266` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L319-319` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L355-355` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L357-362` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L1277-1277` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L278-278` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L291-291` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L301-301` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/pptx_scraper.py::L303-303` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L141-141` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L142-142` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L143-143` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L158-158` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L159-159` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L160-160` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L161-161` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L162-162` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L163-163` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L164-164` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L165-165` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L166-166` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L257-257` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L258-258` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L259-259` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L147-147` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L148-148` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L149-149` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L150-150` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L156-156` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/analyze_presets.py::L155-155` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L98-98` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L99-99` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L100-100` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L115-115` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L116-116` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L104-104` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L105-105` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L106-106` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L107-107` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L113-113` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/github_presets.py::L112-112` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L113-113` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L114-114` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L115-115` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L126-126` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L127-127` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L119-119` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L120-120` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L121-121` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L122-122` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L123-123` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/presets/scrape_presets.py::L124-124` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L234-234` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L235-235` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L236-236` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L246-246` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L292-292` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L337-337` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L338-338` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L386-386` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L387-387` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L393-393` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L394-394` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L395-395` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L90-90` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L91-91` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L92-92` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L93-93` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L241-241` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L250-250` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L330-330` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L334-334` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L346-346` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L391-391` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L110-110` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L124-124` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L126-126` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L131-131` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L132-132` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L261-261` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L304-304` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L308-308` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L313-313` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L350-350` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L98-98` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L114-114` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L119-119` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L407-407` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L411-411` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L412-412` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L413-413` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L414-414` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L418-418` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rate_limit_handler.py::L422-422` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L177-177` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L184-184` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L188-188` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L189-189` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L190-190` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L198-198` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L246-246` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L248-250` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L255-255` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L265-265` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L270-270` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L305-305` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L648-648` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L696-696` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L842-842` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L202-202` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L223-223` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L225-225` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L307-307` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L215-215` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/rss_scraper.py::L207-210` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1047-1047` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1048-1048` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1049-1049` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1050-1050` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1051-1051` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1064-1064` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1065-1065` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1066-1066` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1071-1071` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1097-1097` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1100-1100` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1110-1110` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L987-987` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L988-992` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L993-993` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1011-1011` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1012-1012` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1013-1013` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1061-1061` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1068-1068` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1070-1070` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1093-1093` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1094-1094` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1099-1099` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1104-1104` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1006-1006` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1007-1007` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1008-1008` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1031-1031` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1033-1033` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1055-1058` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1077-1077` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1084-1084` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1086-1086` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1087-1087` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1106-1109` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1282-1282` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1017-1017` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1018-1018` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1027-1027` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1060-1060` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1079-1079` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1081-1081` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1083-1083` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1322-1322` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1311-1311` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1332-1335` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/scan_command.py::L1319-1319` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/unified_scraper.py::L34-34` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/unified_scraper.py::L35-35` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L134-134` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L135-135` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L136-136` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L137-137` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L138-138` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L139-139` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L140-140` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L141-141` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L142-142` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L143-143` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L144-144` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L145-145` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L50-50` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L251-251` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L70-70` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L73-73` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L354-354` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/utils.py::L64-64` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L595-595` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L596-596` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L597-597` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L656-656` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L657-657` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L658-658` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L659-659` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L664-664` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L696-696` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L699-699` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L707-707` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L708-708` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L713-713` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L714-714` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L717-717` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L720-720` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L723-723` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L726-726` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L742-742` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L745-745` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L759-759` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L779-779` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L797-797` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L800-800` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L822-822` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L666-666` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L669-669` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L710-710` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L712-712` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L722-722` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L741-741` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L763-763` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L768-768` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L777-777` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L781-781` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L788-788` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L791-791` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L796-796` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L805-805` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L824-824` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L830-830` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L601-601` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L730-730` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L731-731` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L732-732` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L733-733` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L749-749` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L752-752` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L754-754` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L756-756` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L758-758` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L765-765` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L767-767` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L775-775` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L783-783` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L784-786` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L793-793` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L794-794` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L827-827` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L828-828` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L678-678` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L686-686` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L687-687` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L691-691` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L692-692` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L735-735` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L736-736` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L737-737` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L739-739` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L751-751` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L772-772` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L675-675` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L682-682` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/video_setup.py::L689-689` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/word_scraper.py::L133-133` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/word_scraper.py::L252-252` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/cli/word_scraper.py::L254-258` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/mcp/tools/_common.py::L145-145` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/mcp/tools/_common.py::L148-148` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/mcp/tools/_common.py::L142-142` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L200-200` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L203-203` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L204-204` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L205-205` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L226-226` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/monitor.py::L241-241` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L74-74` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L139-139` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L99-99` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L132-132` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L79-79` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L87-87` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L101-101` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L134-134` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L81-81` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L83-83` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `src/skill_seekers/sync/notifier.py::L85-85` (debug_leftover): A print in library code; it may be leftover debugging or intended output.
+- `examples/continue-dev-universal/context_server.py::L146-146` (todo_note): A leftover note: # TODO: Implement query filtering if provided
+- `src/skill_seekers/cli/enhancement_workflow.py::L453-453` (todo_note): A leftover note: # TODO: Implement custom transform system
+- `src/skill_seekers/embedding/server.py::L271-271` (todo_note): A leftover note: # TODO: Store embeddings in vector database
+- `src/skill_seekers/sync/monitor.py::L136-136` (todo_note): A leftover note: # TODO: In real implementation, get actual URLs from scraper
+- `src/skill_seekers/sync/monitor.py::L201-201` (todo_note): A leftover note: # TODO: Integrate with doc_scraper to rebuild skill
+- `src/skill_seekers/sync/notifier.py::L138-138` (todo_note): A leftover note: # TODO: Implement SMTP email sending
+- `src/skill_seekers/cli/skill_converter.py::L73-73` (redundant_check): `result is False` could be `not result` if result is always a bool.
+
+## Lessons learned
+
+- L1: dependency failed after remove_dependency of pyproject.toml::click: click>=8.3.0 pins the version of a package that nltk, uvicorn needs; removing it changes what a fresh install resolves
+- L2: dependency failed after remove_dependency of pyproject.toml::jsonschema: jsonschema>=4.25.1 pins the version of a package that mcp needs; removing it changes what a fresh install resolves
+- L3: dependency failed after remove_dependency of pyproject.toml::pydantic-settings: pydantic-settings>=2.11.0 pins the version of a package that mcp needs; removing it changes what a fresh install resolves
+- L4: dependency failed after remove_dependency of pyproject.toml::python-dotenv: python-dotenv>=1.1.1 pins the version of a package that pydantic-settings needs; removing it changes what a fresh install resolves
+- L5: unverified failed after replace_with of src/skill_seekers/cli/arguments/pptx.py::add_pptx_arguments: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/arguments/pptx.py::add_pptx_arguments']
+- L6: tests failed after replace_with of src/skill_seekers/cli/arguments/scrape.py::get_scrape_argument_count: ============================
+- L7: unverified failed after replace_with of src/skill_seekers/cli/config_manager.py::_get_progress_dir: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/config_manager.py::_get_progress_dir']
+- L8: unverified failed after replace_with of src/skill_seekers/cli/html_scraper.py::infer_description_from_html: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/cli/html_scraper.py::infer_description_from_html']
+- L9: unverified failed after replace_with of src/skill_seekers/mcp/server_fastmcp.py::delete_workflow: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/mcp/server_fastmcp.py::delete_workflow']
+- L10: unverified failed after replace_with of src/skill_seekers/mcp/server_fastmcp.py::push_config: the probes ran no cases, so these rewrites are not verified: ['src/skill_seekers/mcp/server_fastmcp.py::push_config']
+- L11: tests failed after replace_with of src/skill_seekers/mcp/tools/workflow_tools.py::_read_bundled: Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+
+## How the run went
+
+- Phases: ONBOARD → BASELINE → AUDIT → INVESTIGATE → PLAN → EXECUTE → FINAL_VERIFY → REPORT
+- Test runs: 26; LLM requests: 300; tokens: 333560 prompt + 26275 completion.
+- Secret scan: 1 secret files withheld, 121 secret-looking strings redacted before any LLM request.
+
+| Agent | Turns | Instances | Tool steps | LLM requests | Seconds |
+|---|---|---|---|---|---|
+| auditor | 1 | 1 | 2 | 0 | 176.0 |
+| engineer | 31 | 1 | 32 | 0 | 7.0 |
+| explorer | 1 | 1 | 2 | 4 | 13.0 |
+| fixer | 14 | 1 | 0 | 0 | 1.1 |
+| investigator | 1 | 346 | 1189 | 293 | 230.6 |
+| manager | 0 | 1 | 0 | 3 | 0.0 |
+| planner | 1 | 1 | 0 | 0 | 0.1 |
+| tester | 23 | 1 | 3 | 0 | 1896.8 |
+| validator | 19 | 1 | 0 | 0 | 22.2 |
+
+## Delivery
+
+- An experiment run: the workspace is removed afterwards; the cleanup diff is `final.diff` (also `final_diff` in report.json).
+- Nothing was applied to the original.

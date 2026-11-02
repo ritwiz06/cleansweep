@@ -1,0 +1,92 @@
+diff --git a/examples/faiss-example/1_generate_skill.py b/examples/faiss-example/1_generate_skill.py
+index 8db4e38..bab53af 100644
+--- a/examples/faiss-example/1_generate_skill.py
++++ b/examples/faiss-example/1_generate_skill.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """Generate skill for FAISS (same as other examples)"""
+-import subprocess, sys
++import subprocess
+ from pathlib import Path
+ 
+ print("=" * 60)
+diff --git a/examples/faiss-example/2_build_faiss_index.py b/examples/faiss-example/2_build_faiss_index.py
+index f3e16bc..649324f 100644
+--- a/examples/faiss-example/2_build_faiss_index.py
++++ b/examples/faiss-example/2_build_faiss_index.py
+@@ -2,7 +2,6 @@
+ """Build FAISS index with OpenAI embeddings"""
+ import json, sys, os
+ import numpy as np
+-from pathlib import Path
+ 
+ try:
+     import faiss
+diff --git a/examples/llama-index-query-engine/quickstart.py b/examples/llama-index-query-engine/quickstart.py
+index ea5ab55..f669b14 100644
+--- a/examples/llama-index-query-engine/quickstart.py
++++ b/examples/llama-index-query-engine/quickstart.py
+@@ -19,7 +19,7 @@ import json
+ from pathlib import Path
+ 
+ from llama_index.core.schema import TextNode
+-from llama_index.core import VectorStoreIndex, StorageContext
++from llama_index.core import VectorStoreIndex
+ 
+ 
+ def load_nodes(json_path: str) -> list[TextNode]:
+diff --git a/examples/qdrant-example/1_generate_skill.py b/examples/qdrant-example/1_generate_skill.py
+index a396db5..a9eb737 100644
+--- a/examples/qdrant-example/1_generate_skill.py
++++ b/examples/qdrant-example/1_generate_skill.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """Generate skill for Qdrant"""
+-import subprocess, sys
++import subprocess
+ from pathlib import Path
+ 
+ print("=" * 60)
+diff --git a/examples/qdrant-example/2_upload_to_qdrant.py b/examples/qdrant-example/2_upload_to_qdrant.py
+index b44f5be..f96d2ef 100644
+--- a/examples/qdrant-example/2_upload_to_qdrant.py
++++ b/examples/qdrant-example/2_upload_to_qdrant.py
+@@ -1,7 +1,6 @@
+ #!/usr/bin/env python3
+ """Upload to Qdrant"""
+ import json, sys, argparse
+-from pathlib import Path
+ 
+ try:
+     from qdrant_client import QdrantClient
+diff --git a/src/skill_seekers/cli/enhance_status.py b/src/skill_seekers/cli/enhance_status.py
+index eb2e853..4249ec6 100644
+--- a/src/skill_seekers/cli/enhance_status.py
++++ b/src/skill_seekers/cli/enhance_status.py
+@@ -111,7 +111,6 @@ def watch_status(skill_dir, interval=2):
+             # Only print if status changed
+             if status != last_status:
+                 # Clear screen (optional, comment out if you don't want this)
+-                # os.system('clear' if os.name != 'nt' else 'cls')
+ 
+                 print(format_status(status))
+                 last_status = status
+diff --git a/src/skill_seekers/cli/parsers/extractors/base_parser.py b/src/skill_seekers/cli/parsers/extractors/base_parser.py
+index 058c719..3c112c5 100644
+--- a/src/skill_seekers/cli/parsers/extractors/base_parser.py
++++ b/src/skill_seekers/cli/parsers/extractors/base_parser.py
+@@ -277,14 +277,6 @@ class BaseParser(ABC):
+                 tables.append(block.metadata["table_data"])
+         return tables
+ 
+-    def _create_quality_scorer(self):
+-        """Create a quality scorer if enabled."""
+-        if self._quality_scoring:
+-            from .quality_scorer import QualityScorer
+-
+-            return QualityScorer()
+-        return None
+-
+ 
+ def get_parser_for_file(path: str | Path) -> BaseParser | None:
+     """

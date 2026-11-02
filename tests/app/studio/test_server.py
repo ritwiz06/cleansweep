@@ -22,6 +22,23 @@ def test_runs_list_the_shipped_recordings_by_kind(client):
     assert rows[("results", "clean-001")]["path"] == "raw/watch_a/clean-001"
 
 
+def test_every_shipped_v2_recording_replays(client):
+    names = [
+        REPLAY_RUN,
+        "20261102_demo_feature_agentic",
+        "20261101_manager_conflict_step_back",
+        "20261101_skill_seekers_case_study",
+    ]
+    for name in names:
+        query = {"root": "replay", "path": name}
+        agentic = client.get("/api/run", params=query).json()["report"]["stats"]["agentic"]
+        assert agentic["verdict"] == "everything runs", name
+        events = client.get("/api/run/events", params=query).json()
+        assert events[0]["kind"] == "run_start" and events[-1]["kind"] == "run_end", name
+        if name.startswith("20261101_manager"):
+            assert agentic["back_steps"] == {"FINAL_VERIFY->EXECUTE": 1}
+
+
 def test_run_detail_events_and_artifacts(client):
     query = {"root": "replay", "path": REPLAY_RUN}
     run = client.get("/api/run", params=query).json()

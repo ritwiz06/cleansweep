@@ -1,0 +1,58 @@
+[
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches '*_old.py'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "8deec8dd37",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "pkg2/colors_old.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "pkg2/colors_old.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches '*_old.py'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "0c5569d900",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "pkg2/shapes_old.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "pkg2/shapes_old.py",
+   "start_line": null
+  }
+ }
+]

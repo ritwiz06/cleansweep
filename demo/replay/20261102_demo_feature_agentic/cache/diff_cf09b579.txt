@@ -1,0 +1,23 @@
+diff --git a/bookshelf/inventory_old.py b/bookshelf/inventory_old.py
+deleted file mode 100644
+index c622074..0000000
+--- a/bookshelf/inventory_old.py
++++ /dev/null
+@@ -1,17 +0,0 @@
+-from bookshelf.utils import round_money
+-
+-
+-class Inventory:
+-    def __init__(self):
+-        self.books = []
+-
+-    def add(self, isbn, title, price, copies=1):
+-        self.books.append(
+-            {"isbn": isbn, "title": title, "price": price, "copies": copies}
+-        )
+-
+-    def stock_value(self):
+-        total = 0
+-        for book in self.books:
+-            total = total + book["price"] * book["copies"]
+-        return round_money(total)
