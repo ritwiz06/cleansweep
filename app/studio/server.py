@@ -111,6 +111,14 @@ def create_app(
             "toy_runs": data.toy_runs(roots["results"]),
         }
 
+    @app.get("/api/reports")
+    def list_reports() -> list[dict]:
+        return runs.find_reports(roots)
+
+    @app.get("/api/report")
+    def read_report(root: str, path: str) -> dict:
+        return runs.report_file(files.resolve(roots, root, path))
+
     @app.get("/api/file")
     def read_file(root: str, path: str) -> dict:
         found = files.resolve(roots, root, path)

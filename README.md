@@ -185,8 +185,8 @@ message board, the item board, work packages with diffs, tests, probes and check
 budget gauges; Replay adds play/pause, step, 1–50x, a scrubber and "next decision"), **Compare**,
 **Case studies** (health before and after, diffs, report, review sheet with the
 "LLM-reviewer acceptance (independent model, blinded)" decisions), **Watch** (commit stream, slop
-over time, decisions with reasons) and **Results**, plus the dashboard's pages (Live sweep and
-Replay of v1 runs, Scheduler, Baselines, Data, Guard). The user guide describes each screen.
+over time, decisions with reasons) and **Results**, plus the dashboard's pages (saved reports,
+Live sweep and Replay of v1 runs, Scheduler, Baselines, Data, Guard). The user guide describes each screen.
 
 ## Reproduce
 

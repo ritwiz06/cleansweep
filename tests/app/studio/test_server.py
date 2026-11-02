@@ -1,4 +1,5 @@
 import json
+import shutil
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.studio.files import ROOT
 from app.studio.server import create_app
 from tests.app.studio.conftest import REPLAY_RUN
+from tests.conftest import FIXTURES
 
 
 def test_health_and_unknown_routes(client):
@@ -116,6 +118,24 @@ def test_text_tables_and_images(client):
     assert figure.status_code == 404
     index = client.get("/api/results").json()
     assert "main_table.csv" in index["v1"]["tables"] and "eval_table.csv" in index["v2"]["tables"]
+
+
+def test_saved_sweep_reports_are_listed_and_shown(client, results):
+    saved = results / "raw" / "quickstart" / "report.json"
+    saved.parent.mkdir()
+    shutil.copy(FIXTURES / "sample_report.json", saved)
+    (saved.parent / "timing.json").write_text("{}")
+    found = {(r["root"], r["path"]): r for r in client.get("/api/reports").json()}
+    assert found[("results", "raw/quickstart/report.json")]["method"] == "cleansweep"
+    assert ("replay", "20261030_demo_feature_advisory_v1/report.json") in found
+    assert ("results", "raw/quickstart/timing.json") not in found
+    query = {"root": "results", "path": "raw/quickstart/report.json"}
+    report = client.get("/api/report", params=query).json()
+    assert len(report["items"]) == 16 and report["results"][-1]["status"] == "rolled_back"
+    query["path"] = "raw/quickstart/timing.json"
+    assert client.get("/api/report", params=query).status_code == 404
+    query["path"] = "../README.md"
+    assert client.get("/api/report", params=query).status_code == 403
 
 
 def test_case_studies_carry_the_reviewer_label(client):

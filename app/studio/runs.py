@@ -7,6 +7,8 @@ import os
 import re
 from pathlib import Path
 
+from cleansweep.runlog import REPORT_KEYS
+
 from . import files
 
 SKIP = {"workspace", "cache", "patches", "quarantine", "node_modules", "__pycache__", "_jobs"}
@@ -137,48 +139,90 @@ def _report_stats(report: dict) -> dict:
     return stats
 
 
+def report_view(report: dict) -> dict:
+    """A sweep report's numbers, plan items and Guard results, as the run views show them."""
+    return {
+        "repo_id": report.get("repo_id"),
+        "method": report.get("method"),
+        "started_at": report.get("started_at"),
+        "finished_at": report.get("finished_at"),
+        "stats": _report_stats(report),
+        "items": [
+            {
+                "item_id": i.get("item_id"),
+                "unit": (i.get("unit") or {}).get("path", "")
+                + (f"::{i['unit']['name']}" if (i.get("unit") or {}).get("name") else ""),
+                "category": i.get("category"),
+                "lane": i.get("lane"),
+                "action": i.get("action"),
+                "reason": i.get("reason"),
+                "evidence": i.get("evidence", []),
+                "safe_score": i.get("safe_score"),
+            }
+            for i in (report.get("plan") or {}).get("items", [])
+        ],
+        "results": [
+            {
+                "item_id": r.get("item_id"),
+                "status": r.get("status"),
+                "notes": (r.get("notes") or "")[:1500],
+                "diff": r.get("diff") or "",
+                "tests": r.get("tests"),
+            }
+            for r in report.get("results", [])
+        ],
+        "has_final_diff": bool(report.get("stats", {}).get("final_diff")),
+    }
+
+
 def detail(root: str, rel: str, folder: Path) -> dict:
     """A run's summary, its report's numbers and item statuses, and the files it has."""
     out = summary(root, rel, folder)
     report = files.read_json(folder / "report.json")
-    if isinstance(report, dict):
-        out["report"] = {
-            "repo_id": report.get("repo_id"),
-            "method": report.get("method"),
-            "started_at": report.get("started_at"),
-            "finished_at": report.get("finished_at"),
-            "stats": _report_stats(report),
-            "items": [
-                {
-                    "item_id": i.get("item_id"),
-                    "unit": (i.get("unit") or {}).get("path", "")
-                    + (f"::{i['unit']['name']}" if (i.get("unit") or {}).get("name") else ""),
-                    "category": i.get("category"),
-                    "lane": i.get("lane"),
-                    "action": i.get("action"),
-                    "reason": i.get("reason"),
-                    "evidence": i.get("evidence", []),
-                    "safe_score": i.get("safe_score"),
-                }
-                for i in (report.get("plan") or {}).get("items", [])
-            ],
-            "results": [
-                {
-                    "item_id": r.get("item_id"),
-                    "status": r.get("status"),
-                    "notes": (r.get("notes") or "")[:1500],
-                    "diff": r.get("diff") or "",
-                    "tests": r.get("tests"),
-                }
-                for r in report.get("results", [])
-            ],
-            "has_final_diff": bool(report.get("stats", {}).get("final_diff")),
-        }
-    else:
-        out["report"] = None
+    out["report"] = report_view(report) if isinstance(report, dict) else None
     out["docs"] = [name for name in DOCS if (folder / name).is_file()]
     out["has_cache"] = (folder / "cache").is_dir()
     return out
+
+
+def find_reports(roots: dict[str, Path]) -> list[dict]:
+    """Saved sweep reports (any .json with a report's keys) under the roots, newest first."""
+    rows, seen = [], set()
+    for root, base in roots.items():
+        for folder, dirs, names in os.walk(base):
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d not in SKIP]
+            for name in names:
+                path = Path(folder, name)
+                if name.startswith(".") or path.suffix != ".json" or path.is_symlink():
+                    continue
+                real = os.path.realpath(path)
+                if real in seen:
+                    continue
+                seen.add(real)
+                try:
+                    report = json.loads(path.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    continue
+                if not (isinstance(report, dict) and REPORT_KEYS <= set(report)):
+                    continue
+                row = {
+                    "root": root,
+                    "path": path.relative_to(base).as_posix(),
+                    "repo_id": report.get("repo_id"),
+                    "method": report.get("method"),
+                    "started_at": report.get("started_at"),
+                    "mtime": path.stat().st_mtime,
+                }
+                rows.append(files.clean(row))
+    return sorted(rows, key=lambda r: r["mtime"], reverse=True)
+
+
+def report_file(path: Path) -> dict:
+    """A saved sweep report's view; FileNotFoundError when the file is not one."""
+    report = files.read_json(path) if path.suffix == ".json" and path.is_file() else None
+    if not (isinstance(report, dict) and REPORT_KEYS <= set(report)):
+        raise FileNotFoundError(f"not a sweep report: {path.name}")
+    return report_view(report)
 
 
 def final_diff(folder: Path) -> str:

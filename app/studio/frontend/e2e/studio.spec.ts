@@ -109,6 +109,16 @@ test("dashboard parity: v1 live sweep replay", async ({ page }) => {
   await expect(page.getByLabel("Reviewer plan")).toContainText("leftover_file");
 });
 
+test("dashboard parity: a saved sweep report", async ({ page }) => {
+  await open(page, "reports");
+  await page.getByLabel("Sweep report").selectOption(`replay:${V1}/report.json`);
+  await expect(page.getByText("Lines removed")).toBeVisible();
+  await expect(page.locator(".stats-row")).toContainText("47");
+  await expect(page.getByLabel("Cleanup plan")).toContainText("leftover_file");
+  await page.locator("details summary").filter({ hasText: "leftover_file" }).first().click();
+  await expect(page.getByText(/^cp '\.cleansweep\/quarantine\//).first()).toBeVisible();
+});
+
 test("dashboard parity: scheduler, baselines, data, guard", async ({ page }) => {
   await open(page, "scheduler");
   await expect(page.getByLabel("Policy means")).toContainText("every_pr");
@@ -157,6 +167,7 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "results",
     "sweeps",
     `replay?root=replay&path=${V1}`,
+    `reports?root=replay&path=${V1}/report.json`,
     "scheduler",
     "baselines",
     "data",
