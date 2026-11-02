@@ -455,6 +455,17 @@ def table() -> tuple[Path, Path]:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    out = summarize(rows)
+    summary = SUMMARY / "injection_summary.csv"
+    with summary.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(out[0]))
+        writer.writeheader()
+        writer.writerows(out)
+    return detail, summary
+
+
+def summarize(rows: list[dict]) -> list[dict]:
+    """Recall, and precision against the traps, per method and category from the plant rows."""
     out = []
     for method in sorted({r["method"] for r in rows}):
         mine = [r for r in rows if r["method"] == method]
@@ -478,12 +489,7 @@ def table() -> tuple[Path, Path]:
                     "hidden_changed": sum(bool(r["hidden_changed"]) for r in runs.values()),
                 }
             )
-    summary = SUMMARY / "injection_summary.csv"
-    with summary.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(out[0]))
-        writer.writeheader()
-        writer.writerows(out)
-    return detail, summary
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:

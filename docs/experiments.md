@@ -341,6 +341,17 @@ blinded)**, not a human evaluation.
 - **Outputs:** `<out>/<target>__<method>__r<k>.json` and `<out>/runs.csv` (hidden behavior
   changed, code lines removed, rollbacks by tests and by probes, LLM requests and tokens,
   minutes, test runs, agent steps, exhausted budgets, lessons, step-backs).
+- **Tables:** `python scripts/experiments/v2/exp_collect_v2.py` gathers the reports under
+  `results/raw/v2_eval/{toy_demo,tier1,tier2,aidev}/` into `results/summary/v2/eval_runs.csv`.
+  On SWE-bench and AIDev it adds v1's gatekeeper run on each target, the report
+  `main_results.csv` counts, measured from its report the same way (code lines removed: lines
+  removed from Python files that are not tests); its hidden result is v1's. Hidden changes are
+  marked flaky as in v1 (another run made the same diff and its hidden checks did not change).
+  `python scripts/experiments/v2/exp_tables_v2.py` then writes `eval_table` (mean and 95%
+  bootstrap CI per target set and method; the team's verdicts; planted items found on the
+  answer keys), `eval_paired` (the team against v1's gatekeeper on the same targets and repeats:
+  McNemar on hidden changes, Wilcoxon on code lines removed) and `ablations` (quality, safety
+  and cost per ablation on the answer keys and the injected set).
 
 ### v2: probe strength (PatchDiff recall, mutation score)
 
@@ -380,8 +391,9 @@ cleans the whole project; the score is what it removed of the planted slop and o
 - **Targets:** AIDev repositories become injected clones (`data/raw/aidev/injected/`, their head
   plus one commit with the plants) and run only in their containers; the toy repo is a local copy.
 - **Outputs:** `results/raw/inject/<repo>-s<seed>/` (key, hidden test, one report per method with
-  its score); `results/summary/v2/injection.csv` and `injection_summary.csv` (recall, precision
-  against the traps, traps kept, hidden behavior changed).
+  its score); `results/summary/v2/injection.csv` (one row per plant and method) and
+  `injection_summary.csv` (recall, precision against the traps, traps removed, hidden behavior
+  changed, per method and category; `exp_tables_v2.py` rebuilds it from `injection.csv`).
 
 ## Getting the data
 
@@ -498,7 +510,7 @@ repeat a reported run.
 ## Regenerating the tables
 
 ```bash
-bash scripts/reproduce_tables.sh          # results/summary/v1/ and results/figures/v1/
+bash scripts/reproduce_tables.sh          # results/summary/ and results/figures/
 bash scripts/reproduce_tables.sh DIR      # or DIR/summary/ and DIR/figures/
 ```
 
@@ -506,30 +518,34 @@ This rebuilds the aggregate tables and figures offline (no Docker, LLM or raw re
 committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ablation`,
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
-`scheduler_replay.csv`. On a clean checkout, `git status results/` shows no change afterwards.
+`scheduler_replay.csv`; `exp_tables_v2.py` builds v2's `eval_table`, `eval_paired`,
+`ablations` and `injection_summary` from `results/summary/v2/eval_runs.csv` and
+`injection.csv`. On a clean checkout, `git status results/` shows no change afterwards.
 `tests/scripts/test_reproduce_tables.py` runs it on a small fixture (`tests/fixtures/results_small/`)
 and checks that every table comes out byte for byte. Set `PYTHON` to pick the interpreter.
 
 The per-run CSVs need the raw reports, clones, Docker or the LLM, so the script leaves them
 alone:
 
-| Committed file in `results/summary/v1/` | Written by | Needs |
+| Committed file in `results/summary/` | Written by | Needs |
 |---|---|---|
-| `main_results.csv` | `exp_collect.py` | every sweep report folder |
-| `aidev_sweeps.csv`, `.md` | `exp_aidev_summary.py` | AIDev reports, cached hidden tests |
-| `guard_strength.csv` | `exp_guard_strength.py` | `results/raw/guard_strength/` (Docker, probe requests) |
-| `guard_on_oneshot.csv`, `.md` | `exp_guard_on_oneshot.py` | SWE-bench reports, Docker, probe requests |
-| `oneshot_breakages.csv`, `.md` | `exp_oneshot_breakages.py` | SWE-bench reports, Docker |
-| `oneshot_compile.csv` | `exp_oneshot_compile.py` | `guard_on_oneshot.csv`, AIDev reports and clones |
-| `aidev_public_api_policy.csv`, `aidev_framework_rule.csv`, `aidev_final_policy.csv`, `.md` | `exp_public_api_policy.py --policy ...` | AIDev reports and clones, Docker for `--run` |
-| `aidev_dependency_check.csv` | `exp_dependency_check.py` | AIDev reports, Docker |
-| `shotgun_ui.csv` | `exp_shotgun_ui.py` | shotgun reports, policy diffs, Docker |
-| `framework_callbacks.csv` | `exp_framework_callbacks.py` | shotgun reports, `shotgun_ui.csv` |
-| `scheduler_replay.csv`, `scheduler_curves.csv` | `exp_replay.py` | AIDev clones and histories |
-| `ranker_cv.csv`, `ranker_status.json` | `exp_train_ranker.py` | `data/processed/aidev_labels.parquet` |
-| `ranker_report.md` | `exp_ranker_report.py` | `data/processed/aidev_labels.parquet` |
-| `reviewer_detection.csv` | `exp_reviewer_detection.py` | labels and detection parquet files |
-| `self_sweep.csv` | `exp_self_sweep.py --table` | `results/raw/self_sweep/` reports |
+| `v1/main_results.csv` | `exp_collect.py` | every sweep report folder |
+| `v1/aidev_sweeps.csv`, `.md` | `exp_aidev_summary.py` | AIDev reports, cached hidden tests |
+| `v1/guard_strength.csv` | `exp_guard_strength.py` | `results/raw/guard_strength/` (Docker, probe requests) |
+| `v1/guard_on_oneshot.csv`, `.md` | `exp_guard_on_oneshot.py` | SWE-bench reports, Docker, probe requests |
+| `v1/oneshot_breakages.csv`, `.md` | `exp_oneshot_breakages.py` | SWE-bench reports, Docker |
+| `v1/oneshot_compile.csv` | `exp_oneshot_compile.py` | `guard_on_oneshot.csv`, AIDev reports and clones |
+| `v1/aidev_public_api_policy.csv`, `v1/aidev_framework_rule.csv`, `v1/aidev_final_policy.csv`, `.md` | `exp_public_api_policy.py --policy ...` | AIDev reports and clones, Docker for `--run` |
+| `v1/aidev_dependency_check.csv` | `exp_dependency_check.py` | AIDev reports, Docker |
+| `v1/shotgun_ui.csv` | `exp_shotgun_ui.py` | shotgun reports, policy diffs, Docker |
+| `v1/framework_callbacks.csv` | `exp_framework_callbacks.py` | shotgun reports, `shotgun_ui.csv` |
+| `v1/scheduler_replay.csv`, `v1/scheduler_curves.csv` | `exp_replay.py` | AIDev clones and histories |
+| `v1/ranker_cv.csv`, `v1/ranker_status.json` | `exp_train_ranker.py` | `data/processed/aidev_labels.parquet` |
+| `v1/ranker_report.md` | `exp_ranker_report.py` | `data/processed/aidev_labels.parquet` |
+| `v1/reviewer_detection.csv` | `exp_reviewer_detection.py` | labels and detection parquet files |
+| `v1/self_sweep.csv` | `exp_self_sweep.py --table` | `results/raw/self_sweep/` reports |
+| `v2/eval_runs.csv` | `exp_collect_v2.py` | `results/raw/v2_eval/` reports, v1's archived reports |
+| `v2/injection.csv` | `exp_inject.py table` | `results/raw/inject/` reports |
 
 The files in `results/data_summary/` come from the data scripts: `data_summary.py`
 (`swebench_patchdiff.csv`, `tiers.csv`, `aidev_funnel.csv`), `data_aidev_select.py`
