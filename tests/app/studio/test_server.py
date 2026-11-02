@@ -98,7 +98,7 @@ def test_text_tables_and_images(client):
     )
     assert figure.status_code == 404
     index = client.get("/api/results").json()
-    assert "main_table.csv" in index["v1"]["tables"] and index["v2"]["tables"] == []
+    assert "main_table.csv" in index["v1"]["tables"] and "eval_table.csv" in index["v2"]["tables"]
 
 
 def test_case_studies_carry_the_reviewer_label(client):
