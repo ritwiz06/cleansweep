@@ -1,4 +1,4 @@
-"""Child process for a v1 sweep started from Studio: the dashboard's live runner, into --out."""
+"""Child process for a v1 sweep started from Studio: cleansweep.live's runner, into --out."""
 
 from __future__ import annotations
 

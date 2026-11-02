@@ -70,7 +70,7 @@ default for SWE-bench and AIDev, so they get the project's setup).
 | `eval` | Baselines (`tools_only`, `one_shot_llm`, `one_shot_retry`), hidden checks, mutation testing, metrics and statistics (bootstrap intervals, exact McNemar, Wilcoxon) |
 | `data` | Loaders for SWE-bench Verified, PatchDiff agent patches and hidden tests, the AIDev repositories and their histories, and the tier splits |
 | `mining` | Review-comment mining: removal requests (keyword filter plus an LLM check), their taxonomy (TF-IDF and k-means), and association rules |
-| `app` | Streamlit dashboard: report viewer, live sweep and replay (local recordings in `results/raw/live/`, plus the ones that ship in `demo/replay/`), Scheduler, baselines, data and Guard pages |
+| `app` | CleanSweep Studio (`cleansweep studio`), which replaced the Streamlit dashboard: saved reports, live sweep and replay (local recordings in `results/raw/live/`, plus the ones that ship in `demo/replay/`), Scheduler, baselines, data and Guard screens, and the v2 screens |
 
 Each package can be swapped for its stub with `CLEANSWEEP_STUBS=<package>[,<package>]` (or
 `all`), so one package can be developed while another is unfinished.
@@ -158,7 +158,7 @@ python -m cleansweep sweep --target T [--method M] [--out report.json] [--hidden
 python -m cleansweep show  report.json
 python -m cleansweep clean PATH [--mode safe|thorough] [--budget llm=N,minutes=N,tests=N]
                                 [--approve-plan] [--dry-run] [--out DIR] [--model M] [--no-llm]
-streamlit run app/dashboard/dashboard.py
+python -m cleansweep studio [--port N] [--runs DIR] [--no-browser]
 ```
 
 The experiment scripts in `scripts/` are described in `docs/experiments.md`.

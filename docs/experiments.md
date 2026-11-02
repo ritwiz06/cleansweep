@@ -61,7 +61,7 @@ Methods, as `exp_swebench.py --methods` names them: `cleansweep-gatekeeper`,
   hidden tests in `shop_app_hidden/`). The hidden tests are hand-written.
 - **Outputs:** `results/raw/live/<run_id>/` (`events.jsonl`, `report.json`); the `toy` and `demo`
   rows of `main_results.csv`. Three demo recordings ship in `demo/replay/` with repo-relative
-  paths, so the dashboard's Replay works on a fresh clone: the advisory run with the v1.0
+  paths, so Studio's Replay works on a fresh clone: the advisory run with the v1.0
   defaults (`20261030_demo_feature_advisory_v1`, main at f708d87, 6.3 min cold, outcome 7/7; not
   a `main_results.csv` row), the first run with probes, and the run before the probes existed.
 - **Runtime:** 4–8 s from the LLM and probe caches; 1.5–5 min with live judge requests; 8–21 min

@@ -1,4 +1,4 @@
-"""Run one v1 sweep and log every step, for Studio's v1 sweeps (and the Live sweep page).
+"""Run one v1 sweep and log every step, for Studio's v1 sweeps.
 
 The sweep is cleansweep.workflow.run_sweep; its on_event callback (translate) turns each step and
 Guard check into events. Run from the repo root to record a run without the browser:

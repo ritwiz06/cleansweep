@@ -4,7 +4,7 @@ Start with the [README](../README.md): what CleanSweep does, how to install it, 
 the results in brief and the known limitations. The documents below go deeper.
 
 **[User guide](user_guide.md).** How to clean your own project with `cleansweep clean`, read its
-report and branch, and use the dashboard. A short version for now; the full guide with
+report and branch, and use Studio. A short version for now; the full guide with
 screenshots of Studio and watch mode comes with v2.0.
 
 **[Architecture](architecture.md).** CleanSweep v1, the sweep pipeline (`method=cleansweep`):
@@ -28,8 +28,8 @@ table. `scripts/reproduce_tables.sh` rebuilds the aggregate tables offline.
 repositories, Guard strength, the one-shot breakages, the Reviewer policies, the Scheduler and
 the ranker, with confidence intervals and paired tests. v2 results are added in Phase 4.
 
-**[Repository layout](repo_layout.md).** Every folder and what it is for: the package, the
-dashboard, the demo, the scripts by purpose, the committed results, the data splits and the
+**[Repository layout](repo_layout.md).** Every folder and what it is for: the package,
+Studio, the demo, the scripts by purpose, the committed results, the data splits and the
 tests.
 
 **[Changelog](../CHANGELOG.md).** Every release and what changed in it.

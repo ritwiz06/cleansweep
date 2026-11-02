@@ -16,7 +16,7 @@ function recording() {
 }
 
 describe("foldV1", () => {
-  it("matches the dashboard's fold on a shipped recording", () => {
+  it("folds a shipped recording to its end state", () => {
     const s = foldV1(recording());
     expect(s.stages.done).toBe("done");
     expect(s.hidden.behavior_changed).toBe(false);

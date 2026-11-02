@@ -1,5 +1,5 @@
 """Print PatchDiff patch counts per agent, per repo and per label, and write the data summaries
-the dashboard's Data page reads.
+Studio's Data screen reads.
 
 python scripts/data/data_summary.py
 

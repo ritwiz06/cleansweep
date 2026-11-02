@@ -19,12 +19,12 @@ leftover helper behind (`inventory._print_low_stock`).
 ## Before the talk (5 minutes, not timed)
 
 1. `.env` has the Voyager key; `VOYAGER_MODEL=qwen36-35b-a3b`.
-2. Terminal 1: `source .venv/bin/activate && streamlit run app/dashboard/dashboard.py`, then open
-   **Live sweep** in the browser.
+2. Terminal 1: `source .venv/bin/activate && cleansweep studio` (it opens Studio in the
+   browser), then open **Launch**.
 3. Terminal 2: `bash demo/prepare_demo.sh`. It builds the app in `.cleansweep/demo/shop_app`
    (gitignored) and prints that path.
-4. Check that Replay lists `20261030_demo_feature_advisory_v1` (the main fallback: advisory
-   with the v1.0 defaults) and `20261025_demo_feature_advisory` (the same run before the probes
+4. Check that **Live sweep and replay** lists `20261030_demo_feature_advisory_v1` (the main
+   fallback: advisory with the v1.0 defaults) and `20261025_demo_feature_advisory` (the same run before the probes
    existed). Both ship in `demo/replay/`, so Replay works offline, even on a fresh clone.
    Run the live sweep once the day before, so the LLM cache is warm: a cold advisory run took
    6.3 minutes (7 LLM requests); a warm one takes seconds.
@@ -43,17 +43,19 @@ Run the tests again (12 passed).
 *Fallback if the agent is slow or goes off track:* `bash demo/prepare_demo.sh --with-feature`
 (same change, already committed).
 
-**1:15–2:40 · Live sweep, advisory mode.** On the Live sweep page: target **Prepared demo**,
-method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it runs:
+**1:15–2:40 · Live sweep, advisory mode.** On **Launch**: **Sweep (v1 pipeline)**, target
+**Prepared demo app + feature**, method `cleansweep`, judge mode **advisory**, press **Start**;
+the live run opens. Narrate while it runs:
 - Open → Analyze → Plan: the detectors, then the LLM judge (the stage bar shows a timer).
-- Plan table: green rows are safe edits, orange rows are only reported (the `cmd_*`
-  commands and the `eval`). The over-engineering review drops "can't happen" notes on
-  lines the tests run; the **Run log** under the diffs says which ones and why.
-- Guard feed: each card is one check: apply the batch, compile, import, run the tests, then
+- Reviewer plan: rows in the safe lane are edits, rows in the suggest lane are only reported
+  (the `cmd_*` commands and the `eval`). The over-engineering review drops "can't happen"
+  notes on lines the tests run; the **Run log** at the bottom says which ones and why.
+- Guard: each card is one check: apply the batch, compile, import, run the tests, then
   the differential probes ("probes: N cases agree").
 
-*If the judge is still working at 2:10, or the network is slow:* switch to **Replay**, pick
-`20261030_demo_feature_advisory_v1`, speed 20×, press **Replay** (about 20 seconds).
+*If the judge is still working at 2:10, or the network is slow:* open **Live sweep and
+replay**, press **Replay** on `20261030_demo_feature_advisory_v1`, set the speed to 20 and press
+**Play** (about 20 seconds).
 
 **2:40–3:30 · What it found.**
 - Kept edits (slop meter): the leftover script, the old module, the dead function, the
@@ -73,6 +75,6 @@ method `cleansweep`, judge mode **advisory**, press **Run**. Narrate while it ru
 ## After the talk
 
 Recording a fresh run without the browser:
-`python -m app.dashboard.live_runner --target .cleansweep/demo/shop_app --judge-mode advisory`. It goes to
+`python -m cleansweep.live --target .cleansweep/demo/shop_app --judge-mode advisory`. It goes to
 `results/raw/live/` (not in git). The shipped copies in `demo/replay/` store paths relative to
 the repository, and Replay scores them against `demo/shop_app_expected.json`.

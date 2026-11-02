@@ -79,20 +79,12 @@ README).
   clean runs; and the simulated watch table (`results/summary/v2/watch_replay.csv`).
 - **Results**: every table under `results/summary/v1` and `v2` (sortable, with its Markdown
   notes) and every figure.
-- **Dashboard (v1)**: the Streamlit pages with the same data: Saved reports (any sweep report
-  saved under `results/`, the runs folder or `demo/replay/`: its numbers, slop meter, plan,
-  Guard verdicts with diffs and the command that restores a quarantined file), Live sweep and
-  Replay of v1 runs (stages, the Reviewer's plan, Guard checks, diffs, hidden checks, the
-  answer-key score, the toy runs), Scheduler, Baselines, Data and Guard.
+- **Dashboard (v1)**: the old Streamlit dashboard's pages, with the same data: Saved reports
+  (any sweep report saved under `results/`, the runs folder or `demo/replay/`: its numbers,
+  slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined
+  file), Live sweep and Replay of v1 runs (stages, the Reviewer's plan, Guard checks, diffs,
+  hidden checks, the answer-key score, the toy runs), Scheduler, Baselines, Data and Guard.
 
 The theme button switches between light and dark. Studio's own checks run from
 `app/studio/frontend`: `npm run build`, `npx vitest run` and `npx playwright test` (Chromium).
-
-## Dashboard
-
-```bash
-streamlit run app/dashboard/dashboard.py
-```
-
-It lists the v1 sweep reports under `results/raw/` and has the Live sweep, Scheduler,
-Baselines, Data and Guard pages; Replay plays a recorded run offline. Studio replaces it in v2.0.
+Studio replaced the Streamlit dashboard in v2.0; git history keeps the dashboard.
