@@ -30,8 +30,17 @@ commit per package), the patches, `CLEANUP_REPORT.md`, `blueprint.md`, `PR_DESCR
 `CHANGELOG_ENTRY.md`. Apply the branch yourself after reading the report.
 
 Options: `--mode safe|thorough`, `--budget llm=150,minutes=60,tests=80`, `--approve-plan`,
-`--exclude FOLDER`, `--test-args "..."`, `--no-install`, `--model`, `--quiet`. The full list and
-what each does: [agentic_design.md, section 15](agentic_design.md).
+`--exclude FOLDER`, `--test-args "..."`, `--no-install`, `--model`, `--config FILE`, `--quiet`.
+The full list and what each does: [agentic_design.md, section 15](agentic_design.md).
+
+### Settings file
+
+A `.cleansweep.yaml` at the project's root (or `--config FILE`) holds the settings a project
+always wants: `mode`, `budget` (`{llm: N, minutes: N, tests: N}`), `exclude` (a list of
+folders), `test_args`, `install` (`auto` or `off`) and `model`. The command line overrides the
+file (`--budget` per item; `--exclude` folders are added to the file's), and `clean` prints which
+file it read. An unknown setting or a bad value stops the run with one line naming the file and
+the setting.
 
 ## Studio
 

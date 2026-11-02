@@ -25,7 +25,8 @@ def test_clean_help_lists_the_options(capsys):
         main(["clean", "--help"])
     assert stop.value.code == 0
     text = capsys.readouterr().out
-    for option in ("--mode", "--budget", "--approve-plan", "--dry-run", "--out", "--no-llm"):
+    options = ("--mode", "--budget", "--approve-plan", "--dry-run", "--out", "--no-llm", "--config")
+    for option in options:
         assert option in text
     assert "Nothing is applied to the original folder" in " ".join(text.split())
 
@@ -37,6 +38,30 @@ def test_clean_errors_are_one_readable_line(mini, tmp_path, capsys):
     assert "no such folder" in capsys.readouterr().err
     assert main(["clean", str(mini), "--out", str(mini / "x"), "--no-llm"]) == 1
     assert "outside the project" in capsys.readouterr().err
+
+
+def test_clean_reads_the_project_settings_and_options_win(mini, tmp_path, capsys, monkeypatch):
+    seen = {}
+
+    def fake_clean(path, cfg, **kwargs):
+        agents = cfg["core"]["agents"]
+        seen.update(kwargs, budget=agents["budget"], install=agents["install"])
+        summary = {"verdict": "nothing applied", "applied": 0, "lines_removed": 0}
+        summary.update(files_removed=0, suggested=0)
+        return {"summary": summary, "branch": None, "files": []}
+
+    monkeypatch.setattr("cleansweep.agents.clean_project", fake_clean)
+    (mini / ".cleansweep.yaml").write_text(
+        "mode: thorough\nbudget: {llm: 40, tests: 30}\nexclude: [docs]\ninstall: off\n"
+    )
+    argv = ["clean", str(mini), "--no-llm", "--budget", "tests=5", "--exclude", "tests/fixtures"]
+    assert main(argv) == 0
+    assert seen["mode"] == "thorough" and seen["exclude"] == ["docs/", "tests/fixtures/"]
+    assert seen["budget"]["llm_calls"] == 40 and seen["budget"]["test_runs"] == 5
+    assert seen["install"] == "off" and seen["test_args"] is None
+    assert f"Settings: {mini / '.cleansweep.yaml'}" in capsys.readouterr().out
+    assert main(["clean", str(mini), "--no-llm", "--config", str(tmp_path / "none.yaml")]) == 2
+    assert "cannot read" in capsys.readouterr().err
 
 
 def test_clean_dry_run_from_the_command_line(mini, tmp_path, capsys):

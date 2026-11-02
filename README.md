@@ -71,6 +71,36 @@ Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_sh
 `no_ranker`, `no_batching`. Every package has a stub with the same interface;
 `CLEANSWEEP_STUBS=analysis,guard` (or `all`) swaps packages for their stubs.
 
+### Clean your own project (v2)
+
+```bash
+cleansweep clean path/to/project --dry-run   # plan only: writes blueprint.md, changes nothing
+cleansweep clean path/to/project             # safe mode: deterministic edits, each one verified
+cleansweep clean path/to/project --mode thorough --budget llm=150,minutes=60,tests=80
+cleansweep clean tests/fixtures/toy_repo --no-llm   # try it offline on the toy repo
+```
+
+The original folder is never changed. `clean` copies the project into
+`<project>-cleanup-<time>/` next to it (or `--out`), and the agent team cleans the copy one work
+package at a time, keeping a package only if the tests and the probes still pass. It ends with a
+git branch in that copy (one commit per package), `CLEANUP_REPORT.md`, `blueprint.md`, the
+patches and a PR description; apply the branch yourself after reading the report. The exit code
+is 0 when the result is "everything runs" or "nothing applied".
+
+Settings that a project always wants go in a `.cleansweep.yaml` at its root (or any file passed
+with `--config`); a command-line option overrides the file:
+
+```yaml
+mode: safe                                # or thorough
+budget: {llm: 150, minutes: 60, tests: 80}
+exclude: [tests/fixtures, docs/examples]  # folders the cleanup leaves alone
+test_args: "-m 'not slow'"                # extra pytest arguments
+install: auto                             # off: run the tests with CleanSweep's interpreter
+model: my-model                           # default: VOYAGER_MODEL
+```
+
+The [user guide](docs/user_guide.md) explains the output and every option.
+
 ## How it works
 
 The pipeline, packages, interfaces and every setting are described in [docs/architecture.md](docs/architecture.md).

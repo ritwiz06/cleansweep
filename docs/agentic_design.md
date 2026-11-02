@@ -388,7 +388,7 @@ still work on an agentic run.
 ```
 python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minutes=60,tests=80]
                                   [--approve-plan] [--dry-run] [--out <dir>] [--model M]
-                                  [--no-llm] [--quiet]
+                                  [--no-llm] [--config FILE] [--quiet]
 ```
 
 - `--mode safe` (default): deterministic edits only, every package fully verified, anything
@@ -413,6 +413,8 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
 - Slow suites (`core.agents.full_suite_max_s`, default 120 s): each package runs its related
   tests; the full suite runs once in FINAL VERIFY, and if that is worse than the baseline the
   Manager reverts packages from the last one.
+- `--config FILE` (default: the project's `.cleansweep.yaml`, if any) sets `mode`, `budget`,
+  `exclude`, `test_args`, `install` and `model` for the project; the options above override it.
 - `--no-llm` runs offline: the Investigator gathers the same evidence with its tools and decides
   by rules (keep the detector lane unless a lesson fits or the code may be used dynamically).
 - Exit code 0 when the result is "everything runs" or nothing was applied, 1 otherwise or on an
