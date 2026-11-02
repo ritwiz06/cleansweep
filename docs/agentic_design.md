@@ -266,7 +266,7 @@ callbacks out of packages.
 | Detector | Category (new) | Lane | Source |
 |---|---|---|---|
 | unused local variables (the value is kept as a statement when it is a call; an unused `except ... as e` loses its name) | `unused_variable` | safe | ruff F841 |
-| debugger calls (`breakpoint()`, `pdb.set_trace()`) and debug prints (a string starting with "debug", ">>>", "here", or a self-documenting `f"{x=}"` as written in the source; a hand-written `"x={x}"` is output) | `debug_leftover` | safe; other prints in library modules: suggest (they may be intended output); CLI modules are skipped | `ast` |
+| debugger calls (`breakpoint()`, `pdb.set_trace()`) and debug prints (a string starting with "debug", ">>>", "here", or a self-documenting `f"{x=}"` as written in the source; a hand-written `"x={x}"` is output) | `debug_leftover` | safe; a debugger call under an `if` (an opt-in switch such as `if self.debug_on_nan:`) and other prints in library modules: suggest (a debugging feature or intended output); CLI modules are skipped | `ast` |
 | commented-out code: the longest runs of comment lines that parse as Python statements (prose next to them stays; so does prose that parses by accident: list items such as `- name(a, b)`, a lone expression with a space before its parentheses such as `Paragraph (default)`, and a call of a capitalized name on bare words such as `Author(s)`) | `commented_code` | safe | `tokenize` + `ast` |
 | TODO/FIXME/XXX/HACK comments on their own line | `todo_note` | suggest (a person decides) | `tokenize` |
 | `if c: return True else: return False` → `return bool(c)` (and the negation), a boolean test with the same operand twice | `redundant_check` | safe; `x == True` → `x`: suggest (not the same for non-bool values) | `ast` |
