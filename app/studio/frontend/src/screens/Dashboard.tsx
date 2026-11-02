@@ -1,8 +1,9 @@
-// The Streamlit dashboard's result pages (Scheduler, Baselines, Data, Guard) with the same data.
+// The v1 dashboard's pages (saved reports, Scheduler, Baselines, Data, Guard) with the same data.
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { api, useApi, type Table } from "../api";
-import { ANIMATE, Async, Card, DataTable, Empty, Tabs } from "../components/common";
+import { api, useApi, type ReportView, type SavedReport, type Table } from "../api";
+import { CodeBlock, DiffView } from "../components/Code";
+import { ANIMATE, Async, Card, DataTable, Empty, Stat, Status, Tabs } from "../components/common";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -300,6 +301,122 @@ export function GuardScreen() {
             </Card>
           </>
         )}
+      </Async>
+    </div>
+  );
+}
+
+export function restoreCommand(evidence: string[], unit: string): string | null {
+  const line = evidence.find((e) => e.startsWith("quarantined at "));
+  return line ? `cp '${line.slice("quarantined at ".length)}' '${unit}'` : null;
+}
+
+function Report({ root, path }: { root: string; path: string }) {
+  const res = useApi<ReportView>(`report:${root}/${path}`, () => api("/api/report", { root, path }));
+  return (
+    <Async res={res} what="Loading the report">
+      {(r) => {
+        const units = Object.fromEntries(r.items.map((i) => [i.item_id, i]));
+        const status = Object.fromEntries(r.results.map((x) => [x.item_id, x.status]));
+        const cleaned = r.results.filter((x) => x.status === "kept" || x.status === "repaired").length;
+        const plan: Table = {
+          columns: ["status", "lane", "category", "unit", "action", "safe_score", "reason"],
+          rows: r.items.map((i) => [status[i.item_id] || "-", i.lane, i.category, i.unit, i.action, i.safe_score, i.reason]),
+        };
+        const verdicts = r.results.filter((x) => x.status !== "skipped" && units[x.item_id]);
+        return (
+          <>
+            <p className="muted small">
+              {r.repo_id} · method {r.method} · started {r.started_at}
+            </p>
+            <div className="stats-row">
+              <Stat label="Items found" value={r.stats.items_total ?? r.items.length} />
+              <Stat label="Kept" value={(r.stats.items_kept || 0) + (r.stats.items_repaired || 0)} />
+              <Stat label="Rolled back" value={r.stats.items_rolled_back || 0} />
+              <Stat label="Lines removed" value={r.stats.lines_removed || 0} />
+              <Stat label="Test runs" value={r.stats.test_runs || 0} />
+            </div>
+            <div className="slop-meter" title="Slop meter (items)">
+              <div className="gauge-label">Slop meter (items)</div>
+              <div className="bar big">
+                <div className="fill tone-good" style={{ width: `${(cleaned / Math.max(r.items.length, 1)) * 100}%` }} />
+              </div>
+              <div className="small">
+                {cleaned} cleaned, {Math.max(r.items.length - cleaned, 0)} still open
+              </div>
+            </div>
+            <Card title="Cleanup plan">
+              <DataTable table={plan} label="Cleanup plan" />
+            </Card>
+            <Card title="Guard verdicts">
+              {verdicts.length ? (
+                verdicts.map((x) => {
+                  const item = units[x.item_id];
+                  const restore = restoreCommand(item.evidence || [], item.unit);
+                  return (
+                    <details key={x.item_id}>
+                      <summary>
+                        <Status value={x.status} /> {item.category} · {item.unit}
+                      </summary>
+                      <p>{item.reason}</p>
+                      {x.tests && (
+                        <p className="small">
+                          tests: {x.tests.passed} passed, {x.tests.failed} failed
+                        </p>
+                      )}
+                      {x.notes && <pre className="log">{x.notes}</pre>}
+                      {x.diff && <DiffView text={x.diff} />}
+                      {restore && <CodeBlock code={restore} language="bash" />}
+                    </details>
+                  );
+                })
+              ) : (
+                <Empty>The Guard checked nothing in this report.</Empty>
+              )}
+            </Card>
+          </>
+        );
+      }}
+    </Async>
+  );
+}
+
+export function ReportsScreen({ root, path, onPick }: { root: string; path: string; onPick: (root: string, path: string) => void }) {
+  const res = useApi<SavedReport[]>("reports", () => api("/api/reports"));
+  return (
+    <div className="screen">
+      <header className="screen-head">
+        <h2>Saved reports</h2>
+        <span className="muted">Every sweep report saved under results/, the runs folder and demo/replay/, newest first.</span>
+      </header>
+      <Async res={res} what="Finding saved reports" empty={(rows) => (rows.length ? null : "No saved reports yet. Save one with cleansweep sweep --out.")}>
+        {(rows) => {
+          const chosen = rows.find((r) => r.root === root && r.path === path) || rows[0];
+          return (
+            <>
+              <div className="filters">
+                <label>
+                  Sweep report{" "}
+                  <select
+                    value={`${chosen.root}:${chosen.path}`}
+                    onChange={(e) => {
+                      const [r, ...p] = e.target.value.split(":");
+                      onPick(r, p.join(":"));
+                    }}
+                    aria-label="Sweep report"
+                  >
+                    {rows.map((r) => (
+                      <option key={`${r.root}:${r.path}`} value={`${r.root}:${r.path}`}>
+                        {r.root}/{r.path} ({r.method})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <Report key={`${chosen.root}:${chosen.path}`} root={chosen.root} path={chosen.path} />
+            </>
+          );
+        }}
       </Async>
     </div>
   );

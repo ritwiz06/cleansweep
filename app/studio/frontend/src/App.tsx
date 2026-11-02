@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { DarkContext } from "./components/Code";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
-import { BaselinesScreen, DataScreen, GuardScreen, SchedulerScreen } from "./screens/Dashboard";
+import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
 import { Launcher } from "./screens/Launcher";
 import { Results } from "./screens/Results";
 import { RunView } from "./screens/RunView";
@@ -26,6 +26,7 @@ const NAV: { section: string; links: [string, string][] }[] = [
   {
     section: "Dashboard (v1)",
     links: [
+      ["reports", "Saved reports"],
       ["sweeps", "Live sweep and replay"],
       ["scheduler", "Scheduler"],
       ["baselines", "Baselines"],
@@ -96,6 +97,9 @@ export function App() {
       break;
     case "sweeps":
       screen = <RunsScreen kinds={["v1"]} title="Live sweep and replay (v1 runs)" />;
+      break;
+    case "reports":
+      screen = <ReportsScreen root={q.get("root") || ""} path={q.get("path") || ""} onPick={(root, path) => go("reports", { root, path })} />;
       break;
     case "scheduler":
       screen = <SchedulerScreen />;

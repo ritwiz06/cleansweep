@@ -19,25 +19,36 @@ export interface Table {
   rows: unknown[][];
 }
 
+export interface SavedReport {
+  root: string;
+  path: string;
+  repo_id: string;
+  method: string;
+  started_at: string;
+  mtime: number;
+}
+
+export interface ReportView {
+  repo_id: string;
+  method: string;
+  started_at: string;
+  stats: Record<string, any>;
+  items: {
+    item_id: string;
+    unit: string;
+    category: string;
+    lane: string;
+    action: string;
+    reason: string;
+    evidence: string[];
+    safe_score: number | null;
+  }[];
+  results: { item_id: string; status: string; notes: string; diff: string; tests: any }[];
+  has_final_diff: boolean;
+}
+
 export interface RunDetail extends RunRow {
-  report: {
-    repo_id: string;
-    method: string;
-    started_at: string;
-    stats: Record<string, any>;
-    items: {
-      item_id: string;
-      unit: string;
-      category: string;
-      lane: string;
-      action: string;
-      reason: string;
-      evidence: string[];
-      safe_score: number | null;
-    }[];
-    results: { item_id: string; status: string; notes: string; diff: string; tests: any }[];
-    has_final_diff: boolean;
-  } | null;
+  report: ReportView | null;
   docs: string[];
   has_cache: boolean;
   live: boolean;
