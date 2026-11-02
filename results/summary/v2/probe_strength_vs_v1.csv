@@ -1,0 +1,7 @@
+target_set,experiment,probe_mode,matched,both,only_v1,only_v2,neither,v2_only_run
+demo,mutation,direct,20,18,0,0,2,0
+swebench_t1,mutation,runner,39,36,0,0,3,0
+swebench_t1,patchdiff_recall,runner,3,0,0,0,3,0
+swebench_t2,mutation,runner,66,41,0,0,25,15
+swebench_t2,patchdiff_recall,runner,15,3,0,0,12,3
+toy,mutation,direct,20,19,1,0,0,0
