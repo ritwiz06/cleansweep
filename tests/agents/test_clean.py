@@ -5,7 +5,7 @@ import pytest
 from cleansweep.agents import clean_project
 from cleansweep.agents.events import read_events
 
-from .conftest import tree_hash
+from .conftest import MINI, tree_hash, write_project
 
 ORDER = [
     "ONBOARD",
@@ -128,3 +128,14 @@ def test_a_git_project_is_cloned_and_its_branch_applies(mini, agent_cfg, tmp_pat
         _git(mini, "rev-parse", "HEAD") == head
         and _git(mini, "branch", "--list", "cleansweep/*") == ""
     )
+
+
+def test_a_project_without_tests_gets_the_plan_only(agent_cfg, tmp_path):
+    files = {k: v for k, v in MINI.items() if not k.startswith("tests/")}
+    project = write_project(tmp_path / "untested", files)
+    before = tree_hash(project)
+    result = clean_project(str(project), agent_cfg, out=str(tmp_path / "out"), use_llm=False)
+    summary = result["summary"]
+    assert summary["verdict"] == "nothing applied" and summary["applied"] == 0
+    assert result["report"].stats["agentic"]["baseline"]["ok"] is False
+    assert tree_hash(project) == before
