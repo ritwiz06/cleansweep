@@ -15,6 +15,13 @@ def test_tables_from_sample():
     assert meter["cleaned"] + meter["open"] == len(report.plan.items)
 
 
+def test_a_report_with_no_items_gives_an_empty_table():
+    report = load_report(FIXTURES / "sample_report.json")
+    report.plan.items, report.results = [], []
+    table = plan_table(report)
+    assert table.empty and "item_id" in table.columns
+
+
 def test_restore_command():
     assert restore_command(["quarantined at /q/a.py"], "a.py") == "cp '/q/a.py' 'a.py'"
     assert restore_command(["other"], "a.py") is None

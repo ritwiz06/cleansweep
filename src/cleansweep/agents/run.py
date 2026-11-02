@@ -50,7 +50,8 @@ def build_report(rt, started: str, t0: float, seed: int = 0) -> SweepReport:
             results.append(EditResult(item.item_id, "skipped", notes=why))
     counts = {s: sum(r.status == s for r in results) for s in ("kept", "repaired", "rolled_back")}
     diff = rt.ws.diff_stats(rt.ws.base)
-    usage = rt.llm.usage() if rt.llm is not None else {}
+    llm = rt.llm if rt.llm is not None else rt.manager_llm  # the scenario runs: Manager only
+    usage = llm.usage() if llm is not None else {}
     stats = {
         "items_total": len(items),
         "items_safe": sum(i.lane == "safe" and i.action != "report_only" for i in items),

@@ -53,7 +53,8 @@ def plan_table(report: SweepReport) -> pd.DataFrame:
         }
         for i in report.plan.items
     ]
-    return pd.DataFrame(rows)
+    columns = ["status", "lane", "category", "unit", "reason", "evidence", "safe_score", "item_id"]
+    return pd.DataFrame(rows, columns=columns)  # a report with no items gives an empty table
 
 
 def slop_meter(report: SweepReport) -> dict:
