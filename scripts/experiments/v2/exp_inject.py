@@ -95,15 +95,16 @@ def _module_name(root: Path, path: Path) -> str:
 
 
 def pick_modules(root: Path, rng: random.Random, n: int = 3) -> list[Path]:
-    """n package modules (in a folder with __init__.py, not tests or scripts) that parse."""
-    out = []
+    """n modules that parse and import by name (not tests or scripts): package modules first,
+    then modules in plain folders (namespace packages)."""
+    packages, plain = [], []
     for path in sorted(root.rglob("*.py")):
         rel = path.relative_to(root)
         if any(p in SKIP_DIRS or p.startswith(".") for p in rel.parts[:-1]):
             continue
         if path.name.startswith(("test_", "_")) or path.name in ("conftest.py", "setup.py"):
             continue
-        if not (path.parent / "__init__.py").exists():
+        if not all(p.isidentifier() for p in [*rel.parts[:-1], path.stem]):
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         if "__main__" in text or len(text.splitlines()) < 15:
@@ -112,10 +113,12 @@ def pick_modules(root: Path, rng: random.Random, n: int = 3) -> list[Path]:
             ast.parse(text)
         except SyntaxError:
             continue
-        out.append(path)
-    if len(out) < n:
-        raise ValueError(f"{root}: fewer than {n} package modules to plant in")
-    return rng.sample(out, n)
+        (packages if (path.parent / "__init__.py").exists() else plain).append(path)
+    if len(packages) >= n:
+        return rng.sample(packages, n)
+    if len(packages) + len(plain) < n:
+        raise ValueError(f"{root}: fewer than {n} importable modules to plant in")
+    return packages + rng.sample(plain, n - len(packages))
 
 
 def _after_imports(text: str) -> int:
@@ -500,7 +503,11 @@ def main(argv: list[str] | None = None) -> int:
         for seed in args.seeds:
             name = "toy" if repo == "toy" else repo.replace("/", "__")
             if not (RAW / f"{name}-s{seed}" / "key.json").exists():
-                prepare(repo, seed, cfg)
+                try:
+                    prepare(repo, seed, cfg)
+                except ValueError as exc:  # nowhere to plant: the repository is left out
+                    print(f"skip {repo}: {exc}", flush=True)
+                    continue
             for method in args.methods:
                 if (RAW / f"{name}-s{seed}" / f"{method}.json").exists():
                     continue
