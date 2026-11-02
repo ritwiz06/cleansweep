@@ -134,3 +134,16 @@ def test_mining_items_and_calibration_kappa(tmp_path, monkeypatch):
         "## C1\n\nview\n\n**Your decision:** accept\n\n## C2\n\nview\n\n**Your decision:** reject\n"
     )
     assert review.kappa() == {"labeled": 2, "of": 2, "agreement": 1.0, "cohen_kappa": 1.0}
+
+
+def test_a_long_sheet_is_sampled_across_categories():
+    review = load("exp_llm_review")
+    rows = [{"n": 1, "kind": "applied", "category": "dead_code"}]
+    rows += [{"n": n, "kind": "suggestion", "category": "security"} for n in range(2, 32)]
+    rows += [{"n": n, "kind": "suggestion", "category": "duplicate"} for n in range(32, 36)]
+    picked = review.pick_rows(rows, limit=10)
+    assert picked[0]["n"] == 1 and len(picked) == 11
+    cats = [r["category"] for r in picked[1:]]
+    assert cats.count("duplicate") == 4 and cats.count("security") == 6
+    assert review.pick_rows(rows, limit=10) == picked  # fixed seed
+    assert len(review.pick_rows(rows, limit=50)) == len(rows)

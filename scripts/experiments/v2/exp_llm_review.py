@@ -11,7 +11,9 @@ requests. Its numbers are "LLM-reviewer acceptance (independent model, blinded)"
 The reviewer is VOYAGER_MODEL_ALT, never the agents' model (VOYAGER_MODEL). For each row of a
 review sheet (exp_review_sheet.py) it sees only the code around the change, the proposed change
 or suggestion, and facts: the detectors' evidence, how often the name appears elsewhere in the
-project, and the checks run on the change (tests, probes). It never sees the agents' verdict,
+project, and the checks run on the change (tests, probes). Every applied and tried row is
+reviewed; a sheet with more than --sample suggestions (default 40) gets a sample of them, taken
+in turn from each category with a fixed seed. It never sees the agents' verdict,
 reasons, lane, mode, or which agent produced the row. Rows go out in a shuffled order (fixed
 seed); each is asked 3 times (seeds 0, 1, 2, temperature 0.3, reasoning off) and the majority
 decides (no majority: unsure). The sheet's "LLM reviewer" columns are filled in and
@@ -54,6 +56,7 @@ from cleansweep.core.io import load_json  # noqa: E402
 from cleansweep.core.models import SweepReport  # noqa: E402
 from cleansweep.llm.client import get_client  # noqa: E402
 
+SAMPLE = 40  # suggestions reviewed per sheet at most; every applied and tried row is reviewed
 SEEDS = (0, 1, 2)
 TEMPERATURE = 0.3
 SHUFFLE_SEED = 572
@@ -286,11 +289,31 @@ def _items(meta: dict):
     return reports, summaries
 
 
-def review_sheet(name: str, rev: str | None) -> Path:
+def pick_rows(rows: list[dict], limit: int = SAMPLE) -> list[dict]:
+    """Every applied and tried row, and at most `limit` suggestions, taken in turn from each
+    category (in a fixed shuffled order), so a long sheet's review stays affordable."""
+    picked = [r for r in rows if r["kind"] != "suggestion"]
+    suggestions = [r for r in rows if r["kind"] == "suggestion"]
+    if len(suggestions) <= limit:
+        return picked + suggestions
+    rng = random.Random(SHUFFLE_SEED)
+    by_category: dict[str, list[dict]] = {}
+    for row in suggestions:
+        by_category.setdefault(row["category"], []).append(row)
+    queues = [rng.sample(group, len(group)) for _, group in sorted(by_category.items())]
+    taken: list[dict] = []
+    while len(taken) < limit:
+        for queue in queues:
+            if queue and len(taken) < limit:
+                taken.append(queue.pop())
+    return picked + sorted(taken, key=lambda r: r["n"])
+
+
+def review_sheet(name: str, rev: str | None, limit: int = SAMPLE) -> Path:
     meta = json.loads((CASES / name / "review_rows.json").read_text())
     reports, summaries = _items(meta)
     jobs = []
-    for row in meta["rows"]:
+    for row in pick_rows(meta["rows"], limit):
         report = reports[row["run"]]
         item = next(i for i in report.plan.items if i.item_id == row["item_id"])
         result = next((r for r in report.results if r.item_id == row["item_id"]), None)
@@ -324,6 +347,9 @@ def review_sheet(name: str, rev: str | None) -> Path:
         "seeds": SEEDS,
         "temperature": TEMPERATURE,
         "requests": llm.usage()["llm_calls"],
+        "rows": len(meta["rows"]),
+        "reviewed": len(reviews),
+        "sample": f"every applied and tried row, at most {limit} suggestions (seed {SHUFFLE_SEED})",
         "reviews": {str(k): v for k, v in reviews.items()},
     }
     out.write_text(json.dumps(record, indent=1), encoding="utf-8")
@@ -505,13 +531,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("what", choices=["sheet", "table", "calibration", "kappa", "mining"])
     parser.add_argument("name", nargs="?")
     parser.add_argument("--source-rev")
+    parser.add_argument("--sample", type=int, default=SAMPLE, help="suggestions per sheet")
     parser.add_argument("--n", type=int, default=20)
     parser.add_argument("--seed", type=int, default=SHUFFLE_SEED)
     args = parser.parse_args(argv)
     if args.what == "sheet":
         if not args.name:
             parser.error("sheet needs a case-study NAME")
-        print(review_sheet(args.name, args.source_rev))
+        print(review_sheet(args.name, args.source_rev, args.sample))
     elif args.what == "table":
         print(table())
     elif args.what == "calibration":
