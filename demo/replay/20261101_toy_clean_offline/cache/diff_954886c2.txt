@@ -1,0 +1,24 @@
+diff --git a/shopcart/cart.py b/shopcart/cart.py
+index 8e2b39b..74f3484 100644
+--- a/shopcart/cart.py
++++ b/shopcart/cart.py
+@@ -3,10 +3,6 @@ from shopcart import pricing
+ from shopcart.discounts import apply_discount
+ 
+ 
+-def compute_total(items):
+-    return pricing.total(items)
+-
+-
+ class Cart:
+     def __init__(self):
+         self.items = []
+@@ -23,7 +19,7 @@ class Cart:
+         return sum(item["qty"] for item in self.items)
+ 
+     def checkout(self, code=None):
+-        amount = compute_total(self.items)
++        amount = pricing.total(self.items)
+         if code:
+             amount = apply_discount(amount, code)
+         return amount

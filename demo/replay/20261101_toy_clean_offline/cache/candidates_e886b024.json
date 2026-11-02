@@ -1,0 +1,453 @@
+[
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches 'debug*'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "e7256e167d",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "debug_cart.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "debug_cart.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches 'reproduce*'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "2a30f69d9c",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "reproduce_bug.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "reproduce_bug.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_file",
+  "category": "leftover_file",
+  "evidence": [
+   "file name matches '*_old.py'",
+   "no other file imports it",
+   "not mentioned in project config files",
+   "knowledge base: 4% of mined maintainer removal requests are leftover_file"
+  ],
+  "item_id": "ad1ccca381",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "shopcart/pricing_old.py looks like a leftover file (scratch, debug or old copy) and nothing imports it.",
+  "safe_score": null,
+  "sources": [
+   "patterns",
+   "graph"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "shopcart/pricing_old.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "c8c5c12a31",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "format_money_v2 is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 19,
+   "kind": "function",
+   "name": "format_money_v2",
+   "path": "shopcart/utils.py",
+   "start_line": 15
+  }
+ },
+ {
+  "action": "replace_with",
+  "category": "duplicate",
+  "evidence": [
+   "identical body to shopcart/utils.py::round_price (similarity 1.00)"
+  ],
+  "item_id": "baad19ef2a",
+  "keep_target": "shopcart/utils.py::round_price",
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": "--- a/shopcart/discounts.py\n+++ b/shopcart/discounts.py\n@@ -1,16 +1,7 @@\n+from shopcart.utils import round_price\n CODES = {\"SAVE10\": 0.10, \"HALF\": 0.50}\n-\n-\n-def _round_price(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return round(amount, 2)\n \n \n def apply_discount(amount, code):\n     rate = CODES.get(code.upper(), 0.0)\n-    return _round_price(amount * (1 - rate))\n+    return round_price(amount * (1 - rate))\n",
+  "reason": "_round_price repeats round_price; use the existing function instead.",
+  "safe_score": null,
+  "sources": [
+   "minhash",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 11,
+   "kind": "function",
+   "name": "_round_price",
+   "path": "shopcart/discounts.py",
+   "start_line": 4
+  }
+ },
+ {
+  "action": "replace_with",
+  "category": "duplicate",
+  "evidence": [
+   "near-identical body to shopcart/utils.py::round_price (similarity 0.85)"
+  ],
+  "item_id": "0c1c0f4e23",
+  "keep_target": "shopcart/utils.py::round_price",
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": "--- a/shopcart/storage.py\n+++ b/shopcart/storage.py\n@@ -2,26 +2,17 @@\n from decimal import ROUND_HALF_UP, Decimal\n \n from shopcart.cart import Cart\n+from shopcart.utils import round_price\n \n \n def _half_up(amount):\n     return float(Decimal(str(amount)).quantize(Decimal(\"0.01\"), rounding=ROUND_HALF_UP))\n \n \n-def _safe_round(value):\n-    \"\"\"Round a price to whole cents.\"\"\"\n-    if value is None:\n-        return 0.0\n-    amount = float(value)\n-    if amount < 0:\n-        raise ValueError(\"price cannot be negative\")\n-    return _half_up(amount)\n-\n-\n def save_cart(cart, path):\n     data = {\n         \"items\": cart.items,\n-        \"total\": _safe_round(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n+        \"total\": round_price(sum(i[\"price\"] * i[\"qty\"] for i in cart.items)),\n     }\n     with open(path, \"w\") as f:\n         json.dump(data, f)\n",
+  "reason": "_safe_round repeats round_price; use the existing function instead.",
+  "safe_score": null,
+  "sources": [
+   "minhash",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 18,
+   "kind": "function",
+   "name": "_safe_round",
+   "path": "shopcart/storage.py",
+   "start_line": 11
+  }
+ },
+ {
+  "action": "replace_with",
+  "category": "wrapper",
+  "evidence": [
+   "body is only `return pricing.total(...)` with the same arguments",
+   "called once, from shopcart/cart.py::Cart.checkout",
+   "knowledge base: 2% of mined maintainer removal requests are wrapper"
+  ],
+  "item_id": "ca07b09097",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": "--- a/shopcart/cart.py\n+++ b/shopcart/cart.py\n@@ -2,10 +2,6 @@\n \n from shopcart import pricing\n from shopcart.discounts import apply_discount\n-\n-\n-def compute_total(items):\n-    return pricing.total(items)\n \n \n class Cart:\n@@ -24,7 +20,7 @@\n         return sum(item[\"qty\"] for item in self.items)\n \n     def checkout(self, code=None):\n-        amount = compute_total(self.items)\n+        amount = pricing.total(self.items)\n         if code:\n             amount = apply_discount(amount, code)\n         return amount\n",
+  "reason": "compute_total only forwards to pricing.total; call it directly.",
+  "safe_score": null,
+  "sources": [
+   "ast",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 8,
+   "kind": "function",
+   "name": "compute_total",
+   "path": "shopcart/cart.py",
+   "start_line": 7
+  }
+ },
+ {
+  "action": "remove_import",
+  "category": "unused_import",
+  "evidence": [
+   "ruff F401 at line 1",
+   "knowledge base: 3% of mined maintainer removal requests are unused_import"
+  ],
+  "item_id": "48d108323e",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "The import of os in shopcart/cart.py is never used.",
+  "safe_score": null,
+  "sources": [
+   "ruff"
+  ],
+  "unit": {
+   "end_line": 1,
+   "kind": "import",
+   "name": "os",
+   "path": "shopcart/cart.py",
+   "start_line": 1
+  }
+ },
+ {
+  "action": "remove_import",
+  "category": "unused_import",
+  "evidence": [
+   "ruff F401 at line 1",
+   "knowledge base: 3% of mined maintainer removal requests are unused_import"
+  ],
+  "item_id": "5e8244a83f",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "The import of sys in shopcart/commands.py is never used.",
+  "safe_score": null,
+  "sources": [
+   "ruff"
+  ],
+  "unit": {
+   "end_line": 1,
+   "kind": "import",
+   "name": "sys",
+   "path": "shopcart/commands.py",
+   "start_line": 1
+  }
+ },
+ {
+  "action": "remove_dependency",
+  "category": "unused_dependency",
+  "evidence": [
+   "deptry DEP002: 'requests' defined as a dependency but not used in the codebase",
+   "requests is not mentioned in any config, CI or script file"
+  ],
+  "item_id": "73bf11c5ce",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "requests is listed as a dependency but never imported.",
+  "safe_score": null,
+  "sources": [
+   "deptry"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "dependency",
+   "name": "requests",
+   "path": "requirements.txt",
+   "start_line": null
+  }
+ },
+ {
+  "action": "format",
+  "category": "format",
+  "evidence": [
+   "ruff format --check would reformat this file"
+  ],
+  "item_id": "c7fcf62991",
+  "keep_target": null,
+  "lane": "safe",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "shopcart/pricing.py does not follow the standard code format.",
+  "safe_score": null,
+  "sources": [
+   "ruff"
+  ],
+  "unit": {
+   "end_line": null,
+   "kind": "file",
+   "name": null,
+   "path": "shopcart/pricing.py",
+   "start_line": null
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "350bb97300",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_add is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 11,
+   "kind": "function",
+   "name": "cmd_add",
+   "path": "shopcart/commands.py",
+   "start_line": 7
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "ebc74f012e",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_export is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 22,
+   "kind": "function",
+   "name": "cmd_export",
+   "path": "shopcart/commands.py",
+   "start_line": 19
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "061d473160",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_load is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 28,
+   "kind": "function",
+   "name": "cmd_load",
+   "path": "shopcart/commands.py",
+   "start_line": 25
+  }
+ },
+ {
+  "action": "delete_unit",
+  "category": "dead_code",
+  "evidence": [
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph",
+   "may be used dynamically (getattr, string lookup or decorator)",
+   "knowledge base: 80% of mined maintainer removal requests are dead_code"
+  ],
+  "item_id": "ad149ec43a",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "cmd_total is never called anywhere in the project.",
+  "safe_score": null,
+  "sources": [
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 16,
+   "kind": "function",
+   "name": "cmd_total",
+   "path": "shopcart/commands.py",
+   "start_line": 14
+  }
+ },
+ {
+  "action": "report_only",
+  "category": "security",
+  "evidence": [
+   "bandit B307 (MEDIUM) at line 41",
+   "vulture: unused function (60% confidence)",
+   "not reachable from tests, __main__ or scripts in the call graph"
+  ],
+  "item_id": "5b73439d48",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": null,
+  "reason": "Possible security problem: Use of possibly insecure function - consider using safer ast.literal_eval.",
+  "safe_score": null,
+  "sources": [
+   "bandit",
+   "vulture",
+   "graph"
+  ],
+  "unit": {
+   "end_line": 45,
+   "kind": "function",
+   "name": "load_legacy",
+   "path": "shopcart/storage.py",
+   "start_line": 39
+  }
+ },
+ {
+  "action": "edit_lines",
+  "category": "debug_leftover",
+  "evidence": [
+   "print at line 6"
+  ],
+  "item_id": "4285e25dc4",
+  "keep_target": null,
+  "lane": "suggest",
+  "llm_confidence": null,
+  "patch": "--- a/reproduce_bug.py\n+++ b/reproduce_bug.py\n@@ -6 +5,0 @@\n-print(cart.checkout(\"SAVE10\"))\n",
+  "reason": "A print in library code; it may be leftover debugging or intended output.",
+  "safe_score": null,
+  "sources": [
+   "ast"
+  ],
+  "unit": {
+   "end_line": 6,
+   "kind": "lines",
+   "name": "L6-6",
+   "path": "reproduce_bug.py",
+   "start_line": 6
+  }
+ }
+]

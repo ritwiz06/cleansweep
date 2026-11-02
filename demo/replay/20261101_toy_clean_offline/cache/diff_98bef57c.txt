@@ -1,0 +1,17 @@
+diff --git a/shopcart/utils.py b/shopcart/utils.py
+index bcaacd7..41c386a 100644
+--- a/shopcart/utils.py
++++ b/shopcart/utils.py
+@@ -12,12 +12,5 @@ def format_money(value):
+     return f"${round_price(value):.2f}"
+ 
+ 
+-def format_money_v2(value, currency="USD"):
+-    amount = round_price(value)
+-    if currency == "USD":
+-        return f"${amount:,.2f}"
+-    return f"{amount:,.2f} {currency}"
+-
+-
+ def slugify(name):
+     return "-".join(name.lower().split())

@@ -1,0 +1,9 @@
+{
+ "name": "proj_a",
+ "safe": "proj_a",
+ "thorough": null,
+ "rows": [
+  {"run": "proj_a", "item_id": "aaa1", "mode": "safe", "kind": "change", "item": "pkg/core.py::old", "category": "dead_code", "what": "remove", "evidence": "no references", "checked": "tests, probes", "why": "", "outcome": "kept", "n": 1},
+  {"run": "proj_a", "item_id": "aaa2", "mode": "safe", "kind": "suggestion", "item": "pkg/util.py::helper", "category": "dead_code", "what": "report_only", "evidence": "used by a string", "checked": "-", "why": "", "outcome": "skipped", "n": 2}
+ ]
+}

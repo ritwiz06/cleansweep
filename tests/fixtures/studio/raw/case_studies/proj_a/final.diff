@@ -1,0 +1,7 @@
+diff --git a/pkg/core.py b/pkg/core.py
+--- a/pkg/core.py
++++ b/pkg/core.py
+@@ -1,3 +1,1 @@
+-def old():
+-    return 1
+ keep = 2

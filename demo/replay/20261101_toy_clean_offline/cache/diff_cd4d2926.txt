@@ -1,0 +1,20 @@
+diff --git a/debug_cart.py b/debug_cart.py
+deleted file mode 100644
+index d84458c..0000000
+--- a/debug_cart.py
++++ /dev/null
+@@ -1,14 +0,0 @@
+-from shopcart.cart import Cart
+-from shopcart.pricing import subtotal, tax
+-
+-
+-def dump(cart):
+-    for item in cart.items:
+-        print(item)
+-    print("subtotal", subtotal(cart.items), "tax", tax(cart.items))
+-
+-
+-if __name__ == "__main__":
+-    c = Cart()
+-    c.add("book", 12.5, 2)
+-    dump(c)

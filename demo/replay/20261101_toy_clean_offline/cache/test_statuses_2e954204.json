@@ -1,0 +1,55 @@
+{
+ "runs": [
+  {
+   "tests.test_cart::test_add_and_count": "passed",
+   "tests.test_cart::test_add_rejects_zero_quantity": "passed",
+   "tests.test_cart::test_checkout_with_code": "passed",
+   "tests.test_cart::test_checkout_with_tax": "passed",
+   "tests.test_cart::test_remove": "passed",
+   "tests.test_cli::test_add_and_total": "passed",
+   "tests.test_cli::test_export": "passed",
+   "tests.test_cli::test_unknown_command": "passed",
+   "tests.test_discounts::test_known_code": "passed",
+   "tests.test_discounts::test_unknown_code": "passed",
+   "tests.test_pricing::test_format_money_and_slugify": "passed",
+   "tests.test_pricing::test_round_price": "passed",
+   "tests.test_pricing::test_subtotal_and_tax": "passed",
+   "tests.test_pricing::test_total": "passed",
+   "tests.test_storage::test_save_and_load": "passed"
+  },
+  {
+   "tests.test_cart::test_add_and_count": "passed",
+   "tests.test_cart::test_add_rejects_zero_quantity": "passed",
+   "tests.test_cart::test_checkout_with_code": "passed",
+   "tests.test_cart::test_checkout_with_tax": "passed",
+   "tests.test_cart::test_remove": "passed",
+   "tests.test_cli::test_add_and_total": "passed",
+   "tests.test_cli::test_export": "passed",
+   "tests.test_cli::test_unknown_command": "passed",
+   "tests.test_discounts::test_known_code": "passed",
+   "tests.test_discounts::test_unknown_code": "passed",
+   "tests.test_pricing::test_format_money_and_slugify": "passed",
+   "tests.test_pricing::test_round_price": "passed",
+   "tests.test_pricing::test_subtotal_and_tax": "passed",
+   "tests.test_pricing::test_total": "passed",
+   "tests.test_storage::test_save_and_load": "passed"
+  },
+  {
+   "tests.test_cart::test_add_and_count": "passed",
+   "tests.test_cart::test_add_rejects_zero_quantity": "passed",
+   "tests.test_cart::test_checkout_with_code": "passed",
+   "tests.test_cart::test_checkout_with_tax": "passed",
+   "tests.test_cart::test_remove": "passed",
+   "tests.test_cli::test_add_and_total": "passed",
+   "tests.test_cli::test_export": "passed",
+   "tests.test_cli::test_unknown_command": "passed",
+   "tests.test_discounts::test_known_code": "passed",
+   "tests.test_discounts::test_unknown_code": "passed",
+   "tests.test_pricing::test_format_money_and_slugify": "passed",
+   "tests.test_pricing::test_round_price": "passed",
+   "tests.test_pricing::test_subtotal_and_tax": "passed",
+   "tests.test_pricing::test_total": "passed",
+   "tests.test_storage::test_save_and_load": "passed"
+  }
+ ]
+}

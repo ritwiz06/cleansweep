@@ -1,0 +1,1 @@
+the probes ran no cases, so these rewrites are not verified: ['shopcart/storage.py::_safe_round']

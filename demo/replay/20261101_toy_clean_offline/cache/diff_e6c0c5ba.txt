@@ -1,0 +1,9 @@
+diff --git a/shopcart/cart.py b/shopcart/cart.py
+index 7c41ce1..8e2b39b 100644
+--- a/shopcart/cart.py
++++ b/shopcart/cart.py
+@@ -1,4 +1,3 @@
+-import os
+ 
+ from shopcart import pricing
+ from shopcart.discounts import apply_discount

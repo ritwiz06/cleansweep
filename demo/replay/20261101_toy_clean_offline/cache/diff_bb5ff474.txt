@@ -1,0 +1,6 @@
+diff --git a/requirements.txt b/requirements.txt
+index 535409c..e69de29 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1 +0,0 @@
+-requests>=2.31
