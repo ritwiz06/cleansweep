@@ -1,0 +1,8 @@
+{
+ "label": "LLM-reviewer acceptance (independent model, blinded)",
+ "model": "model_b",
+ "reviews": {
+  "1": {"decision": "accept", "votes": ["accept", "accept", "accept"], "reason": "the function is unused"},
+  "2": {"decision": "reject", "votes": ["reject", "reject", "unsure"], "reason": "a string may call it"}
+ }
+}
