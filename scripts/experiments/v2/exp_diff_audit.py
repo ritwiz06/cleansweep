@@ -10,14 +10,14 @@ is recorded with its evidence.
 
 run: collects the kept edits (status kept, with a diff, not formatting) of the answer-key, SWE-bench
 and AIDev runs (results/raw/v2_eval/, with v1's gatekeeper run on each SWE-bench and AIDev target
-the team ran), the injected set (results/raw/inject/) and the case studies
-(results/raw/case_studies/), and merges identical edits (same project, file and diff). The
-auditor is VOYAGER_MODEL_ALT, never the agents' model. It sees the project, the file, the code
-around the edit at the commit the run started from, the diff, and where the names the edit
-removes appear elsewhere in the project; never the method, the edit's category, the agents'
-evidence or verdicts. Each edit is asked 3 times (seeds 0, 1, 2, temperature 0.3, reasoning
-off) and the majority decides (no majority: unsure). Resumable: results/raw/diff_audit/
-audit.json. A light job: it waits while the 1-minute load average is above the CPU count.
+the team ran), the injected set (results/raw/inject/) and the case studies the results report plus
+the real-project ablation (results/raw/case_studies/), and merges identical edits (same project,
+file and diff). The auditor is VOYAGER_MODEL_ALT, never the agents' model. It sees the project, the
+file, the code around the edit at the commit the run started from, the diff, and where the names the
+edit removes appear elsewhere in the project; never the method, the edit's category, the agents'
+evidence or verdicts. Each edit is asked 3 times (seeds 0, 1, 2, temperature 0.3, reasoning off) and
+the majority decides (no majority: unsure). Resumable: results/raw/diff_audit/audit.json. A light
+job: it waits while the 1-minute load average is above the CPU count.
 auto: checks the flagged edits two rules settle without reading: on the injected set, an edit
 whose removed lines are all planted lines and that adds nothing is fine when it removes planted
 slop and wrong when it removes a trap (the benchmark's key); on SWE-bench, deleting a file the
@@ -61,6 +61,19 @@ OUT = RAW / "diff_audit"
 SUMMARY = ROOT / "results" / "summary" / "v2"
 CHECKS = SUMMARY / "diff_audit_checks.csv"
 CACHE = OUT / "llm_cache.sqlite"
+# the case-study runs the results report; the others were superseded (first tries, killed runs)
+CASE_STUDIES = {
+    "cleansweep-safe-3b",
+    "cleansweep-thorough",
+    "slop-guard-safe-3b",
+    "slop-guard-thorough",
+    "skill-seekers-safe",
+    "skill-seekers-thorough",
+    "shotgun-safe",
+    "telegram-safe",
+    "telegram-thorough",
+}
+DEPENDENCY_FILES = ("requirements", "pyproject.toml", "setup.cfg", "setup.py")
 ANSWERS = ("yes", "no", "unsure")
 SYSTEM = (
     "You audit edits made to Python projects. For each edit you see the code around it, the "
@@ -117,7 +130,8 @@ class Tree:
                 f"{self.prefix}*.cfg",
                 f"{self.prefix}*.txt",
             )
-            lines = [line.split(":", 1)[1] for line in out.splitlines()]
+            # split on newlines only: a matched line can hold a form feed or a carriage return
+            lines = [line.split(":", 1)[1] for line in out.split("\n") if ":" in line]
         else:
             out = subprocess.run(
                 [
@@ -135,7 +149,7 @@ class Tree:
                 capture_output=True,
                 text=True,
             ).stdout
-            lines = [line.removeprefix("./") for line in out.splitlines()]
+            lines = [line.removeprefix("./") for line in out.split("\n") if line]
         return [line.removeprefix(self.prefix) for line in lines]
 
 
@@ -207,6 +221,8 @@ def runs() -> list[tuple[str, str, str, Path]]:
             out.append(("injected", path.stem, path.parent.name, path))
     for path in sorted((RAW / "case_studies").glob("*/report.json")):
         name = path.parent.name
+        if name not in CASE_STUDIES and "-abl-" not in name:
+            continue
         summary = path.parent / "summary.json"
         ablation = json.loads(summary.read_text()).get("ablation") if summary.exists() else None
         source = "real-project ablation" if "-abl-" in name else "case studies"
@@ -246,6 +262,12 @@ def collect() -> tuple[dict, list[dict]]:
     return edits, rows
 
 
+def _dependency(line: str, path: str) -> list[str]:
+    """The package a dependency line names, spelled as code would import it."""
+    pattern = r"^([A-Za-z][\w.-]*)" if "requirements" in path else r"^[\"']([A-Za-z][\w.-]*)"
+    return [n.lower().replace("-", "_") for n in re.findall(pattern, line)]
+
+
 def removed_names(diff: str, path: str) -> list[str]:
     names = []
     for line in diff.splitlines():
@@ -253,6 +275,9 @@ def removed_names(diff: str, path: str) -> list[str]:
             continue
         text = line[1:].strip()
         names += re.findall(r"^(?:async\s+)?(?:def|class)\s+(\w+)", text)
+        if Path(path).name.startswith(DEPENDENCY_FILES):
+            names += _dependency(text, path)
+            continue
         m = re.match(r"^from\s+\S+\s+import\s+(.+)", text) or re.match(r"^import\s+(.+)", text)
         if m:
             names += [

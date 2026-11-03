@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -71,3 +72,39 @@ def test_the_injection_rule_settles_only_planted_lines():
     assert audit.plant_rule(inline, slop, traps) == "fine"
     other = '@@ -5 +5 @@\n-deps = ["numpy", "toolz>=0.1"]\n+deps = []\n'
     assert audit.plant_rule(other, slop, traps) == ""
+
+
+def test_a_removed_dependency_is_named_as_code_imports_it():
+    audit = load()
+    req = "--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1,2 +1 @@\n"
+    req += "-Python-Dateutil>=2.8\n requests\n"
+    assert audit.removed_names(req, "requirements.txt") == ["python_dateutil"]
+    toml = "--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -3,2 +3 @@\n"
+    toml += '-    "tabulate>=0.9",\n-name = "x"\n'
+    assert audit.removed_names(toml, "pyproject.toml") == ["tabulate"]
+
+
+def test_grep_keeps_a_line_with_a_form_feed(tmp_path):
+    audit = load()
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "a.py").write_text("x = shorten  # \f page\nprint(shorten)\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "."], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(tmp_path),
+            "-c",
+            "user.name=a",
+            "-c",
+            "user.email=a@b",
+            "commit",
+            "-qm",
+            "a",
+        ],
+        check=True,
+    )
+    assert audit.Tree(tmp_path, "HEAD").grep("shorten") == [
+        "a.py:1:x = shorten  # \f page",
+        "a.py:2:print(shorten)",
+    ]
