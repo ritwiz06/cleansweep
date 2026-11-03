@@ -50,3 +50,41 @@ def test_runs_pair_by_target_and_repeat_and_no_outcome_counts_as_unchanged():
     assert table["agentic"][tables.VERDICT_COLUMN] == "2 / 0 / 1"
     assert table["agentic"]["planted found"] == "18/21"
     assert table["cleansweep-gatekeeper"][tables.VERDICT_COLUMN] == "--"
+
+
+def plant(method, repo, seed, kind, removed, hidden=False):
+    return {
+        "method": method,
+        "repo": repo,
+        "seed": seed,
+        "kind": kind,
+        "removed": removed,
+        "hidden_changed": hidden,
+        "llm_calls": "4",
+    }
+
+
+def test_injection_tables_pool_seeds_and_pair_by_project_and_seed():
+    tables = load()
+    plants = []
+    for seed in ("1", "2"):
+        for repo in ("toy", "aaa"):
+            plants += [
+                plant("agentic", repo, seed, "slop", 1),
+                plant("agentic", repo, seed, "trap", 0),
+            ]
+            single = repo == "aaa"
+            plants += [
+                plant("agentic-single_agent", repo, seed, "slop", 0, hidden=single),
+                plant("agentic-single_agent", repo, seed, "trap", int(single), hidden=single),
+            ]
+    seeds = {(r["method"], r["seeds"]): r for r in tables.injection_seeds(plants)}
+    assert seeds["agentic", "pooled"]["planted removed"] == "4/4"
+    assert seeds["agentic", "seed 1"]["runs"] == 2
+    assert seeds["agentic-single_agent", "pooled"]["hidden changed"] == "2/4"
+    assert seeds["agentic-single_agent", "pooled"]["traps removed"] == 2
+    paired = {r["comparison"]: r for r in tables.injection_paired(plants)}
+    single = paired["agentic vs agentic-single_agent"]
+    assert single["pairs"] == 4 and single["planted removed"] == "4 vs 0"
+    assert single["hidden changed only first / only second"] == "0 / 2"
+    assert "agentic vs agentic-no_research" not in paired  # no runs to pair

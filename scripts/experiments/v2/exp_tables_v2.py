@@ -4,8 +4,11 @@ injection benchmark by category.
     python scripts/experiments/v2/exp_tables_v2.py
 
 Reads results/summary/v2/eval_runs.csv (exp_collect_v2.py) and injection.csv (exp_inject.py
-table). Writes results/summary/v2/{eval_table,eval_paired,ablations}.{csv,md} and
-injection_summary.csv. Toy and demo pool as "answer keys"; their runs pair by target and repeat.
+table). Writes results/summary/v2/{eval_table,eval_paired,ablations}.{csv,md},
+injection_summary.csv, and injection_seeds and injection_paired (.csv, .md): each method per
+seed and on all seeds pooled (bootstrap CI over project x seed), and the team against no research
+squad, a single agent, v1 and one-shot, paired by project and seed. Toy and demo pool as "answer
+keys"; their runs pair by target and repeat.
 Hidden changes marked flaky count as no outcome. Hidden changes come from hidden tests and
 planted items from answer keys; no LLM judges any measure here.
 """
@@ -231,6 +234,105 @@ def ablations(rows: list[dict], plants: list[dict]) -> list[dict]:
     return out
 
 
+INJECT_ORDER = ["agentic", "cleansweep", "one_shot_llm", *ABLATION_ORDER[1:]]
+PAIRS = [
+    ("agentic", "agentic-no_research"),
+    ("agentic", "agentic-single_agent"),
+    ("agentic", "cleansweep"),
+    ("agentic", "one_shot_llm"),
+]
+
+
+def injection_runs(plants: list[dict]) -> dict[tuple[str, str, str], dict]:
+    """(method, repo, seed) -> planted slop removed, slop planted, traps removed, hidden changed,
+    LLM requests."""
+    runs: dict[tuple[str, str, str], dict] = {}
+    for p in plants:
+        run = runs.setdefault(
+            (p["method"], p["repo"], p["seed"]),
+            {
+                "removed": 0,
+                "planted": 0,
+                "traps": 0,
+                "hidden": p["hidden_changed"],
+                "llm": int(p["llm_calls"] or 0),
+            },
+        )
+        run["hidden"] = run["hidden"] or p["hidden_changed"]
+        if p["kind"] == "slop":
+            run["planted"] += 1
+            run["removed"] += p["removed"]
+        else:
+            run["traps"] += p["removed"]
+    return runs
+
+
+def injection_seeds(plants: list[dict]) -> list[dict]:
+    """Each method on each seed and on all seeds pooled: planted slop removed, the mean share per
+    run with a bootstrap CI over project x seed, traps removed, runs with a hidden change."""
+    runs = injection_runs(plants)
+    seeds = sorted({s for _, _, s in runs})
+    out = []
+    for method in INJECT_ORDER:
+        for label, keep in [*((f"seed {s}", {s}) for s in seeds), ("pooled", set(seeds))]:
+            mine = [r for (m, _, s), r in runs.items() if m == method and s in keep]
+            if not mine or (label == "pooled" and len(seeds) == 1):
+                continue
+            shares = [r["removed"] / r["planted"] for r in mine if r["planted"]]
+            out.append(
+                {
+                    "method": method,
+                    "seeds": label,
+                    "runs": len(mine),
+                    "planted removed": f"{sum(r['removed'] for r in mine)}/"
+                    f"{sum(r['planted'] for r in mine)}",
+                    "share per run (mean, 95% CI)": fmt(*bootstrap_ci(shares), 3),
+                    "traps removed": sum(r["traps"] for r in mine),
+                    "hidden changed": f"{sum(bool(r['hidden']) for r in mine)}/{len(mine)}",
+                    "LLM requests (mean)": _mean([r["llm"] for r in mine]),
+                }
+            )
+    return out
+
+
+def injection_paired(plants: list[dict]) -> list[dict]:
+    """The team against no research squad, a single agent, v1 and one-shot, paired by project
+    and seed: Wilcoxon on planted slop removed, McNemar on hidden changes and on removing a
+    trap."""
+    runs = injection_runs(plants)
+    out = []
+    for a, b in PAIRS:
+        keys = sorted((r, s) for m, r, s in runs if m == a and (b, r, s) in runs)
+        if not keys:
+            continue
+        x = [runs[a, r, s] for r, s in keys]
+        y = [runs[b, r, s] for r, s in keys]
+        stat, p = wilcoxon([v["removed"] for v in x], [v["removed"] for v in y])
+        hid = [(bool(u["hidden"]), bool(v["hidden"])) for u, v in zip(x, y, strict=True)]
+        trap = [(u["traps"] > 0, v["traps"] > 0) for u, v in zip(x, y, strict=True)]
+        out.append(
+            {
+                "comparison": f"{a} vs {b}",
+                "pairs": len(keys),
+                "planted removed": f"{sum(v['removed'] for v in x)} vs "
+                f"{sum(v['removed'] for v in y)}",
+                "Wilcoxon W": round(stat, 1),
+                "Wilcoxon p": round(p, 4),
+                "hidden changed only first / only second": f"{sum(u and not v for u, v in hid)} / "
+                f"{sum(v and not u for u, v in hid)}",
+                "McNemar p (hidden)": round(
+                    mcnemar(sum(u and not v for u, v in hid), sum(v and not u for u, v in hid)), 4
+                ),
+                "trap removed only first / only second": f"{sum(u and not v for u, v in trap)} / "
+                f"{sum(v and not u for u, v in trap)}",
+                "McNemar p (traps)": round(
+                    mcnemar(sum(u and not v for u, v in trap), sum(v and not u for u, v in trap)), 4
+                ),
+            }
+        )
+    return out
+
+
 def read_plants(path: Path) -> list[dict]:
     with path.open() as f:
         plants = list(csv.DictReader(f))
@@ -249,7 +351,9 @@ def main() -> int:
     write("ablations", ablations(rows, plants))
     if plants:
         write("injection_summary", summarize(plants), markdown=False)
-    for name in ("eval_table", "eval_paired", "ablations"):
+        write("injection_seeds", injection_seeds(plants))
+        write("injection_paired", injection_paired(plants))
+    for name in ("eval_table", "eval_paired", "ablations", "injection_seeds", "injection_paired"):
         path = SUMMARY / f"{name}.md"
         print(path.read_text() if path.exists() else "")
     return 0
