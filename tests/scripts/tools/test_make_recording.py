@@ -35,6 +35,10 @@ def test_recording_has_relative_paths_and_redacted_words(tmp_path, monkeypatch):
     diff = (dest / "cache" / "diff_1.txt").read_text()
     assert diff == "see demo/replay/toy_recording/patches and results/raw/toy__agentic__r0"
     assert not (dest / "workspace").exists()
+    meta = json.loads((dest / "recording.json").read_text())
+    assert meta["note"] == (
+        "one product name in third-party content replaced by placeholders; nothing else changed"
+    )
 
 
 def test_a_secret_stops_the_copy(tmp_path, monkeypatch):

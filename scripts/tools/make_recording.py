@@ -6,13 +6,15 @@ Copies events.jsonl, report.json (or --report), the Markdown reports, final.diff
 never the workspace, patches or quarantine. The run folder's absolute path becomes
 demo/replay/NAME, and other paths under this repository or a sibling run copy become relative.
 Each --redact replaces a word in every copied file, ignoring case and keeping it (for product
-names a project uses in its own code that may not be committed here). Stops when a copied file
-still holds an absolute home path or a secret-looking string.
+names a project uses in its own code that may not be committed here); the recording's
+recording.json then says so. Stops when a copied file still holds an absolute home path or a
+secret-looking string.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import sys
@@ -34,6 +36,16 @@ FILES = [
     "final.diff",
 ]
 HOME = re.compile(r"/(Users|home)/[^/\s\"'`]+/")
+COUNT = {1: "one", 2: "two", 3: "three", 4: "four"}
+
+
+def note(n: int) -> str:
+    """What a recording with n redacted words says about them."""
+    names = "product name" if n == 1 else "product names"
+    return (
+        f"{COUNT.get(n, n)} {names} in third-party content replaced by placeholders; "
+        "nothing else changed"
+    )
 
 
 def _case(word: str, like: str) -> str:
@@ -91,6 +103,9 @@ def make(
     if found:
         shutil.rmtree(dest)
         raise SystemExit("not copied:\n" + "\n".join(found))
+    if words:
+        meta = {"recording": name, "source": run.name, "note": note(len(words))}
+        (dest / "recording.json").write_text(json.dumps(meta, indent=1) + "\n")
     return dest
 
 
