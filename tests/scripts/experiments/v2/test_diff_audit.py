@@ -49,3 +49,25 @@ def test_the_auditor_sees_code_diff_and_references_but_no_method(tmp_path):
     assert "`shorten`: 2 line(s) in this file; elsewhere: cli.py:1:" in text
     assert "dead" not in text.lower() and "agentic" not in text
     assert "not searched" in audit.view(edit, audit.Tree(None))
+
+
+def test_the_injection_rule_settles_only_planted_lines():
+    audit = load()
+    key = {"tag": "amber1", "plants": [{"category": "unused_import", "marker": "import zlib\n"}]}
+    slop, traps = audit.plant_lines(key)
+    dead = "@@ -9,5 +9,0 @@\n-def _unused_amber1(items):\n-    total = 0\n-    for item in items:\n"
+    dead += "-        total += len(str(item))\n-    return total\n"
+    assert audit.plant_rule(dead, slop, traps) == "fine"
+    assert audit.plant_rule("@@ -1 +1 @@\n-import zlib\n", slop, traps) == "fine"
+    debug = '@@ -3 +3 @@\n-        print(f"{value=}")\n+        pass\n'
+    assert audit.plant_rule(debug, slop, traps) == "fine"
+    trap = "@@ -20,3 +20,0 @@\n-    def visit_Name(self, node):\n-        self.names += 1\n"
+    assert audit.plant_rule(trap, slop, traps) == "wrong"
+    support = '@@ -1,2 +1,0 @@\n-def describe_amber1(value, verbose=False):\n-    return "x"\n'
+    assert audit.plant_rule(support, slop, traps) == ""  # needs reading
+    key["plants"].append({"category": "unused_dependency", "marker": '"toolz>=0.1"'})
+    slop, traps = audit.plant_lines(key)
+    inline = '@@ -5 +5 @@\n-deps = ["numpy", "toolz>=0.1"]\n+deps = ["numpy"]\n'
+    assert audit.plant_rule(inline, slop, traps) == "fine"
+    other = '@@ -5 +5 @@\n-deps = ["numpy", "toolz>=0.1"]\n+deps = []\n'
+    assert audit.plant_rule(other, slop, traps) == ""
