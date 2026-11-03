@@ -4,24 +4,29 @@ whether it changes behavior anyone could observe. Its votes are LLM-judged; ever
 is recorded with its evidence.
 
     python scripts/experiments/v2/exp_diff_audit.py run
+    python scripts/experiments/v2/exp_diff_audit.py auto
     python scripts/experiments/v2/exp_diff_audit.py pending
     python scripts/experiments/v2/exp_diff_audit.py table
 
 run: collects the kept edits (status kept, with a diff, not formatting) of the answer-key, SWE-bench
 and AIDev runs (results/raw/v2_eval/, with v1's gatekeeper run on each SWE-bench and AIDev target
-the team ran), the injected set (results/raw/inject/) and the case studies
-(results/raw/case_studies/), and merges identical edits (same project, file and diff). The
-auditor is VOYAGER_MODEL_ALT, never the agents' model. It sees the project, the file, the code
-around the edit at the commit the run started from, the diff, and where the names the edit
-removes appear elsewhere in the project; never the method, the edit's category, the agents'
-evidence or verdicts. Each edit is asked 3 times (seeds 0, 1, 2, temperature 0.3, reasoning
-off) and the majority decides (no majority: unsure). Resumable: results/raw/diff_audit/
-audit.json. A light job: it waits while the 1-minute load average is above the CPU count.
+the team ran), the injected set (results/raw/inject/) and the case studies the results report plus
+the real-project ablation (results/raw/case_studies/), and merges identical edits (same project,
+file and diff). The auditor is VOYAGER_MODEL_ALT, never the agents' model. It sees the project, the
+file, the code around the edit at the commit the run started from, the diff, and where the names the
+edit removes appear elsewhere in the project; never the method, the edit's category, the agents'
+evidence or verdicts. Each edit is asked 3 times (seeds 0, 1, 2, temperature 0.3, reasoning off) and
+the majority decides (no majority: unsure). Resumable: results/raw/diff_audit/audit.json. A light
+job: it waits while the 1-minute load average is above the CPU count.
+auto: checks the flagged edits two rules settle without reading: on the injected set, an edit
+whose removed lines are all planted lines and that adds nothing is fine when it removes planted
+slop and wrong when it removes a trap (the benchmark's key); on SWE-bench, deleting a file the
+coding agent's patch created is fine.
 pending: the "yes" and "unsure" edits without a check in results/summary/v2/diff_audit_checks.csv
-(edit, verdict wrong | fine, evidence).
+(edit, verdict wrong | debatable | fine, evidence, checked_by).
 table: results/summary/v2/diff_audit.csv, per method: kept code edits, auditor yes / unsure /
-no, confirmed wrong edits with a rate and a 95% bootstrap CI over runs, and how many of them every
-check missed (the run's hidden checks unchanged or not available).
+no, confirmed wrong edits with a rate and a 95% bootstrap CI over runs, debatable edits, and how
+many wrong edits every check missed (the run's hidden checks unchanged or not available).
 """
 
 from __future__ import annotations
@@ -56,6 +61,19 @@ OUT = RAW / "diff_audit"
 SUMMARY = ROOT / "results" / "summary" / "v2"
 CHECKS = SUMMARY / "diff_audit_checks.csv"
 CACHE = OUT / "llm_cache.sqlite"
+# the case-study runs the results report; the others were superseded (first tries, killed runs)
+CASE_STUDIES = {
+    "cleansweep-safe-3b",
+    "cleansweep-thorough",
+    "slop-guard-safe-3b",
+    "slop-guard-thorough",
+    "skill-seekers-safe",
+    "skill-seekers-thorough",
+    "shotgun-safe",
+    "telegram-safe",
+    "telegram-thorough",
+}
+DEPENDENCY_FILES = ("requirements", "pyproject.toml", "setup.cfg", "setup.py")
 ANSWERS = ("yes", "no", "unsure")
 SYSTEM = (
     "You audit edits made to Python projects. For each edit you see the code around it, the "
@@ -112,7 +130,8 @@ class Tree:
                 f"{self.prefix}*.cfg",
                 f"{self.prefix}*.txt",
             )
-            lines = [line.split(":", 1)[1] for line in out.splitlines()]
+            # split on newlines only: a matched line can hold a form feed or a carriage return
+            lines = [line.split(":", 1)[1] for line in out.split("\n") if ":" in line]
         else:
             out = subprocess.run(
                 [
@@ -130,7 +149,7 @@ class Tree:
                 capture_output=True,
                 text=True,
             ).stdout
-            lines = [line.removeprefix("./") for line in out.splitlines()]
+            lines = [line.removeprefix("./") for line in out.split("\n") if line]
         return [line.removeprefix(self.prefix) for line in lines]
 
 
@@ -202,6 +221,8 @@ def runs() -> list[tuple[str, str, str, Path]]:
             out.append(("injected", path.stem, path.parent.name, path))
     for path in sorted((RAW / "case_studies").glob("*/report.json")):
         name = path.parent.name
+        if name not in CASE_STUDIES and "-abl-" not in name:
+            continue
         summary = path.parent / "summary.json"
         ablation = json.loads(summary.read_text()).get("ablation") if summary.exists() else None
         source = "real-project ablation" if "-abl-" in name else "case studies"
@@ -241,6 +262,12 @@ def collect() -> tuple[dict, list[dict]]:
     return edits, rows
 
 
+def _dependency(line: str, path: str) -> list[str]:
+    """The package a dependency line names, spelled as code would import it."""
+    pattern = r"^([A-Za-z][\w.-]*)" if "requirements" in path else r"^[\"']([A-Za-z][\w.-]*)"
+    return [n.lower().replace("-", "_") for n in re.findall(pattern, line)]
+
+
 def removed_names(diff: str, path: str) -> list[str]:
     names = []
     for line in diff.splitlines():
@@ -248,6 +275,9 @@ def removed_names(diff: str, path: str) -> list[str]:
             continue
         text = line[1:].strip()
         names += re.findall(r"^(?:async\s+)?(?:def|class)\s+(\w+)", text)
+        if Path(path).name.startswith(DEPENDENCY_FILES):
+            names += _dependency(text, path)
+            continue
         m = re.match(r"^from\s+\S+\s+import\s+(.+)", text) or re.match(r"^import\s+(.+)", text)
         if m:
             names += [
@@ -326,6 +356,136 @@ def run_audit() -> Path:
     return path
 
 
+CHECK_FIELDS = ["edit", "verdict", "evidence", "checked_by"]
+EVIDENCE = {
+    "wrong": "removes a planted trap (the benchmark's key)",
+    "fine": "removes planted slop only (the benchmark's key)",
+}
+
+
+def _lines(diff: str, sign: str) -> list[str]:
+    head = sign * 3
+    return [
+        line[1:].strip()
+        for line in diff.splitlines()
+        if line.startswith(sign) and not line.startswith(head) and line[1:].strip()
+    ]
+
+
+def plant_lines(key: dict) -> tuple[set[str], set[str]]:
+    """(the lines of the planted slop, the distinctive lines of the two traps), stripped, from
+    exp_inject.py's templates and the key."""
+    tag = key["tag"]
+    slop = {
+        f'"""Trying out the {tag} totals; not used anywhere."""',
+        "values = [1, 2, 3]",
+        "print(sum(values))",
+        f"def _unused_{tag}(items):",
+        "total = 0",
+        "for item in items:",
+        "total += len(str(item))",
+        "return total",
+        'print(f"{value=}")',
+        f"# result = describe_{tag}(2, verbose=True)",
+        "# if result:",
+        "#     print(result)",
+    }
+    for plant in key["plants"]:
+        if plant["category"] in ("unused_import", "unused_dependency"):
+            slop.add(plant["marker"].strip().strip(","))
+    traps = {
+        "def visit_Name(self, node):",
+        "self.names += 1",
+        f"def scale_{tag}(values, factor=100):",
+        f"def scale_{tag}_v2(values, factor=100):",
+        "out.append(round(value * factor) / factor)",
+        "out.append(int(value * factor + 0.5) / factor)",
+    }
+    return slop, traps
+
+
+def plant_rule(diff: str, slop: set[str], traps: set[str]) -> str:
+    """wrong when the edit removes a trap's line; fine when it removes planted slop only (a line,
+    or a planted dependency taken out of a line) and adds nothing but `pass`; "" when reading is
+    needed."""
+    removed = {line.strip(",") for line in _lines(diff, "-")}
+    added = {line.strip(",") for line in _lines(diff, "+")} - {"pass"}
+    if removed & traps:
+        return "wrong"
+    deps = [s.replace(" ", "") for s in slop if ">=" in s]
+    for line in sorted(removed - slop):
+        rest = line.replace(" ", "")
+        for dep in deps:
+            rest = rest.replace("," + dep, "").replace(dep + ",", "").replace(dep, "")
+        match = next((a for a in added if a.replace(" ", "") == rest), None)
+        if match is not None and rest != line.replace(" ", ""):
+            removed.discard(line)  # the same line with a planted dependency taken out
+            added.discard(match)
+    if removed <= slop and not added and _lines(diff, "-"):
+        return "fine"
+    return ""
+
+
+def agent_created(project: str) -> set[str]:
+    """Files the coding agent's patch created, for a "swebench:<instance>:<agent>" target."""
+    from cleansweep.data import load_agent_patches
+
+    _, instance, agent = project.split(":", 2)
+    found = [p for p in load_agent_patches([agent]) if p.instance_id == instance]
+    if not found:
+        return set()
+    return set(re.findall(r"^diff --git a/\S+ b/(\S+)\nnew file mode", found[0].patch, re.M))
+
+
+def auto() -> int:
+    """Add the checks the two rules settle; return how many were added."""
+    audit = json.loads((OUT / "audit.json").read_text())
+    known = checks()
+    rows, plants, created = [], {}, {}
+    for edit_id, record in sorted(audit.items()):
+        if record["answer"] == "no" or edit_id in known:
+            continue
+        diff, report = record["diff"], Path(record["report"])
+        if report.parent.parent.name == "inject":
+            if report.parent not in plants:
+                plants[report.parent] = plant_lines(
+                    json.loads((report.parent / "key.json").read_text())
+                )
+            verdict = plant_rule(diff, *plants[report.parent])
+            if verdict:
+                rows.append(
+                    {
+                        "edit": edit_id,
+                        "verdict": verdict,
+                        "evidence": EVIDENCE[verdict],
+                        "checked_by": "rule: injection key",
+                    }
+                )
+        elif record["project"].startswith("swebench:") and "deleted file mode" in diff:
+            project = record["project"]
+            if project not in created:
+                created[project] = agent_created(project)
+            if record["path"] in created[project]:
+                rows.append(
+                    {
+                        "edit": edit_id,
+                        "verdict": "fine",
+                        "evidence": "deletes a file the coding agent's patch created",
+                        "checked_by": "rule: agent patch",
+                    }
+                )
+    write_checks([*known.values(), *rows])
+    return len(rows)
+
+
+def write_checks(rows: list[dict]) -> None:
+    SUMMARY.mkdir(parents=True, exist_ok=True)
+    with CHECKS.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CHECK_FIELDS)
+        writer.writeheader()
+        writer.writerows(sorted(rows, key=lambda r: r["edit"]))
+
+
 def checks() -> dict[str, dict]:
     if not CHECKS.exists():
         return {}
@@ -364,6 +524,7 @@ def table() -> Path:
         mine = [r for r in rows if (r["source"], r["method"]) == (source, method)]
         answers = [audit.get(r["edit"], {}).get("answer", "") for r in mine]
         wrong = [r for r in mine if known.get(r["edit"], {}).get("verdict") == "wrong"]
+        debatable = [r for r in mine if known.get(r["edit"], {}).get("verdict") == "debatable"]
         open_ = [
             r
             for r, a in zip(mine, answers, strict=True)
@@ -390,6 +551,7 @@ def table() -> Path:
                 "wrong_rate": round(len(wrong) / len(mine), 4) if mine else "",
                 "ci_low": low,
                 "ci_high": high,
+                "debatable": len(debatable),
                 "missed_by_every_check": sum(r["hidden_changed"] != 1 for r in wrong),
             }
         )
@@ -404,10 +566,12 @@ def table() -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "pending", "table"])
+    parser.add_argument("what", choices=["run", "auto", "pending", "table"])
     args = parser.parse_args(argv)
     if args.what == "run":
         print(run_audit())
+    elif args.what == "auto":
+        print(f"{auto()} checks added by rule")
     elif args.what == "pending":
         for row in pending():
             print(json.dumps(row))
