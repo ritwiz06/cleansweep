@@ -8,7 +8,8 @@
 # v1: exp_tables.py: main_table, paired_tests, ablation, oneshot_series and the main figures,
 # from main_results.csv and guard_strength.csv. exp_scheduler_tradeoff.py: scheduler_tradeoff.csv
 # and its figure, from scheduler_replay.csv. v2: exp_tables_v2.py: eval_table, eval_paired,
-# ablations and injection_summary, from eval_runs.csv and injection.csv. On a clean checkout,
+# ablations and injection_summary, from eval_runs.csv and injection.csv; exp_real_ablation.py
+# table: real_ablation, from real_ablation_runs.csv. On a clean checkout,
 # `git status results/` shows no change afterwards. docs/experiments.md lists the per-run CSVs
 # and the scripts that write them.
 set -euo pipefail
@@ -23,4 +24,5 @@ fi
 "$PYTHON" scripts/experiments/v1/exp_tables.py > /dev/null
 "$PYTHON" scripts/experiments/v1/exp_scheduler_tradeoff.py > /dev/null
 "$PYTHON" scripts/experiments/v2/exp_tables_v2.py > /dev/null
+"$PYTHON" scripts/experiments/v2/exp_real_ablation.py table > /dev/null
 echo "reproduce_tables: rebuilt the tables and figures in ${CLEANSWEEP_RESULTS:-results}"

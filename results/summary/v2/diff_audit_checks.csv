@@ -1,5 +1,6 @@
 edit,verdict,evidence,checked_by
 029d6944baf7,fine,removes planted slop only (the benchmark's key),rule: injection key
+02f786af28d1,wrong,"merges _import_sampler_base into _import_ldpc_code, which imports a different class; evaluate() now binds LDPCCode to SamplerBase, so the subclass check of every program fails.",reading (LLM-judged)
 03358e56ca17,wrong,replaces _maybe_import_differential_evolution with another task's _maybe_import_cp_sat; the oracle gets a different optimizer.,reading (LLM-judged)
 041b202709a7,debatable,"removes shellingham; dropkit never imports it, but typer imports it to detect the shell for --install-completion. typer 0.12+ depends on it itself; dropkit allows typer>=0.9.0, where it is optional.",reading (LLM-judged)
 049cefa36abe,wrong,"deletes MinimolScorer.score_klebsiella_pneumoniae, which grader.py:252 calls.",reading (LLM-judged)
@@ -39,6 +40,7 @@ edit,verdict,evidence,checked_by
 3629eb58c2b5,fine,removes pytest-asyncio: the project has no async tests and no asyncio marker or mode (async def test_* are API routes in settings.py).,reading (LLM-judged)
 38f508ff9402,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 3951db7d3326,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+3cb673e1aa2c,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 3cfcd50dea61,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 3e0917930370,fine,removes planted slop only (the benchmark's key),rule: injection key
 3ed55ba899bd,fine,removes qrcode: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
@@ -51,18 +53,21 @@ edit,verdict,evidence,checked_by
 463f505f7685,fine,deletes a file the coding agent's patch created,rule: agent patch
 46a4be2b8add,fine,deletes a file the coding agent's patch created,rule: agent patch
 492cdb721947,fine,removes pyzbar: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
+4b743ee9a784,fine,removes planted slop only (the benchmark's key),rule: injection key
 4c030116f522,fine,deletes a file the coding agent's patch created,rule: agent patch
 4da22c59c6ed,fine,deletes a file the coding agent's patch created,rule: agent patch
 4e7f02206d11,debatable,"replaces a fail-fast from minimol import Minimol in MinimolScorer.__init__ with pass (the next line keeps the same check for rdkit, noqa F401); Minimol is imported again where it is used (minimol.py:179) and the grader checks is_available() first, so only the moment a missing package fails moves.",reading (LLM-judged)
 4fe03741ac36,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 5204d0f8cc4a,fine,"removes pytest-asyncio; the project has no async test, no asyncio marker and no asyncio_mode setting (its async def test_* functions are API routes).",reading (LLM-judged)
 5410124918a4,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+54952a4c6357,fine,"removes Pillow from requirements.txt; no file imports PIL, and neither qrcode nor pyzbar is imported (as 289688156563).",reading (LLM-judged)
 556908d9e2e6,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
 5760d88c8456,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
 5bd9de6319f2,debatable,"deletes MinimolScorer.score_neisseria_gonorrhoeae: no caller, docs or config; a public method of an installable grader package (same edit as 3322f6207bda on another base).",reading (LLM-judged)
 5f9ad4028cab,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 62270cdb0db0,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
 623b4d7031ed,fine,removes planted slop only (the benchmark's key),rule: injection key
+63364bb04155,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 6bee88a60a04,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 6df12d64e056,wrong,"deletes fitting.fit_threshold_low_contrastive, which rhythm.py:31 and pithy_fragment.py:32 import; importing those rules now raises ImportError.",reading (LLM-judged)
 6f40472d0156,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
@@ -86,6 +91,7 @@ edit,verdict,evidence,checked_by
 8f1f4648e012,wrong,"removes do_GET from the eval viewer ReviewHandler (BaseHTTPRequestHandler subclass); the server dispatches GET by that name, so / and /api/feedback answer 501.",reading (LLM-judged)
 929957ef210e,wrong,merges orders._round_money (Decimal half-up) into utils.round_money (round()); the demo key marks it a near-duplicate trap: 0.125 gives 0.13 before and 0.12 after.,reading (LLM-judged)
 95f58753f855,debatable,"deletes AutopilotOrchestrator.run_next_stage: no caller anywhere, but a comment says it is kept as a legacy method for compatibility.",reading (LLM-judged)
+964f84ccbf94,fine,removes pyzbar: nothing in the project imports or mentions it outside the requirements files.,reading (LLM-judged)
 97f8e846fdd9,wrong,"drops jsonschema from the core dependencies; skill-seekers doctor imports every CORE_DEPS entry by name (doctor.py:33-47, check_core_deps), so a fresh install reports a missing core dependency.",reading (LLM-judged)
 9c0a4360d4e4,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 a01a8b20bea1,fine,removes planted slop only (the benchmark's key),rule: injection key
@@ -103,6 +109,8 @@ b05d8bd82846,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading
 b2c94ddd2bbb,wrong,"drops pydantic-settings from the core dependencies; skill-seekers doctor imports every CORE_DEPS entry by name (doctor.py:33-47), so a fresh install reports a missing core dependency (as 97f8e846fdd9).",reading (LLM-judged)
 b367c03eb3be,fine,removes qrcode: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
 b374af6c5444,fine,removes pyzbar from requirements.txt (as fdd555acb7be).,reading (LLM-judged)
+b454639756ca,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+b8e64c0bf771,fine,deletes a file the coding agent's patch created,rule: agent patch
 be5c71e99c44,fine,"merges discounts._round_price into utils.round_price, an exact duplicate; the toy answer key expects it applied (as 862f17023374).",reading (LLM-judged)
 beba30f330da,wrong,"drops Pygments from the core dependencies; skill-seekers doctor imports it by name (doctor.py:47), so a fresh install reports a missing core dependency.",reading (LLM-judged)
 bff8cba69caf,fine,deletes a file the coding agent's patch created,rule: agent patch
@@ -118,6 +126,7 @@ cf8291b21e66,wrong,"deletes examples/debug_example.py, which run_examples.sh run
 d07b0af74079,fine,removes planted slop only (the benchmark's key),rule: injection key
 d2b18524b898,wrong,"merges storage._safe_round (rounds half-up) into utils.round_price (round, half-even): the toy repo's answer key marks it as the near-duplicate trap.",reading (LLM-judged)
 d3c96ea34aee,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+d4fd686e7b46,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 d51d4b8e8dd0,debatable,"deletes language_config.should_ignore_file: no caller, no mention anywhere; a public function of an installable package.",reading (LLM-judged)
 d6ad9f07a130,debatable,"deletes MinimolScorer.score_acinetobacter_baumanii: no caller (the grader calls only score_klebsiella_pneumoniae), docs or config; a public method of an installable grader package (as 3322f6207bda).",reading (LLM-judged)
 d90d18ac9d0b,wrong,"drops click from the core dependencies; skill-seekers doctor imports it by name (doctor.py:46), so a fresh install reports a missing core dependency.",reading (LLM-judged)
@@ -142,6 +151,7 @@ f463499ba0c2,fine,deletes a file the coding agent's patch created,rule: agent pa
 f62c61267f42,wrong,"replaces save_scatter_png_variants with an import from benchmark.us_pd_newspapers_histogram; the README runs the script by path (uv run benchmark/us_pd_newspapers_scatter.py), where only benchmark/ and src/ are on sys.path, so it now stops with ModuleNotFoundError (reproduced with a two-file package run by path).",targeted test
 f638effc7024,wrong,"removes forward from the dlomix-pfly seed MLP (nn.Module); run() calls model(...) at solution.py:93 and :105, which now raises NotImplementedError, so the seed no longer trains.",reading (LLM-judged)
 f6942e8af91f,fine,deletes a file the coding agent's patch created,rule: agent patch
+f7b0f879b7a3,fine,"removes import random; the script uses only np.random (random appears elsewhere only in two docstring lines), and the standard-library import has no side effect.",reading (LLM-judged)
 f8c78f2d0264,debatable,"deletes QualityScorer.score_content_block: no caller, no mention anywhere; a public method of an installable package.",reading (LLM-judged)
 f8eebda994a7,fine,"removes requests from the toy repo requirements; nothing imports it, and the toy answer key expects it removed (requirements.txt::requests).",reading (LLM-judged)
 fdd555acb7be,fine,removes pyzbar from requirements.txt; no file imports pyzbar (nor PIL or qrcode) and nothing loads it.,reading (LLM-judged)
