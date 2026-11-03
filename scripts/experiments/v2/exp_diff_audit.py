@@ -22,7 +22,7 @@ auto: checks the flagged edits two rules settle without reading: on the injected
 whose removed lines are all planted lines and that adds nothing is fine when it removes planted
 slop and wrong when it removes a trap (the benchmark's key); on SWE-bench, deleting a file the
 coding agent's patch created is fine.
-pending: the "yes" and "unsure" edits without a check in results/summary/v2/diff_audit_checks.csv
+pending: the "yes" and "unsure" edits of the runs above without a check in diff_audit_checks.csv
 (edit, verdict wrong | debatable | fine, evidence, checked_by).
 table: results/summary/v2/diff_audit.csv, per method: kept code edits, auditor yes / unsure /
 no, confirmed wrong edits with a rate and a 95% bootstrap CI over runs, debatable edits, and how
@@ -495,11 +495,12 @@ def checks() -> dict[str, dict]:
 
 def pending() -> list[dict]:
     audit = json.loads((OUT / "audit.json").read_text())
+    edits, _ = collect()
     known = checks()
     return [
         {"edit": e, "answer": r["answer"], "project": r["project"], "path": r["path"]}
         for e, r in sorted(audit.items())
-        if r["answer"] != "no" and e not in known
+        if r["answer"] != "no" and e in edits and e not in known
     ]
 
 
