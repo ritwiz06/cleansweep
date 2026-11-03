@@ -69,15 +69,14 @@ SUMMARY = ROOT / "results" / "summary" / "v2"
 REPOS = [
     "toy",
     "FangYuan33/easy-code-reader",
-    "Fu-Jie/openwebui-extensions",
     "eric-tramel/slop-guard",
     "Usagi-org/ai-goofish-monitor",
     "thomasjjj/Telegram-Snowball-Sampling",
     "utensils/mcp-nixos",
     "trailofbits/dropkit",
-    "gotalab/skillport",
     "curvedinf/wove",
     "Human-Agent-Society/CORAL",
+    "marin-community/haliax",
 ]
 # Left out, with the reason (reported beside the results).
 EXCLUDED = {
@@ -85,6 +84,11 @@ EXCLUDED = {
     "planted module, getting_started.py, is a demo script that runs matplotlib and sample data "
     "on import); its planted dependency was valid (generate_readme.py defines a local function "
     "named tabulate and imports nothing by that name)",
+    "Fu-Jie/openwebui-extensions": "its hidden test failed on the injected baseline in all 3 "
+    "draws (the plugin modules import open_webui, which the project does not install); "
+    "replaced by marin-community/haliax",
+    "gotalab/skillport": "fewer than 3 importable modules to plant in",
+    "posit-dev/chatlas": "fewer than 3 importable modules to plant in (tried as the tenth project)",
 }
 METHODS = ["agentic", "cleansweep", "one_shot_llm"]  # the default comparison
 ATTEMPTS = 3

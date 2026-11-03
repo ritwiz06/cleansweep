@@ -42,7 +42,9 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
 | [v2 team vs v1, ablations](#v2-agentic-vs-v1-and-the-ablations) | `exp_eval.py`, `exp_collect_v2.py`, `exp_tables_v2.py` | main at c68fcdc and 7237ccc | `eval_runs.csv`, `eval_table`, `eval_paired`, `ablations` |
 | [v2 probe strength](#v2-probe-strength-patchdiff-recall-mutation-score) | `exp_probe_strength.py` | main at f84d568 | `probe_strength.csv`, `probe_strength_vs_v1.csv` |
 | [v2 detection](#v2-detection-by-category-on-aidev) | `exp_detection.py` | PR #112 (merged as c003ca0) | `detection.csv` |
-| [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568 | `injection.csv`, `injection_summary.csv`, `ablations` |
+| [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568; 106c952 (plant checks, seeds 2 and 3) | `injection.csv`, `injection_summary.csv`, `injection_seeds`, `injection_paired`, `ablations` |
+| [v2 real-project ablation](#v2-real-project-ablation) | `exp_case_study.py --ablation`, `exp_real_ablation.py` | 106c952 (#128) | `real_ablation_runs.csv`, `real_ablation` |
+| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv` |
 | [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
 ## Experiments
@@ -437,17 +439,103 @@ cleans the whole project; the score is what it removed of the planted slop and o
   commented-out block and an unused dependency; traps: a near-duplicate (half-even vs half-up
   rounding) and a framework callback (`ast.NodeVisitor.visit_Name`). A hidden test, kept outside
   the project, checks the planted code's behavior before and after the method's final diff.
+- **Plant checks** (`prepare`, before every run): each plant must be a right answer: a leftover
+  file nothing else names, a dead function with no caller, two copies that are really equal, an
+  unused import the module does not use, a debug print and a commented-out block planted once, a
+  dependency nothing in the project imports; the traps must really differ (the rounding helpers
+  give different results, and removing `visit_Name` changes the count). An invalid plant is
+  dropped and listed in the key (`dropped`). The hidden test must then pass on the injected
+  project before any cleanup; if it fails, the modules are drawn again (at most 3 draws, the
+  failures go to `rejected.txt`). `python scripts/experiments/v2/exp_inject.py validate` reruns
+  the checks on the keys already prepared, with each report's hidden baseline.
+- **One-shot scope:** `one_shot_llm` is shown the files the plants commit added or changed
+  (`planted_files`), since the injected clones have no lines from agent pull requests.
 - **Targets:** AIDev repositories become injected clones (`data/raw/aidev/injected/`, their head
   plus one commit with the plants) and run only in their containers; the toy repo is a local copy.
-  Of the 10 AIDev repositories in the script, skillport has fewer than three importable modules
-  to plant in and is skipped, so seed 1 has 10 targets.
+  `REPOS` in the script lists the toy repo and 9 AIDev repositories; `EXCLUDED` lists the ones
+  left out with the reason: imgviz (replaced on request: its hidden test failed before any
+  cleanup; its planted dependency was valid), openwebui-extensions (its hidden test failed on the
+  injected baseline in all 3 draws), skillport and chatlas (fewer than three importable modules
+  to plant in). mcp-nixos replaced imgviz and haliax replaced openwebui-extensions.
+- **Seeds:** seed 1 with every method; seed 2 with every method; seed 3 with the team, no research
+  squad and the single agent (run only if seed 2 ended by 2026-11-07). Seed 1 was rerun where
+  the plants changed (mcp-nixos, every method) and for one-shot everywhere (its new scope).
 - **Outputs:** `results/raw/inject/<repo>-s<seed>/` (key, hidden test, one report per method with
-  its score); `results/summary/v2/injection.csv` (one row per plant and method) and
+  its score); `results/summary/v2/injection.csv` (one row per plant, method and seed) and
   `injection_summary.csv` (recall, precision against the traps, traps removed, hidden behavior
-  changed, per method and category; `exp_tables_v2.py` rebuilds it from `injection.csv`).
-- **Code version:** main at f84d568. **Runtime:** the team, v1 and one-shot on seed 1 took 8 h
-  25 min, partly beside the answer-key and AIDev runs (v1 alone took 138 min on CORAL); the ablations
-  took 9 h 54 min for their 70 runs (CORAL about an hour each). **Model:** `qwen36-35b-a3b`.
+  changed, per method and category); `injection_seeds` (each method per seed and pooled, with a
+  95% bootstrap CI over project and seed) and `injection_paired` (the team against no research
+  squad, the single agent, v1 and one-shot, paired by project and seed: Wilcoxon on planted
+  items removed, exact McNemar on hidden changes). `exp_tables_v2.py` rebuilds the last three
+  from `injection.csv`.
+- **Code version:** seed 1 at main f84d568; the plant checks, the seed-1 reruns and seeds 2 and 3
+  at 106c952 (#128), in the frozen clone `../cleansweep-runs-v2c`. **Runtime:** the team, v1 and
+  one-shot on seed 1 took 8 h 25 min, partly beside the answer-key and AIDev runs (v1 alone took
+  138 min on CORAL); the ablations took 9 h 54 min for their 70 runs (CORAL about an hour each).
+  **Model:** `qwen36-35b-a3b`.
+
+### v2: real-project ablation
+
+The test of whether investigation helps on real projects: the team, the team without its
+research squad, and a single agent clean the five case-study projects.
+
+- **Run:** `python scripts/experiments/v2/exp_case_study.py TARGET --name <project>-abl-<method>
+  --budget minutes=120 [--ablation no_research|single_agent]` in safe mode (Skill_Seekers with
+  `llm=300`, as in its case study), the AIDev targets in their containers, this repository on a
+  scratch clone with the case study's excludes. Then `python
+  scripts/experiments/v2/exp_real_ablation.py review` (a review sheet of each run's kept changes
+  and the LLM reviewer's 3 votes on each, as in the case studies; LLM-judged), `... ui`
+  (shotgun's UI check on each shotgun run's final diff, in its container, so the single agent,
+  which has no UI check of its own, gets the same one), `... collect` and `... table`.
+- **Targets:** this repository, slop-guard @ 7ef2113, Telegram-Snowball-Sampling @ 1787fe5,
+  shotgun @ 4d344d5, Skill_Seekers @ 5b5d8df (the case studies' commits).
+- **Counts:** lines removed (deleted minus added) and files deleted come from each run's final
+  diff, so the three methods are counted the same way; the reviewer sees kept changes only; the
+  wrong and debatable edits are the diff audit's checked verdicts on the run's kept code edits.
+- **Caveat:** the single agent's 120 minutes start after its test baseline (`solo.py`), the
+  team's at the start of the run; on shotgun the baseline took 14 minutes.
+- **Outputs:** `results/raw/case_studies/<project>-abl-<method>/` (report, summary, review sheet,
+  `llm_review.json`, `ui_check.json`); `results/summary/v2/real_ablation_runs.csv` (one row per
+  run) and `real_ablation.{csv,md}` (per method; `reproduce_tables.sh` rebuilds it).
+- **Code version:** 106c952 (#128), frozen clone `../cleansweep-runs-v2c`. **Runtime:** 15 runs,
+  1.4 to 144 minutes each. **Models:** agents `qwen36-35b-a3b`; reviewer `glm-5-3`.
+
+The same chain reran pytorch_connectomics with the team after #124 (a debugger call behind a
+condition is only suggested): `exp_eval.py --split data/splits/aidev_repos.json --repos
+PytorchConnectomics/pytorch_connectomics --methods agentic --out
+results/raw/v2_eval/aidev_after124`.
+
+### v2: diff audit
+
+An independent model reads every kept code edit and says whether it changes behavior anyone
+could observe; every "yes" or "unsure" is then checked and the verdict recorded with its
+evidence. The auditor's votes are LLM-judged, and so are the checks done by reading.
+
+- **Run:** `python scripts/experiments/v2/exp_diff_audit.py run` (resumable; a light job),
+  `... auto` (the flags two rules settle), `... pending` (the flags still unchecked), then each
+  check goes into `results/summary/v2/diff_audit_checks.csv` by hand, and `... table`.
+- **Scope:** the kept edits with a diff (not formatting) of the answer-key, SWE-bench and AIDev
+  runs (with v1's gatekeeper run on each SWE-bench and AIDev target the team ran; on AIDev the
+  original pytorch_connectomics row and the rerun after #124), every injected run of every seed,
+  the case-study runs the results report and the real-project ablation. Identical edits (same
+  project, file and diff) are merged.
+- **Auditor:** `VOYAGER_MODEL_ALT`, never the agents' model. It sees the project, the file, the
+  code around the edit at the run's starting commit, the diff, and where the removed names
+  appear elsewhere in the project; never the method, the category, or the agents' evidence and
+  verdicts. 3 votes (seeds 0, 1, 2, temperature 0.3, reasoning off); the majority decides.
+- **Checks:** `rule: injection key` (an injected edit that removes only planted lines: fine for
+  planted slop, wrong for a trap), `rule: agent patch` (deleting a file the SWE-bench agent's
+  patch created), `reading (LLM-judged)` (the code around the edit and every use of the removed
+  names), `targeted test` (a short script run on the code before and after), `UI check`
+  (shotgun). Verdicts: wrong (breaks a caller, an import, a registration by string, a test or
+  harness, a documented or opt-in feature, a result, or a dependency something imports; every
+  removed trap), debatable (a public name with no caller and not documented or exported, or a
+  status message a user might read; reported apart), fine (the rest, with the evidence).
+- **Outputs:** `results/raw/diff_audit/audit.json` (every vote); `diff_audit_checks.csv` (edit,
+  verdict, evidence, checked_by); `diff_audit.csv` (per method and target set: kept code edits,
+  the auditor's yes / unsure / no, confirmed wrong edits with a rate and a 95% bootstrap CI over
+  runs, debatable edits, and how many wrong edits every check missed).
+- **Code version:** the audit from #129 with the fixes of #132 and #133. **Model:** `glm-5-3`.
 
 ### v2: watch mode
 
@@ -585,8 +673,9 @@ committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ab
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
 `scheduler_replay.csv`; `exp_tables_v2.py` builds v2's `eval_table`, `eval_paired`,
-`ablations` and `injection_summary` from `results/summary/v2/eval_runs.csv` and
-`injection.csv`. On a clean checkout, `git status results/` shows no change afterwards.
+`ablations`, `injection_summary`, `injection_seeds` and `injection_paired` from
+`results/summary/v2/eval_runs.csv` and `injection.csv`; `exp_real_ablation.py table` builds
+`real_ablation` from `real_ablation_runs.csv`. On a clean checkout, `git status results/` shows no change afterwards.
 `tests/scripts/test_reproduce_tables.py` runs it on a small fixture (`tests/fixtures/results_small/`)
 and checks that every table comes out byte for byte. Set `PYTHON` to pick the interpreter.
 
@@ -612,6 +701,9 @@ alone:
 | `v1/self_sweep.csv` | `exp_self_sweep.py --table` | `results/raw/self_sweep/` reports |
 | `v2/eval_runs.csv` | `exp_collect_v2.py` | `results/raw/v2_eval/` reports, v1's archived reports |
 | `v2/injection.csv` | `exp_inject.py table` | `results/raw/inject/` reports |
+| `v2/real_ablation_runs.csv` | `exp_real_ablation.py collect` | the ablation records, `llm_review.json`, `ui_check.json`, `diff_audit_checks.csv` |
+| `v2/diff_audit.csv` | `exp_diff_audit.py table` | the raw reports, `results/raw/diff_audit/audit.json`, `diff_audit_checks.csv` |
+| `v2/diff_audit_checks.csv` | by hand (`exp_diff_audit.py auto` for the rule checks) | the flagged edits, targeted tests |
 | `v2/probe_strength.csv`, `v2/probe_strength_vs_v1.csv` | `exp_probe_strength.py` (`--compare`) | `results/raw/probe_strength/` (Docker, probe requests), `results/raw/guard_strength/` |
 | `v2/manager_scenarios.csv` | `exp_manager_scenarios.py` | the LLM |
 | `v2/llm_review_acceptance.csv`, `v2/mining_llm_precision.csv` | `exp_llm_review.py` | case-study review sheets, the reviewer model |
