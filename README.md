@@ -260,7 +260,9 @@ how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
 - Reading every diff of the team's (LLM-judged, as above) found one wrong edit the hidden checks
   cannot see: on pytorch_connectomics it removed a `pdb.set_trace()` under `if self.debug_on_nan:`,
   an opt-in debugger. A debugger call behind a condition is only a suggestion since #124, after
-  these runs.
+  these runs; rerun with that fix (`results/raw/v2_eval/aidev_after124/`), the team suggested
+  all 153 candidates on pytorch_connectomics, applied nothing and left the hidden checks
+  unchanged.
 - The team spends more LLM requests (41.5 against 5.5 on the answer keys) and fewer minutes; the
   ablations below show where the requests go.
 - The first SWE-bench runs saw no tests (the workspace never stored test statuses) and are not
@@ -308,12 +310,40 @@ each) and the injected set (one run on each of the 10 projects).
   injected set at about a tenth: 2 on CORAL, where the full team's 150 requests ran out before
   the Investigator decided, and the planted `tabulate` on imgviz, which the Investigator wrongly
   kept: its reference search found a local function named `tabulate` in `generate_readme.py`,
-  and it took that for an import. Whether investigation pays off on real projects is open: no
-  ablation ran there.
+  and it took that for an import. On real projects it is a different story (below).
 - The rule-based Manager, broadcast messages, inlined artifacts and no coverage guidance match
   the team within one item. Without lessons the team missed 3 on the answer keys (two of those runs
   ran out of test runs) and 3 on the injected set, in runs where no package rolled back, so no
   lesson was missing (one run each).
+
+**Real-project ablation** (`real_ablation.md`, `real_ablation_runs.csv`): the test of whether
+investigation helps on real projects. The team, the team without its research squad and the
+single agent clean the five case-study projects (this repository, slop-guard, Skill_Seekers,
+shotgun, Telegram-Snowball-Sampling) once each, in safe mode, at most 120 minutes. Lines are net
+lines removed by the final diffs. The LLM reviewer (independent model, blinded, 3 votes) judges
+the kept changes; its acceptance is LLM-judged. Wrong / debatable are the checked verdicts of the
+diff audit on the kept code edits (readings LLM-judged); the UI check is shotgun's.
+
+| method | verdicts | packages kept / rolled back | lines removed | LLM reviewer accepts kept changes | wrong / debatable of kept code edits | shotgun UI check | LLM requests (mean) | minutes (mean) |
+|---|---|---|---|---|---|---|---|---|
+| team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 / 0 of 14 | ok | 129.8 | 19.0 |
+| no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 / 0 of 20 | ok | 15.8 | 35.3 |
+| single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 18 / 14 of 65 | changed (`AttachmentBar`) | 83.2 | 47.1 |
+
+- **On real projects the research squad buys safety, not yield.** Every kept code edit of the
+  team checked fine. Without the squad the team kept more at an eighth of the requests, but 4 of
+  its 20 kept code edits were wrong: it deleted this repository's documented
+  `exp_collect_v2.py`, shotgun's build hook (so the package no longer builds), and a Skill_Seekers
+  function the video pipeline imports, and merged a duplicate through an `src.`-prefixed import
+  that fails once the package is installed.
+- **The single agent removes the most and breaks the most**: 18 of 65 kept code edits wrong,
+  among them five core dependencies Skill_Seekers' `doctor` command imports by name, the Studio
+  messages that print its URL and build commands, and two shotgun widget methods Textual calls
+  by name (`compose`, `watch_state`), which the UI check caught.
+- No wrong edit failed a test or probe in its run: every run ended "everything runs" (slop-guard
+  with the team: nothing applied). One run per project and 14 to 65 edits per method make this a
+  small sample. The single agent's 120 minutes start after its test baseline (14 minutes on
+  shotgun), the team's at the start of the run.
 
 **Probe strength** (`probe_strength.csv`): v1's mutants and PatchDiff patches, checked by the
 tests and then the coverage-guided probes. On the 163 mutants and patches both versions checked,

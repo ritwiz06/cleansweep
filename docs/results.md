@@ -500,7 +500,10 @@ n = 6).
   "hidden for now", and `feedback.py` left with only its imports). **One edit is wrong**: on
   pytorch_connectomics the team removed `pdb.set_trace()` under `if self.debug_on_nan:`, an
   opt-in debugger, so the option no longer stops. No test or hidden check enters that path. Since
-  #124 a debugger call behind a condition is only suggested; the runs above predate it.
+  #124 a debugger call behind a condition is only suggested; the runs above predate it. Rerun at
+  106c952 (after #124; `results/raw/v2_eval/aidev_after124/`): all 153 candidates went to the
+  suggest lane, the conditional `pdb.set_trace()` among them, so nothing was applied and the
+  hidden checks did not change (52 LLM requests, 15.8 minutes).
 - **Cost.** The team makes more, shorter LLM requests (about 1,400 tokens each on the answer keys
   against v1's 5,800) and finishes sooner: its investigations run three at a time, v1's judge
   waits for long answers.
@@ -602,8 +605,59 @@ ran alone, so the minutes do not compare across rows. Per project:
 
 On these benchmarks the one answer the research squad changed by reading the code, the imgviz
 `tabulate`, it got wrong; without the squad the team removed at least as much in every category
-and no trap. Whether investigation pays off on real projects is
-open: no ablation ran there.
+and no trap. On real projects the picture differs: see the real-project ablation below.
+
+### Real-project ablation
+
+The test of whether investigation helps on real projects (`real_ablation.csv`, one row per run
+in `real_ablation_runs.csv`): the team, the team without its research squad and the single agent
+clean the five case-study projects once each, in safe mode, at most 120 minutes (Skill_Seekers
+with 300 LLM requests, as in its case study), at 106c952. Lines removed are net lines (deleted
+minus added) in each final diff, counted the same way for the three. The LLM reviewer
+(independent model, blinded, 3 votes) judges each kept change; its acceptance is LLM-judged.
+Wrong and debatable are the diff audit's checked verdicts on the kept code edits
+(`diff_audit_checks.csv`, each with its evidence; readings LLM-judged). shotgun's UI check ran on all three final diffs.
+
+| method | verdicts | packages kept / rolled back | lines removed | LLM reviewer accepts kept changes | wrong / debatable of kept code edits | shotgun UI check | LLM requests (mean) | minutes (mean) |
+|---|---|---|---|---|---|---|---|---|
+| team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 / 0 of 14 | ok (46 classes) | 129.8 | 19.0 |
+| no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 / 0 of 20 | ok (46 classes) | 15.8 | 35.3 |
+| single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 18 / 14 of 65 | `AttachmentBar` changed | 83.2 | 47.1 |
+
+Per project (packages kept / net lines):
+
+| project | team | no research squad | single agent |
+|---|---|---|---|
+| this repository | 0 / 0 (its one package rolled back) | 1 / 141 | 14 / -46 (added 46 lines) |
+| slop-guard | nothing applied | 0 / 0 (3 rolled back) | 9 / 28 |
+| Skill_Seekers | 7 / 11 | 10 / 89 | 25 / 372 |
+| shotgun | 8 / 298 | 9 / 417 | 18 / 527 |
+| Telegram-Snowball-Sampling | 1 / 6 | 2 / 6 | 7 / 139 |
+
+- **The team.** Every one of its 14 kept code edits checked fine, and the reviewer accepted 12
+  of the 14 kept changes it decided on. It rolled back more packages than it kept (20 against
+  16).
+- **No research squad.** The detector lanes decide what is safe, so it tried more and kept more
+  at an eighth of the requests, but 4 of its 20 kept code edits are wrong: it deleted this
+  repository's `scripts/experiments/v2/exp_collect_v2.py` (the documented script that writes
+  `eval_runs.csv`), shotgun's `CustomBuildHook` (the build hook `pyproject.toml` declares, so
+  building the package fails), and Skill_Seekers' `resolve_playlist`
+  (`VideoScraper.run` imports it, so every video run fails), and it merged
+  `infer_description_from_html` into the identical EPUB function through an
+  `src.skill_seekers...` import that fails once the package is installed.
+- **Single agent.** It removed the most and broke the most: 18 of 65 kept code edits are wrong.
+  On this repository it removed the Studio messages that print the URL and the build commands
+  (documented in the user guide), rewrote `checked[checked.removal == True]` as
+  `checked[checked.removal]` where the column holds `None`, and turned `value is False` into `not
+  value` for the install setting; on Skill_Seekers it dropped five core dependencies that
+  `skill-seekers doctor` imports by name, html5lib (the lenient-parser fallback a test requires)
+  and a bundled workflow preset; on shotgun it deleted the build hook, a settings validator, the
+  command-palette hook and `AttachmentBar.compose` and `watch_state`, which Textual calls by name
+  (the UI check caught the last two). On this repository it added 46 lines net.
+- No wrong edit failed a test or probe in its run; every run ended "everything runs" or (the
+  team on slop-guard) "nothing applied". One run per project and 14 to 65 kept code edits per
+  method make this a small sample. The single agent's 120 minutes start after its test baseline
+  (`solo.py`; 14 minutes on shotgun), the team's at the start of the run.
 
 ### Probe strength
 
