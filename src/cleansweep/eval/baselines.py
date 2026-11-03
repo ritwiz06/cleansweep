@@ -257,9 +257,10 @@ def one_shot_llm(target: str, cfg: dict, seed: int = 0) -> SweepReport:
     """Baseline: ask the model once for cleaned-up files (JSON) and apply them with no checks.
 
     The model sees all .py files within a budget, or on SWE-bench and AIDev only the files the
-    agent created or changed. It replies {"delete": [paths], "files": {path: full new content}}; our
-    code makes those changes. A reply that doesn't parse or names files it wasn't shown is
-    recorded as invalid output (stats["invalid_output"] = 1), not as zero edits."""
+    agent created or changed, or the files cfg["exp"]["one_shot_paths"] names. It replies
+    {"delete": [paths], "files": {path: full new content}}; our code makes those changes. A
+    reply that doesn't parse or names files it wasn't shown is recorded as invalid output
+    (stats["invalid_output"] = 1), not as zero edits."""
     return _one_shot(target, cfg, seed, retry=False)
 
 
@@ -278,7 +279,10 @@ def _one_shot(target: str, cfg: dict, seed: int, retry: bool) -> SweepReport:
     ws = open_workspace(target, cfg.get("core", {}).get("sandbox"))
     try:
         llm = cfg.get("llm_client") or get_client(cfg.get("core", {}).get("llm"))
-        paths = _agent_files(ws.path) if target.startswith(AGENT_TARGETS) else None
+        given = cfg.get("exp", {}).get("one_shot_paths")
+        paths = given
+        if given is None and target.startswith(AGENT_TARGETS):
+            paths = _agent_files(ws.path)
         code, shown = _collect_code(ws.path, paths=paths)
         messages = [{"role": "user", "content": PROMPT.replace("{code}", code)}]
         extra = cfg.get("exp", {}).get("one_shot_extra_body")
@@ -318,7 +322,11 @@ def _one_shot(target: str, cfg: dict, seed: int, retry: bool) -> SweepReport:
             paths if paths is not None else iter_py_files(ws.path)
         ) - len(shown)
         agent = target.startswith(AGENT_TARGETS)
-        report.stats["scope"] = scope_stats(ws.path, agent_scope(ws.path) if agent else None, agent)
+        if given is not None:
+            report.stats["scope"] = {"kind": "given", "files": len(given)}
+        else:
+            scope = agent_scope(ws.path) if agent else None
+            report.stats["scope"] = scope_stats(ws.path, scope, agent)
         if retry:
             report.stats.update(compile_failed=failed, compile_failed_after=after)
         return report

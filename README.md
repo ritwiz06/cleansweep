@@ -305,10 +305,11 @@ each) and the injected set (one run on each of the 10 projects).
   framework callback, and called 3 of those 4 injected projects "everything runs".
 - **The research squad costs requests without adding recall or safety here.** Without it the
   team found the same on the answer keys at about a quarter of the requests, and 3 more on the
-  injected set at about a tenth: 2 on CORAL, where the full team's 150 requests ran out before the Investigator
-  decided, and the planted `tabulate` on imgviz, which the Investigator kept because a script
-  imports it (the flaw in the key above). Whether investigation pays off on real projects is
-  open: no ablation ran there.
+  injected set at about a tenth: 2 on CORAL, where the full team's 150 requests ran out before
+  the Investigator decided, and the planted `tabulate` on imgviz, which the Investigator wrongly
+  kept: its reference search found a local function named `tabulate` in `generate_readme.py`,
+  and it took that for an import. Whether investigation pays off on real projects is open: no
+  ablation ran there.
 - The rule-based Manager, broadcast messages, inlined artifacts and no coverage guidance match
   the team within one item. Without lessons the team missed 3 on the answer keys (two of those runs
   ran out of test runs) and 3 on the injected set, in runs where no package rolled back, so no
