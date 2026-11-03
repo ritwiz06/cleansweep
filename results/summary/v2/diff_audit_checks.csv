@@ -1,0 +1,149 @@
+edit,verdict,evidence,checked_by
+029d6944baf7,fine,removes planted slop only (the benchmark's key),rule: injection key
+03358e56ca17,wrong,replaces _maybe_import_differential_evolution with another task's _maybe_import_cp_sat; the oracle gets a different optimizer.,reading (LLM-judged)
+041b202709a7,debatable,"removes shellingham; dropkit never imports it, but typer imports it to detect the shell for --install-completion. typer 0.12+ depends on it itself; dropkit allows typer>=0.9.0, where it is optional.",reading (LLM-judged)
+049cefa36abe,wrong,"deletes MinimolScorer.score_klebsiella_pneumoniae, which grader.py:252 calls.",reading (LLM-judged)
+04ccf7545cbb,fine,deletes a file the coding agent's patch created,rule: agent patch
+06e63f2e0885,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+075cf7ded34a,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+07ed9c5ac355,fine,"the imported name is unused: the evaluator loads the candidate by path and calls program.search_algorithm (evaluator.py:139-195); the import only made evaluator.py need an importable initial_program, which lives in seed/, not next to it.",reading (LLM-judged)
+088291d39d6c,fine,deletes a file the coding agent's patch created,rule: agent patch
+094f18144ad2,fine,removes planted slop only (the benchmark's key),rule: injection key
+0afb9586883b,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+0d643ceb0c11,fine,removes planted slop only (the benchmark's key),rule: injection key
+1194cff4a4a9,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+145aa0514759,fine,removes planted slop only (the benchmark's key),rule: injection key
+1518219995b3,wrong,"deletes BundleAgent, which _grader/grader.py:243 registers by the string frontier_swe_grader.bundle_agent:BundleAgent (as 349aa717e680).",reading (LLM-judged)
+16cc48fe42a5,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+16eeceb0218e,wrong,deletes SolverAgent from the swebench-verified seed; its grader runs --agent-import-path solve:SolverAgent (grader.py:133) and task.yaml says solve.py exports it.,reading (LLM-judged)
+1a456b42d5b7,wrong,"deletes DebugManager.disable_nan_hooks (DebugManager is in connectomics.training.__all__); enable_nan_hooks tells the user to call it (debugging.py:356: Call disable_nan_hooks() first), so hooks can no longer be removed.",reading (LLM-judged)
+1a56f540b79a,debatable,"deletes kuzu_compat.is_kuzu_available: no caller, no mention anywhere; a public function of an installable package.",reading (LLM-judged)
+1b1d78749ce0,debatable,"deletes Document.find_tables_by_caption: no caller, test or doc mentions it; a public method of an installable package (as 42a7ccc8ed23).",reading (LLM-judged)
+1b34cedc8fc3,fine,"deletes the toy repo debug_cart.py, a leftover debug script nothing imports; the toy answer key expects it removed.",reading (LLM-judged)
+1eef19d4bf31,wrong,"deletes BundleAgent, which grader.py:243 in the same package registers by the string frontier_swe_grader.bundle_agent:BundleAgent (as 349aa717e680).",reading (LLM-judged)
+2051e336f6b2,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+231b7b4f91b0,wrong,"deletes FrontierSWEVerifier, which grader.py:246 in the same package registers by the string frontier_swe_grader.reward_verifier:FrontierSWEVerifier (as 44af5ff3a318).",reading (LLM-judged)
+233984a23915,wrong,"deletes fitting.clamp_int, which blockquote_density.py, bold_term_bullet_run.py and phrase_reuse.py import; importing those rules now raises ImportError.",reading (LLM-judged)
+23a2af8448a7,wrong,replaces _import_channel_model (RayleighFadingChannel) with another task's _import_ldpc_code; _build_channel now builds the wrong object.,reading (LLM-judged)
+289688156563,fine,"removes Pillow from requirements.txt; no file imports PIL, and neither qrcode nor pyzbar is imported.",reading (LLM-judged)
+298352088dcf,wrong,"deletes DebugManager.check_for_nan, a debug utility its docstring documents for interactive use (debugging.py:409); DebugManager is exported in connectomics.training.__all__ (as a76b88b4d154).",reading (LLM-judged)
+2986a2011ae3,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+29cde5f081a5,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+2b7c3d48da4f,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+2c56129fa29c,fine,removes pyzbar: nothing in the project imports or mentions it outside the requirements files.,reading (LLM-judged)
+2f74609ab5db,fine,merges reports._clean_isbn into utils.normalize_isbn; the demo answer key marks it a duplicate expected applied (bookshelf/reports.py::_clean_isbn).,reading (LLM-judged)
+327ae05d846c,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+3322f6207bda,debatable,"deletes MinimolScorer.score_neisseria_gonorrhoeae: no caller, docs or config mention it; a public method of an installable grader package.",reading (LLM-judged)
+348c97c51e1b,wrong,removes a planted trap (the benchmark's key),rule: injection key
+349aa717e680,wrong,"deletes BundleAgent, which grader.py:243 in the same package registers by the string 'frontier_swe_grader.bundle_agent:BundleAgent'.",reading (LLM-judged)
+3629eb58c2b5,fine,removes pytest-asyncio: the project has no async tests and no asyncio marker or mode (async def test_* are API routes in settings.py).,reading (LLM-judged)
+38f508ff9402,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+3951db7d3326,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+3cfcd50dea61,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+3e0917930370,fine,removes planted slop only (the benchmark's key),rule: injection key
+3ed55ba899bd,fine,removes qrcode: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
+4150f257e45d,wrong,"empties seed/solution.py, the workspace the coding agent starts from (task.yaml repo_path ./seed; coral/cli/author.py: 'baseline the agent will iterate on'); the Solution interface the grader evaluates is gone.",reading (LLM-judged)
+42a7ccc8ed23,debatable,"deletes Document.find_code_by_language: no caller, test or doc mentions it; a public method of an installable package.",reading (LLM-judged)
+43b8cfcd8bb8,fine,removes planted slop only (the benchmark's key),rule: injection key
+43d3c3bf5745,wrong,"removes do_POST from the eval viewer ReviewHandler; the page saves feedback by POST /api/feedback, which now answers 501 (as e008a24a0ed6).",reading (LLM-judged)
+44af5ff3a318,wrong,"deletes FrontierSWEVerifier, which grader.py:246 in the same package registers by the string frontier_swe_grader.reward_verifier:FrontierSWEVerifier.",reading (LLM-judged)
+45c6ccb7379d,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+463f505f7685,fine,deletes a file the coding agent's patch created,rule: agent patch
+46a4be2b8add,fine,deletes a file the coding agent's patch created,rule: agent patch
+492cdb721947,fine,removes pyzbar: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
+4c030116f522,fine,deletes a file the coding agent's patch created,rule: agent patch
+4da22c59c6ed,fine,deletes a file the coding agent's patch created,rule: agent patch
+4e7f02206d11,debatable,"replaces a fail-fast from minimol import Minimol in MinimolScorer.__init__ with pass (the next line keeps the same check for rdkit, noqa F401); Minimol is imported again where it is used (minimol.py:179) and the grader checks is_available() first, so only the moment a missing package fails moves.",reading (LLM-judged)
+4fe03741ac36,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+5204d0f8cc4a,fine,"removes pytest-asyncio; the project has no async test, no asyncio marker and no asyncio_mode setting (its async def test_* functions are API routes).",reading (LLM-judged)
+5410124918a4,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+556908d9e2e6,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+5760d88c8456,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+5bd9de6319f2,debatable,"deletes MinimolScorer.score_neisseria_gonorrhoeae: no caller, docs or config; a public method of an installable grader package (same edit as 3322f6207bda on another base).",reading (LLM-judged)
+5f9ad4028cab,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+62270cdb0db0,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+623b4d7031ed,fine,removes planted slop only (the benchmark's key),rule: injection key
+6bee88a60a04,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+6df12d64e056,wrong,"deletes fitting.fit_threshold_low_contrastive, which rhythm.py:31 and pithy_fragment.py:32 import; importing those rules now raises ImportError.",reading (LLM-judged)
+6f40472d0156,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+6f570a52cb6f,fine,deletes a file the coding agent's patch created,rule: agent patch
+7230951cf7e4,fine,removes planted slop only (the benchmark's key),rule: injection key
+72f691fe96bd,fine,removes httpx from CORAL dependencies; no file imports it (litellm[proxy] still brings it in).,reading (LLM-judged)
+73054bd7c354,fine,removes planted slop only (the benchmark's key),rule: injection key
+73acc2be04ae,fine,deletes a file the coding agent's patch created,rule: agent patch
+76fa87257eca,debatable,"deletes utils.split_search_terms: no caller, test or doc mentions it; a public function of an installable package (as 897e67b3863c).",reading (LLM-judged)
+7c74f907b7d2,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+7dcb85ac48c1,wrong,"deletes BundleAgent, registered by string in the package's grader.py (as 349aa717e680).",reading (LLM-judged)
+81eed3058a2d,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+8227db2e0adc,fine,removes planted slop only (the benchmark's key),rule: injection key
+83adb13b000d,wrong,"removes the package __getattr__ that provides every name in __all__ (Config, create_edge_list, ...); from telegram_snowball_sampling import Config, or import *, now raises.",reading (LLM-judged)
+85c7f5d01f6d,wrong,removes visit_Name from the planted _NameCounterCedar1 trap; count_names_cedar1 now returns 0 (the benchmark key: a trap).,reading (LLM-judged)
+862f17023374,fine,"merges discounts._round_price into utils.round_price, an exact duplicate; the toy repo's answer key expects it applied.",reading (LLM-judged)
+8758a9d816ad,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+8760fc50d9dc,fine,removes planted slop only (the benchmark's key),rule: injection key
+897e67b3863c,debatable,"deletes utils.split_search_terms: no caller, test or doc mentions it; a public function of an installable package.",reading (LLM-judged)
+8b73a7dc36cd,fine,"removes requests from the toy repo requirements; nothing imports it, and the toy answer key expects it removed (requirements.txt::requests).",reading (LLM-judged)
+8f1f4648e012,wrong,"removes do_GET from the eval viewer ReviewHandler (BaseHTTPRequestHandler subclass); the server dispatches GET by that name, so / and /api/feedback answer 501.",reading (LLM-judged)
+929957ef210e,wrong,merges orders._round_money (Decimal half-up) into utils.round_money (round()); the demo key marks it a near-duplicate trap: 0.125 gives 0.13 before and 0.12 after.,reading (LLM-judged)
+95f58753f855,debatable,"deletes AutopilotOrchestrator.run_next_stage: no caller anywhere, but a comment says it is kept as a legacy method for compatibility.",reading (LLM-judged)
+97f8e846fdd9,wrong,"drops jsonschema from the core dependencies; skill-seekers doctor imports every CORE_DEPS entry by name (doctor.py:33-47, check_core_deps), so a fresh install reports a missing core dependency.",reading (LLM-judged)
+9c0a4360d4e4,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+a01a8b20bea1,fine,removes planted slop only (the benchmark's key),rule: injection key
+a30254d2650a,fine,deletes a file the coding agent's patch created,rule: agent patch
+a404c01b5fd0,fine,removes planted slop only (the benchmark's key),rule: injection key
+a484024bdb21,wrong,"removes forward from MLPClassifier (a LightningModule); _score calls model(features) (minimol.py:207), which now raises NotImplementedError, so the grader loses its minimol scores.",reading (LLM-judged)
+a5ad5fd86f82,wrong,"removes pytest from requirements.txt; tests/conftest.py and other tests import it, and tests/README.md sets up the tests with pip install -r requirements.txt.",reading (LLM-judged)
+a76b88b4d154,wrong,"deletes DebugManager.enable_nan_hooks, documented in its docstring as an interactive command ((Pdb) pl_module.enable_nan_hooks()) and named by two other methods' messages ('Call enable_nan_hooks() first').",reading (LLM-judged)
+ab09a011c384,wrong,"deletes FrontierSWEVerifier, which grader.py:246 in the same package registers by the string frontier_swe_grader.reward_verifier:FrontierSWEVerifier.",reading (LLM-judged)
+ada4eb48a0b8,fine,removes planted slop only (the benchmark's key),rule: injection key
+ae8c5277e632,debatable,"deletes utils.sanitize_filename: no caller, no mention anywhere; a public function of an installable package (the second model's hidden tests call it).",reading (LLM-judged)
+af701e57ad81,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+af9735eb0a15,debatable,"deletes BaseParser.can_parse: no caller, no mention anywhere; a public method of a base class others could subclass.",reading (LLM-judged)
+b05d8bd82846,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+b2c94ddd2bbb,wrong,"drops pydantic-settings from the core dependencies; skill-seekers doctor imports every CORE_DEPS entry by name (doctor.py:33-47), so a fresh install reports a missing core dependency (as 97f8e846fdd9).",reading (LLM-judged)
+b367c03eb3be,fine,removes qrcode: nothing in the project imports or mentions it outside requirements.txt.,reading (LLM-judged)
+b374af6c5444,fine,removes pyzbar from requirements.txt (as fdd555acb7be).,reading (LLM-judged)
+be5c71e99c44,fine,"merges discounts._round_price into utils.round_price, an exact duplicate; the toy answer key expects it applied (as 862f17023374).",reading (LLM-judged)
+beba30f330da,wrong,"drops Pygments from the core dependencies; skill-seekers doctor imports it by name (doctor.py:47), so a fresh install reports a missing core dependency.",reading (LLM-judged)
+bff8cba69caf,fine,deletes a file the coding agent's patch created,rule: agent patch
+c29016175d4f,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+c36921eb1aa8,fine,deletes a file the coding agent's patch created,rule: agent patch
+c3d53684dc35,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+c3ff6b298045,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+c523c3588ea6,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+c8db0315fcc0,debatable,"removes the numpy==1.26.4 pin; nothing imports numpy directly and pandas and matplotlib still require it, but the pin chose the numpy version for the pinned pandas==2.2.0, and a fresh install may now resolve a newer one.",reading (LLM-judged)
+c9fc450a13b4,fine,deletes a file the coding agent's patch created,rule: agent patch
+cb902d3eb381,fine,deletes a file the coding agent's patch created,rule: agent patch
+cf8291b21e66,wrong,"deletes examples/debug_example.py, which run_examples.sh runs (line 24) and which documents debug mode.",reading (LLM-judged)
+d07b0af74079,fine,removes planted slop only (the benchmark's key),rule: injection key
+d2b18524b898,wrong,"merges storage._safe_round (rounds half-up) into utils.round_price (round, half-even): the toy repo's answer key marks it as the near-duplicate trap.",reading (LLM-judged)
+d3c96ea34aee,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+d51d4b8e8dd0,debatable,"deletes language_config.should_ignore_file: no caller, no mention anywhere; a public function of an installable package.",reading (LLM-judged)
+d6ad9f07a130,debatable,"deletes MinimolScorer.score_acinetobacter_baumanii: no caller (the grader calls only score_klebsiella_pneumoniae), docs or config; a public method of an installable grader package (as 3322f6207bda).",reading (LLM-judged)
+d90d18ac9d0b,wrong,"drops click from the core dependencies; skill-seekers doctor imports it by name (doctor.py:46), so a fresh install reports a missing core dependency.",reading (LLM-judged)
+dbb179a3f66d,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+dd5a63ff6cb3,wrong,removes pdb.set_trace() under `if self.debug_on_nan:`; the opt-in debugger no longer stops on NaN.,reading (LLM-judged)
+de09a0fbd151,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+dff317170870,fine,deletes a file the coding agent's patch created,rule: agent patch
+e008a24a0ed6,wrong,"removes do_POST from the eval viewer ReviewHandler; the page saves feedback by POST /api/feedback, which now answers 501.",reading (LLM-judged)
+e0e955bb22be,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+e58bace875bf,wrong,merges complete_project_name into complete_droplet_name (they call list_projects and list_droplets); `dropkit create --project` now completes droplet names. Probes saw [] from both without a config.,reading (LLM-judged)
+e7245ce7d271,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
+e87220adce16,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+ece2a6718eae,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+ecec396a8590,debatable,"deletes DebugManager.print_hook_summary: no caller and not documented itself, but part of the interactive debugging methods enable_nan_hooks documents.",reading (LLM-judged)
+edd9f742376e,fine,deletes a file the coding agent's patch created,rule: agent patch
+eea03ee5f153,fine,inlines the one-line wrapper compute_total; the toy answer key expects it applied (shopcart/cart.py::compute_total).,reading (LLM-judged)
+ef7c2a3c1486,wrong,"deletes EnhancerScorer, which the dna_design grader imports and instantiates (grader.py:149-151); the import now fails inside try/except, so the enhancer scores silently disappear.",reading (LLM-judged)
+efa6df485de5,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+f2351bdb23af,fine,deletes a file the coding agent's patch created,rule: agent patch
+f39f4e9b0abd,wrong,"removes a log_message override on a BaseHTTPRequestHandler subclass; the base class calls it by name, so every request is logged to stderr again (a framework callback).",reading (LLM-judged)
+f463499ba0c2,fine,deletes a file the coding agent's patch created,rule: agent patch
+f62c61267f42,wrong,"replaces save_scatter_png_variants with an import from benchmark.us_pd_newspapers_histogram; the README runs the script by path (uv run benchmark/us_pd_newspapers_scatter.py), where only benchmark/ and src/ are on sys.path, so it now stops with ModuleNotFoundError (reproduced with a two-file package run by path).",targeted test
+f638effc7024,wrong,"removes forward from the dlomix-pfly seed MLP (nn.Module); run() calls model(...) at solution.py:93 and :105, which now raises NotImplementedError, so the seed no longer trains.",reading (LLM-judged)
+f6942e8af91f,fine,deletes a file the coding agent's patch created,rule: agent patch
+f8c78f2d0264,debatable,"deletes QualityScorer.score_content_block: no caller, no mention anywhere; a public method of an installable package.",reading (LLM-judged)
+f8eebda994a7,fine,"removes requests from the toy repo requirements; nothing imports it, and the toy answer key expects it removed (requirements.txt::requests).",reading (LLM-judged)
+fdd555acb7be,fine,removes pyzbar from requirements.txt; no file imports pyzbar (nor PIL or qrcode) and nothing loads it.,reading (LLM-judged)
+fea70b97d508,debatable,"deletes RubricStateManager.list_versions: no caller, docs or config; a public method of an installable grader package.",reading (LLM-judged)
+ff6b2ec5cc5f,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
