@@ -2,7 +2,7 @@
 
     python scripts/experiments/v2/exp_case_study.py PATH --name NAME [--exclude FOLDER ...]
         [--test-args "..."] [--runs-dir ../case_studies/runs] [--mode safe|thorough]
-        [--budget llm=N,minutes=N,tests=N]
+        [--budget llm=N,minutes=N,tests=N] [--ablation no_research|single_agent|...]
 
 The clean output (workspace with the branch, report files) goes to --runs-dir/NAME (outside
 the project). An "aidev:owner/name@sha" target (an untrusted repository) runs only inside its
@@ -28,6 +28,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from methods_v2 import ABLATIONS  # noqa: E402
 
 from cleansweep.agents import clean_project  # noqa: E402
 from cleansweep.agents.budgets import parse_budget  # noqa: E402
@@ -57,6 +59,7 @@ def record(result: dict, seconds: float) -> dict:
     )
     return {
         "project": report.repo_id,
+        "ablation": agentic.get("ablation"),
         "verdict": result["summary"]["verdict"],
         "seconds": round(seconds, 1),
         "brief": brief,
@@ -85,9 +88,10 @@ def record(result: dict, seconds: float) -> dict:
 
 
 def agent_cfg(args) -> dict:
-    """The agents' settings from the command line: the mode and the run budget."""
+    """The agents' settings from the command line: the mode, the run budget and an ablation."""
     budget = parse_budget(args.budget) if args.budget else {}
-    return {"mode": args.mode, **({"budget": budget} if budget else {})}
+    ablation = {"ablation": args.ablation} if args.ablation else {}
+    return {"mode": args.mode, **({"budget": budget} if budget else {}), **ablation}
 
 
 def run_container(args, out: Path) -> dict:
@@ -121,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mode", default="safe", choices=["safe", "thorough"])
     parser.add_argument("--runs-dir", default=str(ROOT.parent / "case_studies" / "runs"))
     parser.add_argument("--budget", help="caps for the whole run, e.g. llm=150,minutes=120")
+    parser.add_argument("--ablation", choices=ABLATIONS, help="one part of the team switched off")
     args = parser.parse_args(argv)
     out = Path(args.runs_dir) / args.name
     dest = ROOT / "results" / "raw" / "case_studies" / args.name

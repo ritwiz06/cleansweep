@@ -76,6 +76,16 @@ def test_one_shot_sees_only_agent_files(agent_repo):
     assert shown == files
 
 
+def test_one_shot_sees_only_the_paths_it_is_given(toy_repo, cfg):
+    cfg["llm_client"] = FakeLLM({"Clean it up": '{"delete": [], "files": {}}'})
+    cfg["exp"] = {"one_shot_paths": ["shopcart/utils.py", "debug_cart.py"]}
+    report = one_shot_llm(toy_repo, cfg, seed=0)
+    prompt = cfg["llm_client"].calls[0][0]["content"]
+    assert "### shopcart/utils.py" in prompt and "### shopcart/cart.py" not in prompt
+    assert report.stats["files_shown"] == 2
+    assert report.stats["scope"] == {"kind": "given", "files": 2}
+
+
 def test_collect_code_skips_a_file_that_does_not_fit(tmp_path):
     from cleansweep.eval.baselines import _collect_code
 

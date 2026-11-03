@@ -536,9 +536,10 @@ template file named `*.py` (`class {{CLASS_NAME}}:`; an edit that raises is skip
 after these runs); the duplicates on the other 9 targets (neither system's detectors flagged a
 planted copy); 2 on CORAL, where the run's 150 LLM requests ran out before the Investigator
 decided; 1 on the toy repository, an import the Investigator judged safe whose edit could not be
-applied; and 1 on imgviz, where the Investigator refused the planted "unused" `tabulate` because
-`generate_readme.py` imports it. That last plant is a flaw in the benchmark's key: v1's removal of
-it counts as right. v1 has no detector for debug prints or commented-out code.
+applied; and 1 on imgviz, where the Investigator refused the planted `tabulate` as imported by
+`generate_readme.py`. That file defines a local function named `tabulate` and imports nothing by
+that name: the refusal was wrong (its reference search matched the function by name), and v1's
+removal was right. v1 has no detector for debug prints or commented-out code.
 
 ### Ablations
 
@@ -588,8 +589,9 @@ ran alone, so the minutes do not compare across rows. Per project:
   openwebui-extensions, where the team's run stopped at the template file, it removed 2.
 - **No research squad.** 3 more than the team at about a tenth of the requests: on CORAL the
   team's 150 requests ran out before the Investigator decided on the planted import and
-  dependency (the variant used 24), and on imgviz the Investigator kept the planted `tabulate`
-  that `generate_readme.py` imports, which this variant removed. Without the squad, v1's
+  dependency (the variant used 24), and on imgviz the Investigator wrongly kept the planted
+  `tabulate` (it took a local function of that name in `generate_readme.py` for an import),
+  which this variant removed. Without the squad, v1's
   detectors go straight to the development squad, one package per safe item.
 - **Within a few items.** Every variant but no research squad used all 150 requests on CORAL
   and openwebui-extensions, and all but it and the single agent on ai-goofish-monitor; on CORAL the variants differ by one or two
@@ -598,9 +600,9 @@ ran alone, so the minutes do not compare across rows. Per project:
   three projects, so no lesson was missing; with one run each, we read the gap as run-to-run
   variation.
 
-On these benchmarks the research squad changed one answer by reading the code, the imgviz
-`tabulate` it kept, and the key counts that as a miss; without the squad the team removed at
-least as much in every category and no trap. Whether investigation pays off on real projects is
+On these benchmarks the one answer the research squad changed by reading the code, the imgviz
+`tabulate`, it got wrong; without the squad the team removed at least as much in every category
+and no trap. Whether investigation pays off on real projects is
 open: no ablation ran there.
 
 ### Probe strength

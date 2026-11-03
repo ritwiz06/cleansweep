@@ -4,6 +4,7 @@ method on it, and score what it removed.
     python scripts/experiments/v2/exp_inject.py run [--repos toy owner/name ...] [--seeds 1]
         [--methods agentic cleansweep one_shot_llm agentic-<ablation> ...]
     python scripts/experiments/v2/exp_inject.py table
+    python scripts/experiments/v2/exp_inject.py validate [--repos ...] [--seeds 1]
 
 Plants (one each, in three of the project's own package modules chosen by the seed):
 - slop the cleanup should remove: a leftover file (scratch_<tag>.py), a dead function, an
@@ -15,9 +16,19 @@ Plants (one each, in three of the project's own package modules chosen by the se
 A hidden test the methods never see (kept outside the project) checks the planted code's
 behavior before and after the method's final diff.
 
+Every plant is checked before a run (check_plants): the leftover file, dead function, unused
+import and unused dependency are used nowhere (scripts and tests included), the duplicate's two
+copies match, the debug print and commented-out block are there once, and both traps behave
+differently from what removing them would give. An invalid plant is dropped and listed in the
+key. The hidden test must pass on the injected project before any cleanup; when it does not
+(a planted module that cannot be imported), the modules are drawn again, up to ATTEMPTS times.
+`validate` runs the plant checks on keys already prepared.
+
 The toy repo is copied as a local project; an AIDev repository becomes an injected clone
 (data/raw/aidev/injected/<owner>__<name>: its head plus one commit with the plants) and runs,
-like every AIDev target, only inside its container. Every method sees the whole project.
+like every AIDev target, only inside its container; each seed is one commit on the same base,
+tagged s<seed>. Every method sees the whole project, except the one-shot baseline, which is shown
+the files the plants commit changed (as it is shown the agent's files on AIDev).
 Writes results/raw/inject/<name>-s<seed>/ (the key, the hidden test, one report per method with
 its score) and, with `table`, results/summary/v2/injection.csv (per repository, method and
 category) and injection_summary.csv (per method and category: recall, precision against the
@@ -62,13 +73,21 @@ REPOS = [
     "eric-tramel/slop-guard",
     "Usagi-org/ai-goofish-monitor",
     "thomasjjj/Telegram-Snowball-Sampling",
-    "wkentaro/imgviz",
+    "utensils/mcp-nixos",
     "trailofbits/dropkit",
     "gotalab/skillport",
     "curvedinf/wove",
     "Human-Agent-Society/CORAL",
 ]
+# Left out, with the reason (reported beside the results).
+EXCLUDED = {
+    "wkentaro/imgviz": "replaced by request: its hidden test failed before any cleanup (one "
+    "planted module, getting_started.py, is a demo script that runs matplotlib and sample data "
+    "on import); its planted dependency was valid (generate_readme.py defines a local function "
+    "named tabulate and imports nothing by that name)",
+}
 METHODS = ["agentic", "cleansweep", "one_shot_llm"]  # the default comparison
+ATTEMPTS = 3
 WORDS = ["amber", "basil", "cedar", "delta", "ember", "fjord", "garnet", "harbor", "indigo"]
 STDLIB = ["textwrap", "fnmatch", "zlib", "sched", "colorsys", "netrc"]
 DEPS = ["tabulate", "toolz", "humanize", "termcolor"]
@@ -140,9 +159,10 @@ def _append(path: Path, block: str) -> None:
     path.write_text(text.rstrip("\n") + "\n\n\n" + block.strip("\n") + "\n", encoding="utf-8")
 
 
-def inject(root: Path, seed: int) -> dict:
-    """Plant the slop and the traps; return the key (what was planted where)."""
-    rng = random.Random(seed)
+def inject(root: Path, seed: int, attempt: int = 0) -> dict:
+    """Plant the slop and the traps; return the key (what was planted where). A later attempt
+    draws other modules for the same seed."""
+    rng = random.Random(seed if attempt == 0 else f"{seed}.{attempt}")
     tag = f"{rng.choice(WORDS)}{seed}"
     a, b, c = pick_modules(root, rng)
     names = {p: _module_name(root, p) for p in (a, b, c)}
@@ -248,7 +268,8 @@ def _plant_dependency(root: Path, rng: random.Random) -> tuple[str, str] | None:
     taken = (pyproject.read_text() if pyproject.exists() else "") + (
         requirements.read_text() if requirements.exists() else ""
     )
-    name = next(d for d in DEPS if d not in taken.lower())
+    used = imported_names(root)
+    name = next(d for d in DEPS if d not in taken.lower() and d not in used)
     if pyproject.exists():
         import tomlkit
 
@@ -262,6 +283,91 @@ def _plant_dependency(root: Path, rng: random.Random) -> tuple[str, str] | None:
         requirements.write_text(requirements.read_text().rstrip("\n") + f"\n{name}>=0.1\n")
         return "requirements.txt", f"{name}>=0.1"
     return None
+
+
+def _py_texts(root: Path) -> dict[str, str]:
+    out = {}
+    for path in sorted(root.rglob("*.py")):
+        rel = path.relative_to(root)
+        if rel.parts[0] != ".git":
+            out[rel.as_posix()] = path.read_text(encoding="utf-8", errors="replace")
+    return out
+
+
+def imported_names(root: Path) -> dict[str, str]:
+    """Top-level module name -> the first file importing it, over every .py file in the tree."""
+    out = {}
+    for rel, text in _py_texts(root).items():
+        names = re.findall(r"^\s*from\s+([A-Za-z_]\w*)", text, re.M)
+        for line in re.findall(r"^\s*import\s+([^\n#]+)", text, re.M):
+            names += [part.split()[0].split(".")[0] for part in line.split(",") if part.strip()]
+        for name in names:
+            out.setdefault(name, rel)
+    return out
+
+
+def _node(text: str, name: str) -> ast.AST | None:
+    for node in ast.walk(ast.parse(text)):
+        if isinstance(node, ast.FunctionDef | ast.ClassDef) and node.name == name:
+            return node
+    return None
+
+
+def _run(text: str, names: list[str], call: str, scope: dict) -> object:
+    """Run the named definitions from a module's text on their own, then evaluate call."""
+    for name in names:
+        exec(ast.get_source_segment(text, _node(text, name)), scope)
+    return eval(call, scope)
+
+
+def check_plants(root: Path, key: dict) -> list[str]:
+    """Per plant, in key order: why it would be a wrong answer ("" when it is valid)."""
+    texts = _py_texts(root)
+    tag = key["tag"]
+    reasons = []
+    for plant in key["plants"]:
+        text = texts.get(plant["path"], "")
+        category, kind = plant["category"], plant["kind"]
+        reason = ""
+        if category == "leftover_file":
+            stem = Path(plant["path"]).stem
+            users = [r for r, x in texts.items() if stem in x and r != plant["path"]]
+            reason = f"{stem} is used in {users[0]}" if users else ""
+        elif category == "dead_code" and kind == "slop":
+            uses = sum(x.count(f"_unused_{tag}") for x in texts.values())
+            reason = f"_unused_{tag} has a caller" if uses != 1 else ""
+        elif category == "duplicate" and kind == "slop":
+            a, b = (texts.get(p, "") for p in plant["paths"])
+            same = [_node(x, f"slugify_{tag}") for x in (a, b)]
+            if None in same or ast.dump(same[0]) != ast.dump(same[1]):
+                reason = "the two copies differ"
+        elif category == "duplicate" and kind == "trap":
+            a = next(x for r, x in texts.items() if f"def scale_{tag}(" in x)
+            one = _run(a, [f"scale_{tag}"], f"scale_{tag}([0.125])", {})
+            two = _run(text, [f"scale_{tag}_v2"], f"scale_{tag}_v2([0.125])", {})
+            reason = "the near-duplicates give the same result" if one == two else ""
+        elif category == "dead_code" and kind == "trap":
+            scope = {f"_ast_{tag}": ast}
+            names = [f"_NameCounter{tag.title()}", f"count_names_{tag}"]
+            kept = _run(text, names, f'count_names_{tag}("x = y")', scope)
+            gone = _run(
+                text.replace("def visit_Name(", "def _visit_removed("),
+                names,
+                f'count_names_{tag}("x = y")',
+                scope,
+            )
+            reason = "removing visit_Name changes nothing" if kept == gone else ""
+        elif category == "unused_import":
+            module = plant["marker"].split()[1]
+            reason = f"{module} is used" if len(re.findall(rf"\b{module}\b", text)) != 1 else ""
+        elif category in ("debug_leftover", "commented_code"):
+            reason = "" if text.count(plant["marker"]) == 1 else "not planted once"
+        elif category == "unused_dependency":
+            dep = re.match(r'"?([A-Za-z0-9_.-]+?)[<>=]', plant["marker"]).group(1)
+            user = imported_names(root).get(dep.replace("-", "_"))
+            reason = f"{dep} is imported by {user}" if user else ""
+        reasons.append(reason)
+    return reasons
 
 
 def present(root: Path, plant: dict) -> int:
@@ -299,26 +405,45 @@ def _git_tree(src: Path, dest: Path) -> str:
 
 
 def prepare(repo: str, seed: int, cfg: dict) -> tuple[str, Path, dict]:
-    """(target, the injected tree, its key) for the toy repo or an AIDev repository."""
+    """(target, the injected tree, its key) for the toy repo or an AIDev repository, with the
+    invalid plants dropped and a hidden test that passes before any cleanup."""
+    name = "toy" if repo == "toy" else repo.replace("/", "__")
+    folder = RAW / f"{name}-s{seed}"
+    (folder / "hidden").mkdir(parents=True, exist_ok=True)
+    rejected = []
+    for attempt in range(ATTEMPTS):
+        tree = _toy_tree(folder) if repo == "toy" else _injected_base(repo, name, cfg)
+        key = inject(tree, seed, attempt)
+        reasons = check_plants(tree, key)
+        pairs = list(zip(key["plants"], reasons, strict=True))
+        key["dropped"] = [{**p, "reason": r} for p, r in pairs if r]
+        key["plants"] = [p for p, r in pairs if not r]
+        sha = _commit(tree, "plants")
+        target = str(tree) if repo == "toy" else f"aidev:{repo}@{sha}"
+        if repo != "toy":
+            subprocess.run(["git", "tag", "-f", f"s{seed}", sha], cwd=tree, capture_output=True)
+        (folder / "hidden" / "test_planted.py").write_text(key["hidden_test"])
+        baseline = hidden_baseline(target, folder / "hidden", cfg)
+        if baseline["ok"]:
+            key.update(target=target, sha=sha, attempt=attempt, rejected=rejected)
+            key["hidden_baseline"] = baseline
+            (folder / "key.json").write_text(json.dumps(key, indent=1))
+            return target, tree, key
+        rejected.append({"attempt": attempt, "modules": key["modules"], **baseline})
+    (folder / "rejected.txt").write_text(json.dumps(rejected, indent=1))
+    raise ValueError(f"the hidden test fails before any cleanup in {ATTEMPTS} draws")
+
+
+def _injected_base(repo: str, name: str, cfg: dict) -> Path:
+    """The injected clone, checked out clean at its base commit (the repository's head). Earlier
+    seeds stay in it as tagged commits."""
     from cleansweep.data import load_repos
     from cleansweep.data.swebench import data_path
 
-    name = "toy" if repo == "toy" else repo.replace("/", "__")
-    folder = RAW / f"{name}-s{seed}"
-    if repo == "toy":
-        tree = folder / "repo"
-        if tree.exists():
-            shutil.rmtree(tree)
-        _git_tree(ROOT / "tests" / "fixtures" / "toy_repo", tree)
-        key = inject(tree, seed)
-        _commit(tree, "plants")
-        target = str(tree)
-    else:
+    tree = data_path(CLONES) / name
+    if not (tree / ".git").exists():
         ref = next(r for r in load_repos() if r.repo_id.removeprefix("aidev:") == repo)
         clone = data_path(cfg["data"]["aidev"]["clones"]) / name
-        tree = data_path(CLONES) / name
-        if tree.exists():
-            shutil.rmtree(tree)
         with tempfile.TemporaryDirectory() as tmp:
             archive = subprocess.Popen(
                 ["git", "archive", ref.head_sha], cwd=clone, stdout=subprocess.PIPE
@@ -326,14 +451,48 @@ def prepare(repo: str, seed: int, cfg: dict) -> tuple[str, Path, dict]:
             subprocess.run(["tar", "-xf", "-", "-C", tmp], stdin=archive.stdout, check=True)
             archive.wait()
             _git_tree(Path(tmp), tree)
-        key = inject(tree, seed)
-        sha = _commit(tree, "plants")
-        target = f"aidev:{repo}@{sha}"
-    folder.mkdir(parents=True, exist_ok=True)
-    (folder / "key.json").write_text(json.dumps({**key, "target": target}, indent=1))
-    (folder / "hidden").mkdir(exist_ok=True)
-    (folder / "hidden" / "test_planted.py").write_text(key["hidden_test"])
-    return target, tree, key
+        return tree
+    _tag_prepared(tree, name)
+    base = _git(tree, "rev-list", "--max-parents=0", "HEAD").split()[0]
+    _git(tree, "checkout", "-q", "--detach", base)
+    _git(tree, "reset", "-q", "--hard")
+    _git(tree, "clean", "-qfdx")
+    return tree
+
+
+def _toy_tree(folder: Path) -> Path:
+    tree = folder / "repo"
+    if tree.exists():
+        shutil.rmtree(tree)
+    _git_tree(ROOT / "tests" / "fixtures" / "toy_repo", tree)
+    return tree
+
+
+def _tag_prepared(tree: Path, name: str) -> None:
+    """Tag the plants commit of every seed already prepared, so it outlives a new checkout."""
+    for key_path in RAW.glob(f"{name}-s*/key.json"):
+        sha = json.loads(key_path.read_text())["target"].partition("@")[2]
+        seed = key_path.parent.name.rsplit("-s", 1)[1]
+        subprocess.run(["git", "tag", "-f", f"s{seed}", sha], cwd=tree, capture_output=True)
+
+
+def _git(tree: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=tree, capture_output=True, text=True, check=True
+    ).stdout.strip()
+
+
+def hidden_baseline(target: str, hidden: Path, cfg: dict) -> dict:
+    """The hidden test on the injected project before any cleanup, in a fresh workspace."""
+    ws = open_workspace(target, cfg["core"].get("sandbox"))
+    try:
+        shutil.copytree(hidden, Path(ws.path) / "_cs_hidden")
+        if hasattr(ws, "sync"):
+            ws.sync()
+        result = ws.run_tests(["_cs_hidden"])
+        return {"ok": result.ok, "passed": result.passed, "failed_ids": result.failed_ids}
+    finally:
+        ws.close()
 
 
 def _commit(tree: Path, message: str) -> str:
@@ -366,10 +525,11 @@ def hidden_check(target: str, final_diff: str, hidden: Path, cfg: dict) -> dict:
         ws.close()
 
 
-def final_tree(tree: Path, final_diff: str) -> tuple[Path, bool]:
-    """A temporary copy of the injected tree with the final diff applied."""
+def final_tree(tree: Path, final_diff: str, sha: str = "HEAD") -> tuple[Path, bool]:
+    """A temporary copy of the injected tree at sha with the final diff applied."""
     tmp = Path(tempfile.mkdtemp(prefix="cs_inject_"))
-    subprocess.run(["git", "clone", "-q", str(tree), str(tmp / "t")], check=True)
+    subprocess.run(["git", "clone", "-q", "--no-checkout", str(tree), str(tmp / "t")], check=True)
+    subprocess.run(["git", "checkout", "-q", sha], cwd=tmp / "t", check=True)
     ok = True
     if final_diff.strip():
         proc = subprocess.run(
@@ -391,9 +551,13 @@ def run_one(repo: str, seed: int, method: str, cfg: dict) -> dict:
     from cleansweep.data.swebench import data_path
 
     tree = folder / "repo" if repo == "toy" else data_path(CLONES) / name
+    sha = key.get("sha") or (_git(tree, "rev-parse", "HEAD") if repo == "toy" else "")
+    sha = sha or target.partition("@")[2]
     label, judge, agents = resolve("cleansweep-gatekeeper" if method == "cleansweep" else method)
     if agents:
         cfg = {**cfg, "core": {**cfg["core"], "agents": {**cfg["core"]["agents"], **agents}}}
+    if method == "one_shot_llm":
+        cfg = {**cfg, "exp": {**cfg.get("exp", {}), "one_shot_paths": planted_files(tree, sha)}}
     if judge:
         os.environ["CLEANSWEEP_JUDGE_MODE"] = judge
     else:
@@ -403,7 +567,7 @@ def run_one(repo: str, seed: int, method: str, cfg: dict) -> dict:
     report = run_sweep(target, cfg, label)
     minutes = round((time.time() - t0) / 60, 2)
     diff = report.stats.get("final_diff", "")
-    after, applied = final_tree(tree, diff)
+    after, applied = final_tree(tree, diff, sha)
     try:
         scored = score(after, key)
     finally:
@@ -422,6 +586,52 @@ def run_one(repo: str, seed: int, method: str, cfg: dict) -> dict:
         "traps_removed": sum(p["removed"] for p in scored if p["kind"] == "trap"),
         "hidden_changed": hidden.get("behavior_changed"),
     }
+
+
+def planted_files(tree: Path, sha: str) -> list[str]:
+    """The files the plants commit added or changed: the one-shot baseline's scope."""
+    out = _git(tree, "diff", "--name-only", "--diff-filter=AM", f"{sha}~1", sha)
+    return sorted(out.split())
+
+
+def validate(repos: list[str], seeds: list[int]) -> list[dict]:
+    """The plant checks on keys already prepared, with the hidden test's baseline result from
+    the reports run on them."""
+    from cleansweep.data.swebench import data_path
+
+    out = []
+    for repo in repos:
+        name = "toy" if repo == "toy" else repo.replace("/", "__")
+        for seed in seeds:
+            folder = RAW / f"{name}-s{seed}"
+            if not (folder / "key.json").exists():
+                continue
+            key = json.loads((folder / "key.json").read_text())
+            tree = folder / "repo" if repo == "toy" else data_path(CLONES) / name
+            sha = key.get("sha") or key["target"].partition("@")[2] or "HEAD"
+            copy, _ = final_tree(tree, "", sha)
+            try:
+                reasons = check_plants(copy, key)
+            finally:
+                shutil.rmtree(copy.parent, ignore_errors=True)
+            before = {
+                json.loads(r.read_text())["stats"].get("hidden", {}).get("before_ok")
+                for r in folder.glob("*.json")
+                if r.name != "key.json"
+            }
+            out.append(
+                {
+                    "repo": repo,
+                    "seed": seed,
+                    "invalid": {
+                        f"{p['category']}/{p['kind']}": r
+                        for p, r in zip(key["plants"], reasons, strict=True)
+                        if r
+                    },
+                    "hidden_before_ok": sorted(before - {None}),
+                }
+            )
+    return out
 
 
 def table() -> tuple[Path, Path]:
@@ -494,13 +704,17 @@ def summarize(rows: list[dict]) -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "table"])
+    parser.add_argument("what", choices=["run", "table", "validate"])
     parser.add_argument("--repos", nargs="+", default=REPOS)
     parser.add_argument("--seeds", nargs="+", type=int, default=[1])
     parser.add_argument("--methods", nargs="+", default=METHODS, choices=["cleansweep", *LABELS])
     args = parser.parse_args(argv)
     if args.what == "table":
         print(*table(), sep="\n")
+        return 0
+    if args.what == "validate":
+        for row in validate(args.repos, args.seeds):
+            print(json.dumps(row), flush=True)
         return 0
     cfg = load_config(
         {"reviewer": {"scope": "repo"}, "core": {"sandbox": {"aidev_clones": CLONES}}}
@@ -511,7 +725,7 @@ def main(argv: list[str] | None = None) -> int:
             if not (RAW / f"{name}-s{seed}" / "key.json").exists():
                 try:
                     prepare(repo, seed, cfg)
-                except ValueError as exc:  # nowhere to plant: the repository is left out
+                except ValueError as exc:  # nowhere to plant, or no valid draw: left out
                     print(f"skip {repo}: {exc}", flush=True)
                     continue
             for method in args.methods:
