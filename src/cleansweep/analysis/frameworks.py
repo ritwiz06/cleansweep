@@ -98,6 +98,54 @@ FRAMEWORKS: dict[str, dict] = {
         "names": {"runtest", "reportinfo", "repr_failure", "collect", "setup", "teardown"},
         "prefixes": ("pytest_",),
     },
+    "http.server": {
+        "packages": ("http", "socketserver"),
+        "names": {
+            "handle",
+            "setup",
+            "finish",
+            "log_message",
+            "log_request",
+            "log_error",
+            "send_head",
+            "version_string",
+        },
+        "prefixes": ("do_",),
+    },
+    "ast.NodeVisitor": {
+        "packages": ("ast",),
+        "names": {"generic_visit"},
+        "prefixes": ("visit_",),
+    },
+    "torch": {
+        "packages": ("torch",),
+        "names": {"forward", "extra_repr", "reset_parameters"},
+        "prefixes": (),
+    },
+    "lightning": {
+        "packages": ("lightning", "pytorch_lightning"),
+        "names": {
+            "forward",
+            "training_step",
+            "validation_step",
+            "test_step",
+            "predict_step",
+            "configure_optimizers",
+            "train_dataloader",
+            "val_dataloader",
+            "test_dataloader",
+            "predict_dataloader",
+            "prepare_data",
+            "setup",
+            "teardown",
+        },
+        "prefixes": ("on_",),
+    },
+    "hatchling": {
+        "packages": ("hatchling",),
+        "names": {"initialize", "finalize", "clean", "dependencies"},
+        "prefixes": (),
+    },
 }
 
 _BY_PACKAGE = {pkg: name for name, fw in FRAMEWORKS.items() for pkg in fw["packages"]}
