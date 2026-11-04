@@ -100,6 +100,12 @@ def _applies(ws, diff: str) -> bool:
     return proc.returncode == 0
 
 
+def _failures(ws) -> list[str]:
+    """The failure lines (pytest's "E " lines) of the workspace's last test run."""
+    out = getattr(ws, "last_test_output", "")
+    return [line.strip() for line in out.splitlines() if line.startswith("E ")][:8]
+
+
 def check_edit(ws, base: str, folder: Path, record: dict) -> dict:
     """Run one test before and after one edit in an open workspace, then reset it."""
     ws.rollback(base)
@@ -115,10 +121,12 @@ def check_edit(ws, base: str, folder: Path, record: dict) -> dict:
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(folder, dest)
     before = ws.run_tests(["_cs_audit"])
+    before_errors = _failures(ws)
     applied = ws.apply_patch(record["diff"])
     hide = folder / "hide.txt"
     hidden = ws.hide_packages(hide.read_text().split()) if applied and hide.exists() else None
     after = ws.run_tests(["_cs_audit"]) if applied else None
+    after_errors = _failures(ws) if applied else []
     output = getattr(ws, "last_test_output", "")[-1500:]
     if hidden is not None:
         ws.restore_packages()
@@ -130,8 +138,10 @@ def check_edit(ws, base: str, folder: Path, record: dict) -> dict:
         "hidden": hidden,
         "before_ok": before.ok,
         "before_failed": before.failed_ids,
+        "before_errors": before_errors,
         "after_ok": after.ok if after else None,
         "after_failed": after.failed_ids if after else [],
+        "after_errors": after_errors,
         "confirmed": bool(applied and before.ok and after is not None and not after.ok),
         "output": output,
     }

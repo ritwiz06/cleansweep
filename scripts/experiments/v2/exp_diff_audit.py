@@ -249,6 +249,12 @@ def _normal(diff: str) -> str:
     )
 
 
+def edit_key(project: str, path: str, diff: str) -> str:
+    """The audit's id of an edit: the same project, file and diff give the same id."""
+    key = f"{project}\n{path}\n{_normal(diff)}"
+    return hashlib.sha1(key.encode()).hexdigest()[:12]
+
+
 def collect() -> tuple[dict, list[dict]]:
     """(unique edits by id, occurrences: one row per kept edit in a run)."""
     edits, rows = {}, []
@@ -256,8 +262,7 @@ def collect() -> tuple[dict, list[dict]]:
         report = json.loads(path.read_text())
         project = report["repo_id"]
         for edit in kept_edits(report):
-            key = f"{project}\n{edit['path']}\n{_normal(edit['diff'])}"
-            edit_id = hashlib.sha1(key.encode()).hexdigest()[:12]
+            edit_id = edit_key(project, edit["path"], edit["diff"])
             edits.setdefault(edit_id, {**edit, "project": project, "report": str(path)})
             rows.append(
                 {
