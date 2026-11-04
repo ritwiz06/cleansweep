@@ -25,6 +25,7 @@ from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.eval import run_hidden_checks  # noqa: E402
 from cleansweep.runlog import outcome_score  # noqa: E402
+from cleansweep.sandbox.scratch import on_start  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 TOY = ROOT / "tests" / "fixtures" / "toy_repo"
@@ -127,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--out", default="results/raw/agentic_p2")
     args = parser.parse_args(argv)
+    on_start()
     out = Path(args.out)
     (out / "reports").mkdir(parents=True, exist_ok=True)
     summary = out / "summary.csv"

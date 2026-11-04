@@ -43,6 +43,7 @@ sys.path.insert(0, str(ROOT))
 
 from cleansweep.agents import clean_project  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
+from cleansweep.sandbox.scratch import on_start  # noqa: E402
 from cleansweep.workflow.sweep import make_llm  # noqa: E402
 
 FIXTURES = ROOT / "tests" / "fixtures" / "scenarios"
@@ -192,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     runs = RAW / "runs.json"
     rows = json.loads(runs.read_text()) if runs.exists() else []
     if not args.table:
+        on_start()
         done = {(r["scenario"], r["manager"], r["repeat"]) for r in rows}
         for scenario in args.scenarios:
             for manager in args.managers:

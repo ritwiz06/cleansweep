@@ -44,6 +44,7 @@ from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.eval import run_hidden_checks  # noqa: E402
 from cleansweep.runlog import outcome_score  # noqa: E402
+from cleansweep.sandbox.scratch import on_start  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 FIELDS = [
@@ -200,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--out", required=True)
     args = parser.parse_args(argv)
+    on_start()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     todo = jobs(args)

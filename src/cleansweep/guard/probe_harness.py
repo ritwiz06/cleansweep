@@ -16,6 +16,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import signal
 import socket
 import sys
@@ -241,11 +242,13 @@ def main(spec_path, root=None):
         socket.create_connection,
         signal.getsignal(signal.SIGALRM),
     )
+    scratch = tempfile.mkdtemp(prefix="cs_probe_")  # stray file writes land outside the repo
     try:
-        _run(spec_path, root or os.getcwd())
+        _run(spec_path, root or os.getcwd(), scratch)
     finally:
         cwd, path, connect, create, handler = saved
         os.chdir(cwd)
+        shutil.rmtree(scratch, ignore_errors=True)
         sys.path[:] = path
         socket.socket.connect = connect
         socket.create_connection = create
@@ -255,7 +258,7 @@ def main(spec_path, root=None):
         _drop_stubs()
 
 
-def _run(spec_path, root):
+def _run(spec_path, root, scratch):
     with open(spec_path) as f:
         spec = json.load(f)
     for extra in reversed(spec.get("paths", ["."])):
@@ -270,7 +273,7 @@ def _run(spec_path, root):
         _TIMER["on"] = True
     except ValueError:  # not the main thread: cases run without a timeout
         pass
-    os.chdir(tempfile.mkdtemp(prefix="cs_probe_"))  # stray file writes land outside the repo
+    os.chdir(scratch)
 
     out = {"modules": {}, "probes": {}, "swaps": []}
     for name, rel in sorted(spec.get("scripts", {}).items()):

@@ -61,6 +61,7 @@ from methods_v2 import LABELS, resolve  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
+from cleansweep.sandbox.scratch import on_start  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "inject"
@@ -720,6 +721,7 @@ def main(argv: list[str] | None = None) -> int:
         for row in validate(args.repos, args.seeds):
             print(json.dumps(row), flush=True)
         return 0
+    on_start()
     cfg = load_config(
         {"reviewer": {"scope": "repo"}, "core": {"sandbox": {"aidev_clones": CLONES}}}
     )

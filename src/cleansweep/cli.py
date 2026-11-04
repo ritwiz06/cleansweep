@@ -35,6 +35,8 @@ def cmd_sweep(args) -> int:
     from cleansweep.workflow import run_sweep
 
     cfg = load_config()
+    if args.keep_workspace:
+        cfg["core"].setdefault("sandbox", {})["keep_workspace"] = True
     report = run_sweep(args.target, cfg, method=args.method, seed=args.seed)
     if args.out:
         save_json(report, args.out)
@@ -210,6 +212,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--out")
     p.add_argument("--hidden", action="store_true", help="also run hidden checks afterwards")
+    p.add_argument(
+        "--keep-workspace",
+        action="store_true",
+        help="keep the scratch workspace (and its container) after the sweep",
+    )
     p.set_defaults(func=cmd_sweep)
     p = sub.add_parser("plan", help="print the cleanup plan without applying anything")
     p.add_argument("--target", required=True)
@@ -301,6 +308,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-browser", action="store_true", help="do not open a browser window")
     p.set_defaults(func=cmd_studio)
     args = parser.parse_args(argv)
+    if args.command != "show":
+        from cleansweep.sandbox.scratch import on_start
+
+        on_start(load_config()["core"].get("sandbox"))
     return args.func(args)
 
 

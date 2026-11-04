@@ -1,6 +1,8 @@
 import json
 import os
+import signal
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,17 @@ for _var in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GI
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TOY = FIXTURES / "toy_repo"
+
+
+@pytest.fixture(autouse=True)
+def _own_temp_folder(tmp_path_factory, monkeypatch):
+    """What the code writes to the temp folder, or sweeps from it, stays in the test's own
+    folder; the signal handlers a runner installs are put back."""
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path_factory.mktemp("temp")))
+    handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP)}
+    yield
+    for sig, handler in handlers.items():
+        signal.signal(sig, handler)
 
 
 @pytest.fixture

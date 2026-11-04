@@ -15,6 +15,10 @@ Repository restructure; no change in behavior or results (#81–#86, tag `pre-ti
   acceptance checklist `docs/requirements.md`.
 - Every regenerated table and figure is byte-identical to `pre-tidy`, and the offline v1 toy
   sweep gives the same report.
+- Runs remove their scratch however they end: workspaces, containers, coverage data and the
+  probe harness's working folder go on success, on errors and on SIGTERM or SIGHUP; a run's
+  start removes what killed runs left (older than 24 hours, owner gone). `cleansweep sweep
+  --keep-workspace` keeps the workspace.
 
 ## v1.0.3 (2026-10-31)
 

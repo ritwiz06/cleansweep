@@ -33,6 +33,7 @@ from cleansweep.core.io import load_json, save_json  # noqa: E402
 from cleansweep.core.models import SweepReport  # noqa: E402
 from cleansweep.guard import apply_edit  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
+from cleansweep.sandbox.scratch import on_start  # noqa: E402
 from cleansweep.workflow.sweep import make_llm  # noqa: E402
 
 
@@ -78,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", required=True)
     parser.add_argument("--out", default=str(ROOT / "results" / "raw" / "duplicate_probes"))
     args = parser.parse_args(argv)
+    on_start()
     cfg = load_config({"reviewer": {"scope": "repo"}})
     llm = make_llm(cfg["core"])
     report = load_json(SweepReport, args.report)
