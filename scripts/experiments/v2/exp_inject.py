@@ -61,7 +61,7 @@ from methods_v2 import LABELS, resolve  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "inject"

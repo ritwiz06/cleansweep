@@ -20,7 +20,7 @@ report ◀── hidden checks (evaluation only) ◀── Guard: apply, verify,
    `aidev:<owner>/<name>@<sha>` (a `python:3.11` container that installs the project, then
    loses its network before any project code runs). The workspace, its container and its
    coverage data go when the run ends, also on an error or on SIGTERM and SIGHUP, which the
-   runners turn into a normal exit (`sandbox/scratch.py`; a signal ignored under `nohup` stays
+   runners turn into a normal exit (`sandbox/cleanup.py`; a signal ignored under `nohup` stays
    ignored). `cleansweep` commands and the v2 experiment runners start by removing workspaces
    and `cs_*` temp folders older than 24 hours whose owner process (recorded in the
    workspace's `.git`) is gone, with their containers.

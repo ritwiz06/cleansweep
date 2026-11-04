@@ -43,7 +43,7 @@ sys.path.insert(0, str(ROOT))
 
 from cleansweep.agents import clean_project  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 from cleansweep.workflow.sweep import make_llm  # noqa: E402
 
 FIXTURES = ROOT / "tests" / "fixtures" / "scenarios"

@@ -25,7 +25,7 @@ from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.core.io import save_json  # noqa: E402
 from cleansweep.eval import run_hidden_checks  # noqa: E402
 from cleansweep.runlog import outcome_score  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 from cleansweep.workflow import run_sweep  # noqa: E402
 
 TOY = ROOT / "tests" / "fixtures" / "toy_repo"

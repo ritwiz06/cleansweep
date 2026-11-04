@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cleansweep.sandbox.scratch import sweep_orphans
+from cleansweep.sandbox.cleanup import sweep_orphans
 from cleansweep.sandbox.workspace import OWNER_FILE
 from cleansweep.workflow import run_sweep
 
@@ -19,7 +19,7 @@ for sig in (signal.SIGTERM, signal.SIGHUP):
     signal.signal(sig, signal.SIG_DFL)
 signal.signal(signal.SIGINT, signal.default_int_handler)
 from cleansweep.sandbox import open_workspace
-from cleansweep.sandbox.scratch import exit_on_signals
+from cleansweep.sandbox.cleanup import exit_on_signals
 exit_on_signals()
 with open_workspace(sys.argv[1], {"work_dir": sys.argv[2]}):
     print("open", flush=True)

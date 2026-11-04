@@ -34,7 +34,7 @@ from methods_v2 import ABLATIONS  # noqa: E402
 from cleansweep.agents import clean_project  # noqa: E402
 from cleansweep.agents.budgets import parse_budget  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 COPY = ["CLEANUP_REPORT.md", "blueprint.md", "PR_DESCRIPTION.md", "report.json", "events.jsonl"]
 

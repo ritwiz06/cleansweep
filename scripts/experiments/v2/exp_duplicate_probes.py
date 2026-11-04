@@ -33,7 +33,7 @@ from cleansweep.core.io import load_json, save_json  # noqa: E402
 from cleansweep.core.models import SweepReport  # noqa: E402
 from cleansweep.guard import apply_edit  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 from cleansweep.workflow.sweep import make_llm  # noqa: E402
 
 

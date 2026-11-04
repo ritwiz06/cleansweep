@@ -45,7 +45,7 @@ from exp_diff_audit import (  # noqa: E402
 
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 TESTS = OUT / "tests"
 RESULTS = TESTS / "results.json"

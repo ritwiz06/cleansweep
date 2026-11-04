@@ -281,7 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.what == "review":
         review()
     elif args.what == "ui":
-        from cleansweep.sandbox.scratch import on_start
+        from cleansweep.sandbox.cleanup import on_start
 
         on_start()
         ui()

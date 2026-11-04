@@ -32,7 +32,7 @@ sys.path.insert(0, str(ROOT))
 from cleansweep.agents import clean_project, watch  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.data import load_history, load_repos  # noqa: E402
-from cleansweep.sandbox.scratch import on_start  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "watch_demo"
 V1 = ROOT / "results" / "summary" / "v1" / "scheduler_replay.csv"

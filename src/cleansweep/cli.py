@@ -309,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_studio)
     args = parser.parse_args(argv)
     if args.command != "show":
-        from cleansweep.sandbox.scratch import on_start
+        from cleansweep.sandbox.cleanup import on_start
 
         on_start(load_config()["core"].get("sandbox"))
     return args.func(args)
