@@ -61,6 +61,7 @@ def record(result: dict, seconds: float) -> dict:
     return {
         "project": report.repo_id,
         "ablation": agentic.get("ablation"),
+        "investigate": agentic.get("investigate", "all"),
         "verdict": result["summary"]["verdict"],
         "seconds": round(seconds, 1),
         "brief": brief,
@@ -89,10 +90,12 @@ def record(result: dict, seconds: float) -> dict:
 
 
 def agent_cfg(args) -> dict:
-    """The agents' settings from the command line: the mode, the run budget and an ablation."""
+    """The agents' settings from the command line: the mode, the run budget, an ablation and
+    the investigation (all, adaptive or none)."""
     budget = parse_budget(args.budget) if args.budget else {}
     ablation = {"ablation": args.ablation} if args.ablation else {}
-    return {"mode": args.mode, **({"budget": budget} if budget else {}), **ablation}
+    investigate = {"investigate": args.investigate} if args.investigate else {}
+    return {"mode": args.mode, **({"budget": budget} if budget else {}), **ablation, **investigate}
 
 
 def run_container(args, out: Path) -> dict:
@@ -127,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runs-dir", default=str(ROOT.parent / "case_studies" / "runs"))
     parser.add_argument("--budget", help="caps for the whole run, e.g. llm=150,minutes=120")
     parser.add_argument("--ablation", choices=ABLATIONS, help="one part of the team switched off")
+    parser.add_argument("--investigate", choices=["all", "adaptive", "none"])
     args = parser.parse_args(argv)
     on_start()
     out = Path(args.runs_dir) / args.name

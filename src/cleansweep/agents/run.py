@@ -74,6 +74,7 @@ def build_report(rt, started: str, t0: float, seed: int = 0) -> SweepReport:
         "agentic": {
             "mode": rt.mode,
             "ablation": rt.ablation,
+            "investigate": rt.acfg.get("investigate", "all"),
             "verdict": rt.summary.get("verdict"),
             "phases": rt.phases.order(),
             "phase_seconds": rt.phases.seconds(),

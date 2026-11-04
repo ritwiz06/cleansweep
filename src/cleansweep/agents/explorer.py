@@ -200,7 +200,7 @@ def run(rt) -> None:
         _readme(Path(rt.ws.path)) or f"A Python project with {facts['python_files']} Python files."
     )
     notes: list[str] = []
-    if rt.llm is not None and rt.ablation != "no_research":
+    if rt.llm is not None and rt.ablation != "no_research" and rt.acfg.get("investigate") != "none":
         result = react(
             NAME,
             rt.llm,

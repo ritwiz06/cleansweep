@@ -51,6 +51,31 @@ def _framework(rt, item: CleanupItem) -> str | None:
     return rt.graph.framework_callback(item.unit.key) if item.unit.name else None
 
 
+def _public_in_package(rt, item: CleanupItem) -> bool:
+    """A public name in a package module (its folder has __init__.py), outside the tests."""
+    path = Path(item.unit.path)
+    if not item.unit.name or _short(item).startswith("_") or "tests" in path.parts:
+        return False
+    package = (Path(rt.ws.path) / path.parent / "__init__.py").exists()
+    return package and not path.name.startswith("test_")
+
+
+def uncertain(rt, item: CleanupItem) -> str | None:
+    """Why adaptive investigation sends an item to an Investigator, or None when the rules
+    decide it (as in the no-research ablation)."""
+    if item.category in ("duplicate", "wrapper"):
+        return "a near-duplicate or wrapper"
+    if item.category == "unused_dependency":
+        return "a dependency removal"
+    if _framework(rt, item):
+        return "a framework-convention method"
+    if item.unit.name and rt.graph.dynamic_risk(item.unit.key):
+        return "possible dynamic use"
+    if item.category == "dead_code" and _public_in_package(rt, item):
+        return "a public name in a package module"
+    return None
+
+
 def task_text(rt, item: CleanupItem, lessons: list[dict]) -> str:
     """What the Investigator is told about one candidate."""
     unit = item.unit
@@ -387,21 +412,30 @@ def _isolated(fn):
 
 
 def run(rt) -> None:
-    """INVESTIGATE: a verdict for every candidate, up to `parallel_llm` at once."""
+    """INVESTIGATE: a verdict for every candidate, up to `parallel_llm` Investigators at once.
+    core.agents.investigate: all (every candidate the rules do not settle goes to an
+    Investigator), adaptive (only the uncertain ones; the rest by rules) or none (all by rules)."""
     pending = [i for i in rt.items.values() if i.item_id not in rt.verdicts]
-    use_llm = rt.llm is not None and rt.ablation != "no_research"
-    work = []
+    mode = rt.acfg.get("investigate", "all")
+    use_llm = rt.llm is not None and rt.ablation != "no_research" and mode != "none"
+    asked, ruled = [], []
     for n, item in enumerate(pending, 1):
         fixed = _fixed(item, rt.brief, rt.acfg.get("format_policy", "enforced"), rt.ws.path)
         if fixed is not None:
             rt.verdicts[item.item_id] = fixed
+        elif use_llm and (mode == "all" or uncertain(rt, item)):
+            asked.append((n, item))
         else:
-            work.append((n, item))
-    fn = _isolated(investigate_llm if use_llm else investigate_rules)
-    workers = int(rt.acfg.get("parallel_llm", 3)) if use_llm else 1
-    with cf.ThreadPoolExecutor(max(1, workers)) as pool:
-        for verdict in pool.map(lambda job: fn(rt, job[1], job[0]), work):
+            ruled.append((n, item))
+    if use_llm and mode == "adaptive":
+        text = f"{len(asked)} of {len(asked) + len(ruled)} candidates go to the Investigators"
+        rt.log.emit("decision", agent=NAME, payload={"rule": "adaptive", "text": text})
+    by_llm, by_rules = _isolated(investigate_llm), _isolated(investigate_rules)
+    with cf.ThreadPoolExecutor(max(1, int(rt.acfg.get("parallel_llm", 3)))) as pool:
+        for verdict in pool.map(lambda job: by_llm(rt, job[1], job[0]), asked):
             rt.verdicts[verdict["item_id"]] = verdict
+    for n, item in ruled:
+        rt.verdicts[item.item_id] = by_rules(rt, item, n)
     for item in pending:
         verdict = rt.verdicts[item.item_id]
         rt.before_verdict[item.item_id] = (
