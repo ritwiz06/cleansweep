@@ -3,6 +3,7 @@ import { DarkContext } from "./components/Code";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
 import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
+import { Evaluation } from "./screens/Evaluation";
 import { Launcher } from "./screens/Launcher";
 import { Results } from "./screens/Results";
 import { RunView } from "./screens/RunView";
@@ -21,6 +22,7 @@ const NAV: { section: string; links: [string, string][] }[] = [
       ["cases", "Case studies"],
       ["watch", "Watch"],
       ["results", "Results"],
+      ["evaluation", "Evaluation"],
     ],
   },
   {
@@ -94,6 +96,9 @@ export function App() {
       break;
     case "results":
       screen = <Results />;
+      break;
+    case "evaluation":
+      screen = <Evaluation tab={q.get("tab") || ""} onTab={(tab) => go("evaluation", { tab })} />;
       break;
     case "sweeps":
       screen = <RunsScreen kinds={["v1"]} title="Live sweep and replay (v1 runs)" />;

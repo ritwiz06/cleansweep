@@ -19,6 +19,9 @@ Repository restructure; no change in behavior or results (#81–#86, tag `pre-ti
   probe harness's working folder go on success, on errors and on SIGTERM or SIGHUP; a run's
   start removes what killed runs left (older than 24 hours, owner gone). `cleansweep sweep
   --keep-workspace` keeps the workspace.
+- Studio's **Evaluation** screen charts the v2 results from the committed tables: the injection
+  benchmark by seed and pooled with CIs, the ablations, the real-project ablation, the diff audit
+  by tier and kind, probe strength, the Manager scenarios, LLM-reviewer acceptance and watch.
 
 ## v1.0.3 (2026-10-31)
 

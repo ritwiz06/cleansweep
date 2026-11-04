@@ -30,5 +30,6 @@ test("user guide screenshots", async ({ page }) => {
   await shot(page, "cases?name=shotgun-safe", "case_study");
   await shot(page, "watch?root=results&path=raw/watch_demo/watch", "watch");
   await shot(page, "results", "results");
+  await shot(page, "evaluation?tab=audit", "evaluation");
   await shot(page, "reports?root=replay&path=20261030_demo_feature_advisory_v1/report.json", "saved_report");
 });
