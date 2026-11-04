@@ -92,8 +92,10 @@ Security findings always stay in the suggest lane. Two policies run after the ju
 - `framework_callbacks` (on): dead code and duplicates on methods a framework calls by name
   go to the suggest lane. Examples are Textual's `compose` and `on_*`, Django's
   `get_queryset`, and Click's `invoke`. The conventions are one table in
-  `analysis/frameworks.py`, covering Textual, Django, Flask, FastAPI/Starlette, Click/Typer
-  and pytest.
+  `analysis/frameworks.py`, covering Textual, Django, Flask, FastAPI/Starlette, Click/Typer,
+  pytest, the standard library's `http.server` handlers (`do_*`, `log_message`) and
+  `ast.NodeVisitor` (`visit_*`), PyTorch and Lightning modules (`forward`, `training_step`,
+  `on_*`) and hatchling build hooks (`initialize`).
 
 Format items and format edits run `ruff format` with the project's own ruff settings when it
 has them (`ruff.toml`, `.ruff.toml` or `[tool.ruff]` in `pyproject.toml`), and with ruff's

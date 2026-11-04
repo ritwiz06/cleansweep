@@ -82,3 +82,34 @@ def test_framework_callbacks_follow_bases_to_the_framework(tmp_path):
         "web.py::Cli.invoke": "click",
         "web.py::YamlItem.runtest": "pytest",
     }
+
+
+def test_standard_library_and_ml_base_classes_have_callbacks_too(tmp_path):
+    g = write(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/m.py": "from http.server import BaseHTTPRequestHandler\nimport ast as a\n"
+            "import torch.nn as nn\nimport pytorch_lightning as pl\n"
+            "from hatchling.builders.hooks.plugin.interface import BuildHookInterface\n\n"
+            "class H(BaseHTTPRequestHandler):\n    def do_POST(self):\n        pass\n\n"
+            "    def log_message(self, *args):\n        pass\n\n"
+            "    def helper(self):\n        pass\n\n"
+            "class V(a.NodeVisitor):\n    def visit_Name(self, node):\n        pass\n\n"
+            "class M(nn.Module):\n    def forward(self, x):\n        pass\n\n"
+            "class L(pl.LightningModule):\n    def training_step(self, batch, i):\n        pass\n\n"
+            "class Hook(BuildHookInterface):\n    def initialize(self, version, data):\n"
+            "        pass\n",
+        },
+    )
+    names = ("H.do_POST", "H.log_message", "H.helper", "V.visit_Name", "M.forward")
+    names += ("L.training_step", "Hook.initialize")
+    assert {n: g.framework_callback(f"pkg/m.py::{n}") for n in names} == {
+        "H.do_POST": "http.server",
+        "H.log_message": "http.server",
+        "H.helper": None,
+        "V.visit_Name": "ast.NodeVisitor",
+        "M.forward": "torch",
+        "L.training_step": "lightning",
+        "Hook.initialize": "hatchling",
+    }
