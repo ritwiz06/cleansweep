@@ -47,7 +47,8 @@ cleansweep/
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
-│   │                                     make_recording.py (Studio recordings), coverage.sh
+│   │                                     make_recording.py (Studio recordings), coverage.sh,
+│   │                                     housekeeping.py (see below)
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)
@@ -80,3 +81,25 @@ Where things go:
 - Raw run output goes in `results/raw/<folder>/` (git-ignored) and is archived before a release.
 - A test goes in the `tests/` folder that mirrors the code it tests.
 - Local notes (status docs, report sources, scratch) live in `.notes/`, which git never sees.
+- `tests/test_repo_layout.py` (in the pre-push checks and CI) fails when a tracked file sits
+  outside the folders above or is named like scratch (`tmp_*`, `*_old`, `*_backup*`, `scratch*`,
+  `*.bak`, `untitled*`, `debug_*`), unless its allowlist names the file with a reason.
+
+## Housekeeping
+
+`python scripts/tools/housekeeping.py` lists what a pass would do; `--apply` does it, prints the
+space freed and appends a line to `.notes/housekeeping.log`. It touches only the repository's
+parent folder and the temp folder's CleanSweep scratch (`cleansweep/ws/` and the `cs_*` folders).
+
+- Kept: the repository, `../cleansweep-archive/` and its tarball, the frozen run clones, the
+  case-study folder's live chain scripts and logs, every `results/raw/` folder that feeds a
+  table, the Docker images, and `.notes/`'s docs, report, submission and calibration sheets.
+- Removed when no running job uses it (no process works in it, no running container mounts it,
+  no command line names it) and it is older than `--min-age-hours` (2): workspaces of finished
+  runs, the temp folder's `cs_*` scratch, stopped `cs-*` containers and dangling volumes, caches
+  (`__pycache__`, `.pytest_cache`, `.ruff_cache`, Playwright output, coverage data, the
+  frontend's `dist/`, which Studio rebuilds), and backups whose exact content is committed.
+- Archived, then removed, when older than `--archive-age-hours` (24): runs set aside after a
+  sleep, finished chains' scripts and logs, finished pushes' logs, `.notes` files nothing cites,
+  and every UI-review set but the latest. Each copy is checked, added to the archive's
+  `SHA256SUMS`, and the archive's `tools/verify_archive.py` must pass before the original goes.
