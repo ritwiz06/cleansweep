@@ -1,69 +1,74 @@
 source,method,verdict,kind,kept_code_edits,confirmed,unique_edits
-aidev,agentic,wrong,other,1,0,1
+aidev,agentic,wrong,other,1,1,1
 aidev,cleansweep-gatekeeper,debatable,public name,18,0,18
-aidev,cleansweep-gatekeeper,wrong,deleted file,1,0,1
-aidev,cleansweep-gatekeeper,wrong,dependency,5,0,5
-aidev,cleansweep-gatekeeper,wrong,public name,3,0,3
-answer keys,agentic-single_agent,wrong,changed logic,4,0,2
+aidev,cleansweep-gatekeeper,wrong,deleted file,1,1,1
+aidev,cleansweep-gatekeeper,wrong,dependency,5,1,5
+aidev,cleansweep-gatekeeper,wrong,public name,3,2,3
+answer keys,agentic-single_agent,wrong,changed logic,4,4,2
+injected,agentic,debatable,dependency,1,0,1
 injected,agentic,debatable,dynamic handler or stub,19,0,19
 injected,agentic,debatable,public name,4,0,4
-injected,agentic,wrong,changed logic,1,0,1
+injected,agentic,wrong,changed logic,1,1,1
 injected,agentic,wrong,dependency,2,2,2
-injected,agentic,wrong,dynamic handler or stub,5,0,5
-injected,agentic-broadcast,wrong,changed logic,1,0,1
+injected,agentic,wrong,dynamic handler or stub,5,2,5
+injected,agentic-broadcast,debatable,dependency,1,0,1
+injected,agentic-broadcast,wrong,changed logic,1,1,1
 injected,agentic-broadcast,wrong,dependency,2,2,2
-injected,agentic-broadcast,wrong,dynamic handler or stub,3,0,3
-injected,agentic-inline_artifacts,wrong,changed logic,1,0,1
+injected,agentic-broadcast,wrong,dynamic handler or stub,3,2,3
+injected,agentic-inline_artifacts,debatable,dependency,1,0,1
+injected,agentic-inline_artifacts,wrong,changed logic,1,1,1
 injected,agentic-inline_artifacts,wrong,dependency,2,2,2
 injected,agentic-inline_artifacts,wrong,dynamic handler or stub,1,0,1
-injected,agentic-no_coverage,wrong,changed logic,1,0,1
+injected,agentic-no_coverage,debatable,dependency,1,0,1
+injected,agentic-no_coverage,wrong,changed logic,1,1,1
 injected,agentic-no_coverage,wrong,dependency,2,2,2
-injected,agentic-no_coverage,wrong,dynamic handler or stub,2,0,2
+injected,agentic-no_coverage,wrong,dynamic handler or stub,2,1,2
+injected,agentic-no_lessons,debatable,dependency,1,0,1
 injected,agentic-no_lessons,wrong,changed logic,4,2,4
-injected,agentic-no_lessons,wrong,dependency,3,2,3
+injected,agentic-no_lessons,wrong,dependency,3,3,3
 injected,agentic-no_lessons,wrong,dynamic handler or stub,1,0,1
 injected,agentic-no_research,debatable,changed logic,1,0,1
-injected,agentic-no_research,debatable,dependency,1,0,1
+injected,agentic-no_research,debatable,dependency,2,0,2
 injected,agentic-no_research,debatable,dynamic handler or stub,1,0,1
 injected,agentic-no_research,debatable,public name,1,0,1
-injected,agentic-no_research,wrong,changed logic,2,0,2
-injected,agentic-no_research,wrong,deleted file,2,0,2
-injected,agentic-no_research,wrong,dependency,6,2,6
-injected,agentic-no_research,wrong,dynamic handler or stub,6,0,6
+injected,agentic-no_research,wrong,changed logic,2,2,2
+injected,agentic-no_research,wrong,deleted file,2,2,2
+injected,agentic-no_research,wrong,dependency,6,6,6
+injected,agentic-no_research,wrong,dynamic handler or stub,6,3,6
 injected,agentic-rules,debatable,dynamic handler or stub,20,0,20
 injected,agentic-rules,debatable,public name,4,0,4
-injected,agentic-rules,wrong,changed logic,1,0,1
+injected,agentic-rules,wrong,changed logic,1,1,1
 injected,agentic-rules,wrong,dependency,2,2,2
-injected,agentic-rules,wrong,dynamic handler or stub,5,0,5
-injected,agentic-single_agent,debatable,dependency,4,0,4
+injected,agentic-rules,wrong,dynamic handler or stub,5,2,5
+injected,agentic-single_agent,debatable,dependency,5,0,5
 injected,agentic-single_agent,debatable,dynamic handler or stub,21,0,21
 injected,agentic-single_agent,debatable,public name,10,0,10
-injected,agentic-single_agent,wrong,changed logic,7,0,7
-injected,agentic-single_agent,wrong,deleted file,2,0,2
-injected,agentic-single_agent,wrong,dependency,3,2,3
-injected,agentic-single_agent,wrong,dynamic handler or stub,22,6,22
-injected,agentic-single_agent,wrong,public name,3,0,3
+injected,agentic-single_agent,wrong,changed logic,7,2,7
+injected,agentic-single_agent,wrong,deleted file,2,2,2
+injected,agentic-single_agent,wrong,dependency,4,3,4
+injected,agentic-single_agent,wrong,dynamic handler or stub,22,17,22
+injected,agentic-single_agent,wrong,public name,3,2,3
 injected,cleansweep,debatable,changed logic,1,0,1
-injected,cleansweep,debatable,dependency,4,0,4
+injected,cleansweep,debatable,dependency,5,0,5
 injected,cleansweep,debatable,dynamic handler or stub,69,0,69
 injected,cleansweep,debatable,public name,1,0,1
 injected,cleansweep,wrong,changed logic,1,0,1
-injected,cleansweep,wrong,deleted file,2,0,2
+injected,cleansweep,wrong,deleted file,2,2,2
 injected,cleansweep,wrong,dependency,2,2,2
-injected,cleansweep,wrong,dynamic handler or stub,19,1,19
+injected,cleansweep,wrong,dynamic handler or stub,19,5,19
 injected,cleansweep,wrong,public name,2,0,2
 injected,one_shot_llm,wrong,changed logic,3,3,3
-injected,one_shot_llm,wrong,dynamic handler or stub,1,1,1
-real-project ablation,agentic-no_research,wrong,changed logic,1,0,1
-real-project ablation,agentic-no_research,wrong,deleted file,1,0,1
+injected,one_shot_llm,wrong,dynamic handler or stub,2,2,2
+real-project ablation,agentic-no_research,wrong,changed logic,1,1,1
+real-project ablation,agentic-no_research,wrong,deleted file,1,1,1
 real-project ablation,agentic-no_research,wrong,dynamic handler or stub,1,0,1
-real-project ablation,agentic-no_research,wrong,public name,1,0,1
+real-project ablation,agentic-no_research,wrong,public name,1,1,1
 real-project ablation,agentic-single_agent,debatable,changed logic,1,0,1
 real-project ablation,agentic-single_agent,debatable,dependency,1,0,1
 real-project ablation,agentic-single_agent,debatable,other,1,0,1
 real-project ablation,agentic-single_agent,debatable,public name,11,0,11
-real-project ablation,agentic-single_agent,wrong,changed logic,2,1,2
-real-project ablation,agentic-single_agent,wrong,deleted file,1,0,1
-real-project ablation,agentic-single_agent,wrong,dependency,6,0,6
-real-project ablation,agentic-single_agent,wrong,dynamic handler or stub,5,3,5
-real-project ablation,agentic-single_agent,wrong,other,4,0,4
+real-project ablation,agentic-single_agent,wrong,changed logic,2,2,2
+real-project ablation,agentic-single_agent,wrong,deleted file,1,1,1
+real-project ablation,agentic-single_agent,wrong,dependency,6,1,6
+real-project ablation,agentic-single_agent,wrong,dynamic handler or stub,5,4,5
+real-project ablation,agentic-single_agent,wrong,other,4,4,4
