@@ -5,6 +5,7 @@ edit applied. A test that passes before and fails after confirms the verdict (ch
 
     python scripts/experiments/v2/exp_audit_confirm.py run [--edits ID ...]
     python scripts/experiments/v2/exp_audit_confirm.py record
+    python scripts/experiments/v2/exp_audit_confirm.py fresh EDIT=PACKAGE [...]
 
 Tests: results/raw/diff_audit/tests/<edit>/test_<edit>.py, plus hide.txt for a removed dependency
 (the packages a fresh install would no longer have, hidden as the Guard hides them), or
@@ -18,6 +19,11 @@ run: results/raw/diff_audit/tests/results.json (per edit: applied, before and af
 confirmed).
 record: diff_audit_checks.csv: a confirmed edit gets checked_by "targeted test" and the test's
 docstring in its evidence; an edit with no_test.txt gets the reason in its evidence.
+fresh: for a dependency removal whose test cannot fail because a test extra still needs the
+package, whether a fresh plain install of the project gets the package before and after the edit
+(pip install --dry-run --report in python:3.11, which runs the project's build backend); one JSON
+line per edit. The check's verdict follows it (DECISIONS: wrong when a plain install loses the
+package, debatable when it keeps it).
 """
 
 from __future__ import annotations
@@ -244,14 +250,88 @@ def record() -> int:
     return changed
 
 
+RESOLVE = (
+    "pip install -q --upgrade pip >/dev/null 2>&1; "
+    "pip install --dry-run --quiet --ignore-installed --report /tmp/r.json /src >/dev/null 2>&1; "
+    "python -c \"import json; print(json.dumps([i['metadata']['name'] for i in "
+    "json.load(open('/tmp/r.json'))['install']]))\""
+)
+
+
+def _name(package: str) -> str:
+    return re.sub(r"[-_.]+", "-", package).lower()
+
+
+def resolved(tree: Path) -> set[str]:
+    """The packages a fresh plain install of the project at tree gets (normalized names)."""
+    proc = subprocess.run(
+        ["docker", "run", "--rm", "-v", f"{tree}:/src", "python:3.11", "bash", "-c", RESOLVE],
+        capture_output=True,
+        text=True,
+        timeout=1800,
+    )
+    lines = [x for x in proc.stdout.splitlines() if x.startswith("[")]
+    if not lines:
+        raise RuntimeError(f"resolution failed: {proc.stderr[-300:]}")
+    return {_name(n) for n in json.loads(lines[-1])}
+
+
+def _apply(tree: Path, diff: str, check: bool = False) -> bool:
+    cmd = ["git", "apply", *(["--check"] if check else []), "-"]
+    diff = diff if diff.endswith("\n") else diff + "\n"
+    return subprocess.run(cmd, cwd=tree, input=diff, text=True, capture_output=True).returncode == 0
+
+
+def fresh(edit: str, package: str) -> dict:
+    """Whether a fresh plain install gets the package before and after the edit."""
+    record = json.loads((OUT / "audit.json").read_text())[edit]
+    report_path = Path(record["report"])
+    tree = tree_for(record["project"], report_path)
+    if record["project"].startswith("aidev:") and "@" in record["project"]:
+        tree.rev = tree.rev or record["project"].partition("@")[2]
+    tmp = Path(tempfile.mkdtemp(prefix="cs_fresh_"))
+    try:
+        archive = subprocess.Popen(
+            ["git", "archive", tree.rev], cwd=tree.repo, stdout=subprocess.PIPE
+        )
+        subprocess.run(["tar", "-xf", "-", "-C", str(tmp)], stdin=archive.stdout, check=True)
+        archive.wait()
+        subprocess.run(["git", "init", "-q"], cwd=tmp, check=True)
+        prefix = []
+        if not _apply(tmp, record["diff"], check=True):
+            report = json.loads(report_path.read_text())
+            prefix = earlier_edits(report, record["item_id"], record["path"])
+            if not all(_apply(tmp, d) for d in prefix):
+                raise RuntimeError(f"{edit}: the run's earlier edits do not apply")
+        before = resolved(tmp)
+        if not _apply(tmp, record["diff"]):
+            raise RuntimeError(f"{edit}: the edit does not apply")
+        after = resolved(tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    name = _name(package)
+    return {
+        "edit": edit,
+        "package": package,
+        "prefix": len(prefix),
+        "before": name in before,
+        "after": name in after,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "record"])
+    parser.add_argument("what", choices=["run", "record", "fresh"])
+    parser.add_argument("pairs", nargs="*", help="fresh: EDIT=PACKAGE")
     parser.add_argument("--edits", nargs="*", help="only these test folders")
     args = parser.parse_args(argv)
     on_start()
     if args.what == "run":
         print(run(args.edits))
+    elif args.what == "fresh":
+        for pair in args.pairs:
+            edit, _, package = pair.partition("=")
+            print(json.dumps(fresh(edit, package)), flush=True)
     else:
         print(f"{record()} checks updated")
     return 0

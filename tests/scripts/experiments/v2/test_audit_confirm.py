@@ -80,3 +80,9 @@ def test_an_earlier_test_not_confirmed_here_goes_back_to_reading(tmp_path):
     out = confirm.recorded(check, None, folder)
     assert out["checked_by"] == "reading (LLM-judged)"
     assert out["evidence"] == "x. The earlier test ran outside the run's environment."
+
+
+def test_package_names_compare_as_pip_normalizes_them():
+    confirm = load()
+    assert confirm._name("Pydantic_Settings") == confirm._name("pydantic-settings")
+    assert confirm._name("python.dotenv") == "python-dotenv"

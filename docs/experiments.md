@@ -44,7 +44,7 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
 | [v2 detection](#v2-detection-by-category-on-aidev) | `exp_detection.py` | PR #112 (merged as c003ca0) | `detection.csv` |
 | [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568; 106c952 (plant checks, seeds 2 and 3) | `injection.csv`, `injection_summary.csv`, `injection_seeds`, `injection_paired`, `ablations` |
 | [v2 real-project ablation](#v2-real-project-ablation) | `exp_case_study.py --ablation`, `exp_real_ablation.py` | 106c952 (#128) | `real_ablation_runs.csv`, `real_ablation` |
-| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py`, `exp_audit_confirm.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
+| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py`, `exp_audit_confirm.py`, `exp_audit_rubric.py`, `audit_loop.sh`, `confirm_batch.sh` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
 | [v2 framework rule re-scored](#v2-the-extended-framework-rule-re-scored) | `exp_rule_rescore.py` | #139 and later | `inject_rule.csv` |
 | [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
@@ -512,11 +512,24 @@ An independent model reads every kept code edit and says whether it changes beha
 could observe; every "yes" or "unsure" is then checked and the verdict recorded with its
 evidence. The auditor's votes are LLM-judged, and so are the checks done by reading.
 
-- **Run:** `python scripts/experiments/v2/exp_diff_audit.py run` (resumable; a light job),
-  `... auto` (the flags two rules settle), `... pending` (the flags still unchecked), then each
-  check goes into `results/summary/v2/diff_audit_checks.csv` by hand; then
-  `python scripts/experiments/v2/exp_audit_confirm.py run` and `... record` (the targeted
-  tests), and `exp_diff_audit.py table`.
+- **Run,** each pass after new runs land (all from the repository):
+  1. `python scripts/experiments/v2/exp_diff_audit.py run` (resumable; a light job). Beside
+     injected runs in a frozen clone, `scripts/experiments/v2/audit_loop.sh <clone>
+     [<audit clone>]` does this every hour, after copying each finished injected project
+     folder into `results/raw/inject/`.
+  2. `... auto` (the flags two rules settle).
+  3. `... match > matched.jsonl` (flags that make the same change as a checked edit carry its
+     check; the rest are listed on stderr), and `... show EDIT ...` to read the rest.
+  4. `... record --input FILE` for the matched and the hand-read checks (JSON lines: edit,
+     verdict, evidence, and kind unless fine).
+  5. A test folder for every new wrong verdict, run with `scripts/experiments/v2/confirm_batch.sh
+     EDIT ...` (`exp_audit_confirm.py run`, detached), then `exp_audit_confirm.py record`. For a
+     removed dependency that a test extra still installs, `exp_audit_confirm.py fresh
+     EDIT=PACKAGE` says whether a plain install keeps it.
+  6. `exp_diff_audit.py table`.
+
+  Replayed from the repository on the same inputs, the pass of 2026-11-04 03:40 gives
+  byte-identical `diff_audit_checks.csv`, `diff_audit.csv` and `diff_audit_types.csv`.
 - **Scope:** the kept edits with a diff (not formatting) of the answer-key, SWE-bench and AIDev
   runs (with v1's gatekeeper run on each SWE-bench and AIDev target the team ran; on AIDev the
   original pytorch_connectomics row and the rerun after #124), every injected run of every seed,
@@ -572,7 +585,9 @@ evidence. The auditor's votes are LLM-judged, and so are the checks done by read
   debugger call).
 - **Rubric re-applied (2026-11-03):** the rubric above was written down after the first 335
   checks and every earlier verdict was read against it. The changes (edit, old verdict, new
-  verdict, reason) are in `diff_audit_rubric_changes.csv`.
+  verdict, reason) are in `diff_audit_rubric_changes.csv`. `exp_audit_rubric.py` rebuilds that
+  step from the committed 335 checks (`git show 6d5fefc:results/summary/v2/diff_audit_checks.csv`):
+  its output equals the checks and changes committed in 11ca94b, byte for byte.
 - **Calibration:** `... sheet` writes 20 checks drawn at random (seed 572) as the auditor saw
   them, blinded, with an empty verdict column (by default `.notes/report/
   audit_calibration_sheet.md`, kept local); once a person fills it in, `... kappa` gives Cohen's
@@ -772,7 +787,7 @@ alone:
 | `v2/injection.csv` | `exp_inject.py table` | `results/raw/inject/` reports |
 | `v2/real_ablation_runs.csv` | `exp_real_ablation.py collect` | the ablation records, `llm_review.json`, `ui_check.json`, `diff_audit_checks.csv` |
 | `v2/diff_audit.csv`, `v2/diff_audit_types.csv` | `exp_diff_audit.py table` | the raw reports, `results/raw/diff_audit/audit.json`, `diff_audit_checks.csv` |
-| `v2/diff_audit_checks.csv` | by hand (`exp_diff_audit.py auto` for the rule checks) | the flagged edits, targeted tests |
+| `v2/diff_audit_checks.csv` | `exp_diff_audit.py auto`, `match` and `record` (hand-read checks as JSON lines), `exp_audit_confirm.py record` | the flagged edits, targeted tests |
 | `v2/diff_audit_rubric_changes.csv` | by hand, once | `diff_audit_checks.csv` before the rubric was written down |
 | `v2/inject_rule.csv` | `exp_rule_rescore.py table` | `results/raw/inject_rule/`, the injected reports, `diff_audit_checks.csv` |
 | `v2/probe_strength.csv`, `v2/probe_strength_vs_v1.csv` | `exp_probe_strength.py` (`--compare`) | `results/raw/probe_strength/` (Docker, probe requests), `results/raw/guard_strength/` |

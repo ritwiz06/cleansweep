@@ -7,6 +7,9 @@ the kind of edit.
     python scripts/experiments/v2/exp_diff_audit.py run
     python scripts/experiments/v2/exp_diff_audit.py auto
     python scripts/experiments/v2/exp_diff_audit.py pending
+    python scripts/experiments/v2/exp_diff_audit.py match > matched.jsonl
+    python scripts/experiments/v2/exp_diff_audit.py show EDIT [EDIT ...]
+    python scripts/experiments/v2/exp_diff_audit.py record --input checks.jsonl
     python scripts/experiments/v2/exp_diff_audit.py table
     python scripts/experiments/v2/exp_diff_audit.py sheet [--path PATH]
     python scripts/experiments/v2/exp_diff_audit.py kappa [--path PATH]
@@ -27,6 +30,12 @@ slop and wrong when it removes a trap (the benchmark's key); on SWE-bench, delet
 coding agent's patch created is fine.
 pending: the "yes" and "unsure" edits of the runs above without a check in diff_audit_checks.csv
 (edit, verdict wrong | debatable | fine, evidence, checked_by, kind).
+match: for each pending edit that makes the same change as a checked one (same repository, file,
+removed and added lines, and the class or function each hunk sits in), the earlier check as a JSON
+line; a rule's tier carries over, a test's does not (it ran on the other edit). The edits left to
+read go to stderr. show: the pending edits to read, with where they occur and one auditor vote.
+record: merges hand-read checks (JSON lines: edit, verdict, evidence, and kind unless fine;
+checked_by defaults to reading, LLM-judged) from --input or stdin into diff_audit_checks.csv.
 table: results/summary/v2/diff_audit.csv, per target set and method: kept code edits, auditor yes
 / unsure / no, wrong edits in two tiers (confirmed: a targeted test, the UI check or a rule;
 reading: LLM-judged), debatable and fine edits, the wrong rate of all tiers and of the confirmed
@@ -539,6 +548,95 @@ def pending() -> list[dict]:
     ]
 
 
+def _change(diff: str) -> tuple[str, ...]:
+    return tuple(x for x in diff.splitlines() if x[:1] in "+-" and not x.startswith(("+++", "---")))
+
+
+def _context(diff: str, path: str) -> tuple[str, ...]:
+    """The class or function each hunk sits in (Python files): the same lines removed in another
+    class are another change."""
+    if not path.endswith(".py"):
+        return ()
+    return tuple(m.strip() for m in re.findall(r"^@@ [^@]+ @@(.*)$", diff, re.M))
+
+
+def _same(edit: dict) -> tuple:
+    repo = re.sub(r"@.*$", "", edit["project"])
+    return repo, edit["path"], _change(edit["diff"]), _context(edit["diff"], edit["path"])
+
+
+def match(edits: dict, audit: dict, known: dict) -> tuple[list[dict], list[str]]:
+    """(checks carried to pending edits that make the same change as a checked edit, the pending
+    edits left to read)."""
+    index: dict[tuple, list[tuple[str, dict]]] = {}
+    for edit_id, check in known.items():
+        edit = edits.get(edit_id) or audit.get(edit_id)
+        if edit:
+            index.setdefault(_same(edit), []).append((edit_id, check))
+    found, left = [], []
+    for edit_id, rec in sorted(audit.items()):
+        if rec["answer"] == "no" or edit_id in known or edit_id not in edits:
+            continue
+        prior = index.get(_same(edits[edit_id]), [])
+        if len({check["verdict"] for _, check in prior}) != 1:
+            left.append(edit_id)  # no earlier check, or earlier checks that disagree
+            continue
+        root, check = prior[0]
+        evidence = check["evidence"]
+        copied = re.match(r"the same change as (\w{12}) \(.*?\): (.*)", evidence, re.S)
+        if copied:
+            root, evidence = copied.groups()
+        rule = check["checked_by"].startswith("rule:")
+        found.append(
+            {
+                "edit": edit_id,
+                "verdict": check["verdict"],
+                "evidence": f"the same change as {root} (same file, same removed and added lines; "
+                f"another seed or run): {evidence}",
+                "checked_by": check["checked_by"] if rule else "reading (LLM-judged)",
+                "kind": check.get("kind", ""),
+            }
+        )
+    return found, left
+
+
+def record(known: dict, lines: list[str]) -> list[dict]:
+    """The checks with the given JSON lines merged in."""
+    rows = dict(known)
+    for line in lines:
+        if not line.strip():
+            continue
+        new = json.loads(line)
+        if new["verdict"] not in VERDICTS:
+            raise ValueError(f"{new['edit']}: unknown verdict {new['verdict']!r}")
+        if new["verdict"] != "fine" and new.get("kind") not in KINDS:
+            raise ValueError(f"{new['edit']}: a {new['verdict']} check needs a kind")
+        rows[new["edit"]] = {
+            "edit": new["edit"],
+            "verdict": new["verdict"],
+            "evidence": new["evidence"],
+            "checked_by": new.get("checked_by", "reading (LLM-judged)"),
+            "kind": new.get("kind", ""),
+        }
+    return list(rows.values())
+
+
+def show(edit_ids: list[str], limit: int = 3000) -> str:
+    """The edits as a reader needs them: where they occur, one auditor vote, the diff."""
+    edits, rows = collect()
+    audit = json.loads((OUT / "audit.json").read_text())
+    out = []
+    for edit_id in edit_ids:
+        edit = edits[edit_id]
+        where = sorted({(r["source"], r["method"], r["run"]) for r in rows if r["edit"] == edit_id})
+        out.append(f"#### {edit_id} {edit['project']} {edit['path']} [{edit['category']}]")
+        out.append("   in: " + "; ".join(f"{s}/{m}/{r}" for s, m, r in where)[:600])
+        for vote in audit.get(edit_id, {}).get("votes", [])[:1]:
+            out.append(f"   auditor: {str(vote)[:400]}")
+        out.append(edit["diff"][:limit])
+    return "\n".join(out)
+
+
 def _ci(by_run: dict[str, tuple[int, int]], n: int = 2000) -> tuple[float, float]:
     keys = sorted(by_run)
     rng = random.Random(572)
@@ -708,8 +806,11 @@ def kappa(path: Path = SHEET) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "auto", "pending", "table", "sheet", "kappa"])
+    what = ["run", "auto", "pending", "match", "show", "record", "table", "sheet", "kappa"]
+    parser.add_argument("what", choices=what)
+    parser.add_argument("edits", nargs="*", help="show: the edits to print")
     parser.add_argument("--path", type=Path, default=SHEET, help="the calibration sheet")
+    parser.add_argument("--input", type=Path, help="record: a JSON lines file (default: stdin)")
     args = parser.parse_args(argv)
     if args.what == "run":
         print(run_audit())
@@ -718,6 +819,22 @@ def main(argv: list[str] | None = None) -> int:
     elif args.what == "pending":
         for row in pending():
             print(json.dumps(row))
+    elif args.what == "match":
+        edits, _ = collect()
+        audit = json.loads((OUT / "audit.json").read_text())
+        found, left = match(edits, audit, checks())
+        for row in found:
+            print(json.dumps(row))
+        for edit_id in left:
+            edit = edits[edit_id]
+            print(f"to read: {edit_id} {edit['project']} {edit['path']}", file=sys.stderr)
+    elif args.what == "show":
+        print(show(args.edits))
+    elif args.what == "record":
+        lines = (args.input.read_text() if args.input else sys.stdin.read()).splitlines()
+        rows = record(checks(), lines)
+        write_checks(rows)
+        print(f"{len(rows)} checks")
     elif args.what == "sheet":
         print(sheet(args.path))
     elif args.what == "kappa":
