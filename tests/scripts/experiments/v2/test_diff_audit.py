@@ -167,3 +167,10 @@ def test_the_calibration_sheet_reads_back_only_filled_verdicts():
     text += "| 1 | 0123456789ab | Wrong | x |\n| 2 | 0123456789ac |  |  |\n"
     text += "| 3 | 0123456789ad | fine |  |\n"
     assert audit.sheet_verdicts(text) == {"0123456789ab": "wrong", "0123456789ad": "fine"}
+
+
+def test_an_edit_keeps_its_id_across_index_lines():
+    audit = load()
+    first = audit.edit_key("p", "x.py", "diff --git a/x.py b/x.py\nindex 1..2\n-x = 1\n")
+    again = audit.edit_key("p", "x.py", "diff --git a/x.py b/x.py\nindex 3..4\n-x = 1\n")
+    assert first == again != audit.edit_key("p", "y.py", "-x = 1\n")
