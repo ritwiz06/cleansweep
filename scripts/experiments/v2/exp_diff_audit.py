@@ -1,12 +1,15 @@
 """A blinded diff audit: an independent model reads every kept code edit of the v2 runs and says
 whether it changes behavior anyone could observe. Its votes are LLM-judged; every "yes" or
-"unsure" is then checked by hand (a targeted test or a close reading of the code) and the check
-is recorded with its evidence.
+"unsure" is then checked (a targeted test, the UI check, a rule, or a close reading of the code)
+and the check is recorded with its evidence, a verdict under the rubric (docs/experiments.md) and
+the kind of edit.
 
     python scripts/experiments/v2/exp_diff_audit.py run
     python scripts/experiments/v2/exp_diff_audit.py auto
     python scripts/experiments/v2/exp_diff_audit.py pending
     python scripts/experiments/v2/exp_diff_audit.py table
+    python scripts/experiments/v2/exp_diff_audit.py sheet [--path PATH]
+    python scripts/experiments/v2/exp_diff_audit.py kappa [--path PATH]
 
 run: collects the kept edits (status kept, with a diff, not formatting) of the answer-key, SWE-bench
 and AIDev runs (results/raw/v2_eval/, with v1's gatekeeper run on each SWE-bench and AIDev target
@@ -23,10 +26,16 @@ whose removed lines are all planted lines and that adds nothing is fine when it 
 slop and wrong when it removes a trap (the benchmark's key); on SWE-bench, deleting a file the
 coding agent's patch created is fine.
 pending: the "yes" and "unsure" edits of the runs above without a check in diff_audit_checks.csv
-(edit, verdict wrong | debatable | fine, evidence, checked_by).
-table: results/summary/v2/diff_audit.csv, per method: kept code edits, auditor yes / unsure /
-no, confirmed wrong edits with a rate and a 95% bootstrap CI over runs, debatable edits, and how
-many wrong edits every check missed (the run's hidden checks unchanged or not available).
+(edit, verdict wrong | debatable | fine, evidence, checked_by, kind).
+table: results/summary/v2/diff_audit.csv, per target set and method: kept code edits, auditor yes
+/ unsure / no, wrong edits in two tiers (confirmed: a targeted test, the UI check or a rule;
+reading: LLM-judged), debatable and fine edits, the wrong rate of all tiers and of the confirmed
+tier with 95% bootstrap CIs over runs, and how many wrong edits every check missed (the run's
+hidden checks unchanged or not available); and diff_audit_types.csv, the wrong and debatable
+edits of each method by kind.
+sheet: a calibration sheet for a person: 20 checks drawn at random (seed 572), each with the
+blinded view the auditor saw and an empty verdict to fill in under the rubric. kappa: Cohen's
+kappa between the filled-in verdicts and the recorded ones.
 """
 
 from __future__ import annotations
@@ -51,7 +60,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "v1"))
 
 from exp_collect_v2 import SETS, v1_report  # noqa: E402
-from exp_llm_review import PARALLEL, _ask, majority  # noqa: E402
+from exp_llm_review import PARALLEL, _ask, cohen, majority  # noqa: E402
 
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.llm.client import get_client  # noqa: E402
@@ -61,6 +70,7 @@ OUT = RAW / "diff_audit"
 SUMMARY = ROOT / "results" / "summary" / "v2"
 CHECKS = SUMMARY / "diff_audit_checks.csv"
 CACHE = OUT / "llm_cache.sqlite"
+SHEET = ROOT / ".notes" / "report" / "audit_calibration_sheet.md"
 # the case-study runs the results report; the others were superseded (first tries, killed runs)
 CASE_STUDIES = {
     "cleansweep-safe-3b",
@@ -356,7 +366,18 @@ def run_audit() -> Path:
     return path
 
 
-CHECK_FIELDS = ["edit", "verdict", "evidence", "checked_by"]
+CHECK_FIELDS = ["edit", "verdict", "evidence", "checked_by", "kind"]
+VERDICTS = ("wrong", "debatable", "fine")
+# what a wrong or debatable edit did (docs/experiments.md, the diff audit's rubric)
+KINDS = (
+    "dynamic handler or stub",
+    "public name",
+    "changed logic",
+    "deleted file",
+    "dependency",
+    "other",
+)
+CONFIRMED = {"targeted test", "UI check", "rule: injection key", "rule: agent patch"}
 EVIDENCE = {
     "wrong": "removes a planted trap (the benchmark's key)",
     "fine": "removes planted slop only (the benchmark's key)",
@@ -426,6 +447,13 @@ def plant_rule(diff: str, slop: set[str], traps: set[str]) -> str:
     return ""
 
 
+def trap_kind(diff: str) -> str:
+    """The kind of a removed trap: the NodeVisitor callback, or the near-duplicate pair that
+    rounds differently."""
+    visitor = {"def visit_Name(self, node):", "self.names += 1"}
+    return "dynamic handler or stub" if visitor & set(_lines(diff, "-")) else "changed logic"
+
+
 def agent_created(project: str) -> set[str]:
     """Files the coding agent's patch created, for a "swebench:<instance>:<agent>" target."""
     from cleansweep.data import load_agent_patches
@@ -459,6 +487,7 @@ def auto() -> int:
                         "verdict": verdict,
                         "evidence": EVIDENCE[verdict],
                         "checked_by": "rule: injection key",
+                        "kind": trap_kind(diff) if verdict == "wrong" else "",
                     }
                 )
         elif record["project"].startswith("swebench:") and "deleted file mode" in diff:
@@ -472,6 +501,7 @@ def auto() -> int:
                         "verdict": "fine",
                         "evidence": "deletes a file the coding agent's patch created",
                         "checked_by": "rule: agent patch",
+                        "kind": "",
                     }
                 )
     write_checks([*known.values(), *rows])
@@ -516,6 +546,94 @@ def _ci(by_run: dict[str, tuple[int, int]], n: int = 2000) -> tuple[float, float
     return round(rates[int(0.025 * n)], 4), round(rates[int(0.975 * n) - 1], 4)
 
 
+def tier(check: dict) -> str:
+    """confirmed (a targeted test, the UI check or a rule) or reading (LLM-judged)."""
+    return "confirmed" if check.get("checked_by") in CONFIRMED else "reading"
+
+
+def _by_run(mine: list[dict], hits: list[dict]) -> dict[str, tuple[int, int]]:
+    """run -> (hits, kept code edits)."""
+    hit = {id(r) for r in hits}
+    out: dict[str, tuple[int, int]] = {}
+    for r in mine:
+        h, k = out.get(r["run"], (0, 0))
+        out[r["run"]] = (h + (id(r) in hit), k + 1)
+    return out
+
+
+def method_row(mine: list[dict], audit: dict, known: dict) -> dict:
+    """The table's numbers for one method's kept code edits (rows of collect())."""
+    answers = [audit.get(r["edit"], {}).get("answer", "") for r in mine]
+    verdict = [known.get(r["edit"], {}).get("verdict", "") for r in mine]
+    wrong = [r for r, v in zip(mine, verdict, strict=True) if v == "wrong"]
+    confirmed = [r for r in wrong if tier(known[r["edit"]]) == "confirmed"]
+    fine = [
+        r
+        for r, a, v in zip(mine, answers, verdict, strict=True)
+        if v == "fine" or (a == "no" and not v)
+    ]
+    flagged = zip(mine, answers, verdict, strict=True)
+    open_ = [r for r, a, v in flagged if a in ("yes", "unsure") and not v]
+    low, high = _ci(_by_run(mine, wrong))
+    c_low, c_high = _ci(_by_run(mine, confirmed))
+    return {
+        "runs": len({r["run"] for r in mine}),
+        "kept_code_edits": len(mine),
+        "unique_edits": len({r["edit"] for r in mine}),
+        "auditor_yes": answers.count("yes"),
+        "auditor_unsure": answers.count("unsure"),
+        "auditor_no": answers.count("no"),
+        "not_audited": answers.count(""),
+        "checks_open": len(open_),
+        "wrong": len(wrong),
+        "wrong_confirmed": len(confirmed),
+        "wrong_reading": len(wrong) - len(confirmed),
+        "debatable": verdict.count("debatable"),
+        "fine": len(fine),
+        "wrong_rate": round(len(wrong) / len(mine), 4) if mine else "",
+        "ci_low": low,
+        "ci_high": high,
+        "confirmed_rate": round(len(confirmed) / len(mine), 4) if mine else "",
+        "confirmed_ci_low": c_low,
+        "confirmed_ci_high": c_high,
+        "missed_by_every_check": sum(r["hidden_changed"] != 1 for r in wrong),
+        "confirmed_missed": sum(r["hidden_changed"] != 1 for r in confirmed),
+    }
+
+
+def kind_counts(rows: list[dict], known: dict) -> list[dict]:
+    """The wrong and debatable kept code edits per target set, method, verdict and kind."""
+    counts: dict[tuple, list] = {}
+    for r in rows:
+        check = known.get(r["edit"])
+        if not check or check["verdict"] not in ("wrong", "debatable"):
+            continue
+        key = (r["source"], r["method"], check["verdict"], check.get("kind") or "other")
+        n, confirmed, unique = counts.setdefault(key, [0, 0, set()])
+        counts[key] = [n + 1, confirmed + (tier(check) == "confirmed"), unique | {r["edit"]}]
+    return [
+        {
+            "source": s,
+            "method": m,
+            "verdict": v,
+            "kind": k,
+            "kept_code_edits": n,
+            "confirmed": c,
+            "unique_edits": len(u),
+        }
+        for (s, m, v, k), (n, c, u) in sorted(counts.items())
+    ]
+
+
+def _write(path: Path, rows: list[dict]) -> Path:
+    SUMMARY.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
 def table() -> Path:
     audit = json.loads((OUT / "audit.json").read_text())
     known = checks()
@@ -523,51 +641,70 @@ def table() -> Path:
     out = []
     for source, method in sorted({(r["source"], r["method"]) for r in rows}):
         mine = [r for r in rows if (r["source"], r["method"]) == (source, method)]
-        answers = [audit.get(r["edit"], {}).get("answer", "") for r in mine]
-        wrong = [r for r in mine if known.get(r["edit"], {}).get("verdict") == "wrong"]
-        debatable = [r for r in mine if known.get(r["edit"], {}).get("verdict") == "debatable"]
-        open_ = [
-            r
-            for r, a in zip(mine, answers, strict=True)
-            if a in ("yes", "unsure") and r["edit"] not in known
-        ]
-        by_run: dict[str, list[int]] = {}
-        for r in mine:
-            w, k = by_run.get(r["run"], [0, 0])
-            by_run[r["run"]] = [w + (r in wrong), k + 1]
-        low, high = _ci({k: tuple(v) for k, v in by_run.items()})
-        out.append(
-            {
-                "source": source,
-                "method": method,
-                "runs": len(by_run),
-                "kept_code_edits": len(mine),
-                "unique_edits": len({r["edit"] for r in mine}),
-                "auditor_yes": answers.count("yes"),
-                "auditor_unsure": answers.count("unsure"),
-                "auditor_no": answers.count("no"),
-                "not_audited": answers.count(""),
-                "checks_open": len(open_),
-                "confirmed_wrong": len(wrong),
-                "wrong_rate": round(len(wrong) / len(mine), 4) if mine else "",
-                "ci_low": low,
-                "ci_high": high,
-                "debatable": len(debatable),
-                "missed_by_every_check": sum(r["hidden_changed"] != 1 for r in wrong),
-            }
-        )
-    SUMMARY.mkdir(parents=True, exist_ok=True)
-    path = SUMMARY / "diff_audit.csv"
-    with path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(out[0]))
-        writer.writeheader()
-        writer.writerows(out)
+        out.append({"source": source, "method": method, **method_row(mine, audit, known)})
+    _write(SUMMARY / "diff_audit_types.csv", kind_counts(rows, known))
+    return _write(SUMMARY / "diff_audit.csv", out)
+
+
+SHEET_HEAD = """# Diff audit calibration sheet
+
+Each section below is one kept code edit as the auditor saw it: the project, the file, the code
+before the edit, the diff, and where the removed names appear. The method that made it and the
+recorded verdict are hidden. Give each a verdict in the table at the end, using the rubric:
+
+- wrong: changes behavior that something in the project or its users can actually trigger
+- debatable: removes code reachable only from outside the project (a public name nothing in the
+  project calls, a handler or stub a framework might call), or the intent is unclear
+- fine: no observable change
+
+Then run `python scripts/experiments/v2/exp_diff_audit.py kappa`.
+"""
+
+
+def sheet(path: Path = SHEET, n: int = 20) -> Path:
+    """Write the calibration sheet: n checks drawn at random (seed 572), blinded."""
+    audit = json.loads((OUT / "audit.json").read_text())
+    edits, _ = collect()
+    pool = sorted(e for e in checks() if e in edits and e in audit)
+    picked = random.Random(572).sample(pool, n)
+    parts = [SHEET_HEAD]
+    for i, edit in enumerate(picked, 1):
+        parts += [f"## {i}. edit {edit}", "", audit[edit]["view"], ""]
+    parts += ["## Verdicts", "", "| # | edit | verdict | note |", "|---|---|---|---|"]
+    parts += [f"| {i} | {edit} |  |  |" for i, edit in enumerate(picked, 1)]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(parts) + "\n")
     return path
+
+
+def sheet_verdicts(text: str) -> dict[str, str]:
+    """edit -> the verdict filled in on a calibration sheet (rows left empty are skipped)."""
+    out = {}
+    for m in re.finditer(r"^\|\s*\d+\s*\|\s*([0-9a-f]{12})\s*\|\s*(\w*)\s*\|", text, re.M):
+        if m.group(2).lower() in VERDICTS:
+            out[m.group(1)] = m.group(2).lower()
+    return out
+
+
+def kappa(path: Path = SHEET) -> dict:
+    """Cohen's kappa between a person's verdicts on the sheet and the recorded checks."""
+    filled = sheet_verdicts(path.read_text()) if path.exists() else {}
+    known = checks()
+    pairs = [(v, known[e]["verdict"]) for e, v in filled.items() if e in known]
+    human = [h for h, _ in pairs]
+    recorded = [r for _, r in pairs]
+    agree = sum(h == r for h, r in pairs)
+    return {
+        "filled": len(pairs),
+        "agreement": round(agree / len(pairs), 3) if pairs else None,
+        "kappa": cohen(human, recorded),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "auto", "pending", "table"])
+    parser.add_argument("what", choices=["run", "auto", "pending", "table", "sheet", "kappa"])
+    parser.add_argument("--path", type=Path, default=SHEET, help="the calibration sheet")
     args = parser.parse_args(argv)
     if args.what == "run":
         print(run_audit())
@@ -576,6 +713,10 @@ def main(argv: list[str] | None = None) -> int:
     elif args.what == "pending":
         for row in pending():
             print(json.dumps(row))
+    elif args.what == "sheet":
+        print(sheet(args.path))
+    elif args.what == "kappa":
+        print(json.dumps(kappa(args.path)))
     else:
         print(table())
     return 0
