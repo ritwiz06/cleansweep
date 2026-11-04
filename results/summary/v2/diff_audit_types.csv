@@ -10,7 +10,7 @@ injected,agentic,debatable,dependency,1,0,1
 injected,agentic,debatable,dynamic handler or stub,19,0,19
 injected,agentic,debatable,public name,4,0,4
 injected,agentic,wrong,changed logic,1,1,1
-injected,agentic,wrong,dependency,2,2,2
+injected,agentic,wrong,dependency,3,3,3
 injected,agentic,wrong,dynamic handler or stub,5,2,5
 injected,agentic-broadcast,debatable,dependency,1,0,1
 injected,agentic-broadcast,wrong,changed logic,1,1,1
@@ -34,20 +34,20 @@ injected,agentic-no_research,debatable,dynamic handler or stub,1,0,1
 injected,agentic-no_research,debatable,public name,1,0,1
 injected,agentic-no_research,wrong,changed logic,2,2,2
 injected,agentic-no_research,wrong,deleted file,2,2,2
-injected,agentic-no_research,wrong,dependency,6,6,6
-injected,agentic-no_research,wrong,dynamic handler or stub,6,3,6
+injected,agentic-no_research,wrong,dependency,9,9,9
+injected,agentic-no_research,wrong,dynamic handler or stub,7,4,7
 injected,agentic-rules,debatable,dynamic handler or stub,20,0,20
 injected,agentic-rules,debatable,public name,4,0,4
 injected,agentic-rules,wrong,changed logic,1,1,1
 injected,agentic-rules,wrong,dependency,2,2,2
 injected,agentic-rules,wrong,dynamic handler or stub,5,2,5
 injected,agentic-single_agent,debatable,dependency,5,0,5
-injected,agentic-single_agent,debatable,dynamic handler or stub,21,0,21
-injected,agentic-single_agent,debatable,public name,10,0,10
+injected,agentic-single_agent,debatable,dynamic handler or stub,23,0,23
+injected,agentic-single_agent,debatable,public name,12,0,12
 injected,agentic-single_agent,wrong,changed logic,7,2,7
 injected,agentic-single_agent,wrong,deleted file,2,2,2
-injected,agentic-single_agent,wrong,dependency,4,4,4
-injected,agentic-single_agent,wrong,dynamic handler or stub,22,17,22
+injected,agentic-single_agent,wrong,dependency,6,6,6
+injected,agentic-single_agent,wrong,dynamic handler or stub,25,20,25
 injected,agentic-single_agent,wrong,public name,3,2,3
 injected,cleansweep,debatable,changed logic,1,0,1
 injected,cleansweep,debatable,dependency,5,0,5
