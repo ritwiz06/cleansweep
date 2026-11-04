@@ -88,3 +88,9 @@ def test_injection_tables_pool_seeds_and_pair_by_project_and_seed():
     assert single["pairs"] == 4 and single["planted removed"] == "4 vs 0"
     assert single["hidden changed only first / only second"] == "0 / 2"
     assert "agentic vs agentic-no_research" not in paired  # no runs to pair
+
+
+def test_p_values_below_four_places_are_not_shown_as_zero():
+    tables = load()
+    assert tables.p_value(0.06327) == 0.0633
+    assert tables.p_value(3.05e-5) == "<0.0001"

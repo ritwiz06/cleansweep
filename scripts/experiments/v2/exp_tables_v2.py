@@ -86,6 +86,11 @@ def fmt(mean: float, lo: float, hi: float, digits: int = 1) -> str:
     return f"{mean:.{digits}f} [{lo:.{digits}f}, {hi:.{digits}f}]"
 
 
+def p_value(p: float) -> float | str:
+    """p rounded to 4 places; below that, "<0.0001" rather than a misleading 0.0."""
+    return round(p, 4) if p >= 0.0001 else "<0.0001"
+
+
 def _values(recs: list[dict], key: str) -> list:
     return [r[key] for r in recs if r[key] != ""]
 
@@ -178,10 +183,10 @@ def eval_paired(rows: list[dict]) -> list[dict]:
                     "pairs": len(pairs),
                     "hidden changed only with method": b,
                     "hidden changed only with v1": c,
-                    "McNemar exact p": round(mcnemar(b, c), 4),
+                    "McNemar exact p": p_value(mcnemar(b, c)),
                     "code lines removed, method vs v1 (total)": f"{sum(ours)} vs {sum(theirs)}",
                     "Wilcoxon W": round(stat, 1),
-                    "Wilcoxon p": round(p, 4),
+                    "Wilcoxon p": p_value(p),
                 }
             )
     return out
@@ -317,16 +322,16 @@ def injection_paired(plants: list[dict]) -> list[dict]:
                 "planted removed": f"{sum(v['removed'] for v in x)} vs "
                 f"{sum(v['removed'] for v in y)}",
                 "Wilcoxon W": round(stat, 1),
-                "Wilcoxon p": round(p, 4),
+                "Wilcoxon p": p_value(p),
                 "hidden changed only first / only second": f"{sum(u and not v for u, v in hid)} / "
                 f"{sum(v and not u for u, v in hid)}",
-                "McNemar p (hidden)": round(
-                    mcnemar(sum(u and not v for u, v in hid), sum(v and not u for u, v in hid)), 4
+                "McNemar p (hidden)": p_value(
+                    mcnemar(sum(u and not v for u, v in hid), sum(v and not u for u, v in hid))
                 ),
                 "trap removed only first / only second": f"{sum(u and not v for u, v in trap)} / "
                 f"{sum(v and not u for u, v in trap)}",
-                "McNemar p (traps)": round(
-                    mcnemar(sum(u and not v for u, v in trap), sum(v and not u for u, v in trap)), 4
+                "McNemar p (traps)": p_value(
+                    mcnemar(sum(u and not v for u, v in trap), sum(v and not u for u, v in trap))
                 ),
             }
         )
