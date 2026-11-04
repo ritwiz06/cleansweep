@@ -22,6 +22,12 @@ Repository restructure; no change in behavior or results (#81–#86, tag `pre-ti
 - Studio's **Evaluation** screen charts the v2 results from the committed tables: the injection
   benchmark by seed and pooled with CIs, the ablations, the real-project ablation, the diff audit
   by tier and kind, probe strength, the Manager scenarios, LLM-reviewer acceptance and watch.
+- `core.agents.investigate: all | adaptive | none` (#145): `adaptive` sends only uncertain
+  candidates to an Investigator and lets the rules decide the rest; the default stays `all`.
+- The final v2 results (#146) in the README, `docs/results.md` and `docs/experiments.md`: every
+  injected seed with per-seed and pooled CIs and paired tests, the diff audit with a tier in every
+  claim (confirmed by a test, check or rule, or a reading, LLM-judged), the real-project ablation
+  in two tiers, and the extended framework rule re-scored next to the numbers as run.
 
 ## v1.0.3 (2026-10-31)
 
