@@ -174,3 +174,48 @@ def test_an_edit_keeps_its_id_across_index_lines():
     first = audit.edit_key("p", "x.py", "diff --git a/x.py b/x.py\nindex 1..2\n-x = 1\n")
     again = audit.edit_key("p", "x.py", "diff --git a/x.py b/x.py\nindex 3..4\n-x = 1\n")
     assert first == again != audit.edit_key("p", "y.py", "-x = 1\n")
+
+
+def test_a_pending_edit_takes_the_check_of_the_same_change():
+    audit = load()
+    a, b, c, d, e = (x * 12 for x in "abcde")
+    hunk = "@@ -1,2 +1,1 @@ class Task:\n-    def check(self):\n"
+    other = "@@ -9,2 +9,1 @@ class Update:\n-    def check(self):\n"
+    edits = {
+        a: {"project": "aidev:o/r@1", "path": "m.py", "diff": hunk},
+        b: {"project": "aidev:o/r@2", "path": "m.py", "diff": hunk},
+        c: {"project": "aidev:o/r@2", "path": "m.py", "diff": other},
+        d: {"project": "aidev:o/r@2", "path": "m.py", "diff": "@@ -1 +1 @@\n-x = 1\n"},
+    }
+    votes = {x: {"answer": "yes"} for x in (a, b, c, d)}
+    check = {"verdict": "wrong", "evidence": "deletes Task.check", "kind": "public name"}
+    found, left = audit.match(edits, votes, {a: {**check, "checked_by": "targeted test"}})
+    assert [(r["edit"], r["verdict"], r["checked_by"]) for r in found] == [
+        (b, "wrong", "reading (LLM-judged)")
+    ]
+    assert found[0]["evidence"].startswith(f"the same change as {a} (") and left == [c, d]
+    copy = {**found[0], "checked_by": "rule: injection key"}
+    again, _ = audit.match({**edits, e: edits[a]}, {e: {"answer": "yes"}}, {b: copy})
+    assert again[0]["evidence"].startswith(f"the same change as {a} (")  # the root, not the copy
+    assert again[0]["evidence"].endswith("): deletes Task.check")
+    assert again[0]["checked_by"] == "rule: injection key"
+
+
+def test_record_needs_a_kind_unless_fine():
+    audit = load()
+    rows = audit.record({}, ['{"edit": "a", "verdict": "fine", "evidence": "e"}', ""])
+    assert rows == [
+        {
+            "edit": "a",
+            "verdict": "fine",
+            "evidence": "e",
+            "checked_by": "reading (LLM-judged)",
+            "kind": "",
+        }
+    ]
+    try:
+        audit.record({}, ['{"edit": "b", "verdict": "wrong", "evidence": "e"}'])
+    except ValueError as exc:
+        assert "needs a kind" in str(exc)
+    else:
+        raise AssertionError("a wrong check without a kind was recorded")

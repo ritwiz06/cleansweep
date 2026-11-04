@@ -18,7 +18,12 @@ report ◀── hidden checks (evaluation only) ◀── Guard: apply, verify,
    with a `base` commit. Targets are a local folder, `swebench:<instance>:<agent>` (a
    SWE-bench Docker image with an agent's patch committed on top) or
    `aidev:<owner>/<name>@<sha>` (a `python:3.11` container that installs the project, then
-   loses its network before any project code runs).
+   loses its network before any project code runs). The workspace, its container and its
+   coverage data go when the run ends, also on an error or on SIGTERM and SIGHUP, which the
+   runners turn into a normal exit (`sandbox/cleanup.py`; a signal ignored under `nohup` stays
+   ignored). `cleansweep` commands and the v2 experiment runners start by removing workspaces
+   and `cs_*` temp folders older than 24 hours whose owner process (recorded in the
+   workspace's `.git`) is gone, with their containers.
 2. **Analyze.** `build_graph` parses every `.py` file into file, class and function units
    with import and reference edges, entry points and reachability. `extract_features` gives
    each unit the ranker's features.
@@ -128,6 +133,7 @@ A sweep's `cfg` is the merged dictionary; a caller can override any section.
 | `core.llm.timeout_s`, `max_retries` | 600, 2 | per request |
 | `core.llm.cache_path` | `.cleansweep/llm_cache.sqlite` | response cache |
 | `core.sandbox.work_dir` | system temp | where workspaces are created |
+| `core.sandbox.keep_workspace` | false | keep the workspace and its container after a sweep (`cleansweep sweep --keep-workspace`); the next run's start removes it once it is 24 hours old |
 | `core.guard.diff_tests` | true | run differential probes |
 | `core.guard.probe_mode` | `auto` | `direct`, `runner`, or runner for containers and direct for folders |
 | `core.guard.max_targets`, `probe_max_cases` | 10, 8 | probe budget per batch |

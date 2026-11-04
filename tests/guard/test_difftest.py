@@ -2,6 +2,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from cleansweep.analysis import build_graph
@@ -339,6 +340,7 @@ def test_harness_main_puts_back_what_it_changed(tmp_path):
     probe_harness.main(str(tmp_path / "spec.json"), str(tmp_path))
     assert json.loads((tmp_path / "out.json").read_text())["probes"]["t0"]["cases"] == {"one": "1"}
     assert (os.getcwd(), sys.path, socket.socket.connect) == (cwd, path, connect)
+    assert not [p for p in os.listdir(tempfile.gettempdir()) if p.startswith("cs_probe_")]
 
 
 def test_harness_loads_a_script_by_path_without_its_main_block(tmp_path):

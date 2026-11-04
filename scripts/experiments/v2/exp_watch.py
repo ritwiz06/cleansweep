@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 from cleansweep.agents import clean_project, watch  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.data import load_history, load_repos  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "watch_demo"
 V1 = ROOT / "results" / "summary" / "v1" / "scheduler_replay.csv"
@@ -131,6 +132,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--budget-tests", type=int, default=60)
     parser.add_argument("--repos", nargs="*")
     args = parser.parse_args(argv)
+    on_start()
     if args.what == "demo":
         print(demo(not args.no_llm, args.budget_tests))
     else:
