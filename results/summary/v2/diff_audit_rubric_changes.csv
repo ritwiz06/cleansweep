@@ -71,3 +71,5 @@ ece2a6718eae,wrong,debatable,a placeholder Solution whose solve only raises NotI
 efa6df485de5,wrong,debatable,a placeholder Solution whose solve only raises NotImplementedError; the grader fails on the seed either way and nothing in the project calls it: a stub a framework might call
 f39f4e9b0abd,wrong,debatable,the override only silenced request logging; without it the viewer logs each request to stderr and works the same: a message change
 ff6b2ec5cc5f,wrong,debatable,a placeholder Solution whose solve only raises NotImplementedError; the grader fails on the seed either way and nothing in the project calls it: a stub a framework might call
+d90d18ac9d0b,wrong,debatable,"a fresh plain install of the edited project still gets click (pip install --dry-run in python:3.11), so doctor's check does not change; the project relies on a transitive dependency"
+144a8952c9ba,wrong,debatable,"a fresh plain install of the edited project still gets click (pip install --dry-run in python:3.11), so doctor's check does not change; the project relies on a transitive dependency"

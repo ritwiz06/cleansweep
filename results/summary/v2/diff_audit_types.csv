@@ -1,9 +1,10 @@
 source,method,verdict,kind,kept_code_edits,confirmed,unique_edits
 aidev,agentic,wrong,other,1,1,1
+aidev,cleansweep-gatekeeper,debatable,dependency,1,0,1
 aidev,cleansweep-gatekeeper,debatable,public name,18,0,18
 aidev,cleansweep-gatekeeper,wrong,deleted file,1,1,1
-aidev,cleansweep-gatekeeper,wrong,dependency,5,1,5
-aidev,cleansweep-gatekeeper,wrong,public name,3,2,3
+aidev,cleansweep-gatekeeper,wrong,dependency,4,1,4
+aidev,cleansweep-gatekeeper,wrong,public name,3,3,3
 answer keys,agentic-single_agent,wrong,changed logic,4,4,2
 injected,agentic,debatable,dependency,1,0,1
 injected,agentic,debatable,dynamic handler or stub,19,0,19
@@ -45,7 +46,7 @@ injected,agentic-single_agent,debatable,dynamic handler or stub,21,0,21
 injected,agentic-single_agent,debatable,public name,10,0,10
 injected,agentic-single_agent,wrong,changed logic,7,2,7
 injected,agentic-single_agent,wrong,deleted file,2,2,2
-injected,agentic-single_agent,wrong,dependency,4,3,4
+injected,agentic-single_agent,wrong,dependency,4,4,4
 injected,agentic-single_agent,wrong,dynamic handler or stub,22,17,22
 injected,agentic-single_agent,wrong,public name,3,2,3
 injected,cleansweep,debatable,changed logic,1,0,1
@@ -64,11 +65,11 @@ real-project ablation,agentic-no_research,wrong,deleted file,1,1,1
 real-project ablation,agentic-no_research,wrong,dynamic handler or stub,1,0,1
 real-project ablation,agentic-no_research,wrong,public name,1,1,1
 real-project ablation,agentic-single_agent,debatable,changed logic,1,0,1
-real-project ablation,agentic-single_agent,debatable,dependency,1,0,1
+real-project ablation,agentic-single_agent,debatable,dependency,2,0,2
 real-project ablation,agentic-single_agent,debatable,other,1,0,1
 real-project ablation,agentic-single_agent,debatable,public name,11,0,11
 real-project ablation,agentic-single_agent,wrong,changed logic,2,2,2
 real-project ablation,agentic-single_agent,wrong,deleted file,1,1,1
-real-project ablation,agentic-single_agent,wrong,dependency,6,1,6
+real-project ablation,agentic-single_agent,wrong,dependency,5,1,5
 real-project ablation,agentic-single_agent,wrong,dynamic handler or stub,5,4,5
 real-project ablation,agentic-single_agent,wrong,other,4,4,4
