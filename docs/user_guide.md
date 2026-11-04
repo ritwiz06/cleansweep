@@ -228,7 +228,8 @@ cleansweep show  results/raw/quickstart/report.json
 ```
 
 [architecture.md](architecture.md) describes it, and Studio's Saved reports screen shows any
-report it saves.
+report it saves. The sweep's scratch workspace is removed when it ends; `--keep-workspace` keeps
+it for a look inside.
 
 ## When something goes wrong
 

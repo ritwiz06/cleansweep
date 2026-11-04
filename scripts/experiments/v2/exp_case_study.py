@@ -34,6 +34,7 @@ from methods_v2 import ABLATIONS  # noqa: E402
 from cleansweep.agents import clean_project  # noqa: E402
 from cleansweep.agents.budgets import parse_budget  # noqa: E402
 from cleansweep.core.config import load_config  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 COPY = ["CLEANUP_REPORT.md", "blueprint.md", "PR_DESCRIPTION.md", "report.json", "events.jsonl"]
 
@@ -127,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--budget", help="caps for the whole run, e.g. llm=150,minutes=120")
     parser.add_argument("--ablation", choices=ABLATIONS, help="one part of the team switched off")
     args = parser.parse_args(argv)
+    on_start()
     out = Path(args.runs_dir) / args.name
     dest = ROOT / "results" / "raw" / "case_studies" / args.name
     dest.mkdir(parents=True, exist_ok=True)

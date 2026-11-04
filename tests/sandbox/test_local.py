@@ -44,6 +44,7 @@ def test_install_files_stay_out_of_the_diff(toy_ws):
 
 def test_coverage_json_has_contexts(toy_ws):
     path = toy_ws.coverage_json()
+    assert Path(path).is_relative_to(Path(toy_ws.path) / ".git")  # it goes with the workspace
     data = json.loads(Path(path).read_text())
     contexts = data["files"]["shopcart/cart.py"]["contexts"]
     assert any("test_add_and_count" in c for ctx in contexts.values() for c in ctx)

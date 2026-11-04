@@ -23,6 +23,7 @@ GIT_ID = [
     "-c",
     "gc.auto=0",  # no background repacking in throwaway workspaces
 ]
+OWNER_FILE = "cleansweep_owner"  # in a workspace's .git: the pid of the process that opened it
 
 
 def parse_junit(xml_path: str | Path, duration_s: float = 0.0) -> RunResult:
@@ -80,6 +81,7 @@ class Workspace:
         self.extra_env: dict[str, str] = {}  # added to every command's environment
         self.pytest_args: list[str] = []  # e.g. a marker selection for the project's tests
         self.base = self._git("rev-parse", "HEAD").strip()
+        (Path(self.path) / ".git" / OWNER_FILE).write_text(str(os.getpid()))
         qdir = Path(self.cfg.get("quarantine_dir") or ".cleansweep/quarantine")
         self.quarantine_dir = str(qdir.resolve() / repo_id.replace("/", "_").replace(":", "_"))
 
@@ -149,8 +151,10 @@ class Workspace:
         return self.run(cmd, timeout=timeout)
 
     def coverage_json(self, test_paths: list[str] | None = None) -> str | None:
-        """Run the tests under coverage with per-test contexts; return the JSON path."""
-        out_dir = Path(tempfile.mkdtemp(prefix="cs_cov_"))
+        """Run the tests under coverage with per-test contexts; return the JSON path (inside
+        .git, so it goes with the workspace)."""
+        out_dir = Path(self.path) / ".git" / "cs_coverage"
+        out_dir.mkdir(exist_ok=True)
         rc = out_dir / ".coveragerc"
         rc.write_text(f"[run]\ndynamic_context = test_function\ndata_file = {out_dir}/.coverage\n")
         code, _ = self.run(

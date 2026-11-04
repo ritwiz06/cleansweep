@@ -37,6 +37,7 @@ from exp_diff_audit import checks, edit_key, kept_edits, tier  # noqa: E402
 
 from cleansweep.analysis import build_graph  # noqa: E402
 from cleansweep.data.swebench import data_path  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 OUT = inject.RAW.parent / "inject_rule"
 TABLE = inject.SUMMARY / "inject_rule.csv"
@@ -210,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.what == "table":
         print(table())
     else:
+        on_start()
         rows = run(docker=args.what == "run")
         print(
             f"{sum(bool(r['moved']) for r in rows)} of {len(rows)} runs have edits the rule moves"

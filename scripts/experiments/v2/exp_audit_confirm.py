@@ -45,10 +45,12 @@ from exp_diff_audit import (  # noqa: E402
 
 from cleansweep.core.config import load_config  # noqa: E402
 from cleansweep.sandbox import open_workspace  # noqa: E402
+from cleansweep.sandbox.cleanup import on_start  # noqa: E402
 
 TESTS = OUT / "tests"
 RESULTS = TESTS / "results.json"
 INJECTED_CLONES = "data/raw/aidev/injected"  # exp_inject.CLONES
+COPIES: list[Path] = []  # the temporary trees opened() made, removed once their workspace closes
 
 
 def same_change(known: dict[str, dict]) -> dict[str, list[str]]:
@@ -83,10 +85,16 @@ def opened(project: str, report: Path) -> tuple[str, dict]:
     if not tree.rev:
         return str(tree.repo), sandbox
     tmp = Path(tempfile.mkdtemp(prefix="cs_confirm_"))
+    COPIES.append(tmp)
     archive = subprocess.Popen(["git", "archive", tree.rev], cwd=tree.repo, stdout=subprocess.PIPE)
     subprocess.run(["tar", "-xf", "-", "-C", str(tmp)], stdin=archive.stdout, check=True)
     archive.wait()
     return str(tmp / tree.prefix.rstrip("/")) if tree.prefix else str(tmp), sandbox
+
+
+def _drop_copies() -> None:
+    while COPIES:
+        shutil.rmtree(COPIES.pop(), ignore_errors=True)
 
 
 def _applies(ws, diff: str) -> bool:
@@ -177,6 +185,7 @@ def run(only: list[str] | None = None) -> Path:
             error = str(exc)[:300]
             for test, record in pairs:
                 results[record["edit"]] = {"test": test, "error": error, "confirmed": False}
+            _drop_copies()
             continue
         try:
             base = ws.checkpoint("confirm base")
@@ -187,6 +196,7 @@ def run(only: list[str] | None = None) -> Path:
                 RESULTS.write_text(json.dumps(results, indent=1))
         finally:
             ws.close()
+            _drop_copies()
     RESULTS.write_text(json.dumps(results, indent=1))
     return RESULTS
 
@@ -239,6 +249,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("what", choices=["run", "record"])
     parser.add_argument("--edits", nargs="*", help="only these test folders")
     args = parser.parse_args(argv)
+    on_start()
     if args.what == "run":
         print(run(args.edits))
     else:
