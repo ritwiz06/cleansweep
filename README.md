@@ -13,8 +13,17 @@ sweep. This is our CSE 572 project (Group 30).
 **Results in brief.** On 57 SWE-bench agent patches, CleanSweep removed about as much code as
 an unchecked one-shot LLM cleanup and changed hidden behavior on none of them; the one-shot
 cleanup changed it on 9. On 20 real repositories with agent-written code, the v1.0 Reviewer
-policies leave CleanSweep with 0 of 19 hidden changes. Details below and in
-[docs/results.md](docs/results.md).
+policies leave CleanSweep with 0 of 19 hidden changes.
+
+v2's agent team, on a benchmark of slop planted in 10 projects (3 seeds), removed 81% of the
+planted items and changed hidden behavior in none of its 30 runs; a single agent with the same
+tools changed it in 16. A blinded audit of every kept code edit found 18 of the team's 804 edits
+on that benchmark wrong (12 confirmed by targeted tests, the rest by reading, LLM-judged) against
+the single agent's 63 of 489 (50 confirmed); on five real projects none of the team's 14 kept
+code edits was wrong (all tiers), against the single agent's 17 of 65 (12 confirmed). No test
+caught the team's 18: most are methods a framework calls by name, which the extended framework
+rule now keeps in the suggest lane (18 become 9 when the runs are re-scored with it). Details
+below and in [docs/results.md](docs/results.md).
 
 ## Quick start
 
@@ -268,82 +277,129 @@ how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
 - The first SWE-bench runs saw no tests (the workspace never stored test statuses) and are not
   reported; the reruns above have baselines of 5 to 428 passing tests (#118).
 
-**Slop-injection benchmark** (`injection_summary.csv`, seed 1): seven kinds of slop and two traps
-(a near-duplicate that rounds differently, a framework callback) planted in the toy repository and
-9 AIDev repositories; each method cleans the whole project. Planted items removed, of 10 per kind:
+**Slop-injection benchmark** (`injection_seeds.md`, `injection_paired.md`,
+`injection_summary.csv`): seven kinds of slop and two traps (a near-duplicate that rounds
+differently, a framework callback) planted in the toy repository and 9 AIDev repositories. Each
+plant is checked to be a right answer, and each hidden test passes on the injected project before
+any cleanup; each method then cleans the whole project. The team, the no research squad and the
+single agent ran three seeds (30 runs each), v1 and the one-shot LLM two (20 runs). Planted items
+removed per kind:
 
-| | leftover file | dead code | exact duplicate | unused import | debug print | commented-out code | unused dependency | all (of 70) | traps removed (of 20) | hidden changed |
+| | leftover file | dead code | exact duplicate | unused import | debug print | commented-out code | unused dependency | all planted | traps removed | hidden changed |
 |---|---|---|---|---|---|---|---|---|---|---|
-| team | 9 | 9 | 0 | 7 | 9 | 9 | 7 | 50 (0.71) | 0 | 0/8 |
-| v1 | 10 | 10 | 0 | 8 | 0 | 0 | 10 | 38 (0.54) | 0 | 0/8 |
-| one-shot LLM (toy repo only) | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 6 (0.09) | 2 | 1/8 |
+| team | 30/30 | 29/30 | 0/30 | 26/30 | 30/30 | 30/30 | 25/30 | 170/210 (0.81) | 0/60 | 0/30 |
+| no research squad | 30/30 | 28/30 | 0/30 | 29/30 | 30/30 | 30/30 | 29/30 | 176/210 (0.84) | 2/60 | 2/30 |
+| single agent | 30/30 | 26/30 | 0/30 | 27/30 | 9/30 | 6/30 | 16/30 | 114/210 (0.54) | 16/60 | 16/30 |
+| v1 | 20/20 | 19/20 | 0/20 | 19/20 | 0/20 | 0/20 | 20/20 | 78/140 (0.56) | 1/40 | 1/20 |
+| one-shot LLM | 19/20 | 19/20 | 19/20 | 14/20 | 18/20 | 18/20 | 0/20 | 107/140 (0.76) | 36/40 | 19/20 |
 
-The team finds the debug prints and commented-out code v1 has no detector for. Seven of its 20
-misses are one project where the run stopped on a template file named `*.py` (an edit that
-raises is skipped since #125, after these runs); neither version's detectors flagged a planted
-duplicate. The benchmark has flaws we report rather than hide: on openwebui-extensions it
-planted into that template file, so its hidden test cannot run, and on imgviz the hidden test
-failed before every cleanup (hidden changed counts the other 8); the one-shot baseline, as in
-v1, sees only lines agent pull requests wrote, an empty scope in the injected AIDev clones, so
-its row is the toy repository alone.
+- Paired by project and seed (`injection_paired.md`):
+  - **Team vs the single agent:** 170 against 114 planted items removed (Wilcoxon p < 0.0001); 0 against 16 hidden changes (McNemar p < 0.0001).
+  - **Team vs the no research squad:** 170 against 176 (p = 0.063); 0 against 2 hidden changes (p = 0.5).
+  - The team's share per seed is 0.81, 0.80 and 0.81 (`injection_seeds.md`, with 95% CIs).
+- Every trap the single agent, the no research squad and v1 removed is the framework callback (`visit_Name`, which `ast.NodeVisitor` calls by name). None of them merged the near-duplicate.
+- The one-shot LLM removes most of the slop, including the exact duplicates that no detector-based method touches. It also removes 36 of the 40 traps and changes hidden behavior on 19 of 20 projects.
+- v1 has no detector for debug prints or commented-out code.
+- Four projects are left out, with the reasons in `EXCLUDED` (`exp_inject.py`):
+  - imgviz: its hidden test failed before any cleanup;
+  - openwebui-extensions: its hidden test failed on every injected draw;
+  - skillport and chatlas: too few modules to plant in.
+- Runs spoiled by a laptop sleep were rerun and replace them. The spoiled ones are kept apart (`results/raw/inject_superseded/`) and are not reported.
 
-**Ablations** (`ablations.md`): one part of the team switched off, on the answer keys (6 runs
-each) and the injected set (one run on each of the 10 projects).
+**Ablations** (`ablations.md`): one part of the team switched off. On the answer keys, 6 runs
+each. On the injected set, the same project-seed runs as above: 30 for the team, the no research
+squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 
-| variant | answer keys: planted found (of 60) | hidden changed (of 6) | LLM requests | injected: planted removed (of 70) | traps removed (of 20) | hidden changed (of 8) | LLM requests |
+| variant | answer keys: planted found (of 60) | hidden changed (of 6) | LLM requests | injected: planted removed | traps removed | hidden changed | LLM requests |
 |---|---|---|---|---|---|---|---|
-| team (LLM Manager) | 60 | 0 | 41.5 | 50 | 0 | 0 | 92.1 |
-| rule-based Manager | 60 | 0 | 37.2 | 50 | 0 | 0 | 87.0 |
-| no research squad | 60 | 0 | 11.7 | 53 | 0 | 0 | 9.8 |
-| broadcast messages | 60 | 0 | 43.7 | 50 | 0 | 0 | 90.8 |
-| artifacts inlined | 60 | 0 | 41.7 | 49 | 0 | 0 | 90.8 |
-| no lessons | 57 | 0 | 43.2 | 47 | 0 | 0 | 93.3 |
-| no coverage guidance | 60 | 0 | 42.8 | 50 | 0 | 0 | 90.7 |
-| single agent | 54 | 4 | 36.2 | 35 | 5 | 4 | 83.6 |
+| team (LLM Manager) | 60 | 0 | 41.5 | 170/210 | 0/60 | 0/30 | 92.3 |
+| rule-based Manager | 60 | 0 | 37.2 | 113/140 | 0/40 | 0/20 | 87.5 |
+| no research squad | 60 | 0 | 11.7 | 176/210 | 2/60 | 2/30 | 9.7 |
+| broadcast messages | 60 | 0 | 43.7 | 113/140 | 0/40 | 0/20 | 91.2 |
+| artifacts inlined | 60 | 0 | 41.7 | 112/140 | 0/40 | 0/20 | 91.2 |
+| no lessons | 57 | 0 | 43.2 | 111/140 | 0/40 | 0/20 | 93.7 |
+| no coverage guidance | 60 | 0 | 42.8 | 113/140 | 0/40 | 0/20 | 91.0 |
+| single agent | 54 | 4 | 36.2 | 114/210 | 16/60 | 16/30 | 84.9 |
 
-- **Checking apart from editing is what keeps the cleanup safe.** The single agent (one LLM with
-  every tool, keeping or reverting its own edits) changed hidden behavior in 4 of 6 answer-key
-  runs and on 4 of the 8 injected projects, by merging the near-duplicate or deleting the
-  framework callback, and called 3 of those 4 injected projects "everything runs".
-- **The research squad costs requests without adding recall or safety here.** Without it the
-  team found the same on the answer keys at about a quarter of the requests, and 3 more on the
-  injected set at about a tenth: 2 on CORAL, where the full team's 150 requests ran out before
-  the Investigator decided, and the planted `tabulate` on imgviz, which the Investigator wrongly
-  kept: its reference search found a local function named `tabulate` in `generate_readme.py`,
-  and it took that for an import. On real projects it is a different story (below).
-- The rule-based Manager, broadcast messages, inlined artifacts and no coverage guidance match
-  the team within one item. Without lessons the team missed 3 on the answer keys (two of those runs
-  ran out of test runs) and 3 on the injected set, in runs where no package rolled back, so no
-  lesson was missing (one run each).
+- **Checking apart from editing is what keeps the cleanup safe.** The single agent is one LLM with every tool, keeping or reverting its own edits. It changed hidden behavior in 4 of 6 answer-key runs (merging the near-duplicate) and in 16 of 30 injected runs (deleting the framework callback).
+- **On the benchmarks, the research squad costs requests without adding recall.**
+  - Without it, the team found the same on the answer keys at about a quarter of the requests.
+  - On the injected set it removed as much (176 against 170) at about a tenth of the requests, but it removed 2 traps where the team removed none.
+  - On real projects the squad matters (below).
+- The rule-based Manager, broadcast messages, inlined artifacts, no lessons and no coverage guidance stay within two items of the team on the same two seeds (113 of 140). None of them removed a trap.
+
+**Diff audit** (`diff_audit.csv`, `diff_audit_checks.csv`, `diff_audit_types.csv`):
+- **Process:**
+  - An independent model (`glm-5-3`, never the agents' model) reads every kept code edit of every method and target set, blinded to the method, with 3 votes.
+  - Every edit it flags is checked under a written rubric ([docs/experiments.md](docs/experiments.md#v2-diff-audit)):
+    - **wrong:** changes behavior that something in the project or its users can trigger;
+    - **debatable:** the code is reachable only from outside the project;
+    - **fine:** no observable change.
+  - Each verdict has a tier:
+    - **confirmed:** a targeted test that passes before the edit and fails after, run in that run's own environment; or the UI check; or a rule;
+    - **reading (LLM-judged):** read by the coding assistant that ran the evaluation, not a person.
+- **Checks:** 561.
+  - Wrong: 147. 88 are confirmed. The 59 by reading each record the observed reason no test could run.
+  - Debatable: 252, by reading.
+  - Fine: 162.
+- Wrong of the kept code edits, all tiers, with the confirmed count in brackets:
+
+| target | team | no research squad | single agent | v1 |
+|---|---|---|---|---|
+| injected, all seeds | 18 of 804 (12) | 27 of 825 (22) | 63 of 489 (50) | 48 of 610 (13) |
+| real projects (below) | 0 of 14 | 4 of 20 (3) | 17 of 65 (12) | |
+| AIDev (6 repositories) | 1 of 10 (1) | | | 8 of 53 (5) |
+
+- **No check caught the team's 18 injected wrong edits**: no test, probe or hidden test failed on them.
+  - 14 are code that a framework or grader calls by name, for example CORAL's eval-viewer `do_GET` and `do_POST`, torch `forward` methods, and the `KernelBuilder` class of a published kernel demo.
+  - 3 remove dependencies, and 1 changes logic.
+  - This is the gap between "everything runs" and "nothing changed" that tests cannot close.
+- **The readings are not checked by a person.** The calibration sheet holds 20 blinded checks and has not been filled in yet.
+
+**Framework rule, re-scored** (`inject_rule.csv`):
+- Since most of the team's wrong edits were methods a framework calls by name, the framework-callback rule now also covers `http.server` handlers, `ast.NodeVisitor`, PyTorch and Lightning modules and hatchling build hooks (#139). On the final data, 14 of the team's 18 injected wrong edits are of that kind, so the rule stays on.
+- The runs above were made without it. Re-scoring all 210 injected runs (the hidden test is rerun wherever the rule moves an edit to the suggest lane) gives:
+
+| method | wrong of kept code edits (confirmed), as run → with the rule | traps removed | hidden changed | planted removed |
+|---|---|---|---|---|
+| team | 18 → 9 (12 → 7) | 0 → 0 | 0 → 0 | 170 → 170 |
+| no research squad | 27 → 20 (22 → 17) | 2 → 0 | 2 → 0 | 176 → 176 |
+| single agent | 63 → 47 (50 → 34) | 16 → 0 | 16 → 1 | 114 → 114 |
+| v1 | 48 → 37 (13 → 8) | 1 → 0 | 1 → 0 | 78 → 78 |
+
+The reported numbers stay as run. The rule moves edits in 38 of the 210 runs. The single agent's
+remaining hidden change is slop-guard, seed 1, where the hidden test still fails on the rest of
+that run's diff.
 
 **Real-project ablation** (`real_ablation.md`, `real_ablation_runs.csv`): the test of whether
-investigation helps on real projects. The team, the team without its research squad and the
-single agent clean the five case-study projects (this repository, slop-guard, Skill_Seekers,
-shotgun, Telegram-Snowball-Sampling) once each, in safe mode, at most 120 minutes. Lines are net
-lines removed by the final diffs. The LLM reviewer (independent model, blinded, 3 votes) judges
-the kept changes; its acceptance is LLM-judged. Wrong / debatable are the checked verdicts of the
-diff audit on the kept code edits (readings LLM-judged); the UI check is shotgun's.
+investigation helps on real projects.
+- **Setup:** the team, the team without its research squad and the single agent each clean the five case-study projects once (this repository, slop-guard, Skill_Seekers, shotgun, Telegram-Snowball-Sampling), in safe mode, for at most 120 minutes.
+- **Columns:**
+  - lines removed: net lines removed by the final diffs;
+  - reviewer acceptance: the LLM reviewer (an independent model, blinded, 3 votes) judges the kept changes, so its acceptance is LLM-judged;
+  - wrong and debatable: the diff audit's verdicts on the kept code edits;
+  - UI check: shotgun's.
 
-| method | verdicts | packages kept / rolled back | lines removed | LLM reviewer accepts kept changes | wrong / debatable of kept code edits | shotgun UI check | LLM requests (mean) | minutes (mean) |
-|---|---|---|---|---|---|---|---|---|
-| team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 / 0 of 14 | ok | 129.8 | 19.0 |
-| no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 / 0 of 20 | ok | 15.8 | 35.3 |
-| single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 18 / 14 of 65 | changed (`AttachmentBar`) | 83.2 | 47.1 |
+| method | verdicts | packages kept / rolled back | lines removed | LLM reviewer accepts kept changes (LLM-judged) | wrong of kept code edits (confirmed) | debatable (reading, LLM-judged) | shotgun UI check | LLM requests (mean) | minutes (mean) |
+|---|---|---|---|---|---|---|---|---|---|
+| team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 of 14 | 0 | ok | 129.8 | 19.0 |
+| no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 of 20 (3) | 0 | ok | 15.8 | 35.3 |
+| single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 17 of 65 (12) | 15 | changed (`AttachmentBar`) | 83.2 | 47.1 |
 
-- **On real projects the research squad buys safety, not yield.** Every kept code edit of the
-  team checked fine. Without the squad the team kept more at an eighth of the requests, but 4 of
-  its 20 kept code edits were wrong: it deleted this repository's documented
-  `exp_collect_v2.py`, shotgun's build hook (so the package no longer builds), and a Skill_Seekers
-  function the video pipeline imports, and merged a duplicate through an `src.`-prefixed import
-  that fails once the package is installed.
-- **The single agent removes the most and breaks the most**: 18 of 65 kept code edits wrong,
-  among them five core dependencies Skill_Seekers' `doctor` command imports by name, the Studio
-  messages that print its URL and build commands, and two shotgun widget methods Textual calls
-  by name (`compose`, `watch_state`), which the UI check caught.
-- No wrong edit failed a test or probe in its run: every run ended "everything runs" (slop-guard
-  with the team: nothing applied). One run per project and 14 to 65 edits per method make this a
-  small sample. The single agent's 120 minutes start after its test baseline (14 minutes on
-  shotgun), the team's at the start of the run.
+- **On real projects the research squad buys safety, not yield.**
+  - None of the team's 14 kept code edits is wrong in any tier.
+  - Without the squad, the team kept more at an eighth of the requests, but 4 of its 20 kept code edits are wrong. Three are confirmed by targeted tests:
+    - it deleted this repository's documented `exp_collect_v2.py`;
+    - it deleted a Skill_Seekers function the video pipeline imports;
+    - it merged a duplicate through an `src.`-prefixed import that fails once the package is installed.
+  - The fourth is by reading: it deleted shotgun's build hook, so the package no longer builds.
+- **The single agent removes the most and breaks the most:** 17 of 65 kept code edits are wrong.
+  - 12 are confirmed (10 by targeted tests, 2 by the UI check): the Studio messages that print its URL and build commands, two rewritten conditions, a pydantic validator and the command-palette hook in shotgun, and two shotgun widget methods Textual calls by name (`compose`, `watch_state`).
+  - 5 are by reading: four core dependencies that Skill_Seekers' `doctor` command imports by name, and shotgun's build hook.
+- **Caveats:**
+  - No wrong edit failed a test or probe in its run. Every run ended "everything runs", except slop-guard with the team ("nothing applied").
+  - One run per project and 14 to 65 kept code edits per method make this a small sample.
+  - The single agent's 120 minutes start after its test baseline (14 minutes on shotgun); the team's start at the beginning of the run.
 
 **Probe strength** (`probe_strength.csv`): v1's mutants and PatchDiff patches, checked by the
 tests and then the coverage-guided probes. On the 163 mutants and patches both versions checked,
@@ -458,8 +514,18 @@ code-level edits comes from the rest:
   project calls: there is nothing to run. `keep_public_api: auto` keeps public names in package
   modules in the suggest lane, and the framework rule keeps framework callbacks there; anything
   else relies on the judge.
-- **The framework rule knows five frameworks** (Textual, Django, Flask/FastAPI, Click/Typer,
-  pytest; `analysis/frameworks.py`). Callbacks of other frameworks look like dead code.
+- **The framework rule knows a fixed list** (Textual, Django, Flask/FastAPI, Click/Typer, pytest,
+  and since #139 `http.server`, `ast.NodeVisitor`, PyTorch, Lightning and hatchling;
+  `analysis/frameworks.py`). Callbacks of other frameworks, and classes a grader or plugin
+  loader finds by name, look like dead code.
+- **"Everything runs" is not "nothing changed".** No test, probe or hidden check caught any of
+  the wrong edits the diff audit found in the team's runs: code that only something outside the
+  tests reaches (a web handler, a build hook, a documented function) can go with every test
+  passing.
+- **Many audit verdicts are readings.** 59 of 147 wrong verdicts and every debatable one rest on
+  reading the code (LLM-judged, by the coding assistant that ran the evaluation), each wrong one
+  with the observed reason no test could run. The blinded calibration sheets (20 audit checks, 20
+  review items) have not been filled in by a person yet.
 - **Probes check only what the model thinks to call.** A target that needs files, the network
   or the clock gets no probe cases; direct-mode probes can't set up a framework (runner mode,
   the default in containers, can).

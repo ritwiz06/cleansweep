@@ -473,7 +473,10 @@ cleans the whole project; the score is what it removed of the planted slop and o
   at 106c952 (#128), in the frozen clone `../cleansweep-runs-v2c`. **Runtime:** the team, v1 and
   one-shot on seed 1 took 8 h 25 min, partly beside the answer-key and AIDev runs (v1 alone took
   138 min on CORAL); the ablations took 9 h 54 min for their 70 runs (CORAL about an hour each).
-  **Model:** `qwen36-35b-a3b`.
+  Seeds 2 and 3 and the reruns ran 2026-11-02 to 11-04, two or three sweeps at a time. Three
+  laptop sleeps spoiled runs whose wall clock ran through them; each was rerun, and the spoiled
+  ones are kept in `results/raw/inject_superseded/sleep_*` and not reported. **Model:**
+  `qwen36-35b-a3b`.
 
 ### v2: real-project ablation
 
@@ -620,6 +623,9 @@ hooks (#139). The finished runs were made without it; this measures what it woul
   `results/summary/v2/inject_rule.csv` (per method, as run and with the rule: edits moved,
   planted slop removed, traps removed, hidden tests changed, wrong edits in all tiers and
   confirmed). The numbers as run stay the reported ones; "with rule" is shown next to them.
+- **Code version:** #139's rule and #140's script, run from the results branch at 3fda062
+  (resumed at 6859ed7) on all 210 injected runs of seeds 1–3, Docker. The rule moves edits in 38
+  of them. **Runtime:** 26 minutes.
 
 ### v2: watch mode
 

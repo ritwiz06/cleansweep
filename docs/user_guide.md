@@ -210,6 +210,8 @@ per method in two tiers, confirmed and reading, and by kind), probe strength, th
 scenarios, the LLM reviewer's acceptance and watch. Anything an LLM judged carries an
 "LLM-judged" label. A table that is not built yet says so.
 
+![Evaluation: the diff audit tab, wrong edits per method by tier and by kind](images/studio/evaluation.png)
+
 **Dashboard (v1)** has the old Streamlit dashboard's pages, with the same data. **Saved
 reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: its
 numbers, slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined
