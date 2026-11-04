@@ -203,6 +203,13 @@ notes) and every figure.
 
 ![Results: the v1 main table](images/studio/results.png)
 
+**Evaluation** charts the v2 results from the same committed tables, one tab each: the injection
+benchmark (each seed and all seeds pooled, with 95% CIs, and the paired tests), the ablations
+(with their LLM requests and minutes) and the real-project ablation, the diff audit (wrong edits
+per method in two tiers, confirmed and reading, and by kind), probe strength, the Manager
+scenarios, the LLM reviewer's acceptance and watch. Anything an LLM judged carries an
+"LLM-judged" label. A table that is not built yet says so.
+
 **Dashboard (v1)** has the old Streamlit dashboard's pages, with the same data. **Saved
 reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: its
 numbers, slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined

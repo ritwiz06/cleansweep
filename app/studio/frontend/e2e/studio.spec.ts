@@ -155,6 +155,24 @@ test("bad launch requests show the server's reason", async ({ page }) => {
   await expect(page.getByRole("alert")).toContainText("absolute path");
 });
 
+test("evaluation: every tab loads, with the tiers and the LLM-judged labels", async ({ page }) => {
+  await open(page, "evaluation");
+  await expect(page.getByRole("heading", { name: "Evaluation" })).toBeVisible();
+  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch"]) {
+    await page.getByRole("tab", { name: tab }).click();
+    await expect(page.locator(".state.loading")).toHaveCount(0);
+    await expect(page.locator(".state.error")).toHaveCount(0);
+  }
+  await page.getByRole("tab", { name: "Probe strength" }).click();
+  await expect(page.getByLabel("probe_strength.csv")).toContainText("swebench_t1");
+  await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toBeVisible();
+  await page.getByRole("tab", { name: "LLM reviewer" }).click();
+  await expect(page.locator("main")).toContainText("LLM-judged");
+  await page.getByRole("tab", { name: "Diff audit" }).click();
+  await expect(page.locator("main")).toContainText("reading tier: LLM-judged");
+  await expect(page).toHaveURL(/tab=audit/);
+});
+
 test("every screen renders in both themes at 1280x720", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // finished charts in the screenshots
   const routes = [
@@ -165,6 +183,9 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "cases?name=proj_a",
     "watch?root=results&path=raw/watch_a",
     "results",
+    "evaluation",
+    "evaluation?tab=audit",
+    "evaluation?tab=ablations",
     "sweeps",
     `replay?root=replay&path=${V1}`,
     `reports?root=replay&path=${V1}/report.json`,
