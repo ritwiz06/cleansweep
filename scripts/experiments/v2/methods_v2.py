@@ -4,6 +4,8 @@ agentic                      the team (LLM-guided Manager)
 agentic-<ablation>           no_research, broadcast, inline_artifacts, no_lessons,
                              no_coverage, single_agent
 agentic-rules                the rule-based Manager
+agentic-adaptive             the team with adaptive investigation: only uncertain items go to an
+                             Investigator, the rest are decided by rules (core.agents.investigate)
 cleansweep-gatekeeper, cleansweep-advisory, guard_tests_only, tools_only, one_shot_llm
                              v1's methods, as scripts/experiments/v1/exp_swebench.py runs them
 """
@@ -25,7 +27,7 @@ V1 = {
     "tools_only": ("tools_only", None),
     "one_shot_llm": ("one_shot_llm", None),
 }
-LABELS = ["agentic", *(f"agentic-{a}" for a in ABLATIONS), "agentic-rules", *V1]
+LABELS = ["agentic", *(f"agentic-{a}" for a in ABLATIONS), "agentic-rules", "agentic-adaptive", *V1]
 
 
 def resolve(label: str) -> tuple[str, str | None, dict]:
@@ -37,6 +39,8 @@ def resolve(label: str) -> tuple[str, str | None, dict]:
         return "agentic", None, {}
     if label == "agentic-rules":
         return "agentic", None, {"manager": "rules"}
+    if label == "agentic-adaptive":
+        return "agentic", None, {"investigate": "adaptive"}
     ablation = label.removeprefix("agentic-")
     if ablation not in ABLATIONS:
         raise ValueError(f"unknown method {label!r}; use one of {', '.join(LABELS)}")

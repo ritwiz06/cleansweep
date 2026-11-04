@@ -141,6 +141,7 @@ def run_team(rt) -> None:
             "repo_id": rt.ws.repo_id,
             "mode": rt.mode,
             "ablation": rt.ablation,
+            "investigate": rt.acfg.get("investigate", "all"),
             "dry_run": rt.dry_run,
             "model": getattr(rt.llm if rt.llm is not None else rt.manager_llm, "model", None),
             "budget": rt.run_budget.as_dict(),

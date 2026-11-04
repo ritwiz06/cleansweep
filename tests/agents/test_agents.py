@@ -90,6 +90,27 @@ def test_investigator_rules_and_fixed_verdicts(rt):
     assert sum(m.type == "verdict" for m in rt.board.messages) == len(rt.items)
 
 
+def test_adaptive_investigation_asks_only_about_uncertain_items(rt):
+    rt.acfg["investigate"] = "adaptive"
+    llm = ScriptedLLM(default=final({"decision": "suggest", "reason": "x", "evidence": []}))
+    _llm_rt(rt, llm)
+    auditor.run(rt)
+    why = {i.unit.key: investigator.uncertain(rt, i) for i in rt.items.values()}
+    assert why["shop/core.py::legacy_alpha"] == "a public name in a package module"
+    investigator.run(rt)
+    by = {rt.items[k].category: v["stop"] for k, v in rt.verdicts.items()}
+    assert by["unused_import"] == "rules" and by["dead_code"] != "rules"
+    assert any(e["payload"].get("rule") == "adaptive" for e in rt.log.events)
+
+
+def test_investigate_none_decides_everything_by_rules(rt):
+    rt.acfg["investigate"] = "none"
+    _llm_rt(rt, ScriptedLLM(default=final({"decision": "safe", "reason": "x", "evidence": []})))
+    auditor.run(rt)
+    investigator.run(rt)
+    assert {v["stop"] for v in rt.verdicts.values()} <= {"rules", "rule"}
+
+
 def test_planner_packages_and_blueprint(rt):
     _ready(rt)
     planner.run(rt)

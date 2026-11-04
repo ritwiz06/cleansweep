@@ -29,6 +29,7 @@ ABLATIONS = {
     "single_agent",
 }
 MODES = {"safe", "thorough"}
+INVESTIGATE = {"all", "adaptive", "none"}
 
 
 @dataclass
@@ -81,6 +82,8 @@ class Runtime:
         self.ablation = self.acfg.get("ablation")
         if self.ablation and self.ablation not in ABLATIONS:
             raise ValueError(f"unknown ablation {self.ablation!r}")
+        if self.acfg.get("investigate", "all") not in INVESTIGATE:
+            raise ValueError("investigate must be all, adaptive or none")
         self.ws = ws
         self.out = Path(out_dir).resolve()  # commands run in the workspace: never relative
         self.out.mkdir(parents=True, exist_ok=True)

@@ -463,6 +463,7 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 | `no_coverage` | the Validator runs one probe round, as v1 does |
 | `single_agent` | one ReAct agent (`agents/solo.py`, agent `solo`) with every tool and one context, under the same total budget: it lists the detectors' candidates, investigates with the Investigator's tools, applies edits, runs the tests and the coverage-guided probes, and keeps or reverts each edit itself; no Manager, phases, board, packages or lessons. The baseline and the final suite are measured for the report, not enforced |
 | `core.agents.manager: rules` | the rule-based Manager: no LLM decisions at phase boundaries (a separate setting, run as an ablation) |
+| `core.agents.investigate: adaptive` | adaptive investigation (a separate setting; `all` is the default, `none` decides every candidate by rules): only the uncertain candidates go to an Investigator, namely near-duplicates and wrappers, dependency removals, framework-convention methods, units the graph says may be used dynamically, and public names in package modules. The rest are decided by the Investigator's rules, as in `no_research`; the Explorer still writes its brief. Experiment label `agentic-adaptive` |
 
 ## 17. Contract changes (all additive)
 
