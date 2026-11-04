@@ -1,0 +1,10 @@
+method,runs,moved,slop_removed_as_run,slop_removed_with_rule,traps_removed_as_run,traps_removed_with_rule,hidden_changed_as_run,hidden_changed_with_rule,wrong_as_run,wrong_with_rule,wrong_confirmed_as_run,wrong_confirmed_with_rule
+agentic,30,12,170,170,0,0,0,0,18,9,12,7
+agentic-broadcast,20,5,113,113,0,0,0,0,10,6,8,5
+agentic-inline_artifacts,20,3,112,112,0,0,0,0,7,5,6,4
+agentic-no_coverage,20,5,113,113,0,0,0,0,9,5,7,4
+agentic-no_lessons,20,3,111,111,0,0,0,0,10,8,7,6
+agentic-no_research,30,10,176,176,2,0,2,0,27,20,22,17
+agentic-rules,20,8,113,113,0,0,0,0,12,6,8,5
+agentic-single_agent,30,25,114,114,16,0,16,1,63,47,50,34
+cleansweep,20,15,78,78,1,0,1,0,48,37,13,8
