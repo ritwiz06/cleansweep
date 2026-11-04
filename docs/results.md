@@ -552,7 +552,7 @@ McNemar on hidden changes and on removing a trap):
 | v1 | 20 | 113 vs 78 | < 0.0001 | 0 / 1 | 1.0 |
 | one-shot LLM | 20 | 113 vs 107 | 0.55 | 0 / 19 | < 0.0001 |
 
-- **Traps:** every trap that the single agent, the no research squad and v1 removed is the framework callback, `visit_Name`, which `ast.NodeVisitor` calls by name. None of them merged the near-duplicate. The one-shot LLM removed both traps on 18 of 20 projects.
+- **Traps:** every trap that the single agent, the no research squad and v1 removed is the framework callback, `visit_Name`, which `ast.NodeVisitor` calls by name. None of them merged the near-duplicate. The one-shot LLM removed both traps in 18 of 20 runs.
 - **What the team misses:**
   - No method that works from v1's detectors removed a planted exact duplicate. The one-shot LLM merged 19 of 20.
   - Apart from the duplicates, the team missed 4 unused imports, 5 unused dependencies and 1 dead function.
@@ -650,11 +650,16 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 
 - **Kinds** (`diff_audit_types.csv`):
   - Of the team's 18 injected wrong edits:
-    - 14 are dynamic handlers or stubs: code a framework, grader or loader calls by name, such as CORAL's eval-viewer `do_GET` and `do_POST`, torch and Lightning `forward` methods, and the `KernelBuilder` class of a published kernel demo;
+    - 14 are dynamic handlers or stubs: code a framework, grader or loader calls by name.
+      - 9 are methods: CORAL's eval-viewer `do_GET` (2) and `do_POST` (3), and torch and Lightning `forward` methods (4).
+      - 5 are classes: the `KernelBuilder` class of a published kernel demo (3) and dropkit's hatchling build hook class (2);
     - 3 are dependency removals;
     - 1 changes logic.
   - The single agent's 63 spread more widely: dynamic handlers or stubs 34, public names 10, changed logic 8, dependencies 8, deleted files 3.
 - **What the checks missed:** none of the team's 18 failed a test, probe or hidden check in its run. This is the gap between "everything runs" and "nothing changed".
+- **What the audit does not check:**
+  - Only edits the auditor flagged are checked. The 1,225 of 1,790 audited edits it voted "no" are not, so the wrong counts are lower bounds.
+  - On the demo app it voted "no" on all 11 of the single agent's deletions of command functions (`bookshelf/commands.py`), which the app dispatches through `getattr`. Those runs failed visible tests (Ablations above), but the audit counts these edits as neither wrong nor checked.
 - **Debatable:**
   - 252 edits remove code reachable only from outside the project.
   - 158 of them are in CORAL's task seed folders, mostly `seed/solution.py` stubs whose only method raises `NotImplementedError`.
@@ -668,7 +673,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 
 `inject_rule.csv` reports each method as run and with the rule.
 
-- **Why the rule was extended:** most of the team's wrong edits were methods a framework calls by name. So the framework-callback rule now also covers:
+- **Why the rule was extended:** most of the team's wrong edits were code a framework calls by name. So the framework-callback rule now also covers:
   - `http.server` handlers;
   - `ast.NodeVisitor`;
   - PyTorch and Lightning modules;
@@ -692,6 +697,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 | v1 | 20 | 15 | 78 → 78 | 1 → 0 | 1 → 0 | 48 → 37 (13 → 8) |
 
 - **Effect:** the rule moves edits in 38 of the 210 runs and costs no planted item.
+- **What it moves for the team:** the 9 methods. The rule marks methods (a hatchling hook's `initialize`, for example), not a whole class. So the 5 class deletions stay, along with the 3 jinja2 removals and the dropkit logic change: the `KernelBuilder` demo and dropkit's build hook class are deleted whole.
 - **The remaining hidden change:** with the rule, the single agent's one is slop-guard, seed 1, where the hidden test still fails on the rest of that run's diff.
 - **Reporting:** the reported numbers everywhere else stay as run.
 
@@ -702,7 +708,8 @@ in `real_ablation_runs.csv`).
 
 - **Setup:**
   - The team, the team without its research squad and the single agent each clean the five case-study projects once.
-  - Safe mode, at most 120 minutes; Skill_Seekers gets 300 LLM requests, as in its case study.
+  - Safe mode, a 120-minute budget each; Skill_Seekers gets 300 LLM requests, as in its case study.
+  - The single agent's budget starts after its test baseline, and its shotgun run took 144 minutes in all.
   - Code at 106c952.
 - **Lines removed:** net lines (deleted minus added) in each final diff, counted the same way for the three.
 - **Reviewer:** the LLM reviewer (an independent model, blinded, 3 votes) judges each kept change. Its acceptance is LLM-judged.

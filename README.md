@@ -21,8 +21,9 @@ tools changed it in 16. A blinded audit of every kept code edit found 18 of the 
 on that benchmark wrong (12 confirmed by targeted tests, the rest by reading, LLM-judged) against
 the single agent's 63 of 489 (50 confirmed); on five real projects none of the team's 14 kept
 code edits was wrong (all tiers), against the single agent's 17 of 65 (12 confirmed). No test
-caught the team's 18: most are methods a framework calls by name, which the extended framework
-rule now keeps in the suggest lane (18 become 9 when the runs are re-scored with it). Details
+caught the team's 18: 14 are code a framework or grader calls by name, and the extended framework
+rule now keeps the 9 methods among them in the suggest lane (18 become 9 when the runs are
+re-scored with it). Details
 below and in [docs/results.md](docs/results.md).
 
 ## Quick start
@@ -298,7 +299,7 @@ removed per kind:
   - **Team vs the no research squad:** 170 against 176 (p = 0.063); 0 against 2 hidden changes (p = 0.5).
   - The team's share per seed is 0.81, 0.80 and 0.81 (`injection_seeds.md`, with 95% CIs).
 - Every trap the single agent, the no research squad and v1 removed is the framework callback (`visit_Name`, which `ast.NodeVisitor` calls by name). None of them merged the near-duplicate.
-- The one-shot LLM removes most of the slop, including the exact duplicates that no detector-based method touches. It also removes 36 of the 40 traps and changes hidden behavior on 19 of 20 projects.
+- The one-shot LLM removes most of the slop, including the exact duplicates that no detector-based method touches. It also removes 36 of the 40 traps and changes hidden behavior in 19 of 20 runs.
 - v1 has no detector for debug prints or commented-out code.
 - Four projects are left out, with the reasons in `EXCLUDED` (`exp_inject.py`):
   - imgviz: its hidden test failed before any cleanup;
@@ -351,13 +352,13 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 | AIDev (6 repositories) | 1 of 10 (1) | | | 8 of 53 (5) |
 
 - **No check caught the team's 18 injected wrong edits**: no test, probe or hidden test failed on them.
-  - 14 are code that a framework or grader calls by name, for example CORAL's eval-viewer `do_GET` and `do_POST`, torch `forward` methods, and the `KernelBuilder` class of a published kernel demo.
+  - 14 are code that a framework or grader calls by name. 9 are methods (CORAL's eval-viewer `do_GET` and `do_POST`, torch `forward` methods), and 5 are classes (the `KernelBuilder` class of a published kernel demo, dropkit's hatchling build hook).
   - 3 remove dependencies, and 1 changes logic.
   - This is the gap between "everything runs" and "nothing changed" that tests cannot close.
 - **The readings are not checked by a person.** The calibration sheet holds 20 blinded checks and has not been filled in yet.
 
 **Framework rule, re-scored** (`inject_rule.csv`):
-- Since most of the team's wrong edits were methods a framework calls by name, the framework-callback rule now also covers `http.server` handlers, `ast.NodeVisitor`, PyTorch and Lightning modules and hatchling build hooks (#139). On the final data, 14 of the team's 18 injected wrong edits are of that kind, so the rule stays on.
+- Since most of the team's wrong edits were code a framework calls by name, the framework-callback rule now also covers `http.server` handlers, `ast.NodeVisitor`, PyTorch and Lightning modules and hatchling build hooks (#139). On the final data, 14 of the team's 18 injected wrong edits are of that kind, so the rule stays on.
 - The runs above were made without it. Re-scoring all 210 injected runs (the hidden test is rerun wherever the rule moves an edit to the suggest lane) gives:
 
 | method | wrong of kept code edits (confirmed), as run → with the rule | traps removed | hidden changed | planted removed |
@@ -367,13 +368,13 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 | single agent | 63 → 47 (50 → 34) | 16 → 0 | 16 → 1 | 114 → 114 |
 | v1 | 48 → 37 (13 → 8) | 1 → 0 | 1 → 0 | 78 → 78 |
 
-The reported numbers stay as run. The rule moves edits in 38 of the 210 runs. The single agent's
+The reported numbers stay as run. The rule moves edits in 38 of the 210 runs. For the team it moves the 9 methods. It does not move the 5 classes a grader or build backend loads by name, the 3 dependency removals or the logic change, because the rule marks methods, not classes. The single agent's
 remaining hidden change is slop-guard, seed 1, where the hidden test still fails on the rest of
 that run's diff.
 
 **Real-project ablation** (`real_ablation.md`, `real_ablation_runs.csv`): the test of whether
 investigation helps on real projects.
-- **Setup:** the team, the team without its research squad and the single agent each clean the five case-study projects once (this repository, slop-guard, Skill_Seekers, shotgun, Telegram-Snowball-Sampling), in safe mode, for at most 120 minutes.
+- **Setup:** the team, the team without its research squad and the single agent each clean the five case-study projects once (this repository, slop-guard, Skill_Seekers, shotgun, Telegram-Snowball-Sampling), in safe mode, with a 120-minute budget. The single agent's budget starts after its test baseline, and its shotgun run took 144 minutes in all.
 - **Columns:**
   - lines removed: net lines removed by the final diffs;
   - reviewer acceptance: the LLM reviewer (an independent model, blinded, 3 votes) judges the kept changes, so its acceptance is LLM-judged;
@@ -526,6 +527,10 @@ code-level edits comes from the rest:
   reading the code (LLM-judged, by the coding assistant that ran the evaluation), each wrong one
   with the observed reason no test could run. The blinded calibration sheets (20 audit checks, 20
   review items) have not been filled in by a person yet.
+- **The audit checks only what its model flags.** Edits the auditor voted "no" (1,225 of 1,790)
+  were not checked, so the wrong counts are lower bounds. On the demo app it passed all 11 of the
+  single agent's deletions of command functions the app dispatches through `getattr`, though
+  those runs failed visible tests.
 - **Probes check only what the model thinks to call.** A target that needs files, the network
   or the clock gets no probe cases; direct-mode probes can't set up a framework (runner mode,
   the default in containers, can).
