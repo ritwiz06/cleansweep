@@ -44,7 +44,7 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
 | [v2 detection](#v2-detection-by-category-on-aidev) | `exp_detection.py` | PR #112 (merged as c003ca0) | `detection.csv` |
 | [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568; 106c952 (plant checks, seeds 2 and 3) | `injection.csv`, `injection_summary.csv`, `injection_seeds`, `injection_paired`, `ablations` |
 | [v2 real-project ablation](#v2-real-project-ablation) | `exp_case_study.py --ablation`, `exp_real_ablation.py` | 106c952 (#128) | `real_ablation_runs.csv`, `real_ablation` |
-| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv` |
+| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
 | [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
 ## Experiments
@@ -526,15 +526,47 @@ evidence. The auditor's votes are LLM-judged, and so are the checks done by read
 - **Checks:** `rule: injection key` (an injected edit that removes only planted lines: fine for
   planted slop, wrong for a trap), `rule: agent patch` (deleting a file the SWE-bench agent's
   patch created), `reading (LLM-judged)` (the code around the edit and every use of the removed
-  names), `targeted test` (a short script run on the code before and after), `UI check`
-  (shotgun). Verdicts: wrong (breaks a caller, an import, a registration by string, a test or
-  harness, a documented or opt-in feature, a result, or a dependency something imports; every
-  removed trap), debatable (a public name with no caller and not documented or exported, or a
-  status message a user might read; reported apart), fine (the rest, with the evidence).
+  names), `targeted test` (a short test run on the code before and after the edit), `UI check`
+  (shotgun).
+- **Rubric,** applied the same way to every method (the method is never part of a check):
+  - *wrong:* the edit changes behavior that something in the project or its users can actually
+    trigger: a caller in the project (direct, by a string, through a decorator registration, or
+    a framework callback the project's own entry points trigger, such as a web handler's
+    `do_GET`, a Textual `compose`, a pydantic validator or a hatch build hook); the project's
+    tests, scripts or examples; a command, option or page users reach through the documented
+    interface, or a call the docs or the project's own messages tell users to make; a dependency
+    something imports after a fresh install; a message users depend on (documented, or the only
+    report of a failure or of where to go); and every removed trap of the injected set.
+  - *debatable:* the edit removes code reachable only from outside the project (a public name
+    nothing in the project calls or documents; a handler or stub a framework or grader might
+    call but nothing in the project triggers, such as a placeholder whose only method raises
+    `NotImplementedError`), or its intent is unclear (a progress or debug message, a pin or
+    floor that only changes what a fresh install resolves). Reported apart, never as wrong.
+  - *fine:* no observable change (unused private code, an import of a module without side
+    effects, a dependency nothing imports, planted slop).
+- **Tiers:** every verdict says how it was confirmed: *confirmed* (a targeted test, the UI check,
+  or the injection key's or agent patch's rule) or *reading* (LLM-judged). Every safety claim
+  names its tier.
+- **Kinds** of wrong and debatable edits: dynamic handler or stub (code reached by name at run
+  time: a framework callback, a validator registered by decorator, a class registered by a
+  string, a build hook, a seed or stub a grader loads), public name (reached by a direct
+  reference, or by nothing), changed logic (the code stays but computes something else: a merge
+  of near-duplicates that differ, a rewritten condition, an import of another function), deleted
+  file (a script, example or data file something runs or loads), dependency, other (messages, a
+  debugger call).
+- **Rubric re-applied (2026-11-03):** the rubric above was written down after the first 335
+  checks and every earlier verdict was read against it. The changes (edit, old verdict, new
+  verdict, reason) are in `diff_audit_rubric_changes.csv`.
+- **Calibration:** `... sheet` writes 20 checks drawn at random (seed 572) as the auditor saw
+  them, blinded, with an empty verdict column (by default `.notes/report/
+  audit_calibration_sheet.md`, kept local); once a person fills it in, `... kappa` gives Cohen's
+  kappa against the recorded verdicts. Until then the readings are not checked by a human.
 - **Outputs:** `results/raw/diff_audit/audit.json` (every vote); `diff_audit_checks.csv` (edit,
-  verdict, evidence, checked_by); `diff_audit.csv` (per method and target set: kept code edits,
-  the auditor's yes / unsure / no, confirmed wrong edits with a rate and a 95% bootstrap CI over
-  runs, debatable edits, and how many wrong edits every check missed).
+  verdict, evidence, checked_by, kind); `diff_audit.csv` (per method and target set: kept code
+  edits, the auditor's yes / unsure / no, wrong edits in all tiers, confirmed and by reading,
+  debatable and fine edits, the wrong rate of all tiers and of the confirmed tier with 95%
+  bootstrap CIs over runs, and how many wrong edits every check missed);
+  `diff_audit_types.csv` (the wrong and debatable edits of each method by kind).
 - **Code version:** the audit from #129 with the fixes of #132 and #133. **Model:** `glm-5-3`.
 
 ### v2: watch mode
@@ -702,8 +734,9 @@ alone:
 | `v2/eval_runs.csv` | `exp_collect_v2.py` | `results/raw/v2_eval/` reports, v1's archived reports |
 | `v2/injection.csv` | `exp_inject.py table` | `results/raw/inject/` reports |
 | `v2/real_ablation_runs.csv` | `exp_real_ablation.py collect` | the ablation records, `llm_review.json`, `ui_check.json`, `diff_audit_checks.csv` |
-| `v2/diff_audit.csv` | `exp_diff_audit.py table` | the raw reports, `results/raw/diff_audit/audit.json`, `diff_audit_checks.csv` |
+| `v2/diff_audit.csv`, `v2/diff_audit_types.csv` | `exp_diff_audit.py table` | the raw reports, `results/raw/diff_audit/audit.json`, `diff_audit_checks.csv` |
 | `v2/diff_audit_checks.csv` | by hand (`exp_diff_audit.py auto` for the rule checks) | the flagged edits, targeted tests |
+| `v2/diff_audit_rubric_changes.csv` | by hand, once | `diff_audit_checks.csv` before the rubric was written down |
 | `v2/probe_strength.csv`, `v2/probe_strength_vs_v1.csv` | `exp_probe_strength.py` (`--compare`) | `results/raw/probe_strength/` (Docker, probe requests), `results/raw/guard_strength/` |
 | `v2/manager_scenarios.csv` | `exp_manager_scenarios.py` | the LLM |
 | `v2/llm_review_acceptance.csv`, `v2/mining_llm_precision.csv` | `exp_llm_review.py` | case-study review sheets, the reviewer model |
