@@ -18,8 +18,8 @@ Writes ui_check.json beside the run's record.
 collect: results/summary/v2/real_ablation_runs.csv, one row per run: verdict, packages kept and
 rolled back, lines removed (deleted minus added) and files deleted in its final diff, the LLM
 reviewer's accept / reject / unsure on the kept changes, the diff audit's kept code edits with the
-confirmed wrong and debatable ones (diff_audit_checks.csv), the UI check, LLM requests, tokens and
-minutes.
+wrong ones (all tiers, and those confirmed by a targeted test, the UI check or a rule) and the
+debatable ones (diff_audit_checks.csv), the UI check, LLM requests, tokens and minutes.
 table: results/summary/v2/real_ablation.{csv,md}, per method, from real_ablation_runs.csv only
 (offline; reproduce_tables.sh runs it).
 """
@@ -59,6 +59,7 @@ FIELDS = [
     "reviewer_unsure",
     "code_edits",
     "wrong",
+    "wrong_confirmed",
     "debatable",
     "ui_check",
     "llm_requests",
@@ -66,6 +67,7 @@ FIELDS = [
     "completion_tokens",
     "minutes",
 ]
+AUDIT = ("code_edits", "wrong", "wrong_confirmed", "debatable")
 
 
 def runs() -> list[Path]:
@@ -137,20 +139,23 @@ def _reviewer(run: Path) -> dict:
 
 
 def _audit() -> dict[str, dict]:
-    """Per run: kept code edits, and those checked wrong or debatable."""
+    """Per run: kept code edits, and those checked wrong (all tiers, and confirmed) or
+    debatable."""
     import exp_diff_audit
 
     _, rows = exp_diff_audit.collect()
-    verdicts = {e: c["verdict"] for e, c in exp_diff_audit.checks().items()}
+    known = exp_diff_audit.checks()
     out: dict[str, dict] = {}
     for row in rows:
         if row["source"] != "real-project ablation":
             continue
-        run = out.setdefault(row["run"], {"code_edits": 0, "wrong": 0, "debatable": 0})
+        run = out.setdefault(row["run"], dict.fromkeys(AUDIT, 0))
         run["code_edits"] += 1
-        verdict = verdicts.get(row["edit"])
-        if verdict in ("wrong", "debatable"):
-            run[verdict] += 1
+        check = known.get(row["edit"], {})
+        if check.get("verdict") in ("wrong", "debatable"):
+            run[check["verdict"]] += 1
+        if check.get("verdict") == "wrong" and exp_diff_audit.tier(check) == "confirmed":
+            run["wrong_confirmed"] += 1
     return out
 
 
@@ -201,7 +206,7 @@ def collect() -> Path:
                     "reviewer_unsure": "",
                 },
                 **_reviewer(run),
-                **audit.get(run.name, {"code_edits": 0, "wrong": 0, "debatable": 0}),
+                **audit.get(run.name, dict.fromkeys(AUDIT, 0)),
                 "ui_check": _ui_text(run),
                 "llm_requests": s.get("llm_requests", 0),
                 "prompt_tokens": s.get("prompt_tokens", 0),
@@ -218,12 +223,12 @@ def collect() -> Path:
 
 
 def _sum(rows: list[dict], key: str) -> int:
-    return sum(int(r[key] or 0) for r in rows)
+    return sum(int(r.get(key) or 0) for r in rows)  # a column added later reads as 0 in older rows
 
 
 def method_table(rows: list[dict]) -> list[dict]:
-    """Per method: verdicts, packages, the LLM reviewer's acceptance of kept changes, confirmed
-    wrong edits, the UI check and cost."""
+    """Per method: verdicts, packages, the LLM reviewer's acceptance of kept changes, wrong edits
+    in two tiers and debatable ones, the UI check and cost."""
     out = []
     for method in METHODS:
         mine = [r for r in rows if r["method"] == method]
@@ -244,10 +249,11 @@ def method_table(rows: list[dict]) -> list[dict]:
                 "lines removed": _sum(mine, "lines_removed"),
                 "LLM reviewer accepts kept changes (LLM-judged)": f"{_sum(mine, 'reviewer_accept')}"
                 f"/{decided} ({_sum(mine, 'reviewer_unsure')} unsure)",
-                "confirmed wrong / debatable of kept code edits (LLM-judged reading)": (
-                    f"{_sum(mine, 'wrong')} / {_sum(mine, 'debatable')} of "
-                    f"{_sum(mine, 'code_edits')}"
+                "wrong of kept code edits (confirmed by a test, check or rule)": (
+                    f"{_sum(mine, 'wrong')} of {_sum(mine, 'code_edits')} "
+                    f"({_sum(mine, 'wrong_confirmed')})"
                 ),
+                "debatable (LLM-judged reading)": _sum(mine, "debatable"),
                 "UI check (shotgun)": ui_rows[0] if ui_rows else "",
                 "LLM requests (mean)": round(_sum(mine, "llm_requests") / len(mine), 1),
                 "minutes (mean)": round(sum(float(r["minutes"]) for r in mine) / len(mine), 1),

@@ -43,6 +43,7 @@ def test_the_method_table_sums_runs_and_labels_llm_judged_columns():
             reviewer_unsure=1,
             code_edits=7,
             wrong=2,
+            wrong_confirmed=1,
             debatable=1,
             llm_requests=61,
             minutes=2.8,
@@ -52,9 +53,8 @@ def test_the_method_table_sums_runs_and_labels_llm_judged_columns():
     assert team["verdicts"] == "everything runs 1; nothing applied 1"
     assert team["LLM requests (mean)"] == 57.5 and team["projects"] == 2
     assert single["LLM reviewer accepts kept changes (LLM-judged)"] == "4/6 (1 unsure)"
-    assert single["confirmed wrong / debatable of kept code edits (LLM-judged reading)"] == (
-        "2 / 1 of 7"
-    )
+    assert single["wrong of kept code edits (confirmed by a test, check or rule)"] == "2 of 7 (1)"
+    assert single["debatable (LLM-judged reading)"] == 1
 
 
 def test_reviewer_counts_only_the_kept_changes(tmp_path):
