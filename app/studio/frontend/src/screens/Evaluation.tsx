@@ -164,7 +164,7 @@ function Ablations() {
     <>
       <Card title="Real projects: the team, no research squad, a single agent">
         <Loaded name="real_ablation.csv">{(t) => <DataTable table={t} label="real_ablation.csv" />}</Loaded>
-        <p className="muted">The LLM reviewer's acceptance and the diff audit's readings in this table are LLM-judged; the Diff audit tab splits wrong edits into confirmed and reading.</p>
+        <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged. The table scrolls sideways for the UI check, requests and minutes.</p>
       </Card>
       <Card title="Ablations on the answer keys, SWE-bench, AIDev and the injected set">
         <Loaded name="ablations.csv">{(t) => <AblationCost rows={records(t)} />}</Loaded>
