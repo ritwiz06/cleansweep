@@ -45,6 +45,7 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
 | [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568; 106c952 (plant checks, seeds 2 and 3) | `injection.csv`, `injection_summary.csv`, `injection_seeds`, `injection_paired`, `ablations` |
 | [v2 real-project ablation](#v2-real-project-ablation) | `exp_case_study.py --ablation`, `exp_real_ablation.py` | 106c952 (#128) | `real_ablation_runs.csv`, `real_ablation` |
 | [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py`, `exp_audit_confirm.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
+| [v2 framework rule re-scored](#v2-the-extended-framework-rule-re-scored) | `exp_rule_rescore.py` | #139 and later | `inject_rule.csv` |
 | [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
 ## Experiments
@@ -584,6 +585,27 @@ evidence. The auditor's votes are LLM-judged, and so are the checks done by read
   `diff_audit_types.csv` (the wrong and debatable edits of each method by kind).
 - **Code version:** the audit from #129 with the fixes of #132 and #133. **Model:** `glm-5-3`.
 
+### v2: the extended framework rule, re-scored
+
+The diff audit found that removed dynamically called methods were most of the team's wrong edits
+on the injected set, so the framework-callback rule now also covers the standard library's
+`http.server` handlers and `ast.NodeVisitor`, PyTorch and Lightning modules and hatchling build
+hooks (#139). The finished runs were made without it; this measures what it would have changed.
+
+- **Run:** `python scripts/experiments/v2/exp_rule_rescore.py moved` (no Docker), `... run`,
+  `... table`.
+- **Method:** for every injected run of a method that plans with `build_plan` (v1, the team and
+  its ablations, the single agent; not the one-shot baseline), the kept dead-code and duplicate
+  edits on methods the rule now marks as framework callbacks, with the code graph of the run's
+  starting commit. Those edits would have gone to the suggest lane. For a run where the rule
+  moves any, the run's other kept edits are applied in order to the starting commit, the plants
+  are scored and the hidden test runs on that diff in a fresh workspace, as `exp_inject.py`
+  does; the diff audit's verdicts carry over to the edits that stay.
+- **Outputs:** `results/raw/inject_rule/<project>-s<seed>/<method>.json`;
+  `results/summary/v2/inject_rule.csv` (per method, as run and with the rule: edits moved,
+  planted slop removed, traps removed, hidden tests changed, wrong edits in all tiers and
+  confirmed). The numbers as run stay the reported ones; "with rule" is shown next to them.
+
 ### v2: watch mode
 
 - **Run:** `python scripts/experiments/v2/exp_watch.py demo [--no-llm]` and
@@ -752,6 +774,7 @@ alone:
 | `v2/diff_audit.csv`, `v2/diff_audit_types.csv` | `exp_diff_audit.py table` | the raw reports, `results/raw/diff_audit/audit.json`, `diff_audit_checks.csv` |
 | `v2/diff_audit_checks.csv` | by hand (`exp_diff_audit.py auto` for the rule checks) | the flagged edits, targeted tests |
 | `v2/diff_audit_rubric_changes.csv` | by hand, once | `diff_audit_checks.csv` before the rubric was written down |
+| `v2/inject_rule.csv` | `exp_rule_rescore.py table` | `results/raw/inject_rule/`, the injected reports, `diff_audit_checks.csv` |
 | `v2/probe_strength.csv`, `v2/probe_strength_vs_v1.csv` | `exp_probe_strength.py` (`--compare`) | `results/raw/probe_strength/` (Docker, probe requests), `results/raw/guard_strength/` |
 | `v2/manager_scenarios.csv` | `exp_manager_scenarios.py` | the LLM |
 | `v2/llm_review_acceptance.csv`, `v2/mining_llm_precision.csv` | `exp_llm_review.py` | case-study review sheets, the reviewer model |
