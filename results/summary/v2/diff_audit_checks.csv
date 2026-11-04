@@ -11,6 +11,7 @@ edit,verdict,evidence,checked_by
 0504cc26928f,fine,"the same change as 4be2d2b3bff6 (same file, same removed and added lines; another seed or run): removes python-socks: nothing imports it; SOCKS proxies for AI requests go through httpx[socks] (HTTP_PROXY variables, src/config.py:70-74).",reading (LLM-judged)
 06e63f2e0885,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 07124bfc80b9,fine,"deletes format_money_v2 from the toy repo; nothing calls it, and the toy answer key expects it removed (shopcart/utils.py::format_money_v2).",reading (LLM-judged)
+073d21d9638c,debatable,"deletes CloudInitConfig.ssh_key_ids_not_empty; the field keeps Field(..., min_length=1), so an empty list is still rejected and only the error message changes ('At least one SSH key ID must be configured' becomes pydantic's length message): a message a user might read.",reading (LLM-judged)
 075cf7ded34a,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 07ed9c5ac355,fine,"the imported name is unused: the evaluator loads the candidate by path and calls program.search_algorithm (evaluator.py:139-195); the import only made evaluator.py need an importable initial_program, which lives in seed/, not next to it.",reading (LLM-judged)
 088291d39d6c,fine,deletes a file the coding agent's patch created,rule: agent patch
@@ -36,6 +37,7 @@ edit,verdict,evidence,checked_by
 16cc48fe42a5,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 16eeceb0218e,wrong,deletes SolverAgent from the swebench-verified seed; its grader runs --agent-import-path solve:SolverAgent (grader.py:133) and task.yaml says solve.py exports it.,reading (LLM-judged)
 17757dcd8615,debatable,"deletes Document.get_section_content: no caller, test or doc mentions it; a public method of an installable package (as 42a7ccc8ed23).",reading (LLM-judged)
+183a2aa4f893,fine,removes planted slop only (the benchmark's key),rule: injection key
 18cd6cfa2c84,wrong,"deletes TaskGenerateRequest.empty_str_to_none_for_strings for new_publish_option and region ('', 'null', 'undefined' to None); TaskCreate does not normalize them, so a generated task stores '' or the string 'undefined', which the scraper then applies as a region or new-publish filter (scraper.py:523-527, 796-858).",reading (LLM-judged)
 1a456b42d5b7,wrong,"deletes DebugManager.disable_nan_hooks (DebugManager is in connectomics.training.__all__); enable_nan_hooks tells the user to call it (debugging.py:356: Call disable_nan_hooks() first), so hooks can no longer be removed.",reading (LLM-judged)
 1a56f540b79a,debatable,"deletes kuzu_compat.is_kuzu_available: no caller, no mention anywhere; a public function of an installable package.",reading (LLM-judged)
@@ -112,6 +114,7 @@ edit,verdict,evidence,checked_by
 4da22c59c6ed,fine,deletes a file the coding agent's patch created,rule: agent patch
 4e7f02206d11,debatable,"replaces a fail-fast from minimol import Minimol in MinimolScorer.__init__ with pass (the next line keeps the same check for rdkit, noqa F401); Minimol is imported again where it is used (minimol.py:179) and the grader checks is_available() first, so only the moment a missing package fails moves.",reading (LLM-judged)
 4e90342f8ee2,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
+4f7f257d6b40,wrong,"the same change as e58bace875bf (same file, same removed and added lines; another seed or run): merges complete_project_name into complete_droplet_name (they call list_projects and list_droplets); `dropkit create --project` now completes droplet names. Probes saw [] from both without a config.",reading (LLM-judged)
 4fe03741ac36,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 4ff0d6a5bf02,wrong,"deletes AttachmentBar.compose, which Textual calls by name to build the widget; the #attachment-display Static it yields is gone and the UI check finds AttachmentBar changed.",UI check
 5204d0f8cc4a,fine,"removes pytest-asyncio; the project has no async test, no asyncio marker and no asyncio_mode setting (its async def test_* functions are API routes).",reading (LLM-judged)
@@ -141,6 +144,7 @@ edit,verdict,evidence,checked_by
 63364bb04155,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 6411c905315a,fine,removes planted slop only (the benchmark's key),rule: injection key
 646083998ea7,fine,deletes a file the coding agent's patch created,rule: agent patch
+64719c4940bb,fine,removes planted slop only (the benchmark's key),rule: injection key
 65495f65d709,debatable,"deletes utils.split_search_terms: no caller, test or doc mentions it; a public function of an installable package (as 897e67b3863c).",reading (LLM-judged)
 66ccbd07a873,debatable,"deletes utils.remove_inaccessible_channels: no caller, test or doc mentions it, and the package __all__ does not export it; a public function of an installable package (as 10521662f626).",reading (LLM-judged)
 6741185a4130,debatable,"removes the progress line Building the Studio frontend (npm ci, npm run build) ...: a status message a user might read; npm prints its own output after it.",reading (LLM-judged)
@@ -155,12 +159,14 @@ edit,verdict,evidence,checked_by
 6f570a52cb6f,fine,deletes a file the coding agent's patch created,rule: agent patch
 70cf140f3a5e,debatable,"deletes the run-command helper of the project's subprocess module (named after a vendor tool, so not quoted here): no caller, test or doc mentions it; a public function of an installable package.",reading (LLM-judged)
 71977825a627,debatable,"deletes slurm_utils.print_cluster_resources: no caller, test or doc mentions it; a public function of an installable package.",reading (LLM-judged)
+721c9a1f06e2,fine,removes planted slop only (the benchmark's key),rule: injection key
 7230951cf7e4,fine,removes planted slop only (the benchmark's key),rule: injection key
 7296280342be,wrong,"rewrites value is False as not value for the install setting: an empty install: (None) used to stop with install must be auto or off, as the user guide says a bad value does; now it silently means off.",reading (LLM-judged)
 72b2e511c0d8,fine,"the same change as 2c56129fa29c (same file, same removed and added lines; another seed or run): removes pyzbar: nothing in the project imports or mentions it outside the requirements files.",reading (LLM-judged)
 72f691fe96bd,fine,removes httpx from CORAL dependencies; no file imports it (litellm[proxy] still brings it in).,reading (LLM-judged)
 73054bd7c354,fine,removes planted slop only (the benchmark's key),rule: injection key
 73acc2be04ae,fine,deletes a file the coding agent's patch created,rule: agent patch
+76f103e29a27,fine,removes planted slop only (the benchmark's key),rule: injection key
 76fa87257eca,debatable,"deletes utils.split_search_terms: no caller, test or doc mentions it; a public function of an installable package (as 897e67b3863c).",reading (LLM-judged)
 77d4b028fd7b,fine,"deletes TaskUpdate.normalize_keyword_rules (mode=before); the model-level before validator _normalize_payload_keywords already applies _normalize_keyword_values to keyword_rules for every dict payload, and TaskUpdate is only built from dicts and keyword arguments (no validate_assignment), so the result is the same.",reading (LLM-judged)
 77ed788b6731,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
@@ -170,6 +176,7 @@ edit,verdict,evidence,checked_by
 7b5061191ea0,debatable,"the same change as 24bddc6fc21e (same file, same removed and added lines; another seed or run): removes the numpy==1.26.4 pin; nothing imports numpy directly, but the pin chose the numpy version for the pinned pandas==2.2.0 (as c8db0315fcc0).",reading (LLM-judged)
 7c74f907b7d2,wrong,empties a task's seed/solution.py (see 4150f257e45d).,reading (LLM-judged)
 7d195535e70c,debatable,"deletes DebugManager.get_hook_stats: no caller and not documented itself, but one of the interactive debugging methods enable_nan_hooks documents (as ecec396a8590).",reading (LLM-judged)
+7db4abaa4120,wrong,"the same change as cf8291b21e66 (same file, same removed and added lines; another seed or run): deletes examples/debug_example.py, which run_examples.sh runs (line 24) and which documents debug mode.",reading (LLM-judged)
 7dcb85ac48c1,wrong,"deletes BundleAgent, registered by string in the package's grader.py (as 349aa717e680).",reading (LLM-judged)
 7e140912d26b,debatable,"get_common_argument_names has no caller and no mention in the docs, and arguments/__init__.py does not export it in __all__; a public name in an installable package.",reading (LLM-judged)
 81e20256e744,debatable,the AIAnalysis dataclass is used nowhere in the project or docs; a public name in an installable module.,reading (LLM-judged)
@@ -178,6 +185,7 @@ edit,verdict,evidence,checked_by
 83adb13b000d,wrong,"removes the package __getattr__ that provides every name in __all__ (Config, create_edge_list, ...); from telegram_snowball_sampling import Config, or import *, now raises.",reading (LLM-judged)
 83cbc07b68ae,fine,removes planted slop only (the benchmark's key),rule: injection key
 841b6d984534,fine,removes qrcode: nothing in the project imports or mentions it outside requirements.txt (as 3ed55ba899bd on seed 1).,reading (LLM-judged)
+848fec6090bb,debatable,"the same change as 041b202709a7 (same file, same removed and added lines; another seed or run): removes shellingham; dropkit never imports it, but typer imports it to detect the shell for --install-completion. typer 0.12+ depends on it itself; dropkit allows typer>=0.9.0, where it is optional.",reading (LLM-judged)
 85c7f5d01f6d,wrong,removes visit_Name from the planted _NameCounterCedar1 trap; count_names_cedar1 now returns 0 (the benchmark key: a trap).,reading (LLM-judged)
 862f17023374,fine,"merges discounts._round_price into utils.round_price, an exact duplicate; the toy repo's answer key expects it applied.",reading (LLM-judged)
 8645dea362d1,fine,"the same change as 07124bfc80b9 (same file, same removed and added lines; another seed or run): deletes format_money_v2 from the toy repo; nothing calls it, and the toy answer key expects it removed (shopcart/utils.py::format_money_v2).",reading (LLM-judged)
@@ -189,9 +197,11 @@ edit,verdict,evidence,checked_by
 8ad1df8e6b5e,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 8b65d711e9d0,fine,"removes Pillow from requirements.txt; no file imports PIL, and neither qrcode nor pyzbar is imported (as 289688156563 on seed 1).",reading (LLM-judged)
 8b73a7dc36cd,fine,"removes requests from the toy repo requirements; nothing imports it, and the toy answer key expects it removed (requirements.txt::requests).",reading (LLM-judged)
+8c35ca3503a9,wrong,"deletes CustomBuildHook.initialize, which hatchling calls by name before a build to write dropkit/_version.txt; dropkit/__init__.py:_get_version reads that file, so an installed dropkit reports version 0.1.0 instead of the documented 0.1.0+git.<commit> (dropkit version, version_check).",reading (LLM-judged)
 8f1f4648e012,wrong,"removes do_GET from the eval viewer ReviewHandler (BaseHTTPRequestHandler subclass); the server dispatches GET by that name, so / and /api/feedback answer 501.",reading (LLM-judged)
 90d9730173ba,fine,"the same change as 11b6def88038 (same file, same removed and added lines; another seed or run): removes qrcode: nothing in the project imports or mentions it outside the requirements files.",reading (LLM-judged)
 929957ef210e,wrong,merges orders._round_money (Decimal half-up) into utils.round_money (round()); the demo key marks it a near-duplicate trap: 0.125 gives 0.13 before and 0.12 after.,reading (LLM-judged)
+93b56f2885a3,wrong,"the same change as 300d612638a8 (same file, same removed and added lines; another seed or run): deletes CustomBuildHook from hatch_build.py; pyproject.toml declares [tool.hatch.build.hooks.custom], which loads that BuildHookInterface subclass, so building the package fails.",reading (LLM-judged)
 952513a7223c,wrong,removes a planted trap (the benchmark's key),rule: injection key
 95aec87ffd7d,wrong,"drops python-dotenv from the core dependencies; skill-seekers doctor imports dotenv by name (doctor.py:44), so a fresh install reports a missing core dependency.",reading (LLM-judged)
 95f58753f855,debatable,"deletes AutopilotOrchestrator.run_next_stage: no caller anywhere, but a comment says it is kept as a legacy method for compatibility.",reading (LLM-judged)
@@ -211,6 +221,7 @@ a58f377ff91b,fine,removes qrcode: nothing in the project imports or mentions it 
 a5ad5fd86f82,wrong,"removes pytest from requirements.txt; tests/conftest.py and other tests import it, and tests/README.md sets up the tests with pip install -r requirements.txt.",reading (LLM-judged)
 a66941fad55a,debatable,"deletes arguments.common.get_rag_argument_names: no caller, test or doc mentions it; a public function of an installable package (as 3d11cd812e1d).",reading (LLM-judged)
 a6c0f87c4543,wrong,"deletes BundleAgent, which grader.py:243 in the same package registers by the string frontier_swe_grader.bundle_agent:BundleAgent (as 349aa717e680).",reading (LLM-judged)
+a705258fa611,wrong,removes a planted trap (the benchmark's key),rule: injection key
 a76b88b4d154,wrong,"deletes DebugManager.enable_nan_hooks, documented in its docstring as an interactive command ((Pdb) pl_module.enable_nan_hooks()) and named by two other methods' messages ('Call enable_nan_hooks() first').",reading (LLM-judged)
 a914f9836870,wrong,deletes SolverAgent from the terminal-bench seed; its grader runs --agent-import-path solve:SolverAgent (grader.py:132) (as 16eeceb0218e).,reading (LLM-judged)
 ab09a011c384,wrong,"deletes FrontierSWEVerifier, which grader.py:246 in the same package registers by the string frontier_swe_grader.reward_verifier:FrontierSWEVerifier.",reading (LLM-judged)
@@ -230,6 +241,7 @@ b374af6c5444,fine,removes pyzbar from requirements.txt (as fdd555acb7be).,readin
 b454639756ca,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 b5140d12bd5d,wrong,"deletes KernelBuilder from the kernel_builder seed program; the grader requires the program to define KernelBuilder (grader.py:6, :148) (as ff8935da14cb).",reading (LLM-judged)
 b66cf42c8313,fine,"removes import importlib.util; the module never uses the name (lines 69-70 are inside a code string that calls __import__ itself), and the import has no side effect.",reading (LLM-judged)
+b72e4a16005a,debatable,"the same change as 413ad68ca49b (same file, same removed and added lines; another seed or run): deletes DigitalOceanAPI.get_snapshot: no caller, test or doc mentions it; a public method of an installable package.",reading (LLM-judged)
 b8e64c0bf771,fine,deletes a file the coding agent's patch created,rule: agent patch
 b9c3ab6dd150,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 bc7cc727b0df,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
@@ -290,6 +302,7 @@ e95247e37043,wrong,"empties a task's seed/solution.py, the whole 10-line Solutio
 ec0d504f9b60,fine,"the same change as 2382e893088b (same file, same removed and added lines; another seed or run): removes pytest-asyncio; the project has no async test, no asyncio marker and no asyncio_mode setting (as 5204d0f8cc4a).",reading (LLM-judged)
 ec5779fdc322,fine,"deletes format_money_v2 from the toy repo; nothing calls it, and the toy answer key expects it removed (as 07124bfc80b9).",reading (LLM-judged)
 ec9ab2383195,debatable,"deletes NaNDetectionHookManager.reset_stats: no caller, test or doc mentions it; a public method of an installable package.",reading (LLM-judged)
+eca26242bad0,wrong,removes a planted trap (the benchmark's key),rule: injection key
 ece2a6718eae,wrong,"empties a task's seed/solution.py, the whole 10-line Solution stub (see 4150f257e45d).",reading (LLM-judged)
 ecec396a8590,debatable,"deletes DebugManager.print_hook_summary: no caller and not documented itself, but part of the interactive debugging methods enable_nan_hooks documents.",reading (LLM-judged)
 edd9f742376e,fine,deletes a file the coding agent's patch created,rule: agent patch
@@ -311,6 +324,7 @@ f7b0f879b7a3,fine,"removes import random; the script uses only np.random (random
 f8c78f2d0264,debatable,"deletes QualityScorer.score_content_block: no caller, no mention anywhere; a public method of an installable package.",reading (LLM-judged)
 f8eebda994a7,fine,"removes requests from the toy repo requirements; nothing imports it, and the toy answer key expects it removed (requirements.txt::requests).",reading (LLM-judged)
 f9ec27c94dee,wrong,removes a planted trap (the benchmark's key),rule: injection key
+fbef7bc5aa61,fine,removes planted slop only (the benchmark's key),rule: injection key
 fc90406b523b,wrong,"deletes TaskUpdate.validate_partial_keyword_payload (a pydantic model_validator, registered by decorator): an update in keyword mode with no keyword, or in AI mode with a blank description, no longer raises and is saved.",reading (LLM-judged)
 fdd555acb7be,fine,removes pyzbar from requirements.txt; no file imports pyzbar (nor PIL or qrcode) and nothing loads it.,reading (LLM-judged)
 fddc454b0a49,fine,"the same change as 2c56129fa29c (same file, same removed and added lines; another seed or run): removes pyzbar: nothing in the project imports or mentions it outside the requirements files.",reading (LLM-judged)

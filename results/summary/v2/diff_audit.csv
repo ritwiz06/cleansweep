@@ -1,0 +1,32 @@
+source,method,runs,kept_code_edits,unique_edits,auditor_yes,auditor_unsure,auditor_no,not_audited,checks_open,confirmed_wrong,wrong_rate,ci_low,ci_high,debatable,missed_by_every_check
+aidev,agentic,4,10,10,1,0,9,0,0,1,0.1,0.0,0.5,0,1
+aidev,cleansweep-gatekeeper,5,53,53,27,0,26,0,0,9,0.1698,0.0,0.3,18,3
+answer keys,agentic,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-broadcast,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-inline_artifacts,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-no_coverage,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-no_lessons,6,39,14,9,3,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-no_research,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-rules,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,agentic-single_agent,6,57,23,9,10,38,0,0,4,0.0702,0.0364,0.1017,0,0
+answer keys,cleansweep-advisory,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+answer keys,cleansweep-gatekeeper,6,42,14,9,6,27,0,0,0,0.0,0.0,0.0,0,0
+case studies,agentic,3,14,14,0,0,14,0,0,0,0.0,0.0,0.0,0,0
+case studies,agentic (thorough),2,8,8,0,0,8,0,0,0,0.0,0.0,0.0,0,0
+injected,agentic,14,319,312,62,2,236,19,2,25,0.0784,0.0,0.1213,4,25
+injected,agentic-broadcast,14,276,269,37,2,218,19,2,4,0.0145,0.0,0.0246,0,4
+injected,agentic-inline_artifacts,14,250,243,35,2,194,19,2,2,0.008,0.0,0.0233,0,2
+injected,agentic-no_coverage,14,255,248,36,2,197,20,2,3,0.0118,0.0,0.0242,0,3
+injected,agentic-no_lessons,14,252,244,34,5,192,21,2,5,0.0198,0.0038,0.0497,0,5
+injected,agentic-no_research,14,340,332,53,4,263,20,2,12,0.0353,0.0165,0.0618,3,11
+injected,agentic-rules,14,321,314,63,2,236,20,2,26,0.081,0.0,0.1256,4,26
+injected,agentic-single_agent,14,240,233,90,4,130,16,9,48,0.2,0.061,0.3301,8,39
+injected,cleansweep,14,353,345,127,3,205,18,1,92,0.2606,0.0093,0.3608,5,91
+injected,one_shot_llm,14,57,57,2,0,45,10,0,2,0.0351,0.0,0.1071,0,0
+real-project ablation,agentic,3,14,14,0,0,14,0,0,0,0.0,0.0,0.0,0,0
+real-project ablation,agentic-no_research,4,20,20,4,0,16,0,0,4,0.2,0.1111,0.4,0,4
+real-project ablation,agentic-single_agent,5,65,65,33,1,31,0,0,18,0.2769,0.14,0.375,14,18
+swebench_t1,agentic,7,19,19,10,2,7,0,0,0,0.0,0.0,0.0,0,0
+swebench_t1,cleansweep-gatekeeper,7,20,20,10,3,7,0,0,0,0.0,0.0,0.0,0,0
+swebench_t2,agentic,16,24,24,8,1,15,0,0,0,0.0,0.0,0.0,0,0
+swebench_t2,cleansweep-gatekeeper,16,24,24,8,1,15,0,0,0,0.0,0.0,0.0,0,0
