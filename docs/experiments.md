@@ -44,7 +44,7 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
 | [v2 detection](#v2-detection-by-category-on-aidev) | `exp_detection.py` | PR #112 (merged as c003ca0) | `detection.csv` |
 | [v2 slop injection](#v2-slop-injection-benchmark) | `exp_inject.py`, `exp_tables_v2.py` | main at f84d568; 106c952 (plant checks, seeds 2 and 3) | `injection.csv`, `injection_summary.csv`, `injection_seeds`, `injection_paired`, `ablations` |
 | [v2 real-project ablation](#v2-real-project-ablation) | `exp_case_study.py --ablation`, `exp_real_ablation.py` | 106c952 (#128) | `real_ablation_runs.csv`, `real_ablation` |
-| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
+| [v2 diff audit](#v2-diff-audit) | `exp_diff_audit.py`, `exp_audit_confirm.py` | ee10e14 (#132) and later | `diff_audit_checks.csv`, `diff_audit.csv`, `diff_audit_types.csv` |
 | [v2 watch mode](#v2-watch-mode) | `exp_watch.py` | PR #103 (merged as 12caf01) | `watch_replay.csv` |
 
 ## Experiments
@@ -513,7 +513,9 @@ evidence. The auditor's votes are LLM-judged, and so are the checks done by read
 
 - **Run:** `python scripts/experiments/v2/exp_diff_audit.py run` (resumable; a light job),
   `... auto` (the flags two rules settle), `... pending` (the flags still unchecked), then each
-  check goes into `results/summary/v2/diff_audit_checks.csv` by hand, and `... table`.
+  check goes into `results/summary/v2/diff_audit_checks.csv` by hand; then
+  `python scripts/experiments/v2/exp_audit_confirm.py run` and `... record` (the targeted
+  tests), and `exp_diff_audit.py table`.
 - **Scope:** the kept edits with a diff (not formatting) of the answer-key, SWE-bench and AIDev
   runs (with v1's gatekeeper run on each SWE-bench and AIDev target the team ran; on AIDev the
   original pytorch_connectomics row and the rerun after #124), every injected run of every seed,
@@ -547,6 +549,19 @@ evidence. The auditor's votes are LLM-judged, and so are the checks done by read
 - **Tiers:** every verdict says how it was confirmed: *confirmed* (a targeted test, the UI check,
   or the injection key's or agent patch's rule) or *reading* (LLM-judged). Every safety claim
   names its tier.
+- **Targeted tests** (`exp_audit_confirm.py`): every wrong verdict of every method gets a short
+  test of the behavior it says the edit changes, not a sample. Tests live in
+  `results/raw/diff_audit/tests/<edit>/`. Each runs in the run's own environment (the project's
+  container, installed as the run installed it, for AIDev targets; a local copy for this
+  repository and the fixtures) on the project as the run found it, then again with the edit
+  applied. When the edit applies only after the run's earlier kept edits to the same file, those
+  come first. A removed dependency is hidden as the Guard hides it, so only when no other
+  installed package requires it. A test that passes before and fails after confirms the
+  verdict. Otherwise the verdict stays reading, and `no_test.txt` says why no test could be
+  written (for example, the code needs a package the project does not install). A test also
+  runs on every check that cites its edit as the same change, so each copy is confirmed on its
+  own. A "targeted test" recorded before this script, outside the run's environment, counts
+  only once it is confirmed here. Results: `results/raw/diff_audit/tests/results.json`.
 - **Kinds** of wrong and debatable edits: dynamic handler or stub (code reached by name at run
   time: a framework callback, a validator registered by decorator, a class registered by a
   string, a build hook, a seed or stub a grader loads), public name (reached by a direct
