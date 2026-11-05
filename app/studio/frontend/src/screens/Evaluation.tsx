@@ -218,7 +218,7 @@ function Audit() {
   return (
     <Card title={<>Diff audit: wrong edits by tier and kind {judged("reading tier: LLM-judged")}</>}>
       <p className="muted">
-        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that compare the methods fairly.
+        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that its method labels cannot bias, though the share left unchecked differs by method.
       </p>
       <Loaded name="diff_audit.csv">{(audit) => <Loaded name="diff_audit_types.csv">{(types) => <AuditCharts audit={records(audit)} types={records(types)} />}</Loaded>}</Loaded>
     </Card>

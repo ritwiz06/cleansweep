@@ -59,9 +59,9 @@ result are unchanged.
   injected set (#149, #150): about the team's requests on real code and 2 of 17 kept code edits
   wrong, so the default stays `all`.
 - The conclusion worded to the evidence (#151, #152): Fisher's exact test on the real projects
-  (`real_ablation_tests.csv`), the injection table on the seeds every method ran
+  (`real_ablation_tests.csv`), the injection table on the seeds v1 ran
   (`injection_summary_seeds12.csv`), both tiers against v1, the framework-rule re-score labeled
-  in-sample, and the blinded audit's counts as lower bounds that compare the methods fairly.
+  in-sample, and the blinded audit's counts as lower bounds its method labels cannot bias.
 
 ### Repository and docs
 - Restructure into `scripts/{data,experiments/v1,experiments/v2,report,tools}`,

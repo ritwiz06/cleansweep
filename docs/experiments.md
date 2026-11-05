@@ -782,8 +782,8 @@ committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ab
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
 `scheduler_replay.csv`; `exp_tables_v2.py` builds v2's `eval_table`, `eval_paired`,
-`ablations`, `injection_summary`, `injection_summary_seeds12` (seeds 1 and 2, which every method
-ran), `injection_seeds` and `injection_paired` from `results/summary/v2/eval_runs.csv` and
+`ablations`, `injection_summary`, `injection_summary_seeds12` (seeds 1 and 2, which v1 and the
+one-shot cleanup ran too), `injection_seeds` and `injection_paired` from `results/summary/v2/eval_runs.csv` and
 `injection.csv`; `exp_real_ablation.py table` builds `real_ablation` and `real_ablation_tests`
 (Fisher's exact test of each method's wrong edits against the team's) from
 `real_ablation_runs.csv`. On a clean checkout, `git status results/` shows no change afterwards.

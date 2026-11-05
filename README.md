@@ -21,14 +21,14 @@ blinded audit found 18 wrong edits among its 804 kept code edits (12 confirmed b
 the rest by reading, LLM-judged) that no test, probe or hidden check caught, 14 of them code a
 framework or grader calls by name. A single agent with the same tools removed fewer planted items
 (114 against 170, p < 0.0001), changed hidden behavior in 16 of 30 runs (p < 0.0001) and kept 63
-wrong edits of 489 (50 confirmed): separating checking from editing is what makes the team safe.
+wrong edits of 489 (50 confirmed): a single agent that checks its own edits is not safe.
 On five real projects, one run each, the audit flagged none of the team's 14 kept code edits,
 against 4 wrong of 20 without its research squad (Fisher p = 0.13) and 17 of 65 for the single
 agent (p = 0.03), which suggests, but doesn't establish, that investigating each candidate pays
 off on real code. Against v1 the team is about as safe on the confirmed tier (12 of 804 wrong
 against 13 of 610) and lower across all tiers (18 against 48, 35 of v1's by reading); on AIDev it
 removed about a fifth of v1's code lines, so part of its safety there is caution. The auditor never sees the method, so
-its wrong counts are lower bounds but compare the methods fairly. Re-scored with the framework
+its wrong counts are lower bounds not biased by who made the edit. Re-scored with the framework
 rule, which was extended after these failures, the team's 18 become 9; that estimate is in-sample
 and so optimistic. Details below and in [docs/results.md](docs/results.md).
 
@@ -328,7 +328,7 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 | no coverage guidance | 60 | 0 | 42.8 | 113/140 | 0/40 | 0/20 | 91.0 |
 | single agent | 54 | 4 | 36.2 | 114/210 | 16/60 | 16/30 | 84.9 |
 
-- **Checking apart from editing is what keeps the cleanup safe.** The single agent is one LLM with every tool, keeping or reverting its own edits. It changed hidden behavior in 4 of 6 answer-key runs (merging the near-duplicate) and in 16 of 30 injected runs (deleting the framework callback).
+- **One agent that checks its own edits is not safe.** The single agent is one LLM with every tool, keeping or reverting its own edits. It changed hidden behavior in 4 of 6 answer-key runs (merging the near-duplicate) and in 16 of 30 injected runs (deleting the framework callback).
 - **On the benchmarks, the research squad costs requests without adding recall.**
   - Without it, the team found the same on the answer keys at about a quarter of the requests.
   - On the injected set it removed as much (176 against 170) at about a tenth of the requests, but it removed 2 traps where the team removed none.
@@ -349,7 +349,7 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
   - Wrong: 147. 88 are confirmed. The 59 by reading each record the observed reason no test could run.
   - Debatable: 252, by reading.
   - Fine: 162.
-- **Lower bounds, fair comparison.** Only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so what it leaves unchecked does not depend on who made the edit, and the comparison between methods is fair. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
+- **Lower bounds, not biased by method.** Only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so its flags are not biased by who made the edit, but how loose the bound is differs by method: it voted "no" on 82% of the team's injected edits and 60% of v1's and the single agent's. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
 - Wrong of the kept code edits, all tiers, with the confirmed count in brackets:
 
 | target | team | no research squad | single agent | v1 |
@@ -367,7 +367,7 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 
 **Framework rule, re-scored** (`inject_rule.csv`):
 - Since most of the team's wrong edits were code a framework calls by name, the framework-callback rule now also covers `http.server` handlers, `ast.NodeVisitor`, PyTorch and Lightning modules and hatchling build hooks (#139). On the final data, 14 of the team's 18 injected wrong edits are of that kind, so the rule stays on.
-- The runs above were made without it. Re-scoring all 210 injected runs (the hidden test is rerun wherever the rule moves an edit to the suggest lane) gives:
+- The runs above were made without it. Re-scoring all 220 injected runs (the hidden test is rerun wherever the rule moves an edit to the suggest lane) gives:
 
 | method | wrong of kept code edits (confirmed), as run → with the rule | traps removed | hidden changed | planted removed |
 |---|---|---|---|---|
@@ -378,7 +378,7 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 
 The reported numbers stay as run. The re-score is in-sample: the rule was extended after seeing
 these failures and is scored on the same runs, so 18 → 9 is an optimistic estimate; fresh projects
-or seeds would test it. The rule moves edits in 38 of the 210 runs. For the team it moves the 9 methods. It does not move the 5 classes a grader or build backend loads by name, the 3 dependency removals or the logic change, because the rule marks methods, not classes. The single agent's
+or seeds would test it. The rule moves edits in 38 of the 220 runs. For the team it moves the 9 methods. It does not move the 5 classes a grader or build backend loads by name, the 3 dependency removals or the logic change, because the rule marks methods, not classes. The single agent's
 remaining hidden change is slop-guard, seed 1, where the hidden test still fails on the rest of
 that run's diff.
 
@@ -399,7 +399,7 @@ investigation helps on real projects.
 | adaptive investigation | everything runs 4, nothing applied 1 | 19 / 20 | 593 | 12/17 (2 unsure) | 2 of 17 (1) | 0 | ok | 127.2 | 32.5 |
 
 - **On real projects the results suggest the research squad buys safety, not yield.**
-  - The audit flagged none of the team's 14 kept code edits, so none is wrong in any tier.
+  - The audit flagged none of the team's 14 kept code edits (from three projects: it kept no code edit on this repository and applied nothing on slop-guard), so none was found wrong in any tier.
   - Fisher's exact test against the team (`real_ablation_tests.csv`, two-sided): p = 0.13 for the no research squad's 4 of 20 (0.25 for its 3 confirmed), p = 0.03 for the single agent's 17 of 65 (0.11 for its 12 confirmed). Five projects, one run each, and every wrong edit in three of them (this repository, shotgun, Skill_Seekers): this suggests, but doesn't establish, that per-item investigation pays off on real code.
   - Without the squad, the team kept more at an eighth of the requests, but 4 of its 20 kept code edits are wrong. Three are confirmed by targeted tests:
     - it deleted this repository's documented `exp_collect_v2.py`;
@@ -550,9 +550,9 @@ code-level edits comes from the rest:
   reading the code (LLM-judged, by the coding assistant that ran the evaluation), each wrong one
   with the observed reason no test could run. The blinded calibration sheets (20 audit checks, 20
   review items) have not been filled in by a person yet.
-- **The audit checks only what its model flags.** Edits the auditor voted "no" (1,225 of 1,790)
+- **The audit checks only what its model flags.** Edits the auditor voted "no" (1,223 of 1,784)
   were not checked, so the wrong counts are lower bounds; the auditor is blinded to the method,
-  so the comparison between methods is fair. It flagged none of the team's 14 real-project edits.
+  so its flags are not biased by who made the edit, though the share left unchecked differs. It flagged none of the team's 14 real-project edits.
   On the demo app it passed all 11 of the
   single agent's deletions of command functions the app dispatches through `getattr`, though
   those runs failed visible tests.
