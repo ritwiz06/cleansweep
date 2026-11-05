@@ -1,0 +1,7 @@
+comparison,tier,team wrong,other wrong,Fisher exact p (two-sided)
+team vs no_research,all tiers,0 of 14,4 of 20,0.1261
+team vs no_research,confirmed,0 of 14,3 of 20,0.2513
+team vs single_agent,all tiers,0 of 14,17 of 65,0.0324
+team vs single_agent,confirmed,0 of 14,12 of 65,0.1113
+team vs adaptive,all tiers,0 of 14,2 of 17,0.4882
+team vs adaptive,confirmed,0 of 14,1 of 17,1.0

@@ -455,8 +455,8 @@ c68fcdc, SWE-bench at 7237ccc (with the test-status fix, #118), probe strength a
 the injection benchmark (every seed, with its plant checks), its ablations and the real-project
 ablation at 106c952 ([experiments.md](experiments.md) has the commands).
 Tables: `results/summary/v2/`; `bash scripts/reproduce_tables.sh` rebuilds `eval_table`,
-`eval_paired`, `ablations`, `injection_summary`, `injection_seeds`, `injection_paired` and
-`real_ablation` from the per-run CSVs.
+`eval_paired`, `ablations`, `injection_summary`, `injection_summary_seeds12`, `injection_seeds`,
+`injection_paired`, `real_ablation` and `real_ablation_tests` from the per-run CSVs.
 
 ### The team against v1
 
@@ -472,7 +472,8 @@ Tables: `results/summary/v2/`; `bash scripts/reproduce_tables.sh` rebuilds `eval
 Paired with v1 on the same targets (and repeats): the same code lines in total on the answer
 keys (342), Tier 1 (375) and the Tier 2 subset (303), and no discordant hidden result; on AIDev
 280 against 1,537 lines, hidden changed only with v1 on 3 (McNemar p = 0.25, Wilcoxon p = 0.063,
-n = 6).
+n = 6). The team removed about a fifth of v1's code lines on AIDev, so part of its safety there is
+caution.
 
 - **SWE-bench.** Every removal by either system deletes a whole scratch file the coding agent
   left at the repository root: `reproduce*.py`, `edge_cases.py`, `test_*` reproduction scripts,
@@ -556,7 +557,7 @@ McNemar on hidden changes and on removing a trap):
 - **What the team misses:**
   - No method that works from v1's detectors removed a planted exact duplicate. The one-shot LLM merged 19 of 20.
   - Apart from the duplicates, the team missed 4 unused imports, 5 unused dependencies and 1 dead function.
-- **Kinds without a detector:** v1 has no detector for debug prints or commented-out code. The single agent removes few of them (9 and 6 of 30).
+- **Where the team's gain over v1 comes from** (`injection_summary_seeds12.csv`, seeds 1 and 2, which both ran): 113 against 78 of 140 planted items. The whole gain is in the two kinds the line-level detectors find: debug prints (20 against 0 of 20) and commented-out code (20 against 0), for which v1 has no detector. v1 removed a few more unused dependencies (20 against 17) and unused imports (19 against 17); leftover files, dead code and duplicates are level. The single agent removes few of the line-level kinds (9 and 6 of 30).
 - **Projects left out** (`EXCLUDED` in `exp_inject.py`):
   - imgviz: its hidden test failed before any cleanup, so it was replaced by mcp-nixos.
   - openwebui-extensions: its hidden test failed on all 3 injected draws, because the plugin modules import `open_webui`, which the project does not install. It was replaced by haliax.
@@ -638,6 +639,8 @@ Each of the 129 wrong verdicts that no rule or UI check settled has a targeted t
   - a removed dependency stays installed in the run's environment because another package requires it.
 - A copy of a checked edit (the same change in another seed or run) carries the reading. The original's test runs again on each copy, in the copy's own run.
 
+- **Lower bounds, fair comparison:** only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so what it leaves unchecked does not depend on who made the edit, and the comparison between methods is fair. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
+
 Wrong edits of the kept code edits, all tiers, with the confirmed count in brackets (`diff_audit.csv`):
 
 | target set | team | no research squad | single agent | v1 | one-shot LLM |
@@ -646,6 +649,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 | real-project ablation | 0 of 14 | 4 of 20 (3) | 17 of 65 (12) | | |
 | AIDev (six repositories) | 1 of 10 (1) | | | 8 of 53 (5) | |
 
+- **Team against v1, injected set:** about the same on the confirmed tier, 12 of 804 (1.5% [0.8, 1.9]) against 13 of 610 (2.1% [1.5, 3.8]); lower across all tiers, 2.2% [1.5, 2.8] against 7.9% [2.6, 9.0], though 35 of v1's 48 are readings and the intervals touch. The team's 12 confirmed are all targeted tests; v1's 13 are 12 targeted tests and 1 injection-key rule.
 - **Other target sets:** the only wrong edits on the answer keys, SWE-bench and the case studies are the single agent's 4 of 57 on the answer keys (all confirmed).
 - **Other ablations, injected set:** from 7 of 434 (artifacts inlined) to 12 of 545 (the rule-based Manager).
 
@@ -701,6 +705,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 - **What it moves for the team:** the 9 methods. The rule marks methods (a hatchling hook's `initialize`, for example), not a whole class. So the 5 class deletions stay, along with the 3 jinja2 removals and the dropkit logic change: the `KernelBuilder` demo and dropkit's build hook class are deleted whole.
 - **The remaining hidden change:** with the rule, the single agent's one is slop-guard, seed 1, where the hidden test still fails on the rest of that run's diff.
 - **Reporting:** the reported numbers everywhere else stay as run.
+- **In-sample:** the rule was extended after seeing these failures and is re-scored on the same runs, so 18 → 9 is an optimistic estimate of what it saves. Fresh projects or seeds would test it.
 
 ### Real-project ablation
 
@@ -735,7 +740,7 @@ Per project (packages kept / net lines):
 | Telegram-Snowball-Sampling | 1 / 6 | 2 / 6 | 7 / 139 | 1 / 6 |
 
 - **The team:**
-  - None of its 14 kept code edits is wrong or debatable.
+  - The audit flagged none of its 14 kept code edits, so none is wrong or debatable.
   - The reviewer accepted 12 of the 14 kept changes it decided on.
   - It rolled back more packages than it kept (20 against 16).
 - **No research squad:** the detector lanes decide what is safe, so it tried more and kept more at an eighth of the requests. But 4 of its 20 kept code edits are wrong:
@@ -766,6 +771,15 @@ Per project (packages kept / net lines):
     - LLM requests: 78.6 per run, against 91.8;
     - wrong: 4 of its 188 kept code edits (3 confirmed), against the team's 6 of 275 on that seed. All 188 are edits another method made on the same plants.
   - **Decision (DECISIONS):** the default stays `all`. The bar was the team's safety on real projects at no more than half the requests, and adaptive meets neither part.
+- **Tests** (`real_ablation_tests.csv`): Fisher's exact test, two-sided, of each method's wrong share of kept code edits against the team's 0 of 14.
+
+| team against | all tiers | p | confirmed | p |
+|---|---|---|---|---|
+| no research squad | 4 of 20 | 0.13 | 3 of 20 | 0.25 |
+| single agent | 17 of 65 | 0.03 | 12 of 65 | 0.11 |
+| adaptive investigation | 2 of 17 | 0.49 | 1 of 17 | 1.0 |
+
+- **What this shows:** the research squad's effect on real code is suggested, not established. The test pools edits, but they cluster by project: every wrong edit of the three methods is in this repository, shotgun or Skill_Seekers. The strong claims rest on the 30 paired benchmark runs above.
 - **Caveats:**
   - No wrong edit failed a test or probe in its run. Every run ended "everything runs", or "nothing applied" (the team on slop-guard).
   - One run per project and 14 to 65 kept code edits per method make this a small sample.

@@ -8,10 +8,10 @@
 # v1: exp_tables.py: main_table, paired_tests, ablation, oneshot_series and the main figures,
 # from main_results.csv and guard_strength.csv. exp_scheduler_tradeoff.py: scheduler_tradeoff.csv
 # and its figure, from scheduler_replay.csv. v2: exp_tables_v2.py: eval_table, eval_paired,
-# ablations and injection_summary, from eval_runs.csv and injection.csv; exp_real_ablation.py
-# table: real_ablation, from real_ablation_runs.csv. On a clean checkout,
-# `git status results/` shows no change afterwards. docs/experiments.md lists the per-run CSVs
-# and the scripts that write them.
+# ablations, injection_summary and injection_summary_seeds12, from eval_runs.csv and
+# injection.csv; exp_real_ablation.py table: real_ablation and real_ablation_tests, from
+# real_ablation_runs.csv. On a clean checkout, `git status results/` shows no change afterwards.
+# docs/experiments.md lists the per-run CSVs and the scripts that write them.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -500,7 +500,9 @@ research squad, and a single agent clean the five case-study projects.
   team's at the start of the run; on shotgun the baseline took 14 minutes.
 - **Outputs:** `results/raw/case_studies/<project>-abl-<method>/` (report, summary, review sheet,
   `llm_review.json`, `ui_check.json`); `results/summary/v2/real_ablation_runs.csv` (one row per
-  run) and `real_ablation.{csv,md}` (per method; `reproduce_tables.sh` rebuilds it).
+  run), `real_ablation.{csv,md}` (per method) and `real_ablation_tests.csv` (each method's wrong
+  share of kept code edits against the team's, Fisher's exact test, two-sided, in both tiers;
+  `reproduce_tables.sh` rebuilds both).
 - **Code version:** 106c952 (#128), frozen clone `../cleansweep-runs-v2c`. **Runtime:** 15 runs,
   1.4 to 144 minutes each. **Models:** agents `qwen36-35b-a3b`; reviewer `glm-5-3`.
 
@@ -774,9 +776,11 @@ committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ab
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
 `scheduler_replay.csv`; `exp_tables_v2.py` builds v2's `eval_table`, `eval_paired`,
-`ablations`, `injection_summary`, `injection_seeds` and `injection_paired` from
-`results/summary/v2/eval_runs.csv` and `injection.csv`; `exp_real_ablation.py table` builds
-`real_ablation` from `real_ablation_runs.csv`. On a clean checkout, `git status results/` shows no change afterwards.
+`ablations`, `injection_summary`, `injection_summary_seeds12` (seeds 1 and 2, which every method
+ran), `injection_seeds` and `injection_paired` from `results/summary/v2/eval_runs.csv` and
+`injection.csv`; `exp_real_ablation.py table` builds `real_ablation` and `real_ablation_tests`
+(Fisher's exact test of each method's wrong edits against the team's) from
+`real_ablation_runs.csv`. On a clean checkout, `git status results/` shows no change afterwards.
 `tests/scripts/test_reproduce_tables.py` runs it on a small fixture (`tests/fixtures/results_small/`)
 and checks that every table comes out byte for byte. Set `PYTHON` to pick the interpreter.
 
