@@ -133,6 +133,7 @@ function Injection() {
       </Card>
       <Card title="The extended framework rule, re-scored (as run and with the rule)">
         <Loaded name="inject_rule.csv">{(t) => <DataTable table={t} label="inject_rule.csv" />}</Loaded>
+        <p className="muted">In-sample: the rule was extended after seeing these wrong edits and is re-scored on the same runs, so the drop is optimistic until fresh projects or seeds test it.</p>
       </Card>
     </>
   );
@@ -165,6 +166,8 @@ function Ablations() {
       <Card title="Real projects: the team, no research squad, a single agent">
         <Loaded name="real_ablation.csv">{(t) => <DataTable table={t} label="real_ablation.csv" />}</Loaded>
         <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged. The table scrolls sideways for the UI check, requests and minutes.</p>
+        <p className="muted">Five projects, one run each, with every wrong edit in three of them: these differences suggest, but don't establish, that investigating each candidate pays off on real code. Fisher's exact test against the team:</p>
+        <Loaded name="real_ablation_tests.csv">{(t) => <DataTable table={t} label="real_ablation_tests.csv" />}</Loaded>
       </Card>
       <Card title="Ablations on the answer keys, SWE-bench, AIDev and the injected set">
         <Loaded name="ablations.csv">{(t) => <AblationCost rows={records(t)} />}</Loaded>
@@ -215,7 +218,7 @@ function Audit() {
   return (
     <Card title={<>Diff audit: wrong edits by tier and kind {judged("reading tier: LLM-judged")}</>}>
       <p className="muted">
-        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged.
+        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that compare the methods fairly.
       </p>
       <Loaded name="diff_audit.csv">{(audit) => <Loaded name="diff_audit_types.csv">{(types) => <AuditCharts audit={records(audit)} types={records(types)} />}</Loaded>}</Loaded>
     </Card>
