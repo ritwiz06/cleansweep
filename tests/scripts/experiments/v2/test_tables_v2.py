@@ -94,3 +94,17 @@ def test_p_values_below_four_places_are_not_shown_as_zero():
     tables = load()
     assert tables.p_value(0.06327) == 0.0633
     assert tables.p_value(3.05e-5) == "<0.0001"
+
+
+def test_adaptive_investigation_is_paired_with_the_team_on_its_seed():
+    tables = load()
+    plants = []
+    for repo in ("toy", "aaa"):
+        plants += [plant("agentic", repo, "1", "slop", 1), plant("agentic", repo, "2", "slop", 1)]
+        plants.append(plant("agentic-adaptive", repo, "1", "slop", int(repo == "toy")))
+    paired = {r["comparison"]: r for r in tables.injection_paired(plants)}
+    assert paired["agentic vs agentic-adaptive"]["pairs"] == 2
+    assert paired["agentic vs agentic-adaptive"]["planted removed"] == "2 vs 1"
+    timed = [{**p, "test_runs": "3", "minutes": "1.5"} for p in plants]
+    rows = {(r["set"], r["method"]): r for r in tables.ablations([], timed)}
+    assert rows["injected", "agentic-adaptive"]["planted found"] == "1/2"

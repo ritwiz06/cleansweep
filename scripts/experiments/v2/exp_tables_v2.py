@@ -36,7 +36,12 @@ SUMMARY = RESULTS / "summary" / "v2"
 SET_ORDER = ["answer keys", "swebench_t1", "swebench_t2", "aidev"]
 REFERENCE = "cleansweep-gatekeeper"
 MAIN = ["agentic", "agentic-rules", REFERENCE, "cleansweep-advisory"]
-ABLATION_ORDER = ["agentic", *(f"agentic-{a}" for a in ABLATIONS), "agentic-rules"]
+ABLATION_ORDER = [
+    "agentic",
+    *(f"agentic-{a}" for a in ABLATIONS),
+    "agentic-rules",
+    "agentic-adaptive",
+]
 VERDICTS = ["everything runs", "nothing applied", "not verified"]
 VERDICT_COLUMN = "verdicts: " + " / ".join(VERDICTS)
 NUMBERS = [
@@ -245,6 +250,7 @@ PAIRS = [
     ("agentic", "agentic-single_agent"),
     ("agentic", "cleansweep"),
     ("agentic", "one_shot_llm"),
+    ("agentic", "agentic-adaptive"),
 ]
 
 

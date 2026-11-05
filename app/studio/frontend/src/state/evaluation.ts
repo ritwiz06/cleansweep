@@ -12,6 +12,8 @@ export const METHOD_NAMES: Record<string, string> = {
   "agentic-single_agent": "single agent",
   single_agent: "single agent",
   "agentic-rules": "rule-based Manager",
+  "agentic-adaptive": "adaptive investigation",
+  adaptive: "adaptive investigation",
   "agentic-broadcast": "broadcast",
   "agentic-inline_artifacts": "inline artifacts",
   "agentic-no_lessons": "no lessons",
