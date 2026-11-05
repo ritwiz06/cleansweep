@@ -15,6 +15,12 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
   reports are not published because they contain third-party code. Scripts that read them
   default to the archive folders (`scripts/experiments/v1/archive_paths.py`); their folder flags override that,
   and a default folder that is missing stops the script with the flag to pass.
+- v2's frozen clones (`../cleansweep-runs-v2`, `-v2b`, `-v2c`, `-v2d`, `-audit`) and the
+  case-study run folders (`../case_studies/`) were removed on 2026-11-05, after every committed
+  per-run CSV was rebuilt from this repository's `results/raw/` with no change. What only they
+  held (per-run LLM caches, superseded runs, chain scripts and logs) is in `../cleansweep-archive/`
+  (`raw/<clone>/`, `llm_caches/<clone>/`, `case_studies/`), and each folder's `NOT_COPIED.tsv` says
+  where the rest lives. The v2 raw results are archived too (`raw/cleansweep/results_raw/`).
 - Runtimes are wall-clock on the [reference machine](#requirements) and include contention when
   two jobs shared it. Model names are those our LLM endpoint served at the time.
 - Run every command from the repository root.
@@ -776,8 +782,8 @@ committed per-run CSVs. `exp_tables.py` builds `main_table`, `paired_tests`, `ab
 `oneshot_series` and the main figures from `main_results.csv` and `guard_strength.csv`;
 `exp_scheduler_tradeoff.py` builds `scheduler_tradeoff.csv` and its figure from
 `scheduler_replay.csv`; `exp_tables_v2.py` builds v2's `eval_table`, `eval_paired`,
-`ablations`, `injection_summary`, `injection_summary_seeds12` (seeds 1 and 2, which every method
-ran), `injection_seeds` and `injection_paired` from `results/summary/v2/eval_runs.csv` and
+`ablations`, `injection_summary`, `injection_summary_seeds12` (seeds 1 and 2, which v1 and the
+one-shot cleanup ran too), `injection_seeds` and `injection_paired` from `results/summary/v2/eval_runs.csv` and
 `injection.csv`; `exp_real_ablation.py table` builds `real_ablation` and `real_ablation_tests`
 (Fisher's exact test of each method's wrong edits against the team's) from
 `real_ablation_runs.csv`. On a clean checkout, `git status results/` shows no change afterwards.

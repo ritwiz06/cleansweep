@@ -639,7 +639,7 @@ Each of the 129 wrong verdicts that no rule or UI check settled has a targeted t
   - a removed dependency stays installed in the run's environment because another package requires it.
 - A copy of a checked edit (the same change in another seed or run) carries the reading. The original's test runs again on each copy, in the copy's own run.
 
-- **Lower bounds, fair comparison:** only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so what it leaves unchecked does not depend on who made the edit, and the comparison between methods is fair. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
+- **Lower bounds, not biased by method:** Only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so its flags are not biased by who made the edit, but how loose the bound is differs by method: it voted "no" on 82% of the team's injected edits and 60% of v1's and the single agent's. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
 
 Wrong edits of the kept code edits, all tiers, with the confirmed count in brackets (`diff_audit.csv`):
 
@@ -649,7 +649,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 | real-project ablation | 0 of 14 | 4 of 20 (3) | 17 of 65 (12) | | |
 | AIDev (six repositories) | 1 of 10 (1) | | | 8 of 53 (5) | |
 
-- **Team against v1, injected set:** about the same on the confirmed tier, 12 of 804 (1.5% [0.8, 1.9]) against 13 of 610 (2.1% [1.5, 3.8]); lower across all tiers, 2.2% [1.5, 2.8] against 7.9% [2.6, 9.0], though 35 of v1's 48 are readings and the intervals touch. The team's 12 confirmed are all targeted tests; v1's 13 are 12 targeted tests and 1 injection-key rule.
+- **Team against v1, injected set:** about the same on the confirmed tier, 12 of 804 (1.5% [0.8, 1.9]) against 13 of 610 (2.1% [1.5, 3.8]); lower across all tiers, 2.2% [1.5, 2.8] against 7.9% [2.6, 9.0], though 35 of v1's 48 are readings and the intervals overlap slightly. The team's 12 confirmed are all targeted tests; v1's 13 are 12 targeted tests and 1 injection-key rule.
 - **Other target sets:** the only wrong edits on the answer keys, SWE-bench and the case studies are the single agent's 4 of 57 on the answer keys (all confirmed).
 - **Other ablations, injected set:** from 7 of 434 (artifacts inlined) to 12 of 545 (the rule-based Manager).
 
@@ -663,7 +663,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
   - The single agent's 63 spread more widely: dynamic handlers or stubs 34, public names 10, changed logic 8, dependencies 8, deleted files 3.
 - **What the checks missed:** none of the team's 18 failed a test, probe or hidden check in its run. This is the gap between "everything runs" and "nothing changed".
 - **What the audit does not check:**
-  - Only edits the auditor flagged are checked. The 1,225 of 1,790 audited edits it voted "no" are not, so the wrong counts are lower bounds.
+  - Only edits the auditor flagged are checked. The 1,223 of 1,784 audited edits it voted "no" are not, so the wrong counts are lower bounds.
   - On the demo app it voted "no" on all 11 of the single agent's deletions of command functions (`bookshelf/commands.py`), which the app dispatches through `getattr`. Those runs failed visible tests (Ablations above), but the audit counts these edits as neither wrong nor checked.
 - **Debatable:**
   - 252 edits remove code reachable only from outside the project.
@@ -684,7 +684,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
   - PyTorch and Lightning modules;
   - hatchling build hooks (#139).
 - **Trigger, checked on the final data:** the rule stays if such edits are at least half of the team's injected wrong edits. They are 14 of 18 (8 of them confirmed).
-- **Re-score:** the runs were made without the rule, so each of the 210 injected runs was re-scored with it.
+- **Re-score:** the runs were made without the rule, so each of the 220 injected runs (210, and adaptive investigation's 10 later) was re-scored with it.
   - The kept edits the rule would have sent to the suggest lane are taken out.
   - The rest of the run's diff is applied to the starting commit, and the hidden test runs on it in a fresh workspace.
   - The audit's verdicts carry over to the edits that stay.
@@ -701,7 +701,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 | no coverage guidance | 20 | 5 | 113 → 113 | 0 → 0 | 0 → 0 | 9 → 5 (7 → 4) |
 | v1 | 20 | 15 | 78 → 78 | 1 → 0 | 1 → 0 | 48 → 37 (13 → 8) |
 
-- **Effect:** the rule moves edits in 38 of the 210 runs and costs no planted item.
+- **Effect:** the rule moves edits in 38 of the 220 runs and costs no planted item.
 - **What it moves for the team:** the 9 methods. The rule marks methods (a hatchling hook's `initialize`, for example), not a whole class. So the 5 class deletions stay, along with the 3 jinja2 removals and the dropkit logic change: the `KernelBuilder` demo and dropkit's build hook class are deleted whole.
 - **The remaining hidden change:** with the rule, the single agent's one is slop-guard, seed 1, where the hidden test still fails on the rest of that run's diff.
 - **Reporting:** the reported numbers everywhere else stay as run.
@@ -740,7 +740,7 @@ Per project (packages kept / net lines):
 | Telegram-Snowball-Sampling | 1 / 6 | 2 / 6 | 7 / 139 | 1 / 6 |
 
 - **The team:**
-  - The audit flagged none of its 14 kept code edits, so none is wrong or debatable.
+  - The audit flagged none of its 14 kept code edits, so none was found wrong or debatable. The 14 come from three projects: it kept no code edit on this repository and applied nothing on slop-guard.
   - The reviewer accepted 12 of the 14 kept changes it decided on.
   - It rolled back more packages than it kept (20 against 16).
 - **No research squad:** the detector lanes decide what is safe, so it tried more and kept more at an eighth of the requests. But 4 of its 20 kept code edits are wrong:
