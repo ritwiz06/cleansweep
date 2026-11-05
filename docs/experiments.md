@@ -15,6 +15,12 @@ README, [results.md](results.md), `results/summary/v1/` and `results/summary/v2/
   reports are not published because they contain third-party code. Scripts that read them
   default to the archive folders (`scripts/experiments/v1/archive_paths.py`); their folder flags override that,
   and a default folder that is missing stops the script with the flag to pass.
+- v2's frozen clones (`../cleansweep-runs-v2`, `-v2b`, `-v2c`, `-v2d`, `-audit`) and the
+  case-study run folders (`../case_studies/`) were removed on 2026-11-05, after every committed
+  per-run CSV was rebuilt from this repository's `results/raw/` with no change. What only they
+  held (per-run LLM caches, superseded runs, chain scripts and logs) is in `../cleansweep-archive/`
+  (`raw/<clone>/`, `llm_caches/<clone>/`, `case_studies/`), and each folder's `NOT_COPIED.tsv` says
+  where the rest lives. The v2 raw results are archived too (`raw/cleansweep/results_raw/`).
 - Runtimes are wall-clock on the [reference machine](#requirements) and include contention when
   two jobs shared it. Model names are those our LLM endpoint served at the time.
 - Run every command from the repository root.

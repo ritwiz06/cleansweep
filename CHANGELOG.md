@@ -1,35 +1,80 @@
 # Changelog
 
-## Unreleased
+## v2.0 (2026-11-05)
 
-Repository restructure; no change in behavior or results (#81–#86, tag `pre-tidy` before it).
+The agent team: `cleansweep clean` and `method=agentic`. v1 (`method=cleansweep`) and every v1
+result are unchanged.
 
-- `scripts/` by purpose: `data/`, `experiments/v1/`, `experiments/v2/`, `report/`, `tools/`;
-  `reproduce_tables.sh` stays at the top. Script names are unchanged.
-- `results/summary/v1/` and `results/figures/v1/` hold the v1 tables and figures, including the
-  report tables and figures that were in `docs/report/`; `v2/` folders are for the v2 results.
-- CleanSweep Studio (`cleansweep studio`) replaces the Streamlit dashboard, which is removed
-  (git history keeps it): every dashboard page has a Studio screen with the same data, and the
-  live runner is `python -m cleansweep.live`.
-- New docs: `docs/index.md`, `docs/repo_layout.md`, a short `docs/user_guide.md`, and the v2.0
-  acceptance checklist `docs/requirements.md`.
-- Every regenerated table and figure is byte-identical to `pre-tidy`, and the offline v1 toy
-  sweep gives the same report.
-- Runs remove their scratch however they end: workspaces, containers, coverage data and the
-  probe harness's working folder go on success, on errors and on SIGTERM or SIGHUP; a run's
-  start removes what killed runs left (older than 24 hours, owner gone). `cleansweep sweep
-  --keep-workspace` keeps the workspace.
-- Studio's **Evaluation** screen charts the v2 results from the committed tables: the injection
-  benchmark by seed and pooled with CIs, the ablations, the real-project ablation, the diff audit
-  by tier and kind, probe strength, the Manager scenarios, LLM-reviewer acceptance and watch.
-- `core.agents.investigate: all | adaptive | none` (#145): `adaptive` sends only uncertain
-  candidates to an Investigator and lets the rules decide the rest; the default stays `all`.
-- The final v2 results (#146) in the README, `docs/results.md` and `docs/experiments.md`: every
-  injected seed with per-seed and pooled CIs and paired tests, the diff audit with a tier in every
-  claim (confirmed by a test, check or rule, or a reading, LLM-judged), the real-project ablation
-  in two tiers, and the extended framework rule re-scored next to the numbers as run.
-- Adaptive investigation measured (#150): on the five real projects 2 of 17 kept code edits are
-  wrong (the team: 0 of 14) at about the team's LLM requests, so the default stays `all`.
+### Agent team
+- Ten agents in a Manager's phase machine (onboard, baseline, audit, investigate, plan, execute,
+  final verify, report), a message board of directed messages, an artifact cache passed by ID,
+  and lessons from every rollback (#72, #73, #75, #76).
+- The Manager asks the LLM at phase boundaries, after a rollback and at 85% of a budget; hard
+  rules keep the last word: budgets, at most two step-backs, never worse than the baseline (#90,
+  #106).
+- Line-level detectors (debugger calls, debug prints, commented-out code, TODO notes, redundant
+  checks) beside v1's; a debugger call behind a condition is only suggested (#76, #124).
+- Coverage-guided probes: rounds of LLM-written cases until 90% of the changed lines run; safe mode
+  rolls back any probe-found behavior change (#76, #77, #89).
+- Thorough mode applies Investigator-safe rewrites the probes verify (#91, #93).
+- Formatting is safe only where the project enforces a formatter (#88); an edit that raises is
+  skipped instead of ending the run (#125).
+- "Everything runs" needs tests that ran at baseline; on SWE-bench the workspace keeps per-test
+  results (#118).
+
+### Using it
+- `cleansweep clean PROJECT` works on a scratch clone and delivers a branch, a report and patches;
+  options for mode, budgets, excludes, test arguments, install and model, or a `.cleansweep.yaml`
+  settings file (#73, #78, #122).
+- `cleansweep watch` follows a repository's commits and decides when a clean is worth its test
+  runs, with its reason (#103).
+- A UI snapshot check for Textual apps (#97).
+
+### CleanSweep Studio
+- `cleansweep studio`: runs, launch, replay of any run from its event log, step-back view,
+  compare, case studies with their LLM review, watch, results and saved sweep reports (#111,
+  #115, #117, #120).
+- The Streamlit dashboard is removed; Studio has every page it had (#119, #121).
+
+### Experiments (`scripts/experiments/v2/`, `results/summary/v2/`)
+- The team against v1 on the answer keys, SWE-bench Tier 1 and a Tier 2 subset, and 6 AIDev
+  repositories, with CIs and paired tests (#107, #114).
+- A slop-injection benchmark with traps (#104, #110), ablations including a single agent and the
+  rule-based Manager (#107), probe strength against v1's mutants and PatchDiff patches (#109),
+  Manager decision scenarios (#101), detection by category (#112).
+- Five case studies with blinded LLM-reviewer acceptance (an independent model's judgment, not a
+  human review) (#92–#100, #105).
+- Chaos and property tests and a coverage script (#116).
+- The injection benchmark with checked plants (each plant a right answer, each hidden test passing
+  before any cleanup), the one-shot baseline shown the planted files, seeds 1–3 with per-seed and
+  pooled CIs and paired tests (#128, #131, #146).
+- The real-project ablation: the team, no research squad and single agent on the five
+  case-study projects, with the LLM reviewer and the UI check (#130, #134–#136).
+- A blinded diff audit of every kept code edit, under a written rubric, with two tiers
+  (confirmed by a targeted test in the run's own environment, the UI check or a rule; or a
+  reading, LLM-judged), kinds and a calibration sheet (#129, #132, #133, #137, #138, #143).
+- The framework rule extended to `http.server`, `ast.NodeVisitor`, PyTorch, Lightning and
+  hatchling, and re-scored on every injected run next to the numbers as run (#139, #140, #146).
+- `core.agents.investigate: all | adaptive | none` (#145), measured on the real projects and the
+  injected set (#149, #150): about the team's requests on real code and 2 of 17 kept code edits
+  wrong, so the default stays `all`.
+- The conclusion worded to the evidence (#151, #152): Fisher's exact test on the real projects
+  (`real_ablation_tests.csv`), the injection table on the seeds every method ran
+  (`injection_summary_seeds12.csv`), both tiers against v1, the framework-rule re-score labeled
+  in-sample, and the blinded audit's counts as lower bounds that compare the methods fairly.
+
+### Repository and docs
+- Restructure into `scripts/{data,experiments/v1,experiments/v2,report,tools}`,
+  `results/{summary,figures}/{v1,v2}` and `app/` (#81–#86); byte-identical tables and the same
+  offline v1 toy sweep before and after.
+- `docs/requirements.md` (R1–R16), `docs/agentic_design.md`, `docs/user_guide.md` with Studio
+  screenshots, `docs/repo_layout.md`, and the v2 sections of `docs/experiments.md` and
+  `docs/results.md` (#84, #87, #123, #126, #147).
+- Runs remove their scratch however they end, and a run's start sweeps orphans;
+  `cleansweep sweep --keep-workspace` (#141). `scripts/tools/housekeeping.py` and a repository
+  layout test (#142).
+- Studio's Evaluation screen: the v2 results by tab, with the tier and LLM-judged labels (#144,
+  #148).
 
 ## v1.0.3 (2026-10-31)
 
