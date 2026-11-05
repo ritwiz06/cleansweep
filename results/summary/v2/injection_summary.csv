@@ -7,6 +7,14 @@ agentic,debug_leftover,30,30,1.0,0,0,1.0,30,0
 agentic,commented_code,30,30,1.0,0,0,1.0,30,0
 agentic,unused_dependency,30,25,0.833,0,0,1.0,30,0
 agentic,all,210,170,0.81,60,0,1.0,30,0
+agentic-adaptive,leftover_file,10,9,0.9,0,0,1.0,10,0
+agentic-adaptive,dead_code,10,9,0.9,10,0,1.0,10,0
+agentic-adaptive,duplicate,10,0,0.0,10,0,,10,0
+agentic-adaptive,unused_import,10,9,0.9,0,0,1.0,10,0
+agentic-adaptive,debug_leftover,10,9,0.9,0,0,1.0,10,0
+agentic-adaptive,commented_code,10,10,1.0,0,0,1.0,10,0
+agentic-adaptive,unused_dependency,10,9,0.9,0,0,1.0,10,0
+agentic-adaptive,all,70,55,0.786,20,0,1.0,10,0
 agentic-broadcast,leftover_file,20,20,1.0,0,0,1.0,20,0
 agentic-broadcast,dead_code,20,19,0.95,20,0,1.0,20,0
 agentic-broadcast,duplicate,20,0,0.0,20,0,,20,0

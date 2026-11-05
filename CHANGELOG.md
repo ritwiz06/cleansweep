@@ -28,6 +28,8 @@ Repository restructure; no change in behavior or results (#81–#86, tag `pre-ti
   injected seed with per-seed and pooled CIs and paired tests, the diff audit with a tier in every
   claim (confirmed by a test, check or rule, or a reading, LLM-judged), the real-project ablation
   in two tiers, and the extended framework rule re-scored next to the numbers as run.
+- Adaptive investigation measured (#150): on the five real projects 2 of 17 kept code edits are
+  wrong (the team: 0 of 14) at about the team's LLM requests, so the default stays `all`.
 
 ## v1.0.3 (2026-10-31)
 

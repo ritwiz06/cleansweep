@@ -386,6 +386,7 @@ investigation helps on real projects.
 | team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 of 14 | 0 | ok | 129.8 | 19.0 |
 | no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 of 20 (3) | 0 | ok | 15.8 | 35.3 |
 | single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 17 of 65 (12) | 15 | changed (`AttachmentBar`) | 83.2 | 47.1 |
+| adaptive investigation | everything runs 4, nothing applied 1 | 19 / 20 | 593 | 12/17 (2 unsure) | 2 of 17 (1) | 0 | ok | 127.2 | 32.5 |
 
 - **On real projects the research squad buys safety, not yield.**
   - None of the team's 14 kept code edits is wrong in any tier.
@@ -397,6 +398,11 @@ investigation helps on real projects.
 - **The single agent removes the most and breaks the most:** 17 of 65 kept code edits are wrong.
   - 12 are confirmed (10 by targeted tests, 2 by the UI check): the Studio messages that print its URL and build commands, two rewritten conditions, a pydantic validator and the command-palette hook in shotgun, and two shotgun widget methods Textual calls by name (`compose`, `watch_state`).
   - 5 are by reading: four core dependencies that Skill_Seekers' `doctor` command imports by name, and shotgun's build hook.
+- **Adaptive investigation** (`core.agents.investigate: adaptive`, #145; chain I, run after the others, same budgets): only candidates the rules call uncertain go to an Investigator.
+  - **Real projects:** 2 of its 17 kept code edits are wrong, 1 confirmed by a targeted test, where the team has none of 14. Both are edits the no research squad also made: the documented `exp_collect_v2.py` and shotgun's build hook.
+  - **Cost:** 127.2 LLM requests per project, against the team's 129.8. On real code nearly every candidate counts as uncertain (378 of 387 on shotgun).
+  - **Injected set, seed 1:** it removed 55 of 70 planted items against the team's 57 on the same seed, with no trap and no hidden change, at 78.6 requests per run against 91.8. 4 of its 188 kept code edits are wrong (3 confirmed), against the team's 6 of 275.
+  - The default stays `all`.
 - **Caveats:**
   - No wrong edit failed a test or probe in its run. Every run ended "everything runs", except slop-guard with the team ("nothing applied").
   - One run per project and 14 to 65 kept code edits per method make this a small sample.

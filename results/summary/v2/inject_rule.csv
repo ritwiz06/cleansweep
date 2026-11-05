@@ -1,5 +1,6 @@
 method,runs,moved,slop_removed_as_run,slop_removed_with_rule,traps_removed_as_run,traps_removed_with_rule,hidden_changed_as_run,hidden_changed_with_rule,wrong_as_run,wrong_with_rule,wrong_confirmed_as_run,wrong_confirmed_with_rule
 agentic,30,12,170,170,0,0,0,0,18,9,12,7
+agentic-adaptive,10,0,55,55,0,0,0,0,4,4,3,3
 agentic-broadcast,20,5,113,113,0,0,0,0,10,6,8,5
 agentic-inline_artifacts,20,3,112,112,0,0,0,0,7,5,6,4
 agentic-no_coverage,20,5,113,113,0,0,0,0,9,5,7,4

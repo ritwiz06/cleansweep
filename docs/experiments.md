@@ -509,6 +509,17 @@ condition is only suggested): `exp_eval.py --split data/splits/aidev_repos.json 
 PytorchConnectomics/pytorch_connectomics --methods agentic --out
 results/raw/v2_eval/aidev_after124`.
 
+### v2: adaptive investigation
+
+The team with `core.agents.investigate: adaptive` (#145): only the candidates the rules call
+uncertain go to an Investigator; the rules decide the rest.
+
+- **Run:** chain I in the frozen clone `../cleansweep-runs-v2d` (1b98820), in two parts side by side:
+  - the five real projects with `exp_case_study.py ... --investigate adaptive`, the same targets and budgets as the real-project ablation, written as `<project>-abl-adaptive`;
+  - `exp_inject.py run --seeds 1 --methods agentic-adaptive` on the seed-1 keys the other methods used (copied into the clone, byte-identical).
+- **Analysis:** the same as the real-project ablation. That is `exp_real_ablation.py review`, shotgun's UI check on that run, `collect` and `table`; the diff audit's run; then `exp_tables_v2.py` and `exp_rule_rescore.py run|table`. `exp_diff_audit.case_method` labels the runs `agentic-adaptive` from their summaries (#149).
+- **Runtime:** 2026-11-04 15:03–17:56. The real projects took 4.3 to 66.3 minutes each; the injected projects took 2.5 to 62.3 minutes (CORAL). The laptop ran on battery from 15:03 until it was plugged in between 17:27 (59%, discharging) and 17:46 (on AC), with no sleep (`pmset -g log`). **Model:** `qwen36-35b-a3b`.
+
 ### v2: diff audit
 
 An independent model reads every kept code edit and says whether it changes behavior anyone

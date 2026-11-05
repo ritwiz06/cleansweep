@@ -598,6 +598,7 @@ On the injected set, the same project-seed runs as the benchmark above. The colu
 | no lessons | 20 | 111/140 | 0/40 | 0/20 | 93.7 | 4.3 |
 | no coverage guidance | 20 | 113/140 | 0/40 | 0/20 | 91.0 | 2.2 |
 | single agent | 30 | 114/210 | 16/60 | 16/30 | 84.9 | 4.9 |
+| adaptive investigation (seed 1) | 10 | 55/70 | 0/20 | 0/10 | 78.6 | 7.6 |
 
 Runs shared the machine with other runs in different mixes, so the minutes do not compare across rows. On the same two seeds the team removed 113 of 140.
 
@@ -721,16 +722,17 @@ in `real_ablation_runs.csv`).
 | team | everything runs 4, nothing applied 1 | 16 / 20 | 315 | 12/14 (2 unsure) | 0 of 14 | 0 | ok (46 classes) | 129.8 | 19.0 |
 | no research squad | everything runs 5 | 22 / 35 | 653 | 13/21 (1 unsure) | 4 of 20 (3) | 0 | ok (46 classes) | 15.8 | 35.3 |
 | single agent | everything runs 5 | 73 / 9 | 1,020 | 44/65 (8 unsure) | 17 of 65 (12) | 15 | `AttachmentBar` changed | 83.2 | 47.1 |
+| adaptive investigation | everything runs 4, nothing applied 1 | 19 / 20 | 593 | 12/17 (2 unsure) | 2 of 17 (1) | 0 | ok (46 classes) | 127.2 | 32.5 |
 
 Per project (packages kept / net lines):
 
-| project | team | no research squad | single agent |
-|---|---|---|---|
-| this repository | 0 / 0 (its one package rolled back) | 1 / 141 | 14 / -46 (added 46 lines) |
-| slop-guard | nothing applied | 0 / 0 (3 rolled back) | 9 / 28 |
-| Skill_Seekers | 7 / 11 | 10 / 89 | 25 / 372 |
-| shotgun | 8 / 298 | 9 / 417 | 18 / 527 |
-| Telegram-Snowball-Sampling | 1 / 6 | 2 / 6 | 7 / 139 |
+| project | team | no research squad | single agent | adaptive investigation |
+|---|---|---|---|---|
+| this repository | 0 / 0 (its one package rolled back) | 1 / 141 | 14 / -46 (added 46 lines) | 1 / 141 |
+| slop-guard | nothing applied | 0 / 0 (3 rolled back) | 9 / 28 | nothing applied |
+| Skill_Seekers | 7 / 11 | 10 / 89 | 25 / 372 | 8 / 29 |
+| shotgun | 8 / 298 | 9 / 417 | 18 / 527 | 9 / 417 |
+| Telegram-Snowball-Sampling | 1 / 6 | 2 / 6 | 7 / 139 | 1 / 6 |
 
 - **The team:**
   - None of its 14 kept code edits is wrong or debatable.
@@ -751,6 +753,19 @@ Per project (packages kept / net lines):
     - four core dependencies that `skill-seekers doctor` imports by name and that a fresh install no longer gets (the click removal is debatable, because a fresh install still gets click);
     - shotgun's build hook.
   - On this repository it added 46 lines net.
+- **Adaptive investigation** (`core.agents.investigate: adaptive`, #145): only the candidates the rules call uncertain go to an Investigator. Those are near-duplicates and wrappers, dependency removals, framework methods, dynamic-use risks and public dead code in a package.
+  - **Runs:** chain I, at 1b98820 in `../cleansweep-runs-v2d`, after the other three methods, with the same targets and budgets.
+  - **Routing:** on real code nearly every candidate is uncertain: shotgun 378 of 387, this repository 36 of 40, Telegram 16 of 17, slop-guard 17 of 17. So it used 127.2 LLM requests per project against the team's 129.8 (Skill_Seekers 300, its cap).
+  - **Safety:** 2 of its 17 kept code edits are wrong.
+    - The deleted `exp_collect_v2.py`, confirmed by a test.
+    - shotgun's build hook, by reading.
+    - On this repository and shotgun it kept exactly what the no research squad kept, and both wrong edits are that squad's.
+  - **Review and UI:** the reviewer accepted 12 of 17 (LLM-judged), and shotgun's UI check is ok.
+  - **Injected set, seed 1** (10 projects, the same plants as every other method):
+    - planted items removed: 55 of 70, against the team's 57 (Wilcoxon p = 1.0), with no trap and no hidden change;
+    - LLM requests: 78.6 per run, against 91.8;
+    - wrong: 4 of its 188 kept code edits (3 confirmed), against the team's 6 of 275 on that seed. All 188 are edits another method made on the same plants.
+  - **Decision (DECISIONS):** the default stays `all`. The bar was the team's safety on real projects at no more than half the requests, and adaptive meets neither part.
 - **Caveats:**
   - No wrong edit failed a test or probe in its run. Every run ended "everything runs", or "nothing applied" (the team on slop-guard).
   - One run per project and 14 to 65 kept code edits per method make this a small sample.
