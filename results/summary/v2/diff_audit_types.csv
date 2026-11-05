@@ -12,6 +12,12 @@ injected,agentic,debatable,public name,14,0,14
 injected,agentic,wrong,changed logic,1,1,1
 injected,agentic,wrong,dependency,3,3,3
 injected,agentic,wrong,dynamic handler or stub,14,8,14
+injected,agentic-adaptive,debatable,changed logic,1,0,1
+injected,agentic-adaptive,debatable,dependency,1,0,1
+injected,agentic-adaptive,wrong,changed logic,1,1,1
+injected,agentic-adaptive,wrong,deleted file,1,1,1
+injected,agentic-adaptive,wrong,dependency,1,1,1
+injected,agentic-adaptive,wrong,dynamic handler or stub,1,0,1
 injected,agentic-broadcast,debatable,dependency,2,0,2
 injected,agentic-broadcast,debatable,dynamic handler or stub,10,0,10
 injected,agentic-broadcast,debatable,public name,5,0,5
