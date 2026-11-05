@@ -20,8 +20,11 @@ rolled back, lines removed (deleted minus added) and files deleted in its final 
 reviewer's accept / reject / unsure on the kept changes, the diff audit's kept code edits with the
 wrong ones (all tiers, and those confirmed by a targeted test, the UI check or a rule) and the
 debatable ones (diff_audit_checks.csv), the UI check, LLM requests, tokens and minutes.
-table: results/summary/v2/real_ablation.{csv,md}, per method, from real_ablation_runs.csv only
-(offline; reproduce_tables.sh runs it).
+table: results/summary/v2/real_ablation.{csv,md}, per method, and real_ablation_tests.csv, each
+method's wrong share of kept code edits against the team's (Fisher's exact test, two-sided, in
+both tiers), from real_ablation_runs.csv only (offline; reproduce_tables.sh runs it). The test
+pools edits, which cluster by project (five projects, one run each), so its p-values are a guide,
+not proof.
 """
 
 from __future__ import annotations
@@ -262,6 +265,40 @@ def method_table(rows: list[dict]) -> list[dict]:
     return out
 
 
+def fisher_tests(rows: list[dict]) -> list[dict]:
+    """Each other method's wrong share of kept code edits against the team's, all tiers and the
+    confirmed tier: Fisher's exact test, two-sided."""
+    from scipy.stats import fisher_exact
+
+    team = [r for r in rows if r["method"] == "team"]
+    out = []
+    for method in METHODS[1:]:
+        mine = [r for r in rows if r["method"] == method]
+        if not team or not mine:
+            continue
+        for tier, key in (("all tiers", "wrong"), ("confirmed", "wrong_confirmed")):
+            a, n = _sum(team, key), _sum(team, "code_edits")
+            b, m = _sum(mine, key), _sum(mine, "code_edits")
+            p = fisher_exact([[a, n - a], [b, m - b]])[1]
+            out.append(
+                {
+                    "comparison": f"team vs {method}",
+                    "tier": tier,
+                    "team wrong": f"{a} of {n}",
+                    "other wrong": f"{b} of {m}",
+                    "Fisher exact p (two-sided)": round(float(p), 4),
+                }
+            )
+    return out
+
+
+def _write_csv(path: Path, out: list[dict]) -> None:
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(out[0]))
+        writer.writeheader()
+        writer.writerows(out)
+
+
 def table() -> Path | None:
     if not RUNS_CSV.exists():
         return None
@@ -269,14 +306,14 @@ def table() -> Path | None:
         rows = list(csv.DictReader(f))
     out = method_table(rows)
     path = SUMMARY / "real_ablation.csv"
-    with path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(out[0]))
-        writer.writeheader()
-        writer.writerows(out)
+    _write_csv(path, out)
     cols = list(out[0])
     lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
     lines += ["| " + " | ".join(str(r[c]) for c in cols) + " |" for r in out]
     (SUMMARY / "real_ablation.md").write_text("\n".join(lines) + "\n")
+    tests = fisher_tests(rows)
+    if tests:
+        _write_csv(SUMMARY / "real_ablation_tests.csv", tests)
     return path
 
 

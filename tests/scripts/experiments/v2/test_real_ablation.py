@@ -112,6 +112,22 @@ def test_diff_counts_net_lines_and_deleted_files():
     assert load().diff_counts({"final_diff": diff}) == {"lines_removed": 2, "files_removed": 1}
 
 
+def test_fisher_tests_compare_each_method_with_the_team_in_both_tiers():
+    ablation = load()
+    rows = [
+        row("shotgun", "team", "everything runs", code_edits=14),
+        row("shotgun", "no_research", "everything runs", code_edits=20, wrong=4, wrong_confirmed=3),
+    ]
+    tests = ablation.fisher_tests(rows)
+    assert [(t["comparison"], t["tier"]) for t in tests] == [
+        ("team vs no_research", "all tiers"),
+        ("team vs no_research", "confirmed"),
+    ]
+    assert tests[0]["team wrong"] == "0 of 14" and tests[0]["other wrong"] == "4 of 20"
+    assert tests[0]["Fisher exact p (two-sided)"] == 0.1261
+    assert tests[1]["Fisher exact p (two-sided)"] == 0.2513
+
+
 def test_the_adaptive_runs_get_their_own_row():
     ablation = load()
     rows = [

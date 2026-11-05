@@ -5,7 +5,8 @@ injection benchmark by category.
 
 Reads results/summary/v2/eval_runs.csv (exp_collect_v2.py) and injection.csv (exp_inject.py
 table). Writes results/summary/v2/{eval_table,eval_paired,ablations}.{csv,md},
-injection_summary.csv, and injection_seeds and injection_paired (.csv, .md): each method per
+injection_summary.csv (and injection_summary_seeds12.csv, on seeds 1 and 2 only, which every
+method ran), and injection_seeds and injection_paired (.csv, .md): each method per
 seed and on all seeds pooled (bootstrap CI over project x seed), and the team against no research
 squad, a single agent, v1 and one-shot, paired by project and seed. Toy and demo pool as "answer
 keys"; their runs pair by target and repeat.
@@ -362,6 +363,9 @@ def main() -> int:
     write("ablations", ablations(rows, plants))
     if plants:
         write("injection_summary", summarize(plants), markdown=False)
+        # seeds 1 and 2, which every method ran (the team's seed 3 has no v1 run to compare)
+        both = [p for p in plants if p["seed"] in ("1", "2")]
+        write("injection_summary_seeds12", summarize(both), markdown=False)
         write("injection_seeds", injection_seeds(plants))
         write("injection_paired", injection_paired(plants))
     for name in ("eval_table", "eval_paired", "ablations", "injection_seeds", "injection_paired"):
