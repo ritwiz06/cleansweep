@@ -43,7 +43,7 @@ RESULTS = Path(os.environ.get("CLEANSWEEP_RESULTS", ROOT / "results"))
 SUMMARY = RESULTS / "summary" / "v2"
 CASES = ROOT / "results" / "raw" / "case_studies"
 RUNS_CSV = SUMMARY / "real_ablation_runs.csv"
-METHODS = ["team", "no_research", "single_agent"]
+METHODS = ["team", "no_research", "single_agent", "adaptive"]
 FIELDS = [
     "project",
     "method",

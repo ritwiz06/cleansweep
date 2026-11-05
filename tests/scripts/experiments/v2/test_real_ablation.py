@@ -110,3 +110,12 @@ def test_diff_counts_net_lines_and_deleted_files():
         "@@ -1 +0,0 @@\n-z\n"
     )
     assert load().diff_counts({"final_diff": diff}) == {"lines_removed": 2, "files_removed": 1}
+
+
+def test_the_adaptive_runs_get_their_own_row():
+    ablation = load()
+    rows = [
+        row("telegram", "team", "everything runs", llm_requests=54, minutes=3.7),
+        row("telegram", "adaptive", "everything runs", llm_requests=49, minutes=8.1),
+    ]
+    assert [r["method"] for r in ablation.method_table(rows)] == ["team", "adaptive"]

@@ -219,3 +219,13 @@ def test_record_needs_a_kind_unless_fine():
         assert "needs a kind" in str(exc)
     else:
         raise AssertionError("a wrong check without a kind was recorded")
+
+
+def test_a_case_study_run_is_labeled_by_its_ablation_and_investigation():
+    audit = load()
+    assert audit.case_method({}, "shotgun-safe") == "agentic"
+    lean = audit.case_method({"ablation": "no_research"}, "x-abl-no_research")
+    assert lean == "agentic-no_research"
+    assert audit.case_method({"investigate": "all"}, "x-abl-team") == "agentic"
+    assert audit.case_method({"investigate": "adaptive"}, "x-abl-adaptive") == "agentic-adaptive"
+    assert audit.case_method({}, "slop-guard-thorough") == "agentic (thorough)"

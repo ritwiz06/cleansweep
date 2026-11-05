@@ -243,13 +243,20 @@ def runs() -> list[tuple[str, str, str, Path]]:
         if name not in CASE_STUDIES and "-abl-" not in name:
             continue
         summary = path.parent / "summary.json"
-        ablation = json.loads(summary.read_text()).get("ablation") if summary.exists() else None
         source = "real-project ablation" if "-abl-" in name else "case studies"
-        method = "agentic" + (f"-{ablation}" if ablation else "")
-        if "thorough" in name:
-            method += " (thorough)"
-        out.append((source, method, name, path))
+        record = json.loads(summary.read_text()) if summary.exists() else {}
+        out.append((source, case_method(record, name), name, path))
     return out
+
+
+def case_method(summary: dict, name: str) -> str:
+    """The method of a case-study run from its summary: agentic, agentic-<ablation> or
+    agentic-adaptive, with " (thorough)" for a thorough-mode run."""
+    ablation = summary.get("ablation")
+    method = "agentic" + (f"-{ablation}" if ablation else "")
+    if summary.get("investigate", "all") != "all":
+        method += f"-{summary['investigate']}"
+    return method + (" (thorough)" if "thorough" in name else "")
 
 
 def _normal(diff: str) -> str:
