@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { auditBars, injectionBars, kindBars, methodName, parseCI, probeBars, ratio, records, reviewBars, scenarioBars, watchBars } from "./evaluation";
+import { auditBars, injectionBars, kindBars, methodName, parseCI, probeBars, ratio, records, reviewBars, scenarioBars, v3RecallBars, watchBars } from "./evaluation";
 
 describe("evaluation tables", () => {
   it("reads rows by column and parses CIs and ratios", () => {
@@ -57,5 +57,22 @@ describe("evaluation tables", () => {
     expect(watchBars(watch)).toEqual([{ policy: "watch", debt: 0.3, tests: 20, repos: 2 }]);
     const probes = [{ target_set: "swebench_t1", experiment: "patchdiff_recall", share_by_tests: 0, share_by_probes: 0.2, n: 3 }];
     expect(probeBars(probes)).toEqual([{ label: "SWE-bench T1: PatchDiff", tests: 0, probes: 0.2, n: 3 }]);
+  });
+});
+
+describe("v3RecallBars", () => {
+  it("reads recall and its interval from v3's injection table and skips methods with no runs", () => {
+    const rows = [
+      { method: "agentic", recall: "0.8", recall_ci_low: "0.7", recall_ci_high: "0.9", timed_out: "1" },
+      { method: "aider", recall: "", recall_ci_low: "", recall_ci_high: "", timed_out: "0" },
+    ];
+    const [bar, ...rest] = v3RecallBars(rows);
+    expect(rest).toHaveLength(0);
+    expect(bar.method).toBe("team");
+    expect(bar.share).toBe(0.8);
+    expect(bar.ci[0]).toBeCloseTo(0.1);
+    expect(bar.ci[1]).toBeCloseTo(0.1);
+    expect(bar.timedOut).toBe(1);
+    expect(methodName("aider")).toBe("Aider");
   });
 });

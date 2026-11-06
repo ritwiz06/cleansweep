@@ -14,11 +14,24 @@ import {
   reviewBars,
   scenarioBars,
   sources,
+  v3RecallBars,
   watchBars,
   type Row,
 } from "../state/evaluation";
 
-type TabKey = "injection" | "ablations" | "audit" | "probes" | "manager" | "reviewer" | "watch";
+type TabKey =
+  | "injection"
+  | "ablations"
+  | "audit"
+  | "probes"
+  | "manager"
+  | "reviewer"
+  | "watch"
+  | "v3-hypotheses"
+  | "v3-injection"
+  | "v3-real"
+  | "v3-audit"
+  | "v3-autonomy";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "injection", label: "Injection benchmark" },
@@ -28,6 +41,11 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "manager", label: "Manager scenarios" },
   { key: "reviewer", label: "LLM reviewer" },
   { key: "watch", label: "Watch" },
+  { key: "v3-hypotheses", label: "v3: hypotheses" },
+  { key: "v3-injection", label: "v3: injection" },
+  { key: "v3-real", label: "v3: real projects" },
+  { key: "v3-audit", label: "v3: audit" },
+  { key: "v3-autonomy", label: "v3: autonomy and cost" },
 ];
 
 const AXIS = { fill: "var(--muted)", fontSize: 12 };
@@ -36,18 +54,19 @@ const KIND_COLORS = [1, 2, 3, 4, 5, 7].map((n) => `var(--series-${n})`);
 const TOOLTIP = { background: "var(--surface)", border: "1px solid var(--border)" };
 const judged = (text = "LLM-judged") => <Badge tone="info">{text}</Badge>;
 
-// A committed table; a missing one comes back empty, so the screen can say it is not built yet.
-function useTable(name: string) {
-  return useApi<Table>(`evaluation:${name}`, () =>
-    api<Table>("/api/table", { root: "results", path: `summary/v2/${name}` }).catch((err) => {
+// A committed table (v2's or v3's); a missing one comes back empty, so the screen can say it is
+// not built yet.
+function useTable(name: string, version = "v2") {
+  return useApi<Table>(`evaluation:${version}:${name}`, () =>
+    api<Table>("/api/table", { root: "results", path: `summary/${version}/${name}` }).catch((err) => {
       if (err instanceof ApiError && err.status === 404) return { columns: [], rows: [] };
       throw err;
     }),
   );
 }
 
-function Loaded({ name, children }: { name: string; children: (table: Table) => ReactNode }) {
-  const res = useTable(name);
+function Loaded({ name, version, children }: { name: string; version?: string; children: (table: Table) => ReactNode }) {
+  const res = useTable(name, version);
   return (
     <Async res={res} what={`Loading ${name}`} empty={(t) => (t.columns.length ? null : `${name} is not built yet (scripts/reproduce_tables.sh).`)}>
       {children}
@@ -311,6 +330,85 @@ function Watch() {
   );
 }
 
+const V3_NOTE = "Interim until the results freeze (2026-11-13 12:00); the hypotheses are tested as docs/preregistration_v3.md states them.";
+
+function V3Table({ name }: { name: string }) {
+  return <Loaded name={name} version="v3">{(t) => <DataTable table={t} label={name} maxHeight={360} />}</Loaded>;
+}
+
+function V3Hypotheses() {
+  return (
+    <Card title="H1–H4, as pre-registered">
+      <V3Table name="hypotheses.csv" />
+      <p className="muted">{V3_NOTE} Each is supported, not supported, or not run by the freeze.</p>
+    </Card>
+  );
+}
+
+function V3Injection() {
+  return (
+    <>
+      <Card title="INJECT, seed 4 (out of sample): planted slop removed">
+        <Loaded name="injection.csv" version="v3">
+          {(t) => <Bars data={v3RecallBars(records(t))} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed (95% interval over repositories)" />}
+        </Loaded>
+        <p className="muted">A run that hit the cap or the budget is timed out: it stays in the denominator and removes nothing. {V3_NOTE}</p>
+      </Card>
+      <Card title="Per method">
+        <V3Table name="injection.csv" />
+      </Card>
+    </>
+  );
+}
+
+function V3Real() {
+  return (
+    <>
+      <Card title="REAL, run 1: held-out real tests and visible breaks">
+        <V3Table name="real.csv" />
+        <p className="muted">Half of each project's own test modules are held out (seed 4); only tests that pass in all three baseline runs count. {V3_NOTE}</p>
+      </Card>
+      <Card title="Safety against yield">
+        <V3Table name="curve.csv" />
+        <p className="muted">Wrong edits in all tiers include readings (LLM-judged); the confirmed tier rests on targeted tests, the UI check and rules.</p>
+      </Card>
+    </>
+  );
+}
+
+function V3Audit() {
+  return (
+    <>
+      <Card title="The blinded diff audit on the v3 runs, two tiers">
+        <V3Table name="audit.csv" />
+        <p className="muted">{judged("reading tier: LLM-judged")} Counts on finished runs; Fisher's exact test against the team.</p>
+      </Card>
+      <Card title="What the audit misses (estimate)">
+        <V3Table name="audit_miss.csv" />
+        <p className="muted">Targeted tests on a stratified sample of edits the auditor voted "no"; every number here is an estimate.</p>
+      </Card>
+      <Card title="Human ratings">
+        <V3Table name="human_kappa.csv" />
+        <p className="muted">Cohen's kappa between the two raters and against the LLM labels, or "not human-validated".</p>
+      </Card>
+    </>
+  );
+}
+
+function V3Autonomy() {
+  return (
+    <>
+      <Card title="AUTONOMY: clean on 30 diverse repositories, no human help">
+        <V3Table name="autonomy.csv" />
+        <p className="muted">Completed means a cleanup verdict; "stopped" is a valid ending but not completed. The raw rate decides H4 and R19; the rate without environment-impossible runs is shown beside it.</p>
+      </Card>
+      <Card title="Cost per finished run">
+        <V3Table name="cost.csv" />
+      </Card>
+    </>
+  );
+}
+
 export function Evaluation({ tab, onTab }: { tab: string; onTab: (tab: string) => void }) {
   const active = (TABS.find((t) => t.key === tab)?.key ?? "injection") as TabKey;
   const screens: Record<TabKey, ReactNode> = {
@@ -321,12 +419,17 @@ export function Evaluation({ tab, onTab }: { tab: string; onTab: (tab: string) =
     manager: <Manager />,
     reviewer: <Reviewer />,
     watch: <Watch />,
+    "v3-hypotheses": <V3Hypotheses />,
+    "v3-injection": <V3Injection />,
+    "v3-real": <V3Real />,
+    "v3-audit": <V3Audit />,
+    "v3-autonomy": <V3Autonomy />,
   };
   return (
     <div className="screen">
       <header className="screen-head">
         <h2>Evaluation</h2>
-        <span className="muted">The v2 results, read from the committed tables (results/summary/v2/).</span>
+        <span className="muted">The v2 results (results/summary/v2/) and the v3 results (results/summary/v3/), read from the committed tables.</span>
       </header>
       <Tabs tabs={TABS} value={active} onChange={onTab} />
       {screens[active]}
