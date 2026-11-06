@@ -92,3 +92,30 @@ def test_the_adjusted_rate_leaves_environment_impossible_runs_out():
         1,
         0.5,
     )
+
+
+def test_export_keeps_lfs_pointers_even_when_git_lfs_is_missing(tmp_path, monkeypatch):
+    import subprocess
+
+    auto = load()
+    clone = tmp_path / "clones" / "o__x"
+    clone.mkdir(parents=True)
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", *load().LFS_OFF]
+    git += ["-c", "filter.lfs.clean="]
+    subprocess.run(["git", "init", "-q"], cwd=clone, check=True)
+    (clone / ".gitattributes").write_text("*.bin filter=lfs diff=lfs merge=lfs -text\n")
+    (clone / "data.bin").write_text("version https://git-lfs.github.com/spec/v1\n")
+    (clone / "mod.py").write_text("A = 1\n")
+    subprocess.run([*git, "add", "-A"], cwd=clone, check=True)
+    subprocess.run([*git, "commit", "-qm", "c"], cwd=clone, check=True)
+    # a filter git cannot start, as on a machine where git-lfs is configured but not installed
+    subprocess.run(
+        ["git", "config", "filter.lfs.process", "no-such-git-lfs filter-process"],
+        cwd=clone,
+        check=True,
+    )
+    subprocess.run(["git", "config", "filter.lfs.required", "true"], cwd=clone, check=True)
+    monkeypatch.setattr(auto, "CLONES", tmp_path / "clones")
+    auto.export_tree("o/x", "HEAD", tmp_path / "out")
+    assert (tmp_path / "out" / "mod.py").read_text() == "A = 1\n"
+    assert (tmp_path / "out" / "data.bin").read_text().startswith("version https://git-lfs")
