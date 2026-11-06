@@ -65,10 +65,11 @@ def row(name, status="kept", reason="", **extra):
 
 
 def test_split_is_disjoint_skips_v2_and_hidden_names_and_fills_autonomy_quotas():
-    rows = [row(f"o/kept{i}") for i in range(5)]
+    rows = [row(f"o/kept{i}") for i in range(6)]
     rows += [row("o/v2"), row("o/hidden"), row("o/gpl", license="GPL-3.0")]
     rows += [row("o/notests", "dropped", "fewer than 5 tests ran", test_style="none")]
     rows += [row("o/broken", "dropped", "install failed")]
+    rows += [row("o/slow", "dropped", "tests over the time limit")]
     out = load().split(rows, V3, v2_runnable={"o/v2"}, hidden={"o/hidden"})
     inject = {r["full_name"] for r in out["inject"]}
     real = {r["full_name"] for r in out["real"]}
@@ -78,4 +79,6 @@ def test_split_is_disjoint_skips_v2_and_hidden_names_and_fills_autonomy_quotas()
     assert not ({"o/v2", "o/hidden", "o/gpl"} & (inject | real | autonomy))
     assert {"o/notests", "o/broken"} <= autonomy
     assert [r["runs"] for r in out["real"]] == [2, 1]
+    reserve = {r["full_name"] for r in out["reserve"]}
+    assert len(reserve) == 3 and not reserve & (inject | real | autonomy)
     assert out == load().split(rows, V3, v2_runnable={"o/v2"}, hidden={"o/hidden"})

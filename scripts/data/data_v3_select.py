@@ -11,7 +11,9 @@ Writes data/processed/v3_repo_pool.csv (every row) and results/data_summary/v3_r
 (without the names in data/processed/v3_local_only.txt). Rerunning skips rows already screened.
 
 split: AUTONOMY (diverse layouts, any screen outcome), INJECT and REAL (kept by the screen, not
-among v2's runnable repositories), seeded and disjoint, into data/splits/v3_repos.json.
+among v2's runnable repositories), seeded and disjoint, into data/splits/v3_repos.json, with the
+other runnable repositories as an ordered reserve: the next one replaces a set member that cannot
+be used (for example, too few modules to plant in), so no replacement is picked by hand.
 Untrusted code runs only inside the containers; on the host, files are only read from git.
 """
 
@@ -279,7 +281,8 @@ def split(rows: list[dict], v3: dict, v2_runnable: set[str], hidden: set[str]) -
     rng.shuffle(runnable)
     n_inject, n_real = int(v3["inject"]), int(v3["real"])
     inject, real = runnable[:n_inject], runnable[n_inject : n_inject + n_real]
-    taken = {r["full_name"] for r in inject + real} | v2_runnable
+    reserve = runnable[n_inject + n_real :]  # replacements, in order, for a set member that fails
+    taken = {r["full_name"] for r in runnable} | v2_runnable
     rest = [r for r in usable if r["full_name"] not in taken and r["reason"] not in NOT_SCREENED]
     rng.shuffle(rest)
     autonomy: list[dict] = []
@@ -320,6 +323,7 @@ def split(rows: list[dict], v3: dict, v2_runnable: set[str], hidden: set[str]) -
         "seed": int(v3["seed"]),
         "inject": [entry(r) for r in inject],
         "real": [entry(r, runs=2 if i < runs else 1) for i, r in enumerate(real)],
+        "reserve": [entry(r) for r in reserve],
         "autonomy": [entry(r, traits=sorted(traits(r))) for r in autonomy[: int(v3["autonomy"])]],
     }
 
