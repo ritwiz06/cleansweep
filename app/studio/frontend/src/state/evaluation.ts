@@ -20,6 +20,12 @@ export const METHOD_NAMES: Record<string, string> = {
   "agentic-no_coverage": "no coverage",
   cleansweep: "v1",
   "cleansweep-gatekeeper": "v1",
+  "agentic-no_resolver": "team, resolver off",
+  "agentic-batch": "team, batching",
+  "agentic-thorough": "team, thorough",
+  "agentic-m2": "team, second model",
+  "agentic-single_agent-m2": "single agent, second model",
+  aider: "Aider",
   "cleansweep-advisory": "v1 (advisory)",
   one_shot_llm: "one-shot",
 };
@@ -66,6 +72,21 @@ export function injectionBars(rows: Row[]) {
         ci: ci ? [share - ci.low, ci.high - share] : [0, 0],
         traps: num(r["traps removed"]),
         runs: num(r.runs),
+      };
+    });
+}
+
+// v3's injection.csv: recall with its bootstrap interval over repositories, per method
+export function v3RecallBars(rows: Row[]) {
+  return rows
+    .filter((r) => String(r.recall ?? "") !== "")
+    .map((r) => {
+      const share = num(r.recall);
+      return {
+        method: methodName(r.method),
+        share,
+        ci: [share - num(r.recall_ci_low), num(r.recall_ci_high) - share],
+        timedOut: num(r.timed_out),
       };
     });
 }

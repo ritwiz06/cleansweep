@@ -304,7 +304,7 @@ test("bad launch requests show the server's reason", async ({ page }) => {
 test("evaluation: every tab loads, with the tiers and the LLM-judged labels", async ({ page }) => {
   await open(page, "evaluation");
   await expect(page.getByRole("heading", { name: "Evaluation" })).toBeVisible();
-  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch"]) {
+  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch", "v3: hypotheses", "v3: injection", "v3: real projects", "v3: audit", "v3: autonomy and cost"]) {
     await page.getByRole("tab", { name: tab }).click();
     await expect(page.locator(".state.loading")).toHaveCount(0);
     await expect(page.locator(".state.error")).toHaveCount(0);
@@ -375,6 +375,7 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "evaluation",
     "evaluation?tab=audit",
     "evaluation?tab=ablations",
+    "evaluation?tab=v3-audit",
     "sweeps",
     `replay?root=replay&path=${V1}`,
     `reports?root=replay&path=${V1}/report.json`,
