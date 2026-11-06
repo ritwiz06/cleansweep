@@ -1,6 +1,7 @@
 """Real-project evaluation (v3) with held-out real tests, on the REAL repositories of
 data/splits/v3_repos.json. Each method cleans each project in its network-less container (safe
-mode, the whole project in scope, at most 120 minutes) and sees only half of the project's own
+mode, the whole project in scope, the cap and budget of methods_v3) and sees only half of the
+project's own
 test modules; the other half, held out by a fixed seed, is the hidden check.
 
     python scripts/experiments/v3/exp_real_v3.py prepare [--repos owner/name ...]
@@ -8,9 +9,11 @@ test modules; the other half, held out by a fixed seed, is the hidden check.
 
 prepare: a held-out clone per repository (data/raw/aidev/heldout/<owner>__<name>): commit
 "base" is the screened head; commit "visible" deletes the held-out test modules (test_*.py and
-*_test.py, half of them, seeded; conftest.py and helpers stay). The whole suite runs on the base
-commit in a container to record which tests pass before any cleanup; a project none of whose
-held-out tests pass is skipped. Writes results/raw/real_v3/<name>/split.json.
+*_test.py, half of them, seeded; conftest.py and helpers stay). The whole suite runs three times
+on the base commit in a container: only tests that pass in all three count (a test whose status
+changes is flaky, left out and counted), and the share of test functions held out is recorded. A
+project none of whose held-out tests pass in all three runs is skipped. Writes
+results/raw/real_v3/<name>/split.json.
 A repository that cannot be used (fewer than two test modules, or no held-out test passes before
 any cleanup) is replaced by the split's next reserve, in order; results/raw/real_v3/set.json lists
 the set and every replacement with its reason.
@@ -42,13 +45,13 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
-from methods_v3 import LABELS, Capped, resolve, run_method  # noqa: E402
+from methods_v3 import LABELS, Capped, resolve, run_method, timed_out  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "real_v3"
 SPLIT = ROOT / "data" / "splits" / "v3_repos.json"
 CLONES = "data/raw/aidev/heldout"
 SEED = 4
-BUDGET = {"minutes": 120}
+BASELINE_RUNS = 3
 METHODS = [
     "agentic",
     "agentic-batch",
@@ -190,22 +193,49 @@ def prepare(full_name: str, entry: dict, cfg: dict) -> dict:
         _git(tree, "commit", "-q", "--no-verify", "-m", f"hold out tests (seed {SEED})")
         split["visible_sha"] = _git(tree, "rev-parse", "HEAD")
         _git(tree, "tag", "-f", "visible", split["visible_sha"])
-        split["baseline"] = run_suite(f"aidev:{full_name}@{base}", cfg)
-        passing = [t for t, s in split["baseline"]["statuses"].items() if s == "passed"]
-        split["held_passing"] = sum(in_modules(t, held) for t in passing)
+        runs = [run_suite(f"aidev:{full_name}@{base}", cfg) for _ in range(BASELINE_RUNS)]
+        split["baseline"] = baseline(runs)
+        split.update(held_counts(split["baseline"], held))
         if not split["held_passing"]:
-            split["skip"] = "no held-out test passes before any cleanup"
+            split["skip"] = f"no held-out test passes in all {BASELINE_RUNS} baseline runs"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "split.json").write_text(json.dumps(split, indent=1))
     return split
 
 
+def baseline(runs: list[dict]) -> dict:
+    """The baseline from repeated runs of the suite: the tests that passed in every run, and the
+    flaky ones (a status that changed between runs)."""
+    tests = set().union(*(r.get("statuses", {}) for r in runs))
+    seen = {t: {r.get("statuses", {}).get(t) for r in runs} for t in tests}
+    return {
+        "runs": len(runs),
+        "statuses": runs[0].get("statuses", {}),
+        "stable_passing": sorted(t for t, s in seen.items() if s == {"passed"}),
+        "flaky": sorted(t for t, s in seen.items() if len(s) > 1),
+    }
+
+
+def held_counts(base: dict, held: list[str]) -> dict:
+    """The held-out half in test functions: how many there are, how many pass in every baseline
+    run (the hidden check uses only those), how many are flaky, and the share held out."""
+    tests = list(base["statuses"])
+    in_held = [t for t in tests if in_modules(t, held)]
+    return {
+        "test_functions": len(tests),
+        "held_functions": len(in_held),
+        "held_share": round(len(in_held) / len(tests), 3) if tests else 0.0,
+        "held_passing": sum(in_modules(t, held) for t in base["stable_passing"]),
+        "held_flaky": sum(in_modules(t, held) for t in base["flaky"]),
+    }
+
+
 def compare(split: dict, after: dict) -> dict:
-    """Tests that passed on the base commit and do not pass after the final diff, split into
-    held-out (the hidden check) and visible (what the method could see)."""
-    before = split["baseline"]["statuses"]
+    """Tests that passed in every baseline run on the base commit and do not pass after the
+    final diff, split into held-out (the hidden check) and visible (what the method could see);
+    flaky tests never count."""
     changed = sorted(
-        t for t, s in before.items() if s == "passed" and after["statuses"].get(t) != "passed"
+        t for t in split["baseline"]["stable_passing"] if after["statuses"].get(t) != "passed"
     )
     held = [t for t in changed if in_modules(t, split["held"])]
     return {
@@ -229,7 +259,7 @@ def run_cfg(run: int, folder: Path) -> dict:
 
     over = {
         "reviewer": {"scope": "repo"},
-        "core": {"sandbox": {"aidev_clones": CLONES}, "agents": {"budget": BUDGET}},
+        "core": {"sandbox": {"aidev_clones": CLONES}},
     }
     if run > 1:  # its own caches: a second model run, not a replay of the first
         caches = folder / "caches"
@@ -273,9 +303,10 @@ def run_one(full_name: str, split: dict, label: str, run: int) -> dict:
     try:
         try:
             report = run_method(f"aidev:{full_name}@{split['visible_sha']}", label, cfg, out)
-        except Capped as exc:  # recorded as not finished, never scored
+        except Capped as exc:  # timed out: kept in every denominator, never scored
             minutes = round((time.time() - t0) / 60, 2)
-            capped = {"verdict": "capped", "capped": str(exc), "minutes": minutes}
+            capped = {"verdict": "timed out", "timed_out": "time cap", "capped": str(exc)}
+            capped["minutes"] = minutes
             (folder / "summary.json").write_text(json.dumps(capped, indent=1))
             (folder / "heldout.json").write_text(json.dumps({"behavior_changed": None, **capped}))
             return {"repo": full_name, "method": label, "run": run, **capped}
@@ -283,7 +314,7 @@ def run_one(full_name: str, split: dict, label: str, run: int) -> dict:
         save_json(report, folder / "report.json")
         diff = report.stats.get("final_diff", "")
         (folder / "final.diff").write_text(diff)
-        summary = summarize(report, minutes)
+        summary = {**summarize(report, minutes), "timed_out": timed_out(report.stats, minutes)}
         if resolve(label).kind == "agentic":
             result = {
                 "out": str(out),

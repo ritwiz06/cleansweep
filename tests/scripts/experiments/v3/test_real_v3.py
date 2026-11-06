@@ -35,31 +35,65 @@ def test_tests_are_matched_to_their_modules():
     assert not real.in_modules("tests.test_b::test_one", held)
 
 
+def test_baseline_keeps_tests_that_pass_in_every_run_and_counts_flaky_ones():
+    real = load()
+    runs = [
+        {
+            "statuses": {
+                "tests.test_a::t1": "passed",
+                "tests.test_a::t2": "passed",
+                "x::t": "passed",
+            }
+        },
+        {
+            "statuses": {
+                "tests.test_a::t1": "passed",
+                "tests.test_a::t2": "failed",
+                "x::t": "passed",
+            }
+        },
+        {
+            "statuses": {
+                "tests.test_a::t1": "passed",
+                "tests.test_a::t2": "passed",
+                "x::t": "passed",
+            }
+        },
+    ]
+    base = real.baseline(runs)
+    assert base["stable_passing"] == ["tests.test_a::t1", "x::t"]
+    assert base["flaky"] == ["tests.test_a::t2"]
+    counts = real.held_counts(base, ["tests/test_a.py"])
+    assert counts == {
+        "test_functions": 3,
+        "held_functions": 2,
+        "held_share": 0.667,
+        "held_passing": 1,
+        "held_flaky": 1,
+    }
+
+
 def test_compare_splits_newly_failing_tests_into_held_out_and_visible():
     real = load()
     split = {
         "held": ["tests/test_a.py"],
         "baseline": {
-            "statuses": {
-                "tests.test_a::t1": "passed",
-                "tests.test_a::t2": "failed",
-                "tests.test_b::t3": "passed",
-                "tests.test_b::t4": "passed",
-            }
+            "stable_passing": ["tests.test_a::t1", "tests.test_b::t3", "tests.test_b::t4"],
+            "flaky": ["tests.test_a::t5"],
         },
     }
     after = {
         "statuses": {
             "tests.test_a::t1": "failed",
-            "tests.test_a::t2": "failed",
+            "tests.test_a::t5": "failed",
             "tests.test_b::t3": "passed",
         }
     }
     out = real.compare(split, after)
-    assert out["held_changed"] == ["tests.test_a::t1"]
+    assert out["held_changed"] == ["tests.test_a::t1"]  # the flaky t5 never counts
     assert out["visible_changed"] == ["tests.test_b::t4"]
     assert out["behavior_changed"] is True and out["visible_broken"] is True
-    same = {"statuses": dict(split["baseline"]["statuses"])}
+    same = {"statuses": {t: "passed" for t in split["baseline"]["stable_passing"]}}
     assert real.compare(split, same)["behavior_changed"] is False
 
 

@@ -1,9 +1,12 @@
 import importlib.util
 import json
+import shutil
 import subprocess
 import time
 import urllib.request
 from pathlib import Path
+
+import pytest
 
 from cleansweep.sandbox.local import open_local
 
@@ -31,7 +34,14 @@ def workspace(tmp_path):
     (src / ".env").write_text("SOMETHING=1\n")
     ws = open_local(str(src), {"work_dir": str(tmp_path / "ws")})
     ws.container = "cs-test"
+    ws.sync = lambda: None  # here the "container" edits the workspace itself
     return ws
+
+
+def host_as_container(ext, monkeypatch):
+    """The fakes edit the workspace directly, so there is nothing to pull back."""
+    monkeypatch.setattr(ext, "container_files", lambda container: {})
+    monkeypatch.setattr(ext, "pull_changes", lambda ws, before: {"changed": [], "deleted": []})
 
 
 def fake_exec(ws, calls, code=0, sleep=0.0):
@@ -109,6 +119,7 @@ def test_run_aider_relays_counts_deletes_and_restores(tmp_path, monkeypatch, ups
     calls = []
     monkeypatch.setattr(ext, "_exec", fake_exec(ws, calls))
     monkeypatch.setattr(ext, "_docker", no_docker)
+    host_as_container(ext, monkeypatch)
     secrets = {"key": KEY, "endpoint": url}
     try:
         out = ext.run_aider(ws, tmp_path / "out", MODEL, secrets, 1800, {"max_input_tokens": 9})
@@ -138,6 +149,7 @@ def test_time_cap_stops_the_run_and_keeps_its_diff(tmp_path, monkeypatch, upstre
     ws = workspace(tmp_path)
     monkeypatch.setattr(ext, "_exec", fake_exec(ws, [], code=124, sleep=1.0))
     monkeypatch.setattr(ext, "_docker", no_docker)
+    host_as_container(ext, monkeypatch)
     try:
         out = ext.run_aider(ws, tmp_path / "out", MODEL, {"key": KEY, "endpoint": url}, 1, {})
         assert out["stopped"] == "time cap" and out["exit_status"] == 124
@@ -156,6 +168,7 @@ def test_run_writes_the_result_json_with_settings(tmp_path, monkeypatch, upstrea
     monkeypatch.setattr(ext, "open_aider_workspace", lambda target, sandbox: ws)
     monkeypatch.setattr(ext, "_exec", fake_exec(ws, []))
     monkeypatch.setattr(ext, "_docker", no_docker)
+    host_as_container(ext, monkeypatch)
     tests = {"applied": True, "new_failures": []}
     monkeypatch.setattr(ext, "final_tests", lambda target, diff, sandbox: tests)
     result = ext.run("/some/local/folder", tmp_path / "run", cap_min=0.5)
@@ -195,3 +208,37 @@ def test_one_kept_edit_per_changed_file():
     ]
     assert [r.status for r in results] == ["kept", "kept"]
     assert results[1].diff.startswith("diff --git a/scratch.py")
+
+
+@pytest.mark.docker
+@pytest.mark.skipif(shutil.which("docker") is None, reason="docker not installed")
+def test_pull_changes_brings_back_what_changed_in_the_container(tmp_path):
+    from cleansweep.sandbox import open_workspace
+
+    ext = load()
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+    clone = tmp_path / "clones" / "o__tiny"
+    clone.mkdir(parents=True)
+    (clone / "keep.py").write_text("A = 1\n")
+    (clone / "scratch.py").write_text("B = 2\n")
+    subprocess.run(["git", "init", "-q"], cwd=clone, check=True)
+    subprocess.run([*git, "add", "-A"], cwd=clone, check=True)
+    subprocess.run([*git, "commit", "-qm", "c"], cwd=clone, check=True)
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=clone, capture_output=True, text=True
+    ).stdout.strip()
+    cfg = {"work_dir": str(tmp_path / "ws"), "aidev_clones": str(tmp_path / "clones")}
+    ws = open_workspace(f"aidev:o/tiny@{sha}", {**cfg, "install": False})
+    try:
+        before = ext.container_files(ws.container)
+        edit = "printf 'A = 2\\n' > keep.py && rm scratch.py && printf 'C\\n' > new.py"
+        subprocess.run(
+            ["docker", "exec", "-w", "/repo", ws.container, "sh", "-c", edit], check=True
+        )
+        pulled = ext.pull_changes(ws, before)
+        assert pulled == {"changed": ["keep.py", "new.py"], "deleted": ["scratch.py"]}
+        root = Path(ws.path)
+        assert (root / "keep.py").read_text() == "A = 2\n" and (root / "new.py").exists()
+        assert not (root / "scratch.py").exists()
+    finally:
+        ws.close()

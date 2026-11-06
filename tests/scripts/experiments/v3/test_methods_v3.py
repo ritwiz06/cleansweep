@@ -50,3 +50,24 @@ def test_time_cap_raises_capped_and_restores_the_alarm():
     with methods.time_cap(1):
         pass
     assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
+
+
+def test_every_method_gets_the_same_cap_and_budget():
+    methods = load()
+    cfg = methods.limits({"core": {"agents": {"budget": {"test_runs": 80}}}})
+    assert cfg["core"]["agents"]["budget"] == {
+        "test_runs": 80,
+        "minutes": methods.CAP_MINUTES,
+        "llm_calls": methods.LLM_BUDGET,
+    }
+    assert cfg["core"]["llm"]["max_calls"] == methods.LLM_BUDGET
+    assert cfg["exp"]["external_cap_min"] == methods.CAP_MINUTES
+    assert cfg["exp"]["external_llm_budget"] == methods.LLM_BUDGET
+
+
+def test_a_run_at_the_cap_or_the_budget_is_timed_out():
+    methods = load()
+    assert methods.timed_out({}, methods.CAP_MINUTES) == "time cap"
+    assert methods.timed_out({"llm_calls": methods.LLM_BUDGET}, 10) == "LLM budget"
+    assert methods.timed_out({"external": {"stopped": "LLM budget"}}, 10) == "LLM budget"
+    assert methods.timed_out({"llm_calls": 3, "agentic": {"stopped": None}}, 10) == ""

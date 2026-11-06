@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
-from methods_v3 import LABELS, Capped, run_method  # noqa: E402
+from methods_v3 import LABELS, Capped, run_method, timed_out  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "inject_v3"
 SUMMARY = ROOT / "results" / "summary" / "v3"
@@ -103,11 +103,11 @@ def run_one(v2, repo: str, seed: int, label: str, cfg: dict) -> dict:
     t0 = time.time()
     try:
         report = run_method(target, label, cfg, folder / f"{label}_run")
-    except Capped as exc:  # recorded without a score: v2's table skips it, the v3 table counts it
+    except Capped as exc:  # timed out: no score; v2's table skips it, the v3 tables count it
         minutes = round((time.time() - t0) / 60, 2)
-        stats = {"capped": str(exc), "minutes": minutes}
+        stats = {"timed_out": "time cap", "capped": str(exc), "minutes": minutes}
         (folder / f"{label}.json").write_text(json.dumps({"method": label, "stats": stats}))
-        return {"repo": repo, "seed": seed, "method": label, "minutes": minutes, "capped": True}
+        return {"repo": repo, "seed": seed, "method": label, "minutes": minutes, "timed_out": True}
     minutes = round((time.time() - t0) / 60, 2)
     diff = report.stats.get("final_diff", "")
     after, applied = v2.final_tree(tree, diff, sha)
@@ -117,7 +117,10 @@ def run_one(v2, repo: str, seed: int, label: str, cfg: dict) -> dict:
         shutil.rmtree(after.parent, ignore_errors=True)
     hidden = v2.hidden_check(target, diff, folder / "hidden", cfg)
     report.stats.update(
-        minutes=minutes, inject={"applied": applied, "plants": scored}, hidden=hidden
+        minutes=minutes,
+        inject={"applied": applied, "plants": scored},
+        hidden=hidden,
+        timed_out=timed_out(report.stats, minutes),
     )
     save_json(report, folder / f"{label}.json")
     return {

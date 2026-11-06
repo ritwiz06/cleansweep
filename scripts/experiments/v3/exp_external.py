@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import os
 import re
@@ -29,6 +30,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -264,6 +266,55 @@ def edits(diff: str) -> tuple[list[CleanupItem], list[EditResult]]:
     return items, results
 
 
+# Runs in the container: the sha256 of every file under /repo but .git and caches.
+FILES_PY = r"""
+import hashlib, json, os
+out = {}
+for folder, dirs, files in os.walk("."):
+    dirs[:] = [d for d in dirs if d not in (".git", "__pycache__", ".pytest_cache")]
+    for name in files:
+        path = os.path.normpath(os.path.join(folder, name))
+        try:
+            with open(path, "rb") as f:
+                out[path] = hashlib.sha256(f.read()).hexdigest()
+        except OSError:
+            pass
+print(json.dumps(out))
+"""
+
+
+def container_files(container: str) -> dict[str, str]:
+    """{path: sha256} of the container's copy of the workspace."""
+    proc = subprocess.run(
+        ["docker", "exec", "-w", "/repo", container, "python", "-c", FILES_PY],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"could not list the container's files: {proc.stderr[-300:]}")
+    return json.loads(proc.stdout)
+
+
+def pull_changes(ws: AidevWorkspace, before: dict[str, str]) -> dict:
+    """Bring what Aider changed in the container's copy back into the workspace: the files it
+    added or changed, and the ones it deleted."""
+    after = container_files(ws.container)
+    changed = sorted(p for p, h in after.items() if before.get(p) != h)
+    gone = sorted(p for p in before if p not in after)
+    if changed:
+        proc = subprocess.run(
+            ["docker", "exec", "-w", "/repo", ws.container, "tar", "-cf", "-", "--", *changed],
+            capture_output=True,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(f"could not copy Aider's changes out: {proc.stderr[-300:]}")
+        with tarfile.open(fileobj=io.BytesIO(proc.stdout)) as tar:
+            tar.extractall(ws.path, filter="data")
+    for rel in gone:
+        (Path(ws.path) / rel).unlink(missing_ok=True)
+    return {"changed": changed, "deleted": gone}
+
+
 def _exec(cmd: list[str], timeout: int) -> tuple[int, str]:
     """Run the docker exec; a host timeout (docker itself stuck) counts as the cap."""
     try:
@@ -277,7 +328,13 @@ def _exec(cmd: list[str], timeout: int) -> tuple[int, str]:
 
 
 def run_aider(
-    ws: AidevWorkspace, out: Path, model: str, secrets: dict, cap_s: int, context: dict
+    ws: AidevWorkspace,
+    out: Path,
+    model: str,
+    secrets: dict,
+    cap_s: int,
+    context: dict,
+    budget: int | None = None,
 ) -> dict:
     """Run Aider once in the workspace's container, then the deletions it proposed; its logs go
     to out."""
@@ -295,11 +352,14 @@ def run_aider(
     for name in hidden:
         shutil.move(root / name, aside / name)
     argv = aider_argv(model, test_command(ws.repo_id))
+    ws.sync()  # the container holds its own copy: push the files above, and what moved aside
+    before = container_files(ws.container)
     _docker(["network", "connect", "bridge", ws.container])
     start = time.time()
-    with Relay(secrets["endpoint"], secrets["key"]) as relay:
+    with Relay(secrets["endpoint"], secrets["key"], max_requests=budget) as relay:
         code, output = _exec(exec_command(ws.container, argv, cap_s, relay.url), cap_s + 120)
     seconds = time.time() - start
+    pulled = pull_changes(ws, before)
     _docker(["network", "disconnect", "bridge", ws.container])
     for name in hidden:
         shutil.move(aside / name, root / name)
@@ -314,9 +374,11 @@ def run_aider(
     (logs / "requests.jsonl").write_text("".join(json.dumps(r) + "\n" for r in relay.requests))
     counts = usage(relay.requests, logs / "log.jsonl")
     capped = code in (124, 137) and seconds >= cap_s  # 137 earlier is another kill (memory)
+    refused = sum(r.get("refused") == "budget" for r in relay.requests)
     return {
         "exit_status": code,
-        "stopped": "time cap" if capped else None,
+        "stopped": "time cap" if capped else "LLM budget" if refused else None,
+        "pulled": pulled,
         "seconds": round(seconds, 1),
         "moved_aside": hidden,
         "deletions": {
@@ -349,7 +411,8 @@ def run_external(
     context = context_window(secrets["endpoint"], secrets["key"], model)
     ws = open_aider_workspace(target, cfg.get("core", {}).get("sandbox") or {})
     try:
-        run = run_aider(ws, out, model, secrets, cap_s, context)
+        budget = cfg.get("exp", {}).get("external_llm_budget")
+        run = run_aider(ws, out, model, secrets, cap_s, context, budget)
         diff = ws.diff(ws.base)
         diff_stats = ws.diff_stats(ws.base)
         repo_id = ws.repo_id

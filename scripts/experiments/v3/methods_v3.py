@@ -73,7 +73,12 @@ def apply(cfg: dict, method: Method) -> dict:
     return out
 
 
-V1_CAP_MINUTES = 150  # v1 has no time budget of its own; the team's is 120 minutes on REAL
+# One wall-clock cap and one LLM budget for every method (docs/preregistration_v3.md): the team
+# and Aider stop on their own at them; v1 cannot and is cut at the cap; any run still going
+# HARD_STOP_MINUTES after the cap is stopped. A run that reaches either is "timed out".
+CAP_MINUTES = 120
+LLM_BUDGET = 400
+HARD_STOP_MINUTES = 5
 
 
 class Capped(Exception):
@@ -96,21 +101,46 @@ def time_cap(minutes: float):
         signal.signal(signal.SIGALRM, previous)
 
 
+def limits(cfg: dict) -> dict:
+    """A copy of cfg with the cap and the budget set for every kind of method."""
+    core = cfg.get("core", {})
+    agents = core.get("agents", {})
+    budget = {**agents.get("budget", {}), "minutes": CAP_MINUTES, "llm_calls": LLM_BUDGET}
+    exp = {**cfg.get("exp", {}), "external_cap_min": CAP_MINUTES}
+    exp["external_llm_budget"] = LLM_BUDGET
+    llm = {**core.get("llm", {}), "max_calls": LLM_BUDGET}
+    return {**cfg, "exp": exp, "core": {**core, "llm": llm, "agents": {**agents, "budget": budget}}}
+
+
+def timed_out(stats: dict, minutes: float) -> str:
+    """Why a finished run counts as timed out ("time cap", "LLM budget"), or ""."""
+    if minutes >= CAP_MINUTES:
+        return "time cap"
+    stopped = stats.get("external", {}).get("stopped") or stats.get("agentic", {}).get("stopped")
+    if (stats.get("llm_calls") or 0) >= LLM_BUDGET or stopped == "LLM budget":
+        return "LLM budget"
+    return ""
+
+
 def run_method(target: str, label: str, cfg: dict, out: Path):
     """Run one method on a target (a folder or an "aidev:owner/name@sha" container target);
-    returns its SweepReport, whose stats hold the final diff. v1 runs under V1_CAP_MINUTES and
-    raises Capped when it does not finish; the runners record that, never a score."""
+    returns its SweepReport, whose stats hold the final diff. Every method gets the same cap and
+    budget (limits); a run cut at the cap raises Capped, which the runners record as timed out,
+    never as a score."""
     from cleansweep.workflow import run_sweep
 
     method = resolve(label)
+    cfg = limits(cfg)
     if method.kind == "external":
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         from exp_external import run_external
 
-        return run_external(target, {**cfg, "agent_out": str(out)})
+        with time_cap(CAP_MINUTES + HARD_STOP_MINUTES):
+            return run_external(target, {**cfg, "agent_out": str(out)})
     if method.kind == "v1":
         os.environ["CLEANSWEEP_JUDGE_MODE"] = "gatekeeper"
-        with time_cap(cfg.get("exp", {}).get("v1_cap_minutes", V1_CAP_MINUTES)):
+        with time_cap(CAP_MINUTES):
             return run_sweep(target, cfg, "cleansweep")
     os.environ.pop("CLEANSWEEP_JUDGE_MODE", None)
-    return run_sweep(target, {**apply(cfg, method), "agent_out": str(out)}, "agentic")
+    with time_cap(CAP_MINUTES + HARD_STOP_MINUTES):
+        return run_sweep(target, {**apply(cfg, method), "agent_out": str(out)}, "agentic")
