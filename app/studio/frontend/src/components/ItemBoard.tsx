@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { STAGE_LABELS, itemsByStage, type Item, type ItemStage, type RunState } from "../state/fold";
 import { Badge, Drawer, Empty, Status } from "./common";
+import { StateChip } from "./states";
 
 const COLUMNS: ItemStage[] = [
   "candidate",
@@ -116,9 +117,9 @@ export function ItemBoard({ state }: { state: RunState }) {
     <>
       <div className="kanban" aria-label="Item board">
         {shown.map((stage) => (
-          <div key={stage} className={`column stage-${stage}`}>
+          <div key={stage} className={`column stage-${stage} st-${stage}`}>
             <h4>
-              {STAGE_LABELS[stage]} <Badge>{columns[stage].length}</Badge>
+              <StateChip state={stage} label={STAGE_LABELS[stage]} /> <Badge>{columns[stage].length}</Badge>
             </h4>
             <div className="cards">
               {columns[stage].map((it) => (

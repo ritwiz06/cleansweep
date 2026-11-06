@@ -7,6 +7,10 @@ the results in brief and the known limitations. The documents below go deeper.
 apply its result, keep per-project settings in `.cleansweep.yaml`, watch a repository, and use
 Studio, with screenshots of its screens.
 
+**[Studio design](studio_design.md).** The rules every Studio screen follows: the type and
+spacing scales, the colors and glyphs of each item state in light and dark, the agent icons,
+motion and reduced motion, and legibility at 1280×720 on a projector.
+
 **[Architecture](architecture.md).** CleanSweep v1, the sweep pipeline (`method=cleansweep`):
 open → analyze → plan → rank → batch → guard → report. What each package does, the contracts
 between packages (`core/models.py`, `core/contracts.py`), the events and every setting.

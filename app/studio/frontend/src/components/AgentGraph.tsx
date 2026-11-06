@@ -12,6 +12,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { roleOf, type AgentStats, type Message, type RunState } from "../state/fold";
+import { AgentIcon } from "./AgentIcon";
 import { ANIMATE, seconds } from "./common";
 
 const POS: Record<string, { x: number; y: number }> = {
@@ -42,6 +43,7 @@ function AgentNode({ data }: NodeProps<Node<AgentData>>) {
     <div className={`agent squad-${s.squad} ${data.active ? "active" : ""} ${s.llmOpen ? "thinking" : ""}`} data-agent={s.role}>
       <Handle type="target" position={Position.Left} className="hidden-handle" />
       <div className="agent-name">
+        <AgentIcon agent={s.role} />
         {s.role}
         {many}
         {s.llmOpen > 0 && <span className="spinner small" aria-label="waiting for the LLM" />}
