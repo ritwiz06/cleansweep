@@ -41,6 +41,9 @@ core:
     related_first_s: 20    # run related tests before the full suite when the suite takes longer
     full_suite_max_s: 120  # slower suites: related tests per package, the full suite in FINAL VERIFY
     install: auto          # auto: install the project into .cs_venv when it has packaging files | off
+    no_tests: null         # no usable tests: probes (clean's default): apply only probe-covered
+                           # edits | plan (experiments' default): deliver the plan as suggestions
+    notebooks: null        # hold (clean's default): what a notebook names stays a suggestion | ignore
     max_package: 4         # edits per work package
     format_policy: enforced  # enforced: formatting is safe only if CI or pre-commit runs ruff format
                            # or black, else a suggestion | always

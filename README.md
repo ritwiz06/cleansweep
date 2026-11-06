@@ -101,7 +101,10 @@ The original folder is never changed. `clean` copies the project into
 package at a time, keeping a package only if the tests and the probes still pass. It ends with a
 git branch in that copy (one commit per package), `CLEANUP_REPORT.md`, `blueprint.md`, the
 patches and a PR description; apply the branch yourself after reading the report. The exit code
-is 0 when the result is "everything runs" or "nothing applied".
+is 0 when the result is "everything runs" or "nothing applied"; the other results are "not
+verified by tests" (no usable tests: only probe-covered edits applied), "not verified" and
+"stopped: <reason>, nothing applied" ([user guide](docs/user_guide.md#the-result)). An
+interrupted run continues with `cleansweep clean --resume <its output folder>`.
 
 Settings that a project always wants go in a `.cleansweep.yaml` at its root (or any file passed
 with `--config`); a command-line option overrides the file:

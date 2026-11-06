@@ -103,7 +103,8 @@ def _guarded(rt, role: str, fn) -> None:
             pkg.status, pkg.stage = "rolled_back", "done"
             for iid in pkg.applied:
                 rt.results[iid] = EditResult(iid, "rolled_back", notes=f"{role} failed: {exc}")
-        rt.stopped = rt.stopped or f"{role} failed: {type(exc).__name__}: {exc}"
+        rt.error = rt.error or f"{role} failed: {type(exc).__name__}: {exc}"
+        rt.stopped = rt.stopped or rt.error
         manager._stop(rt, rt.stopped)
     finally:
         stats = rt.node_stats.setdefault(role, [0, 0.0])
@@ -145,14 +146,16 @@ def run_team(rt) -> None:
             "dry_run": rt.dry_run,
             "model": getattr(rt.llm if rt.llm is not None else rt.manager_llm, "model", None),
             "budget": rt.run_budget.as_dict(),
+            "resumed_at": rt.resumed[-1] if rt.resumed else None,
         },
     )
     rt.profiles = {name: load_prompt(name) for name in ["manager", *AGENTS]}
-    rt.log.emit(
-        "phase_change",
-        agent="manager",
-        payload={"from": None, "to": "ONBOARD", "reason": "start", "back": False},
-    )
+    if not rt.resumed:
+        rt.log.emit(
+            "phase_change",
+            agent="manager",
+            payload={"from": None, "to": "ONBOARD", "reason": "start", "back": False},
+        )
     if rt.ablation == "single_agent":
         solo.run(rt)  # one agent with every tool instead of the team
     else:

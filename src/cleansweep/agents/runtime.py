@@ -70,6 +70,7 @@ class Runtime:
         mode: str | None = None,
         dry_run: bool = False,
         approve: Callable[[str], bool] | None = None,
+        resume: bool = False,
     ):
         self.cfg = cfg
         self.acfg = cfg.get("core", {}).get("agents", {}) or {}
@@ -91,7 +92,9 @@ class Runtime:
         self.approve = approve
         self.secrets = scan(ws.path)
         self.redact = Redactor(self.secrets["values"])
-        self.log = EventLog(self.out / "events.jsonl", run_id, on_event, v1_hook, self.redact)
+        self.log = EventLog(
+            self.out / "events.jsonl", run_id, on_event, v1_hook, self.redact, append=resume
+        )
         self.run_budget = RunBudget.from_cfg(self.acfg.get("budget"))
         self.llm = None
         if llm is not None:
@@ -121,6 +124,12 @@ class Runtime:
         self.audited = False
         self.planned = False
         self.plan_only = False  # the baseline could not run: deliver the plan as suggestions
+        # the baseline could not run, and no_tests is "probes": apply only what probes cover
+        self.untested = False
+        self.error: str | None = None  # an agent failed: the run stopped on an error
+        self.resumed: list[str] = []  # the phases this run was resumed at
+        self.resumable = False  # `clean`: save a checkpoint at each safe point
+        self.saved_at: tuple | None = None
         self.approved: bool | None = None
         self.reverting = False  # FINAL VERIFY found the suite worse: undo packages from the end
         self.final: dict | None = None

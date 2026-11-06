@@ -54,9 +54,31 @@ use the original, with more probe rounds, and lets the Fixer repair a behavior c
 find. `--budget llm=150,minutes=60,tests=80` caps the whole run; a run that hits a cap delivers
 the packages it finished.
 
+`clean` finds how the project runs its tests from its own files: pytest settings, a
+`conftest.py`, tox or nox (the pytest or unittest command they run), a Makefile `test` target, or
+test files that are all `unittest.TestCase` (`python -m unittest discover`); the report says
+which it chose and why. It installs the project into a virtual environment in the output folder
+from `pyproject.toml` (with its test/dev extras and dependency groups), `setup.py`/`setup.cfg`
+or `requirements*.txt`, with poetry or uv when the project has their lock file and the tool is
+installed (pip otherwise), and puts a `src/` layout on the import path. If the install fails,
+the tests run with CleanSweep's interpreter and the report says so.
+
+A project with no tests, or whose tests cannot run, is still cleaned, more carefully: only the
+edits the probes cover are applied (an import or a private function the module check covers, a
+change whose lines the probes ran); file and dependency removals and public functions stay
+suggestions, and the result says "not verified by tests". No test runs a notebook either, so
+whatever a notebook's code uses (a function, a file, a dependency) stays a suggestion.
+
 `clean` runs the project's tests on your machine (in a virtual environment in the output folder
 when the project can be installed, else with CleanSweep's interpreter). Clean only code you
 trust, or run CleanSweep inside a container when you don't.
+
+If a run is interrupted (Ctrl-C, a crash, the laptop sleeping), continue it from its last
+finished phase or work package with the options it started with:
+
+```bash
+cleansweep clean --resume path/to/project-cleanup-<time>   # or just the folder's name
+```
 
 ### The result
 
@@ -69,11 +91,14 @@ trust, or run CleanSweep inside a container when you don't.
 | `PR_DESCRIPTION.md`, `CHANGELOG_ENTRY.md` | text for a pull request and a changelog |
 | `report.json`, `events.jsonl`, `cache/` | the run's numbers, its event log and the agents' artifacts (Studio replays them) |
 
-The result is one of three. **Everything runs**: tests ran, and the final suite is at least as
-good as the baseline. **Nothing applied**: a dry run, or no package survived its checks.
-**Not verified**: something was applied, but the final check could not show that nothing got
-worse (for example, the project's tests give no result); read the report before using it. The
-exit code is 0 for the first two and 1 otherwise; 2 means a bad option or settings file.
+Every run ends with a report and one of five results. **Everything runs**: tests ran, and the
+final suite is at least as good as the baseline. **Nothing applied**: a dry run, or no package
+survived its checks. **Not verified by tests**: the project has no usable tests, and the edits
+applied were checked with static evidence and probes only. **Not verified**: something was
+applied, but the final check could not show that nothing got worse; read the report before
+using it. **Stopped: <reason>, nothing applied**: an error (a missing tool, a crash) or Ctrl-C
+ended the run before anything was delivered; an interrupted run can be resumed. The exit code is
+0 for the first two, 130 after Ctrl-C and 1 otherwise; 2 means a bad option or settings file.
 
 ### Apply the result
 
@@ -96,7 +121,8 @@ folder's `quarantine/`.
 Options: `--mode safe|thorough`, `--budget llm=150,minutes=60,tests=80`, `--approve-plan` (show
 `blueprint.md` and ask before applying), `--dry-run`, `--out DIR`, `--exclude FOLDER`
 (repeatable), `--test-args "..."` (extra pytest arguments), `--no-install` (run the tests with
-CleanSweep's interpreter), `--model`, `--no-llm`, `--config FILE`, `--quiet`. What each one does
+CleanSweep's interpreter), `--model`, `--no-llm`, `--config FILE`, `--quiet`, `--resume RUN`
+(continue an interrupted run). What each one does
 in detail: [agentic_design.md, section 15](agentic_design.md#15-command-line).
 
 A `.cleansweep.yaml` at the project's root (or `--config FILE`) holds the settings a project

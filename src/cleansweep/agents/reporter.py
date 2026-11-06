@@ -10,6 +10,33 @@ from cleansweep.core.models import CATEGORIES
 from . import delivery
 
 NAME = "reporter"
+# every run ends with one of these (docs/agentic_design.md, section 15)
+VERDICTS = (
+    "everything runs",
+    "nothing applied",
+    "not verified by tests",
+    "not verified",
+    "stopped: <reason>, nothing applied",
+)
+
+
+def verdict(rt, applied: int) -> str:
+    """The run's verdict, one of VERDICTS."""
+    base, final = rt.baseline or {}, rt.final or {}
+    if rt.error and not applied:
+        return stopped(rt.error)
+    if rt.dry_run or rt.plan_only or not rt.packages:
+        return "nothing applied"
+    if rt.untested:
+        return "not verified by tests" if applied else "nothing applied"
+    if final.get("ok") and base.get("passed"):  # tests ran, and nothing got worse
+        return "everything runs"
+    return "not verified"
+
+
+def stopped(reason: str) -> str:
+    """The verdict of a run that ended on an error before anything was applied."""
+    return f"stopped: {' '.join(reason.split())[:200]}, nothing applied"
 
 
 def summary(rt) -> dict:
@@ -19,14 +46,8 @@ def summary(rt) -> dict:
     by_cat = Counter(rt.items[i].category for i in applied)
     base = rt.baseline or {}
     final = rt.final or {}
-    if rt.dry_run or rt.plan_only or not rt.packages:
-        verdict = "nothing applied"
-    elif final.get("ok") and base.get("passed"):  # tests ran, and nothing got worse
-        verdict = "everything runs"
-    else:
-        verdict = "not verified"
     return {
-        "verdict": verdict,
+        "verdict": verdict(rt, len(applied)),
         "applied": len(applied),
         "applied_by_category": dict(
             sorted(
@@ -53,6 +74,8 @@ def summary(rt) -> dict:
         "phases": rt.phases.order(),
         "back_steps": dict(rt.phases.back_steps),
         "stopped": rt.stopped,
+        "untested": rt.untested,
+        "resumed": list(rt.resumed),
     }
 
 
@@ -97,14 +120,22 @@ def report_md(rt, s: dict, delivered: dict) -> str:
             if getattr(rt.ws, "pytest_args", None)
             else ""
         ),
+        f"- Test command: `{(rt.brief or {}).get('test_command', 'pytest')}` "
+        f"({(rt.brief or {}).get('test_source') or 'the default'}).",
         f"- Baseline ({(rt.baseline or {}).get('runs', 0)} runs): "
         f"{s['baseline']['passed']} passing in every run, "
         f"{s['baseline']['failed']} already failing, {s['baseline']['flaky']} flaky.",
     ]
+    if rt.untested:
+        lines.append(
+            f"- No usable tests ({(rt.baseline or {}).get('reason')}): every edit was checked "
+            "with static evidence and probes only, and applied only where the probes covered "
+            "it. Not verified by tests."
+        )
     ui = _ui_line(rt)
     if ui:
         lines.append(ui)
-    if rt.final:
+    if rt.final and not rt.untested:
         lines.append(
             f"- After the cleanup: {s['final']['passed']} passing; new failures: "
             f"{', '.join(s['final']['new_failures']) or 'none'}."
@@ -115,6 +146,8 @@ def report_md(rt, s: dict, delivered: dict) -> str:
             )
     if rt.stopped:
         lines.append(f"- The run stopped early: {rt.stopped}.")
+    if rt.resumed:
+        lines.append(f"- Resumed after an interruption, at {', '.join(rt.resumed)}.")
     lines += [
         "",
         "## Work packages",
@@ -207,7 +240,15 @@ def pr_md(rt, s: dict) -> str:
         f"Tests: baseline {s['baseline']['passed']} passing; after {s['final'].get('passed')} "
         f"passing; new failures: {len(s['final']['new_failures'])}.",
     ]
-    lines.append("Every package was tested and checked before it was kept; see CLEANUP_REPORT.md.")
+    if rt.untested:
+        lines.append(
+            "No usable tests: every package was checked with static evidence and probes before "
+            "it was kept; not verified by tests. See CLEANUP_REPORT.md."
+        )
+    else:
+        lines.append(
+            "Every package was tested and checked before it was kept; see CLEANUP_REPORT.md."
+        )
     return "\n".join(lines) + "\n"
 
 

@@ -3,7 +3,10 @@ slop knowledge base. Nothing is judged here; the Investigator decides."""
 
 from __future__ import annotations
 
+import json
+import re
 from collections import Counter
+from pathlib import Path
 
 from cleansweep.core.io import to_dict
 from cleansweep.reviewer import build_plan
@@ -12,6 +15,7 @@ from cleansweep.reviewer.lines import run_line_detectors
 from cleansweep.reviewer.planner import review_scope
 
 NAME = "auditor"
+NOTEBOOK_SKIP = {".git", ".ipynb_checkpoints", ".venv", "venv", "node_modules"}
 
 
 def run(rt) -> None:
@@ -71,3 +75,41 @@ def line_items(rt, agent: str = f"{NAME}#lines") -> list:
         payload={"tool": "run_line_detectors", "result": dict(Counter(i.category for i in items))},
     )
     return items
+
+
+def notebook_names(root: Path) -> dict[str, str]:
+    """The names used in the code cells of the project's notebooks, each with the first
+    notebook that uses it."""
+    found: dict[str, str] = {}
+    for path in sorted(root.rglob("*.ipynb")):
+        rel = path.relative_to(root)
+        if NOTEBOOK_SKIP & set(rel.parts):
+            continue
+        try:
+            cells = json.loads(path.read_text(encoding="utf-8")).get("cells", [])
+        except (OSError, ValueError, AttributeError):
+            continue
+        for cell in cells:
+            source = cell.get("source", "") if cell.get("cell_type") == "code" else ""
+            text = "".join(source) if isinstance(source, list) else str(source)
+            for name in re.findall(r"[A-Za-z_]\w*", text):
+                found.setdefault(name, rel.as_posix())
+    return found
+
+
+def hold_notebook_uses(rt) -> None:
+    """Safe candidates a notebook names stay suggestions: no test runs the notebooks."""
+    used = notebook_names(Path(rt.ws.path))
+    for item in rt.safe_items() if used else []:
+        unit = item.unit
+        names = {unit.name.split(".")[-1]} if unit.name and unit.kind != "lines" else set()
+        if unit.kind == "file":
+            names.add(Path(unit.path).stem)
+        elif unit.kind == "dependency" and unit.name:
+            names.add(unit.name.lower().replace("-", "_"))
+        elif unit.kind == "import":
+            names = set()  # a notebook's own import of the same name is no use of this one
+        hit = next((used[n] for n in sorted(names) if n in used), None)
+        if hit:
+            item.lane = "suggest"
+            item.reason += f" Held: {hit} uses it, and no test runs the notebooks."

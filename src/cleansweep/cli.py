@@ -71,7 +71,9 @@ def cmd_show(args) -> int:
 
 def _progress(event: dict) -> None:
     kind, p = event["kind"], event["payload"]
-    if kind == "phase_change":
+    if kind == "run_start" and p.get("resumed_at"):
+        print(f"-> resumed at {p['resumed_at']}", file=sys.stderr)
+    elif kind == "phase_change":
         back = " (step back)" if p.get("back") else ""
         print(f"-> {p['to']}{back}: {p['reason']}", file=sys.stderr)
     elif kind == "decision" and p.get("rule") in (
@@ -97,8 +99,26 @@ def cmd_clean(args) -> int:
 
     from cleansweep.agents import clean_project, project_config
     from cleansweep.agents.budgets import parse_budget
+    from cleansweep.agents.run import Interrupted, resume_project
 
-    cfg = load_config()
+    if bool(args.path) == bool(args.resume):
+        print("cleansweep clean: give a project folder, or --resume RUN", file=sys.stderr)
+        return 2
+    cfg = load_config()  # also reads .env, for the LLM key
+    if args.resume:
+        try:
+            result = resume_project(
+                args.resume,
+                cfg,
+                on_event=None if args.quiet else _progress,
+                approve=_ask_approval if sys.stdin.isatty() else None,
+            )
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"cleansweep clean: {exc}", file=sys.stderr)
+            return 1
+        except Interrupted as stop:
+            return _interrupted(stop)
+        return _print_result(result)
     agents = cfg["core"].setdefault("agents", {})
     try:
         settings = project_config.find(args.path, args.config)
@@ -143,6 +163,20 @@ def cmd_clean(args) -> int:
     except (FileNotFoundError, FileExistsError, ValueError, RuntimeError) as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
         return 1
+    except Interrupted as stop:
+        return _interrupted(stop)
+    return _print_result(result)
+
+
+def _interrupted(stop) -> int:
+    print(
+        f"\ncleansweep clean: interrupted; continue with: cleansweep clean --resume {stop.out}",
+        file=sys.stderr,
+    )
+    return 130
+
+
+def _print_result(result: dict) -> int:
     s = result["summary"]
     print(
         f"\nResult: {s['verdict']}. {s['applied']} edits applied; {s['lines_removed']} lines "
@@ -235,7 +269,13 @@ def main(argv: list[str] | None = None) -> int:
             "original folder."
         ),
     )
-    p.add_argument("path", help="the project folder to clean")
+    p.add_argument("path", nargs="?", help="the project folder to clean")
+    p.add_argument(
+        "--resume",
+        metavar="RUN",
+        help="continue an interrupted run from its last finished phase (its output folder or "
+        "run id); it keeps the options it started with",
+    )
     p.add_argument(
         "--mode",
         choices=["safe", "thorough"],
