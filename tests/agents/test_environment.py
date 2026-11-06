@@ -1,3 +1,4 @@
+import os
 import sys
 
 import pytest
@@ -20,6 +21,84 @@ SRC_LAYOUT = {
         "from srcpkg import answer\n\n\ndef test_answer():\n    assert answer() == 42\n"
     ),
 }
+
+
+PEP621 = (
+    '[project]\nname = "p"\nversion = "1"\n'
+    '[project.optional-dependencies]\ntest = ["pytest"]\ndocs = ["sphinx"]\n'
+    '[dependency-groups]\nlint = ["ruff"]\ndev = ["hypothesis", {include-group = "lint"}]\n'
+)
+POETRY = (
+    '[tool.poetry]\nname = "p"\nversion = "1"\n'
+    '[tool.poetry.dependencies]\npython = "^3.11"\n'
+    '[tool.poetry.group.test.dependencies]\npytest = "^8"\n'
+    '[build-system]\nrequires = ["poetry-core"]\nbuild-backend = "poetry.core.masonry.api"\n'
+)
+
+
+def _plan(tmp_path, files, tools=()):
+    root = write_project(tmp_path, files)
+    return environment.install_plan(root, which=lambda name: name if name in tools else None)
+
+
+def test_a_pep_621_project_with_extras_and_dependency_groups(tmp_path):
+    plan = _plan(tmp_path, {"pyproject.toml": PEP621, "requirements-docs.txt": "sphinx\n"})
+    assert plan["tool"] == "pip" and plan["steps"] == [
+        ["pip", "install", "-e", ".[test]"],
+        ["pip", "install", "hypothesis", "ruff"],
+    ]
+    assert plan["fallback"][0] == ["pip", "install", "-e", "."]
+    assert environment.describe(plan).startswith("pip install -e '.[test]' && pip install")
+
+
+def test_poetry_and_uv_with_their_lock_files_else_pip(tmp_path):
+    files = {"pyproject.toml": POETRY, "poetry.lock": ""}
+    plan = _plan(tmp_path / "a", files, tools=("poetry",))
+    assert plan["steps"] == [["poetry", "install", "--no-interaction", "--with", "test"]]
+    assert plan["fallback"] == [["pip", "install", "-e", "."], ["pip", "install", "pytest"]]
+    assert _plan(tmp_path / "b", files)["steps"] == plan["fallback"]  # poetry not installed
+    files = {"pyproject.toml": PEP621, "uv.lock": ""}
+    plan = _plan(tmp_path / "c", files, tools=("uv",))
+    assert plan["steps"] == [["uv", "sync", "--frozen", "--group", "dev", "--extra", "test"]]
+    assert plan["tool"] == "uv" and plan["fallback"][0] == ["pip", "install", "-e", ".[test]"]
+
+
+def test_requirements_files_and_setup_py_extras(tmp_path):
+    files = {"requirements.txt": "a\n", "requirements-dev.txt": "b\n", "requirements-docs.txt": ""}
+    assert _plan(tmp_path / "a", files)["steps"] == [
+        ["pip", "install", "-r", "requirements-dev.txt"],
+        ["pip", "install", "-r", "requirements.txt"],
+    ]
+    only_prod = _plan(tmp_path / "b", {"requirements-prod.txt": "a\n"})
+    assert only_prod["steps"] == [["pip", "install", "-r", "requirements-prod.txt"]]
+    setup = "from setuptools import setup\nX = {'test': ['pytest']}\nsetup(extras_require=X)\n"
+    assert _plan(tmp_path / "c", {"setup.py": setup})["steps"] == [
+        ["pip", "install", "-e", ".[test]"]
+    ]
+    assert environment.describe(_plan(tmp_path / "d", {"a.py": ""})) == environment.NOTHING
+
+
+def test_a_tool_install_runs_in_the_venv_and_falls_back(tmp_path, agent_cfg, monkeypatch):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for tool, code in (("poetry", 1), ("uv", 0)):
+        script = bin_dir / tool
+        script.write_text(
+            f'#!/bin/sh\necho "$VIRTUAL_ENV" > "{tmp_path}/{tool}.env"\nexit {code}\n'
+        )
+        script.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}:{os.environ['PATH']}")
+    root = write_project(tmp_path / "proj", {"app.py": "x = 1\n"})
+    ws, _ = prepare_workspace(root, tmp_path / "ws", agent_cfg["core"]["sandbox"])
+    agent_cfg["core"]["agents"]["install"] = "auto"
+    rt = Runtime(ws, agent_cfg, None, tmp_path / "out")
+    plan = {"tool": "poetry", "steps": [["poetry", "install"]], "fallback": [["uv", "sync"]]}
+    rt.brief = {"install_plan": plan}
+    info = environment.prepare(rt)
+    venv = tmp_path / "out" / environment.VENV
+    assert (tmp_path / "poetry.env").read_text().strip() == str(venv)  # the tool saw the venv
+    assert info["install"] == "installed into .cs_venv (pip (fallback), next to the workspace)"
+    assert ws.python == str(venv / "bin" / "python") and "VIRTUAL_ENV" not in ws.extra_env
 
 
 def test_pip_commands():

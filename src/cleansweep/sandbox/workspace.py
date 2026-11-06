@@ -24,6 +24,39 @@ GIT_ID = [
     "gc.auto=0",  # no background repacking in throwaway workspaces
 ]
 OWNER_FILE = "cleansweep_owner"  # in a workspace's .git: the pid of the process that opened it
+# Runs a unittest suite with the project's interpreter and writes a JUnit file like pytest's:
+# argv = junit path, start folder, top folder, pattern, then module names to run instead.
+UNITTEST_PY = r"""
+import sys, unittest, xml.etree.ElementTree as ET
+out, start, top, pattern, *names = sys.argv[1:]
+sys.path.insert(0, top)
+loader = unittest.TestLoader()
+suite = loader.loadTestsFromNames(names) if names else loader.discover(start, pattern, top)
+prefix = "" if top in (".", "") else top.strip("/").replace("/", ".") + "."
+root, seen = ET.Element("testsuite"), set()
+class Result(unittest.TestResult):
+    def case(self, test, tag=None, text=""):
+        cls, _, name = test.id().rpartition(".")
+        if (cls, name) in seen:
+            return
+        seen.add((cls, name))
+        node = ET.SubElement(root, "testcase", classname=prefix + cls, name=name)
+        if tag:
+            ET.SubElement(node, tag).text = text
+    def addSuccess(self, test): self.case(test)
+    def addFailure(self, test, err): self.case(test, "failure", self._exc_info_to_string(err, test))
+    def addError(self, test, err): self.case(test, "error", self._exc_info_to_string(err, test))
+    def addSkip(self, test, reason): self.case(test, "skipped", reason)
+    def addExpectedFailure(self, test, err): self.case(test)
+    def addUnexpectedSuccess(self, test): self.case(test, "failure", "unexpected success")
+    def addSubTest(self, test, sub, err):
+        if err is not None:
+            self.case(test, "failure", self._exc_info_to_string(err, test))
+result = Result()
+suite.run(result)
+ET.ElementTree(root).write(out)
+sys.exit(int(any(len(case) and case[0].tag in ("failure", "error") for case in root)))
+"""
 
 
 def parse_junit(xml_path: str | Path, duration_s: float = 0.0) -> RunResult:
@@ -80,6 +113,7 @@ class Workspace:
         self.last_statuses: dict[str, str] = {}  # test id -> status, from the last run_tests
         self.extra_env: dict[str, str] = {}  # added to every command's environment
         self.pytest_args: list[str] = []  # e.g. a marker selection for the project's tests
+        self.test_command: dict = {}  # agents.runners.detect(); empty: pytest
         self.base = self._git("rev-parse", "HEAD").strip()
         (Path(self.path) / ".git" / OWNER_FILE).write_text(str(os.getpid()))
         qdir = Path(self.cfg.get("quarantine_dir") or ".cleansweep/quarantine")
@@ -105,21 +139,28 @@ class Workspace:
             return 124, f"timeout after {timeout}s\n{exc.stdout or ''}"
 
     def run_tests(self, test_paths: list[str] | None = None, timeout: int = 900) -> RunResult:
-        """Run pytest and parse its JUnit report."""
+        """Run the project's tests (pytest unless test_command says otherwise) and parse the
+        JUnit report."""
         self.test_runs += 1
+        runner = self.test_command.get("runner", "pytest")
+        if runner == "command":
+            return self._run_command(timeout)
         with tempfile.TemporaryDirectory() as tmp:
             xml = Path(tmp) / "junit.xml"
-            cmd = [
-                self.python,
-                "-m",
-                "pytest",
-                "-q",
-                "-p",
-                "no:cacheprovider",
-                f"--junitxml={xml}",
-                *self.pytest_args,
-                *(test_paths or []),
-            ]
+            if runner == "unittest":
+                cmd = [self.python, "-c", UNITTEST_PY, str(xml), *self._unittest_args(test_paths)]
+            else:
+                cmd = [
+                    self.python,
+                    "-m",
+                    "pytest",
+                    "-q",
+                    "-p",
+                    "no:cacheprovider",
+                    f"--junitxml={xml}",
+                    *self.pytest_args,
+                    *(test_paths or self.test_command.get("paths", [])),
+                ]
             start = time.time()
             code, out = self.run(cmd, timeout=timeout)
             self.last_statuses = {}
@@ -136,6 +177,30 @@ class Workspace:
                 result.ok, result.errors = False, result.errors + 1
             self.last_test_output = out
             return result
+
+    def _unittest_args(self, test_paths: list[str] | None) -> list[str]:
+        """UNITTEST_PY's arguments; test files become module names under the top folder."""
+        cmd = self.test_command
+        top = cmd.get("top", ".")
+        names = []
+        for path in test_paths or []:
+            rel = os.path.relpath(path, top) if top != "." else path
+            if path.endswith(".py") and not rel.startswith(".."):
+                names.append(rel[:-3].replace("/", "."))
+        return [cmd.get("start", "."), top, cmd.get("pattern", "test*.py"), *names]
+
+    def _run_command(self, timeout: int) -> RunResult:
+        """A test command with no per-test report (`make test`): one result, its exit code."""
+        argv = self.test_command["argv"]
+        start = time.time()
+        code, out = self.run(argv, timeout=timeout)
+        self.last_test_output = out
+        name = f"<command>::{' '.join(argv)}"
+        self.last_statuses = {name: "passed" if code == 0 else "failed"}
+        failed = [] if code == 0 else [name]
+        return RunResult(
+            code == 0, int(code == 0), int(code != 0), 0, 0, failed, time.time() - start
+        )
 
     probe_runner = False  # probes run as a script here unless core.guard.probe_mode says runner
 
