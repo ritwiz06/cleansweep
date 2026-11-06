@@ -121,6 +121,9 @@ export interface Item {
   chain: StudioEvent[];
   pkg: string | null;
   history: { t: number; stage: ItemStage }[];
+  // the agent instance that acted on it last, and when
+  actor: string | null;
+  lastT: number;
 }
 
 export interface TestResult {
@@ -210,6 +213,10 @@ export interface RunState {
   coverage: number | null;
   candidates: number;
   applied: number;
+  // the Explorer's project facts (files, tests, entry points)
+  facts: any | null;
+  // the items the latest item-related event acted on
+  focus: string[];
 }
 
 export function roleOf(agent: string | null | undefined): string {
@@ -254,6 +261,8 @@ export function emptyState(): RunState {
     coverage: null,
     candidates: 0,
     applied: 0,
+    facts: null,
+    focus: [],
   };
 }
 
@@ -306,10 +315,12 @@ const VERDICT_STAGE: Record<string, ItemStage> = { safe: "safe", suggest: "sugge
 export interface Folder {
   state: RunState;
   pending: Record<string, StudioEvent[]>;
+  // the candidates each investigator instance was given
+  assigned: Record<string, string[]>;
 }
 
 export function newFolder(): Folder {
-  return { state: emptyState(), pending: {} };
+  return { state: emptyState(), pending: {}, assigned: {} };
 }
 
 export function fold(events: StudioEvent[]): RunState {
@@ -322,6 +333,35 @@ function setStage(item: Item, stage: ItemStage, t: number) {
   if (item.stage === stage) return;
   item.stage = stage;
   item.history.push({ t, stage });
+}
+
+// Mark items as acted on by an agent now (and as the latest action's focus).
+function touch(s: RunState, ids: string[], agent: string | null, t: number) {
+  const known = ids.filter((id) => s.items[id]);
+  if (!known.length) return;
+  for (const id of known) {
+    if (agent) s.items[id].actor = agent;
+    s.items[id].lastT = t;
+  }
+  s.focus = known;
+}
+
+// The candidate an investigator instance works on, from its first tool call's arguments (the
+// events say which instance decided which item only at the verdict).
+function claim(folder: Folder, args: any): string | null {
+  const s = folder.state;
+  const wanted = [args?.name, args?.pattern, args?.path].filter((v) => typeof v === "string");
+  if (!wanted.length) return null;
+  const taken = new Set(Object.entries(folder.assigned).flatMap(([agent, ids]) => (agent.includes("#") ? ids : [])));
+  for (const id of s.itemOrder) {
+    const item = s.items[id];
+    if (item.stage !== "investigating" || taken.has(id)) continue;
+    const [path, rest] = item.unit.split("::");
+    const stem = path.split("/").pop()!.replace(/\.py$/, "");
+    const name = rest ? rest.split(".").pop()! : stem;
+    if (wanted.some((w) => w === name || w === path || w === stem)) return id;
+  }
+  return null;
 }
 
 function pkgOf(s: RunState, id: string): Package {
@@ -346,6 +386,11 @@ export function step(folder: Folder, e: StudioEvent): void {
     if (e.agent && !a.instances.includes(e.agent)) a.instances.push(e.agent);
     if (e.kind !== "llm_end") s.active = role;
   }
+  if (role === "investigator" && e.agent?.includes("#") && e.kind === "tool_call" && !folder.assigned[e.agent]) {
+    const id = claim(folder, p.args);
+    if (id) folder.assigned[e.agent] = [id];
+  }
+  if (e.agent && folder.assigned[e.agent] && e.kind !== "message") touch(s, folder.assigned[e.agent], e.agent, e.t);
   switch (e.kind) {
     case "run_start":
       s.runId = e.run_id || "";
@@ -389,6 +434,7 @@ export function step(folder: Folder, e: StudioEvent): void {
           pkg.end = e.t;
           const stage = DONE_STAGE[p.status];
           for (const id of pkg.items) if (stage && s.items[id]) setStage(s.items[id], stage, e.t);
+          touch(s, pkg.items, e.agent, e.t);
           if (stage === "kept" || stage === "repaired") s.applied += pkg.applied.length || pkg.items.length;
         }
       }
@@ -399,6 +445,7 @@ export function step(folder: Folder, e: StudioEvent): void {
         pkg.status = "reverted";
         pkg.end = e.t;
         for (const id of pkg.items) if (s.items[id]) setStage(s.items[id], "rolled_back", e.t);
+        touch(s, pkg.items, e.agent, e.t);
       }
       break;
     case "check":
@@ -411,6 +458,7 @@ export function step(folder: Folder, e: StudioEvent): void {
           pkg.ui = p.result ?? p.status ?? JSON.stringify(p);
         }
         pkg.log.push(e);
+        touch(s, pkg.items, e.agent, e.t);
       }
       break;
     case "tool_call":
@@ -426,6 +474,11 @@ export function step(folder: Folder, e: StudioEvent): void {
         const pkg = pkgOf(s, p.package);
         pkg.log.push(e);
         if (p.tool === "commit" && p.commit) pkg.commit = p.commit;
+      }
+      if (p.tool === "project_facts" && e.kind === "tool_result" && !s.facts) s.facts = p.result || null;
+      {
+        const item = p.args?.item || p.item;
+        if (typeof item === "string") touch(s, [item], e.agent, e.t);
       }
       break;
     case "llm_start":
@@ -507,13 +560,18 @@ function onMessage(folder: Folder, e: StudioEvent) {
           chain: [],
           pkg: null,
           history: [{ t: e.t, stage: "candidate" }],
+          actor: msg.sender || null,
+          lastT: e.t,
         };
       }
       s.candidates = s.itemOrder.length;
+      s.focus = (body.items || []).map((c: any) => c.item_id);
       break;
     case "task":
       if (to === "investigator") {
         for (const id of body.items || []) if (s.items[id]) setStage(s.items[id], "investigating", e.t);
+        if (msg.recipients[0]?.includes("#")) folder.assigned[msg.recipients[0]] = body.items || [];
+        touch(s, body.items || [], msg.recipients[0] || null, e.t);
       } else if (to === "engineer" && body.package) {
         const pkg = pkgOf(s, body.package);
         if (body.goal && !pkg.goal) pkg.goal = body.goal;
@@ -528,6 +586,7 @@ function onMessage(folder: Folder, e: StudioEvent) {
               setStage(item, "in_package", e.t);
             }
           }
+          touch(s, body.items, msg.recipients[0] || "engineer", e.t);
         }
       }
       break;
@@ -545,7 +604,14 @@ function onMessage(folder: Folder, e: StudioEvent) {
       };
       item.chain = folder.pending[msg.sender] || [];
       folder.pending[msg.sender] = [];
-      setStage(item, VERDICT_STAGE[body.decision] || "suggest", e.t);
+      // a safe verdict keeps a suggest-lane item a suggestion, except a duplicate or wrapper in
+      // thorough mode (docs/agentic_design.md, section 15)
+      const lifted = s.mode === "thorough" && ["duplicate", "wrapper"].includes(item.category);
+      const held = body.decision === "safe" && item.lane && item.lane !== "safe" && !lifted;
+      const stage = held ? "suggest" : VERDICT_STAGE[body.decision];
+      setStage(item, stage || "suggest", e.t);
+      touch(s, [item.id], msg.sender, e.t);
+      delete folder.assigned[msg.sender];
       break;
     }
     case "blueprint":
@@ -558,6 +624,7 @@ function onMessage(folder: Folder, e: StudioEvent) {
       pkg.notApplied = body.not_applied || [];
       pkg.diffs.push(...msg.artifacts);
       pkg.status = "testing";
+      touch(s, pkg.items, msg.sender, e.t);
       break;
     }
     case "test_result": {
@@ -571,6 +638,7 @@ function onMessage(folder: Folder, e: StudioEvent) {
         t: e.t,
       });
       pkg.status = body.ok ? "validating" : "failing";
+      touch(s, pkg.items, msg.sender, e.t);
       break;
     }
     case "validation": {
@@ -583,17 +651,20 @@ function onMessage(folder: Folder, e: StudioEvent) {
       }
       if (body.checks?.ui) pkg.ui = String(body.checks.ui);
       pkg.status = body.ok ? "committing" : "failing";
+      touch(s, pkg.items, msg.sender, e.t);
       break;
     }
     case "failure": {
       const pkg = pkgOf(s, body.package);
       pkg.failures.push({ stage: body.stage, artifacts: msg.artifacts, t: e.t });
       pkg.status = "repairing";
+      touch(s, pkg.items, msg.recipients[0] || "fixer", e.t);
       break;
     }
     case "repair": {
       const pkg = pkgOf(s, body.package);
       pkg.repair = { outcome: body.outcome, turns: body.turns };
+      touch(s, pkg.items, msg.sender, e.t);
       break;
     }
     case "final_check":
