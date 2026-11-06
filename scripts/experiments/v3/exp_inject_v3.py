@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
-from methods_v3 import LABELS, run_method  # noqa: E402
+from methods_v3 import LABELS, Capped, run_method  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "inject_v3"
 SUMMARY = ROOT / "results" / "summary" / "v3"
@@ -101,7 +101,13 @@ def run_one(v2, repo: str, seed: int, label: str, cfg: dict) -> dict:
     tree = data_path(v2.CLONES) / name
     sha = key.get("sha") or target.partition("@")[2]
     t0 = time.time()
-    report = run_method(target, label, cfg, folder / f"{label}_run")
+    try:
+        report = run_method(target, label, cfg, folder / f"{label}_run")
+    except Capped as exc:  # recorded without a score: v2's table skips it, the v3 table counts it
+        minutes = round((time.time() - t0) / 60, 2)
+        stats = {"capped": str(exc), "minutes": minutes}
+        (folder / f"{label}.json").write_text(json.dumps({"method": label, "stats": stats}))
+        return {"repo": repo, "seed": seed, "method": label, "minutes": minutes, "capped": True}
     minutes = round((time.time() - t0) / 60, 2)
     diff = report.stats.get("final_diff", "")
     after, applied = v2.final_tree(tree, diff, sha)

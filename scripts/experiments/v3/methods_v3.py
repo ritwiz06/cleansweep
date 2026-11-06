@@ -14,7 +14,9 @@ cleansweep               v1 (gatekeeper judge)
 from __future__ import annotations
 
 import os
+import signal
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -71,9 +73,33 @@ def apply(cfg: dict, method: Method) -> dict:
     return out
 
 
+V1_CAP_MINUTES = 150  # v1 has no time budget of its own; the team's is 120 minutes on REAL
+
+
+class Capped(Exception):
+    """A run stopped by its time cap before it finished."""
+
+
+@contextmanager
+def time_cap(minutes: float):
+    """Raise Capped in the main thread once the cap has passed."""
+
+    def stop(signum, frame):
+        raise Capped(f"not finished within {minutes:g} minutes")
+
+    previous = signal.signal(signal.SIGALRM, stop)
+    signal.setitimer(signal.ITIMER_REAL, minutes * 60)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
 def run_method(target: str, label: str, cfg: dict, out: Path):
     """Run one method on a target (a folder or an "aidev:owner/name@sha" container target);
-    returns its SweepReport, whose stats hold the final diff."""
+    returns its SweepReport, whose stats hold the final diff. v1 runs under V1_CAP_MINUTES and
+    raises Capped when it does not finish; the runners record that, never a score."""
     from cleansweep.workflow import run_sweep
 
     method = resolve(label)
@@ -84,6 +110,7 @@ def run_method(target: str, label: str, cfg: dict, out: Path):
         return run_external(target, {**cfg, "agent_out": str(out)})
     if method.kind == "v1":
         os.environ["CLEANSWEEP_JUDGE_MODE"] = "gatekeeper"
-        return run_sweep(target, cfg, "cleansweep")
+        with time_cap(cfg.get("exp", {}).get("v1_cap_minutes", V1_CAP_MINUTES)):
+            return run_sweep(target, cfg, "cleansweep")
     os.environ.pop("CLEANSWEEP_JUDGE_MODE", None)
     return run_sweep(target, {**apply(cfg, method), "agent_out": str(out)}, "agentic")

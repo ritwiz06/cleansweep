@@ -42,7 +42,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
-from methods_v3 import LABELS, resolve, run_method  # noqa: E402
+from methods_v3 import LABELS, Capped, resolve, run_method  # noqa: E402
 
 RAW = ROOT / "results" / "raw" / "real_v3"
 SPLIT = ROOT / "data" / "splits" / "v3_repos.json"
@@ -271,7 +271,14 @@ def run_one(full_name: str, split: dict, label: str, run: int) -> dict:
     out = Path(tempfile.mkdtemp(prefix="cs_real_"))
     t0 = time.time()
     try:
-        report = run_method(f"aidev:{full_name}@{split['visible_sha']}", label, cfg, out)
+        try:
+            report = run_method(f"aidev:{full_name}@{split['visible_sha']}", label, cfg, out)
+        except Capped as exc:  # recorded as not finished, never scored
+            minutes = round((time.time() - t0) / 60, 2)
+            capped = {"verdict": "capped", "capped": str(exc), "minutes": minutes}
+            (folder / "summary.json").write_text(json.dumps(capped, indent=1))
+            (folder / "heldout.json").write_text(json.dumps({"behavior_changed": None, **capped}))
+            return {"repo": full_name, "method": label, "run": run, **capped}
         minutes = round((time.time() - t0) / 60, 2)
         save_json(report, folder / "report.json")
         diff = report.stats.get("final_diff", "")

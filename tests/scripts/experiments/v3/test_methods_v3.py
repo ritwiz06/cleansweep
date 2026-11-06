@@ -1,4 +1,6 @@
 import importlib.util
+import signal
+import time
 from pathlib import Path
 
 import pytest
@@ -37,3 +39,14 @@ def test_apply_merges_overrides_into_a_copy():
     thorough = methods.apply(cfg, methods.resolve("agentic-thorough"))
     assert thorough["core"]["agents"]["mode"] == "thorough"
     assert cfg["core"]["agents"]["mode"] == "safe" and "dynamic_refs" not in cfg["reviewer"]
+
+
+def test_time_cap_raises_capped_and_restores_the_alarm():
+    methods = load()
+    with pytest.raises(methods.Capped):
+        with methods.time_cap(0.001):
+            time.sleep(1)
+    assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
+    with methods.time_cap(1):
+        pass
+    assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
