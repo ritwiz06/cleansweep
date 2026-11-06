@@ -109,6 +109,7 @@ cleansweep clean --resume path/to/project-cleanup-<time>   # or just the folder'
 | `patches/` | the same commits as patch files |
 | `PR_DESCRIPTION.md`, `CHANGELOG_ENTRY.md` | text for a pull request and a changelog |
 | `report.json`, `events.jsonl`, `cache/` | the run's numbers, its event log and the agents' artifacts (Studio replays them) |
+| `project_files.json` | the project's files and their line counts before the cleanup (Studio's tree) |
 
 Every run ends with a report and one of five results. **Everything runs**: tests ran, and the
 final suite is at least as good as the baseline. **Nothing applied**: a dry run, or no package
@@ -188,7 +189,16 @@ It reads three folders: its runs folder (`results/raw/studio/`, or `--runs`), `r
 sends goes through the same redactor the agents use. Everything except Launch works offline;
 `demo/replay/` ships four agent-team recordings beside v1's (the toy repo, the demo app with the
 feature patch, a Manager step-back scenario and the Skill_Seekers case study; see the README).
-The theme button switches between light and dark.
+The theme button switches between light and dark. [studio_design.md](studio_design.md) has the
+rules every screen follows (type, spacing, the colors and glyphs of each item state, motion).
+
+**Home** is where Studio opens. Paste a project's absolute path into "Clean a folder", choose
+safe or thorough mode and the sandbox (auto, docker or none; docker needs a CleanSweep that has
+the Docker sandbox), and Start: Studio runs `cleansweep clean` on a copy and opens the live run.
+A path that can't be cleaned gets a one-line reason (no such folder, a file, no Python files).
+"Try it on" fills in the toy repo or the demo app. Below are the most recent cleanups.
+
+![Home: clean a folder, and the recent runs](images/studio/home.png)
 
 **Runs** lists every recorded run (agent-team cleanups, v1 sweeps, watch folders) with its
 target, mode, model and result. Open one in Replay, follow a live one, or send it to Compare.
@@ -203,6 +213,14 @@ in this session are listed with their status, output and a stop button.
 ![Launch: what to run, the target, the mode and the budgets](images/studio/launch.png)
 
 **Live run** and **Replay** show a run as it happens or from its recording:
+- the Project tab (the default): the project's file tree. Every file, class, function and line
+  range a detector flagged has the color, glyph and name of its state (candidate,
+  investigating, safe, suggest, in package, kept, rolled back) and the icon of the agent that
+  acted on it last; the latest action is outlined, and "Follow the action" opens the tree to it.
+  Click a node for its evidence chain (the verdict, the evidence, the Investigator's tool calls,
+  the lessons it cited), its diff and the checks its work package passed. A run saves its file
+  list (`project_files.json`), so the tree shows every file with its line count; for a recording
+  made before v2.1 the tree shows the files the events name, and says so;
 - the metrics bar: slop meter, packages done, test runs, probe cases, probe coverage, LLM calls
   and tokens, elapsed time, with gauges against the run's budgets;
 - the phase timeline: time per phase, step-backs outlined, the Manager's decisions as marks;
@@ -216,7 +234,26 @@ in this session are listed with their status, output and a stop button.
 Replay adds play/pause, step, a 1–50x speed, a scrubber and "Next decision"; a click on a
 decision jumps to it. A run folder from `cleansweep clean` replays as it is.
 
+![Replay of the demo app cleanup: the project tree, and a rolled-back duplicate's evidence](images/studio/project.png)
+
 ![Replay of the demo app cleanup: metrics, phase timeline, agent graph and the Manager's decisions](images/studio/replay.png)
+
+**Before / after** (from Runs, Home or a replay's header) shows a finished cleanup's result:
+the project's tree before and after side by side (removed files struck through, edited files
+with their +/− line counts, folders that disappeared marked), and a card with the numbers before
+and after: files, Python files, lines of code (non-test Python), the tests passing (with the
+baseline's failing and flaky tests and any new failures), the probe cases and the coverage of the
+changed lines, the public names the cleanup removed, the slop found and left by category, and
+the result. One line says what no check can: behavior that nothing tests isn't covered. Click a
+changed file for its side-by-side diff; each change has a note pointing at it with its category,
+the decisions behind it (Auditor, Investigator, Planner, Engineer, Tester, Validator, Manager),
+the Investigator's evidence and the checks its package passed. A recording made before v2.1
+saved no file list, so its trees show the files its events and diff name, and its file count is
+"not recorded".
+
+![Before / after: both trees and the numbers for the demo app cleanup](images/studio/before_after.png)
+
+![Before / after: one change of the demo app cleanup with the decisions behind it](images/studio/before_after_diff.png)
 
 In the step-back recording, FINAL VERIFY finds the full suite worse than the baseline, and the
 Manager goes back to EXECUTE and undoes only the package that broke a test (outlined on the

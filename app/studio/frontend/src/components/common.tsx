@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
+import { StateChip, stateOf } from "./states";
 
 // charts skip their entry animation when the reader asks for reduced motion (and the
 // screenshots show finished charts)
@@ -96,6 +97,8 @@ export const STATUS_TONE: Record<string, string> = {
 
 export function Status({ value }: { value: string | null | undefined }) {
   if (!value) return <span className="muted">-</span>;
+  const state = stateOf(value);
+  if (state) return <StateChip state={state} label={value.replace(/_/g, " ")} />;
   return <Badge tone={STATUS_TONE[value] || "neutral"}>{value.replace(/_/g, " ")}</Badge>;
 }
 

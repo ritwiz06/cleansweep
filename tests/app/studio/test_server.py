@@ -58,6 +58,20 @@ def test_run_detail_events_and_artifacts(client):
     assert "diff --git" in client.get("/api/run/diff", params=query).json()["text"]
 
 
+def test_project_files_when_the_run_saved_them(client, tmp_path):
+    recording = {"root": "replay", "path": REPLAY_RUN}
+    assert client.get("/api/run/files", params=recording).json() == {
+        "files": [],
+        "complete": False,
+    }
+    run = tmp_path / "runs" / "r1"
+    run.mkdir()
+    listing = [{"path": "a.py", "lines": 3}, {"path": "logo.png", "lines": None}]
+    (run / "project_files.json").write_text(json.dumps({"files": listing}))
+    got = client.get("/api/run/files", params={"root": "runs", "path": "r1"}).json()
+    assert got == {"files": listing, "complete": True}
+
+
 def test_stream_sends_the_events_after_an_index_then_ends(client):
     query = {"root": "replay", "path": REPLAY_RUN}
     events = client.get("/api/run/events", params=query).json()

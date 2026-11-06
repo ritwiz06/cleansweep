@@ -55,6 +55,7 @@ def test_offline_clean_of_the_toy_repo_end_to_end(toy_repo, agent_cfg, tmp_path)
         "PR_DESCRIPTION.md",
         "CHANGELOG_ENTRY.md",
         "report.json",
+        "project_files.json",
     ):
         assert (out / name).exists()
     assert len(list((out / "patches").glob("*.patch"))) == len(kept)

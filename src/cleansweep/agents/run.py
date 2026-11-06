@@ -25,6 +25,7 @@ from . import checkpoint
 from .batching import batch_on
 from .delivery import default_out, inside, prepare_workspace
 from .environment import install_plan
+from .listing import save_project_files
 from .llm import AgentLLM
 from .runtime import Runtime
 from .team import run_team
@@ -140,6 +141,7 @@ def run_agentic(
         )
         rt.workspace_info = {}
         rt.make_patches = False
+        save_project_files(ws.path, out)
         run_team(rt)
         report = build_report(rt, started, t0, seed)
         if cfg.get("run_id"):
@@ -252,6 +254,7 @@ def clean_project(
             src, out_dir / "workspace", cfg["core"].get("sandbox"), trusted
         )
         info["sandbox"] = f"{where} ({why})"
+        save_project_files(ws.path, out_dir)
         if not trusted:
             ws = _container(ws.path, ws.repo_id, cfg)
         ws.pytest_args = list(test_args or [])

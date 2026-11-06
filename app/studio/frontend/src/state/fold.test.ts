@@ -77,6 +77,35 @@ describe("fold", () => {
     expect(itemsByStage(s).kept.map((i) => i.id)).toEqual(["a"]);
   });
 
+  it("keeps a suggest-lane item a suggestion after a safe verdict, except a thorough duplicate", () => {
+    const run = (mode: string) => {
+      n = 0;
+      return fold([
+        ev("run_start", "manager", { repo_id: "local:proj", mode }),
+        msg("auditor", "candidates", {
+          items: [
+            { item_id: "a", unit: "x.py::f", category: "dead_code", lane: "suggest" },
+            { item_id: "b", unit: "x.py::g", category: "duplicate", lane: "suggest" },
+          ],
+        }, ["manager"]),
+        msg("investigator#1", "verdict", { item_id: "a", decision: "safe", evidence: [] }, ["manager"]),
+        msg("investigator#2", "verdict", { item_id: "b", decision: "safe", evidence: [] }, ["manager"]),
+      ]);
+    };
+    expect([run("safe").items.a.stage, run("safe").items.b.stage]).toEqual(["suggest", "suggest"]);
+    expect([run("thorough").items.a.stage, run("thorough").items.b.stage]).toEqual(["suggest", "safe"]);
+  });
+
+  it("records which agent acted on each item last, and the latest action's items", () => {
+    const s = fold(scenario());
+    expect(s.items.a.actor).toBe("manager");
+    expect(s.items.b.actor).toBe("investigator#2");
+    expect(s.focus).toEqual(["a"]);
+    const early = fold(scenario().slice(0, 6));
+    expect(early.items.a.actor).toBe("investigator#1");
+    expect(early.focus).toEqual(["a"]); // its first tool call names f
+  });
+
   it("collects a package's diff, tests, probes, coverage, UI check and commit", () => {
     const p = fold(scenario()).packages.P1;
     expect(p.status).toBe("kept");
