@@ -79,9 +79,9 @@ def run_method(target: str, label: str, cfg: dict, out: Path):
     method = resolve(label)
     if method.kind == "external":
         sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from exp_external import run_on_target
+        from exp_external import run_external
 
-        return run_on_target(target, label, cfg, out)
+        return run_external(target, {**cfg, "agent_out": str(out)})
     if method.kind == "v1":
         os.environ["CLEANSWEEP_JUDGE_MODE"] = "gatekeeper"
         return run_sweep(target, cfg, "cleansweep")
