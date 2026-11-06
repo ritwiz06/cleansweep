@@ -14,10 +14,18 @@ from cleansweep.sandbox.workspace import GIT_ID, Workspace
 EXCLUDE = WS_EXCLUDE + ["_cs_*/", ".cs_venv/"]
 
 
-def _git(cwd: str | Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+def _git(
+    cwd: str | Path, *args: str, check: bool = True, stdin: str | None = None
+) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     return subprocess.run(
-        ["git", *GIT_ID, *args], cwd=cwd, capture_output=True, text=True, env=env, check=check
+        ["git", *GIT_ID, *args],
+        cwd=cwd,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=check,
     )
 
 
@@ -38,13 +46,15 @@ def default_out(src: Path) -> Path:
 
 
 def prepare_workspace(
-    src: str | Path, dest: str | Path, cfg: dict | None = None
+    src: str | Path, dest: str | Path, cfg: dict | None = None, trusted: bool = True
 ) -> tuple[Workspace, dict]:
     """Copy the project into `dest` as a git repo whose HEAD is the starting point.
 
     A git repository is cloned (the branch then applies to its history); uncommitted changes in
     its working tree are copied in and committed on top, so the cleanup starts from what the
-    user sees. A plain folder is copied and committed as "base"."""
+    user sees. A plain folder is copied and committed as "base". For a project that is not
+    trusted, no git command that reads its working tree runs in it: its own .git/config could
+    name a filter or an fsmonitor command to run."""
     src, dest = Path(src).resolve(), Path(dest)
     if not src.is_dir():
         raise FileNotFoundError(f"no such folder: {src}")
@@ -54,9 +64,12 @@ def prepare_workspace(
         head = _git(src, "rev-parse", "HEAD").stdout.strip()
         branch = _git(src, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
         info.update(kind="git clone", head=head, branch=branch)
-        status = _git(src, "status", "--porcelain").stdout
-        if status.strip():
+        changed = _git(src, "status", "--porcelain").stdout.strip() if trusted else True
+        if changed and trusted:
             _copy_working_tree(src, dest)
+        elif changed:
+            _mirror_working_tree(src, dest)
+        if changed and _git(dest, "status", "--porcelain").stdout.strip():
             _git(dest, "add", "-A")
             _git(
                 dest,
@@ -87,6 +100,25 @@ def _write_exclude(dest: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     old = path.read_text() if path.exists() else ""
     path.write_text(old + "\n".join(p for p in EXCLUDE if p not in old) + "\n")
+
+
+def _mirror_working_tree(src: Path, dest: Path) -> None:
+    """_copy_working_tree with git run only in the clone: the clone's ignore rules pick the
+    files to copy (symbolic links are copied as links)."""
+    files = [
+        p.relative_to(src).as_posix()
+        for p in src.rglob("*")
+        if (p.is_file() or p.is_symlink()) and ".git" not in p.relative_to(src).parts
+    ]
+    listed = _git(dest, "check-ignore", "--stdin", check=False, stdin="\n".join(files)).stdout
+    for rel in sorted(set(files) - set(listed.splitlines())):
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.unlink(missing_ok=True)
+        shutil.copy2(src / rel, target, follow_symlinks=False)
+    for rel in filter(None, _git(dest, "ls-files", "-z").stdout.split("\0")):
+        if not (src / rel).exists():
+            (dest / rel).unlink(missing_ok=True)
 
 
 def _copy_working_tree(src: Path, dest: Path) -> None:

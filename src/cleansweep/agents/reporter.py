@@ -126,6 +126,8 @@ def report_md(rt, s: dict, delivered: dict) -> str:
         f"{s['baseline']['passed']} passing in every run, "
         f"{s['baseline']['failed']} already failing, {s['baseline']['flaky']} flaky.",
     ]
+    if rt.workspace_info.get("sandbox"):
+        lines.insert(lines.index("## Tests") + 2, f"- Sandbox: {rt.workspace_info['sandbox']}.")
     if rt.untested:
         lines.append(
             f"- No usable tests ({(rt.baseline or {}).get('reason')}): every edit was checked "

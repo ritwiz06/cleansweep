@@ -69,9 +69,28 @@ change whose lines the probes ran); file and dependency removals and public func
 suggestions, and the result says "not verified by tests". No test runs a notebook either, so
 whatever a notebook's code uses (a function, a file, a dependency) stays a suggestion.
 
-`clean` runs the project's tests on your machine (in a virtual environment in the output folder
-when the project can be installed, else with CleanSweep's interpreter). Clean only code you
-trust, or run CleanSweep inside a container when you don't.
+**Where the project's code runs.** Installing a project and running its tests runs its code.
+`--sandbox docker` runs all of it (the install, the tests, the probes) in a `python:3.11`
+container: the workspace copy is mounted there, the project is installed with the network on,
+and the network is cut before any of its code runs; CleanSweep's own analysis stays on your
+machine and only reads files. `--sandbox none` runs it on your machine, in a virtual
+environment in the output folder (or with CleanSweep's interpreter if the install fails). The
+default, `--sandbox auto`, picks none for a folder in a git repository you own (one with at
+least one commit whose author email is your `git config --global user.email`) and docker for
+anything else; `--untrusted` always picks docker. `clean` prints which one it uses and why, and
+the report repeats it. If Docker is needed but not running, the run stops with "stopped: Docker
+is not running ..., nothing applied".
+
+To run CleanSweep itself in a container, build the image once and mount the project read-only
+(the LLM settings come from your environment; nothing secret is in the image):
+
+```bash
+docker build -t cleansweep -f docker/Dockerfile .
+docker run --rm -e VOYAGER_API_KEY -e VOYAGER_BASE_URL -e VOYAGER_MODEL -v "$PWD:/project:ro" -v "$PWD-cleanup:/out" cleansweep clean /project --out /out
+```
+
+Inside that container the project's code runs in the container itself, with the network the
+LLM needs.
 
 If a run is interrupted (Ctrl-C, a crash, the laptop sleeping), continue it from its last
 finished phase or work package with the options it started with:
@@ -122,7 +141,7 @@ Options: `--mode safe|thorough`, `--budget llm=150,minutes=60,tests=80`, `--appr
 `blueprint.md` and ask before applying), `--dry-run`, `--out DIR`, `--exclude FOLDER`
 (repeatable), `--test-args "..."` (extra pytest arguments), `--no-install` (run the tests with
 CleanSweep's interpreter), `--model`, `--no-llm`, `--config FILE`, `--quiet`, `--resume RUN`
-(continue an interrupted run). What each one does
+(continue an interrupted run), `--sandbox auto|docker|none`, `--untrusted`. What each one does
 in detail: [agentic_design.md, section 15](agentic_design.md#15-command-line).
 
 A `.cleansweep.yaml` at the project's root (or `--config FILE`) holds the settings a project

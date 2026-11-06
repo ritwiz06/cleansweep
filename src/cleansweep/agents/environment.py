@@ -216,7 +216,8 @@ def prepare(rt) -> dict:
         info["pythonpath"] = "src"
     setting = rt.acfg.get("install", "auto")
     if ws.python != sys.executable:
-        return {**info, "install": "the workspace's own environment (its container)"}
+        own = getattr(ws, "install_info", "") or "the workspace's own environment (its container)"
+        return {**info, "install": own}
     plan = (rt.brief or {}).get("install_plan")
     if plan is None:  # a brief written without the plan: its pip commands
         commands = pip_commands((rt.brief or {}).get("install_command", ""))

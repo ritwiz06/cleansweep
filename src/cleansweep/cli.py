@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import sys
 from pathlib import Path
@@ -95,11 +96,10 @@ def _ask_approval(blueprint: str) -> bool:
 
 
 def cmd_clean(args) -> int:
-    import os
-
     from cleansweep.agents import clean_project, project_config
     from cleansweep.agents.budgets import parse_budget
     from cleansweep.agents.run import Interrupted, resume_project
+    from cleansweep.sandbox.container import choose
 
     if bool(args.path) == bool(args.resume):
         print("cleansweep clean: give a project folder, or --resume RUN", file=sys.stderr)
@@ -129,6 +129,14 @@ def cmd_clean(args) -> int:
     except ValueError as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
         return 2
+    if args.untrusted and args.sandbox == "none":
+        print("cleansweep clean: --untrusted needs the docker sandbox", file=sys.stderr)
+        return 2
+    try:
+        where, why = choose(args.path, args.sandbox, args.untrusted)
+    except ValueError as exc:
+        print(f"cleansweep clean: {exc}", file=sys.stderr)
+        return 2
     if args.approve_plan and not sys.stdin.isatty():
         print(
             "cleansweep clean: --approve-plan needs a terminal; use --dry-run to only plan",
@@ -147,6 +155,8 @@ def cmd_clean(args) -> int:
     exclude = [*project.get("exclude", []), *(args.exclude or [])]
     if settings and not args.quiet:
         print(f"Settings: {settings}", flush=True)
+    if not args.quiet:
+        print(f"Sandbox: {where} ({why})", flush=True)
     try:
         result = clean_project(
             args.path,
@@ -159,6 +169,8 @@ def cmd_clean(args) -> int:
             use_llm=not args.no_llm,
             test_args=shlex.split(test_args) if test_args else None,
             exclude=[e.rstrip("/") + "/" for e in exclude],
+            sandbox=args.sandbox,
+            untrusted=args.untrusted,
         )
     except (FileNotFoundError, FileExistsError, ValueError, RuntimeError) as exc:
         print(f"cleansweep clean: {exc}", file=sys.stderr)
@@ -314,6 +326,17 @@ def main(argv: list[str] | None = None) -> int:
         "--config",
         metavar="FILE",
         help="settings file (default: the project's .cleansweep.yaml, if any); options override it",
+    )
+    p.add_argument(
+        "--sandbox",
+        choices=["auto", "docker", "none"],
+        default=os.environ.get("CLEANSWEEP_SANDBOX") or "auto",
+        help="where the project's code (install, tests, probes) runs: docker (a container with "
+        "no network after the install), none (this machine), or auto (default): none for a git "
+        "repository you own, docker for anything else",
+    )
+    p.add_argument(
+        "--untrusted", action="store_true", help="the project is not yours: use docker always"
     )
     p.add_argument("--quiet", action="store_true", help="print only the result")
     p.set_defaults(func=cmd_clean)
