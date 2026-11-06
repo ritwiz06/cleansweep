@@ -319,6 +319,48 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   await expect(page).toHaveURL(/tab=audit/);
 });
 
+// One screen as the user guide's review needs it: loaded, no error, nothing wider than 1280 px.
+async function checkScreen(page: Page, label: string, shot: string) {
+  await expect(page.locator("main h2").first(), label).toBeVisible();
+  await expect(page.locator(".state.loading"), label).toHaveCount(0);
+  await expect(page.locator(".state.error"), label).toHaveCount(0);
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(width, `${label} fits 1280 px`).toBeLessThanOrEqual(1280);
+  await page.screenshot({ path: `test-results/recordings/${shot}.png` });
+}
+
+test("every shipped recording through every screen, in both themes at 1280x720", async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const runs: { root: string; path: string; name: string; kind: string }[] = await (await page.request.get("/api/runs")).json();
+  const shipped = runs.filter((r) => r.root === "replay");
+  expect(shipped.filter((r) => r.kind === "v2").length).toBeGreaterThanOrEqual(4);
+  for (const theme of ["light", "dark"]) {
+    await open(page, "runs");
+    if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== theme) await page.getByRole("button", { name: "Switch theme" }).click();
+    for (const run of shipped) {
+      const q = `root=replay&path=${run.path}`;
+      await open(page, `replay?${q}`);
+      await page.getByRole("button", { name: "Jump to the end" }).click();
+      await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
+      if (run.kind === "v1") {
+        await checkScreen(page, `${run.name} replay`, `${theme}-${run.name}-replay`);
+        await open(page, `reports?root=replay&path=${run.path}/report.json`);
+        await checkScreen(page, `${run.name} saved report`, `${theme}-${run.name}-report`);
+        continue;
+      }
+      for (const tab of ["Project", "Agents", "Message board", "Items", "Work packages", "Report"]) {
+        await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+        await checkScreen(page, `${run.name} ${tab}`, `${theme}-${run.name}-${tab.replace(" ", "_")}`);
+      }
+      for (const [route, view] of [[`after?${q}`, "after"], [`present?${q}`, "present"], [`after?${q}&present=1`, "present_after"]]) {
+        await open(page, route);
+        await checkScreen(page, `${run.name} ${view}`, `${theme}-${run.name}-${view}`);
+      }
+    }
+  }
+});
+
 test("every screen renders in both themes at 1280x720", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // finished charts in the screenshots
   const routes = [

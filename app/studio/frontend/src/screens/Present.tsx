@@ -6,7 +6,7 @@ import { PresentShell } from "../components/PresentShell";
 import { TreeList, treeFiles, useProjectFiles, useTreeView } from "../components/ProjectView";
 import { StateLegend } from "../components/states";
 import { captionSteps, type CaptionStep } from "../state/caption";
-import { PHASES, SQUADS, agentName, roleOf, type RunState, type StudioEvent } from "../state/fold";
+import { PHASES, SQUADS, agentName, repoName, roleOf, type RunState, type StudioEvent } from "../state/fold";
 import { useEvents, useFolded } from "../state/hooks";
 import { STEP_MS, nextDecisionStep } from "../state/present";
 import { buildTree } from "../state/tree";
@@ -106,7 +106,7 @@ function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[
   const exit = runHash(detail, live ? "live" : "replay");
   return (
     <PresentShell
-      title={`${live ? "Live" : "Replay"}: ${(state.repo || detail.target || detail.name).replace(/^local:/, "")}`}
+      title={`${live ? "Live" : "Replay"}: ${repoName(state.repo || detail.target || detail.name)}`}
       position={live ? `${steps.length} steps so far` : `step ${here + 1} of ${steps.length}`}
       progress={steps.length ? (here + 1) / steps.length : 0}
       playing={playing}

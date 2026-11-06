@@ -197,7 +197,10 @@ export function DataTable({
           {rows.map((row, r) => (
             <tr key={r}>
               {row.map((v, c) => (
-                <td key={c}>{cell(v)}</td>
+                // a long text gets a readable width instead of a column squeezed to a few words
+                <td key={c} className={typeof v === "string" && v.length > 60 ? "wrap" : undefined}>
+                  {cell(v)}
+                </td>
               ))}
             </tr>
           ))}

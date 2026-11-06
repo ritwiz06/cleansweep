@@ -223,6 +223,11 @@ export function roleOf(agent: string | null | undefined): string {
   return (agent || "").split("#")[0];
 }
 
+// "aidev:owner/Some_Repo@5b5d8df" -> "Some_Repo", "local:shop_app" -> "shop_app".
+export function repoName(repo: string): string {
+  return repo.replace(/^\w+:/, "").split("/").pop()!.split("@")[0] || repo;
+}
+
 // "investigator#3" -> "Investigator #3", "auditor#lines" -> "Auditor (lines)".
 export function agentName(agent: string): string {
   const [role, instance] = agent.split("#");

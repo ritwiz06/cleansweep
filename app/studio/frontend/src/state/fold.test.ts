@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { fold, itemsByStage, parseMismatch, phaseSeconds, type StudioEvent } from "./fold";
+import { agentName, fold, itemsByStage, parseMismatch, phaseSeconds, repoName, type StudioEvent } from "./fold";
 
 let n = 0;
 function ev(kind: string, agent: string | null, payload: object, extra: Partial<StudioEvent> = {}): StudioEvent {
@@ -140,6 +140,11 @@ describe("fold", () => {
     expect(s.finished).toBe(false);
     expect(s.lastMessage?.type).toBe("verdict");
     expect(s.active).toBe("investigator");
+  });
+
+  it("names agents and repositories the way the screens show them", () => {
+    expect([agentName("investigator#3"), agentName("auditor#lines"), agentName("solo")]).toEqual(["Investigator #3", "Auditor (lines)", "Single agent"]);
+    expect([repoName("local:shop_app"), repoName("aidev:owner/Some_Repo@5b5d8df")]).toEqual(["shop_app", "Some_Repo"]);
   });
 
   it("parses probe mismatches into before and after", () => {

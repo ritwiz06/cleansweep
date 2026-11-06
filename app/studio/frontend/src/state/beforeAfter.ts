@@ -1,7 +1,7 @@
 // Before and after a cleanup: both file trees and the numbers, from the project's file list,
 // the final diff and the folded events.
 import { parseDiff, type DiffFile } from "./diff";
-import { fold, type RunState, type StudioEvent } from "./fold";
+import { fold, repoName, type RunState, type StudioEvent } from "./fold";
 import { filesFromEvents, type FileEntry } from "./tree";
 
 export type FileStatus = "removed" | "edited" | "added" | "unchanged";
@@ -209,6 +209,6 @@ export function afterModel(
   const parsed = parseDiff(diff);
   const list = files?.complete ? files.files : filesFromEvents(events).map((path) => ({ path, lines: null }));
   const stats = fileStats(list, parsed);
-  const name = (state.repo || run.target || "project").replace(/^local:/, "");
+  const name = repoName(state.repo || run.target || "project");
   return { state, parsed, list, trees: fileTrees(stats, name), m: metrics(state, stats, Boolean(files?.complete), run.report?.stats), name };
 }
