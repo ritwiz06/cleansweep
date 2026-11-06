@@ -167,3 +167,14 @@ def test_chat_json_retry_and_failure_are_recorded():
         llm.chat_json([{"role": "user", "content": "x"}])
     usage = llm.usage()
     assert usage["llm_retries"] == 1 and usage["llm_failures"] == 1
+
+
+def test_max_calls_stops_new_requests_but_not_cache_hits(tmp_path):
+    fake = FakeOpenAI(["a", "b", "c"])
+    client = LLMClient("m", openai_client=fake, cache_path=str(tmp_path / "c.sqlite"), max_calls=2)
+    assert client.chat([{"role": "user", "content": "1"}]) == "a"
+    assert client.chat([{"role": "user", "content": "2"}]) == "b"
+    assert client.chat([{"role": "user", "content": "1"}]) == "a"  # cached: free
+    with pytest.raises(LLMError, match="budget exhausted"):
+        client.chat([{"role": "user", "content": "3"}])
+    assert client.usage()["llm_calls"] == 2 and len(fake.kwargs) == 2
