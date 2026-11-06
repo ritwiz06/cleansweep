@@ -24,12 +24,14 @@ results.json.
 table: results/summary/v3/audit_miss.csv, per method and overall, in two tiers: confirmed (the
 test passes before and fails after the edit, and the reading calls the edit wrong) and reading
 (LLM-judged: results/raw/audit_miss/readings.jsonl, one JSON line per edit with verdict, evidence
-and kind). Each row: the sampled edits, tests written, wrong edits, the miss rate per "no"-voted
-kept code edit (weighted to the method's "no" population) with a 95% Wilson interval at Kish's
-effective sample size, and the corrected wrong-edit count: v2's wrong edits (confirmed and
-reading, diff_audit.csv) plus the miss rate times the "no"-voted kept code edits. trap_census
-counts all of a method's "no"-voted injected edits the injection key's rule calls wrong (they
-remove a trap), not a sample.
+and kind). The injection key settles every "no"-voted injected edit that removes a planted trap,
+so those are counted (trap_census, kept code edits), not estimated: sampled trap removals leave
+the estimate and the other sampled edits of their target set stand for its other "no"-voted
+edits. Each row: the sampled edits, tests written, wrong edits, the census, the miss rate among
+the other "no"-voted kept code edits (weighted to the method's population) with a 95% Wilson
+interval at Kish's effective sample size, and the corrected wrong-edit count: v2's wrong edits
+(confirmed and reading, diff_audit.csv), plus the census, plus the miss rate times the other
+"no"-voted kept code edits.
 """
 
 from __future__ import annotations
@@ -129,8 +131,8 @@ def trap_removals(edits: dict, audit: dict) -> set[str]:
 
 
 def draw(pop: dict[tuple[str, str], dict[str, int]], edits: dict, traps: set = frozenset()) -> dict:
-    """The stratified sample: each cell's sizes (and its kept edits that remove a trap), and each
-    drawn edit with its cell and weight."""
+    """The stratified sample: each cell's sizes (and its edits that remove a trap: unique, and as
+    kept code edits), and each drawn edit with its cell, weight and whether it removes a trap."""
     strata, picked = [], []
     for method in sorted({m for m, _ in pop}):
         cells = {s: cell for (m, s), cell in pop.items() if m == method}
@@ -138,6 +140,7 @@ def draw(pop: dict[tuple[str, str], dict[str, int]], edits: dict, traps: set = f
         for target_set in sorted(cells):
             cell, n = cells[target_set], take[target_set]
             size = {"population": len(cell), "kept": sum(cell.values()), "sampled": n}
+            size["trap_edits"] = sum(e in traps for e in cell)
             size["traps"] = sum(k for e, k in cell.items() if e in traps)
             strata.append({"method": method, "target_set": target_set, **size})
             rng = random.Random(f"{SEED}:{method}:{target_set}")
@@ -153,6 +156,7 @@ def draw(pop: dict[tuple[str, str], dict[str, int]], edits: dict, traps: set = f
                         "sampled": n,
                         "weight": len(cell) / n,
                         "kept": cell[edit],
+                        "trap": edit in traps,
                     }
                 )
     return {"seed": SEED, "per_method": PER_METHOD, "strata": strata, "edits": picked}
@@ -180,6 +184,14 @@ def opened(record: dict) -> tuple[str, dict]:
     return confirm.opened(record["project"], Path(record["report"]))
 
 
+def workspace_key(record: dict) -> str:
+    """Edits that open the same workspace. The injected toy repository is "local:repo" on every
+    seed, so its run folder (one per seed) is part of the key."""
+    report = Path(record["report"])
+    key = f"{record['project']}|{report.parent.parent.name}"
+    return f"{key}|{report.parent.name}" if record["project"] == "local:repo" else key
+
+
 def run(only: list[str] | None = None) -> Path:
     edits, _ = collect()
     results = json.loads(RESULTS.read_text()) if RESULTS.exists() else {}
@@ -190,8 +202,7 @@ def run(only: list[str] | None = None) -> Path:
         if (only and edit not in only) or (not only and edit in results):
             continue
         record = {**edits[edit], "edit": edit}
-        key = f"{record['project']}|{Path(record['report']).parent.parent.name}"
-        groups.setdefault(key, []).append(record)
+        groups.setdefault(workspace_key(record), []).append(record)
     for key, records in groups.items():
         confirm._wait_for_load()
         target, sandbox = opened(records[0])
@@ -227,8 +238,8 @@ def wilson(p: float, n: float) -> tuple[float, float]:
 
 
 def estimate(rows: list[dict], hits: list[bool]) -> tuple[float, float, float]:
-    """(rate, CI low, CI high) of hits per "no"-voted kept code edit: each sampled edit counts
-    weight times as often as the method kept it, Wilson at Kish's effective sample size."""
+    """(rate, CI low, CI high) of hits per kept code edit: each sampled edit counts weight times
+    as often as the method kept it, Wilson at Kish's effective sample size."""
     w = [r["weight"] * r["kept"] for r in rows]
     if not w:
         return 0.0, 0.0, 1.0
@@ -259,30 +270,46 @@ def folders(edits: set[str]) -> dict[str, str]:
     return out
 
 
+def rest_weights(sample: dict) -> dict[tuple[str, str], float]:
+    """(method, target set) -> the weight of a sampled edit that removes no trap: the cell's other
+    "no"-voted edits over its sampled ones. Trap removals are counted (trap_census), not
+    estimated, so sampled ones leave the estimate."""
+    out = {}
+    for s in sample["strata"]:
+        key = (s["method"], s["target_set"])
+        n = sum((e["method"], e["target_set"]) == key and not e["trap"] for e in sample["edits"])
+        out[key] = (s["population"] - s["trap_edits"]) / n if n else 0.0
+    return out
+
+
 def tier_row(tier: str, mine: list[dict], strata: list[dict], v2: tuple[int, int]) -> dict:
-    """One method's (or all methods') row of a tier. mine: sampled edits with written, changed
-    and verdict filled in."""
+    """One method's (or all methods') row of a tier. mine: sampled edits with written, changed,
+    verdict and the weight among the edits that remove no trap filled in."""
     if tier == "confirmed":
         hits = [r["changed"] and r["verdict"] == "wrong" for r in mine]
         debatable = sum(r["changed"] and r["verdict"] == "debatable" for r in mine)
     else:
         hits = [r["verdict"] == "wrong" for r in mine]
         debatable = sum(r["verdict"] == "debatable" for r in mine)
-    rate, low, high = estimate(mine, hits)
-    kept = sum(s["kept"] for s in strata)
-    base = sum(v2)
+    rest = [(r, hit) for r, hit in zip(mine, hits, strict=True) if not r["trap"]]
+    rate, low, high = estimate([r for r, _ in rest], [hit for _, hit in rest])
+    census = sum(s["traps"] for s in strata)
+    kept = sum(s["kept"] for s in strata) - census
+    base = sum(v2) + census
     return {
         "tier": tier,
-        "no_kept_code_edits": kept,
+        "no_kept_code_edits": kept + census,
         "no_unique_edits": sum(s["population"] for s in strata),
         "sampled": len(mine),
         "tests_written": sum(r["written"] == "test" for r in mine),
         "no_test": sum(r["written"] == "no_test" for r in mine),
         "fails_after": sum(r["changed"] for r in mine) if tier == "confirmed" else "",
-        "trap_census": sum(s.get("traps", 0) for s in strata) if tier == "confirmed" else "",
         "wrong": sum(hits),
         "debatable": debatable,
         "wrong_share_of_sample": round(sum(hits) / len(mine), 4) if mine else "",
+        "trap_census": census,
+        "sampled_trap_removals": sum(r["trap"] for r in mine),
+        "other_no_kept_code_edits": kept,
         "miss_rate_estimate": round(rate, 4),
         "miss_ci_low_estimate": round(low, 4),
         "miss_ci_high_estimate": round(high, 4),
@@ -297,9 +324,11 @@ def tier_row(tier: str, mine: list[dict], strata: list[dict], v2: tuple[int, int
 
 def table_rows(sample: dict, results: dict, readings: dict, v2: dict, written: dict) -> list[dict]:
     """The table's rows, per tier: each method, then all four together."""
+    weight = rest_weights(sample)
     mine = [
         {
             **e,
+            "weight": weight[(e["method"], e["target_set"])],
             "written": written.get(e["edit"], ""),
             "changed": bool(results.get(e["edit"], {}).get("confirmed")),
             "verdict": readings.get(e["edit"], {}).get("verdict", ""),

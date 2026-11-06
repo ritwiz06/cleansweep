@@ -5,7 +5,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / "scripts" / "experiments" / "v3" / "exp_audit_miss.py"
-A, B, C = "a" * 12, "b" * 12, "c" * 12
+A, B, C, T = "a" * 12, "b" * 12, "c" * 12, "d" * 12
 
 
 def load():
@@ -73,9 +73,12 @@ def test_the_draw_is_deterministic_stratified_and_weighted():
         "population": 2,
         "kept": 4,
         "sampled": 1,
+        "trap_edits": 0,
         "traps": 0,
     }
-    assert miss.draw(pop, edits, {B})["strata"][0]["traps"] == 3
+    traps = miss.draw(pop, edits, {B})
+    assert (traps["strata"][0]["trap_edits"], traps["strata"][0]["traps"]) == (1, 3)
+    assert {e["edit"] for e in traps["edits"] if e["trap"]} <= {B}
 
 
 def test_no_hits_in_25_give_a_wilson_upper_bound_of_13_percent():
@@ -88,44 +91,51 @@ def test_no_hits_in_25_give_a_wilson_upper_bound_of_13_percent():
     assert (low, high) == miss.wilson(0.25, 4)
 
 
-def test_the_table_weights_the_sample_and_corrects_the_v2_counts():
+def test_the_table_counts_trap_removals_and_estimates_the_rest():
     miss = load()
+    cell = {"method": "agentic", "target_set": "injected", "population": 100, "kept": 110}
     sample = {
         "strata": [
-            {"method": "agentic", "target_set": "injected", "population": 100, "kept": 110},
+            {**cell, "trap_edits": 10, "traps": 12},
             {"method": "agentic", "target_set": "AIDev", "population": 10, "kept": 10},
-            {
-                "method": "cleansweep-gatekeeper",
-                "target_set": "injected",
-                "population": 50,
-                "kept": 50,
-            },
+            {"method": "cleansweep-gatekeeper", "target_set": "injected", "population": 50},
         ],
         "edits": [
-            {"edit": A, "method": "agentic", "weight": 50.0, "kept": 1},
-            {"edit": B, "method": "agentic", "weight": 50.0, "kept": 2},
-            {"edit": C, "method": "agentic", "weight": 10.0, "kept": 1},
-            {"edit": A, "method": "cleansweep-gatekeeper", "weight": 50.0, "kept": 1},
+            {"edit": A, "method": "agentic", "target_set": "injected", "kept": 1},
+            {"edit": B, "method": "agentic", "target_set": "injected", "kept": 2},
+            {"edit": T, "method": "agentic", "target_set": "injected", "kept": 1, "trap": True},
+            {"edit": C, "method": "agentic", "target_set": "AIDev", "kept": 1},
+            {"edit": A, "method": "cleansweep-gatekeeper", "target_set": "injected", "kept": 1},
         ],
     }
-    results = {A: {"confirmed": True}, B: {"confirmed": False}, C: {"confirmed": True}}
+    for s in sample["strata"]:
+        s.setdefault("trap_edits", 0)
+        s.setdefault("traps", 0)
+        s.setdefault("kept", s["population"])
+    for e in sample["edits"]:
+        e.setdefault("trap", False)
+    results = {e: {"confirmed": e != B} for e in (A, B, C, T)}
     readings = {A: {"verdict": "wrong"}, B: {"verdict": "wrong"}, C: {"verdict": "debatable"}}
-    written = {A: "test", B: "test", C: "no_test"}
+    readings[T] = {"verdict": "wrong"}
+    written = {A: "test", B: "test", C: "no_test", T: "test"}
     v2 = {"agentic": (3, 1), "cleansweep-gatekeeper": (2, 0)}
     rows = {
         (r["tier"], r["method"]): r for r in miss.table_rows(sample, results, readings, v2, written)
     }
+    # the rest of agentic/injected: 90 edits, 2 sampled (weight 45); AIDev: weight 10
     team = rows[("confirmed", "agentic")]
-    assert (team["sampled"], team["tests_written"], team["no_test"]) == (3, 2, 1)
-    assert (team["fails_after"], team["wrong"], team["debatable"]) == (2, 1, 1)
-    assert team["no_kept_code_edits"] == 120
-    assert team["miss_rate_estimate"] == round(50 / 160, 4)
-    assert team["missed_estimate"] == 37.5
-    assert team["corrected_wrong_estimate"] == 41.5
+    assert (team["sampled"], team["tests_written"], team["no_test"]) == (4, 3, 1)
+    assert (team["fails_after"], team["wrong"], team["debatable"]) == (3, 2, 1)
+    assert (team["trap_census"], team["sampled_trap_removals"]) == (12, 1)
+    assert (team["no_kept_code_edits"], team["other_no_kept_code_edits"]) == (120, 108)
+    assert team["miss_rate_estimate"] == round(45 / 145, 4)
+    assert team["missed_estimate"] == round(45 / 145 * 108, 1)
+    assert team["corrected_wrong_estimate"] == round(4 + 12 + 45 / 145 * 108, 1)
     reading = rows[("reading (LLM-judged)", "agentic")]
-    assert (reading["wrong"], reading["debatable"], reading["fails_after"]) == (2, 1, "")
-    assert reading["corrected_wrong_estimate"] == 4 + 150 / 160 * 120
+    assert (reading["wrong"], reading["debatable"], reading["fails_after"]) == (3, 1, "")
+    assert reading["corrected_wrong_estimate"] == round(16 + 135 / 145 * 108, 1)
     overall = rows[("confirmed", "overall")]
-    assert (overall["sampled"], overall["no_kept_code_edits"], overall["wrong"]) == (4, 170, 2)
-    assert overall["corrected_wrong_estimate"] == round(6 + 100 / 210 * 170, 1)
-    assert overall["corrected_ci_low_estimate"] <= 86.9 <= overall["corrected_ci_high_estimate"]
+    assert (overall["sampled"], overall["no_kept_code_edits"], overall["wrong"]) == (5, 170, 3)
+    assert overall["corrected_wrong_estimate"] == round(6 + 12 + 95 / 195 * 158, 1)
+    low, high = overall["corrected_ci_low_estimate"], overall["corrected_ci_high_estimate"]
+    assert 18 <= low <= overall["corrected_wrong_estimate"] <= high <= 18 + 158

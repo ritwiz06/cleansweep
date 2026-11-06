@@ -668,15 +668,23 @@ per method (the team, no research squad, single agent and v1's gatekeeper; seed 
 method proportional to the target sets with at least one from each set that has any (100 draws,
 98 distinct edits). Each edit gets a targeted test written to catch any behavior a caller, a user
 or a framework could observe (`results/raw/audit_miss/tests/<edit>/`, or `no_test.txt` saying why
-the edit cannot change behavior), run before and after the edit in the run's own environment with
-`exp_audit_confirm.py`'s machinery (`run`), and a reading under the rubric above (LLM-judged,
-`readings.jsonl`). `table` writes `results/summary/v3/audit_miss.csv` in two tiers kept apart:
-confirmed (the test passes before and fails after, and the reading calls the edit wrong) and
-reading (LLM-judged). Per method and overall it gives the miss rate per "no"-voted kept code edit,
-weighted to the method's "no" population, with a 95% Wilson interval at Kish's effective sample
-size, and the corrected wrong-edit count: v2's wrong edits (confirmed and reading) plus the miss
-rate times the "no" population. All of these are estimates. `trap_census` is not sampled: it
-counts every "no"-voted injected edit of the method that the injection key's rule calls wrong.
+the edit cannot change behavior: 44 of 98), run before and after the edit in the run's own
+environment with `exp_audit_confirm.py`'s machinery (`run`), and a reading under the rubric above
+(LLM-judged, `readings.jsonl`). The injection key settles every "no"-voted injected edit that
+removes a planted trap, so those are counted, not sampled: `trap_census` (7 kept code edits of
+these methods: 6 single agent, 1 no research squad; 50 more by the one-shot baseline). Sampled
+trap removals leave the estimate and the other sampled edits stand for the other "no"-voted
+edits. `table` writes `results/summary/v3/audit_miss.csv` in two tiers kept apart: confirmed (the
+test passes before and fails after, and the reading calls the edit wrong) and reading
+(LLM-judged). Per method and overall it gives the miss rate among the other "no"-voted kept code
+edits, weighted to the method's population, with a 95% Wilson interval at Kish's effective sample
+size, and the corrected wrong-edit count: v2's wrong edits (confirmed and reading), plus the
+census, plus the miss rate times the other "no"-voted kept code edits. All of these are
+estimates. **Code version:** this branch (exp/v3-audit-miss). **Runtime:** 38 minutes for the 54
+tests (Docker, one workspace at a time, after waiting 8 minutes for the load to drop) and 2 more
+minutes to rerun 10 of them: 7 that passed after their edit at first and fail after on the rerun
+(the container likely still saw the files before the edit), 2 toy-repository edits first opened
+on another seed's copy, and 1 test fixed.
 
 ## Getting the data
 
