@@ -210,6 +210,19 @@ saved no file list, so its trees show the files its events and diff name, and it
 
 ![Before / after: one change of the demo app cleanup with the decisions behind it](images/studio/before_after_diff.png)
 
+**Presentation mode** ("Present" in a replay's or a before / after header) is for a projector:
+no sidebar, large type, and one plain caption per step ("Investigator #3 checks who calls
+_print_low_stock()"). The tree follows the agent at work and a panel shows that agent and the
+counts so far. Play advances at a fixed pace (1.5 s per step); the space bar (or a clicker's
+Page Down) jumps to the next decision, Shift+space back, the arrow keys one step, P plays or
+pauses, Escape leaves. On before / after it shows the summary, then one change per slide (5 s
+each when playing): the category, the Investigator's reason, the decisions as a chain of agents,
+the side-by-side diff and the checks.
+
+![Presentation mode: a caption per step, the tree following the agent at work](images/studio/present.png)
+
+![Presentation mode on before / after: one change per slide](images/studio/present_after.png)
+
 In the step-back recording, FINAL VERIFY finds the full suite worse than the baseline, and the
 Manager goes back to EXECUTE and undoes only the package that broke a test (outlined on the
 timeline):

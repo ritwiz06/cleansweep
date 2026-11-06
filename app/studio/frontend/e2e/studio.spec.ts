@@ -131,6 +131,54 @@ test("before / after: both trees, the numbers, and each change with the decision
   await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
 });
 
+test("presentation mode: large captions, a fixed pace, and the space bar jumps to the next decision", async ({ page }) => {
+  await open(page, `replay?root=replay&path=${DEMO}`);
+  await page.getByRole("link", { name: "Present" }).click();
+  await expect(page.locator("nav.sidebar")).toHaveCount(0);
+  const caption = page.getByLabel("Caption");
+  const controls = page.getByLabel("Presentation controls");
+  await expect(caption).toContainText("Manager starts cleaning shop_app in safe mode");
+  expect(await caption.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(32);
+  await page.keyboard.press("Space");
+  await expect(caption).toContainText("Manager decides to continue");
+  await expect(controls).toContainText("step 9 of 158");
+  await page.keyboard.press("ArrowRight");
+  await expect(caption).toContainText("Manager moves on to the baseline");
+  await expect(page.getByLabel("Active agent")).toContainText("runs the phases");
+  // one step every 1.5 s, whatever the step took in the run
+  await page.keyboard.press("p");
+  await expect(controls).toContainText("step 11 of 158", { timeout: 2500 });
+  await page.keyboard.press("p");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(controls).toContainText("step 22 of 158");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+  await expect(caption).toContainText("Investigator #1 checks who uses bookshelf/inventory_old.py");
+  await expect(page.getByRole("tree", { name: "Project tree" }).locator(".tree-row.focus").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+});
+
+test("presentation mode on before / after: the summary, then one change per slide", async ({ page }) => {
+  await open(page, `after?root=replay&path=${DEMO}`);
+  await page.getByRole("link", { name: "Present" }).click();
+  const controls = page.getByLabel("Presentation controls");
+  await expect(controls).toContainText("5 changes");
+  await expect(page.getByLabel("Caption")).toContainText("everything runs");
+  await expect(page.getByText("Behavior that nothing tests isn't covered").first()).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(controls).toContainText("change 1 of 5");
+  await expect(page.getByLabel("Decisions")).toContainText("Manager");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(page.getByLabel("Caption")).toContainText("_clean_isbn()");
+  await expect(page.getByLabel("Checks")).toContainText("public names unchanged");
+  await page.keyboard.press("Shift+Space");
+  await expect(controls).toContainText("change 2 of 5");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+});
+
 test("an artifact link opens the cached artifact", async ({ page }) => {
   await open(page, `replay?root=replay&path=${V2}`);
   await page.getByRole("button", { name: "Jump to the end" }).click();
@@ -274,6 +322,8 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "replay?root=replay&path=20261102_demo_feature_agentic",
     `after?root=replay&path=${DEMO}`,
     `after?root=replay&path=${V2}`,
+    `present?root=replay&path=${DEMO}`,
+    `after?root=replay&path=${DEMO}&present=1`,
   ];
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");

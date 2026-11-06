@@ -72,29 +72,38 @@ export function annotateFile(file: DiffFile, state: RunState): HunkNote[] {
 export interface Step {
   agent: string;
   text: string;
+  brief: string; // two or three words, for a chain of icons
 }
 
 // The decisions behind an applied candidate, agent by agent, from the events.
 export function decisionSteps(item: Item, state: RunState): Step[] {
-  const steps: Step[] = [{ agent: "auditor", text: `flagged it as ${categoryLabel(item.category)} (${item.lane} lane)` }];
+  const steps: Step[] = [{ agent: "auditor", text: `flagged it as ${categoryLabel(item.category)} (${item.lane} lane)`, brief: categoryLabel(item.category) }];
   const v = item.verdict;
   if (v) {
     const sure = v.confidence !== null && v.confidence > 0 ? ` (confidence ${v.confidence})` : "";
-    steps.push({ agent: v.agent || "investigator", text: `${v.decision}${sure}: ${v.reason}` });
+    steps.push({ agent: v.agent || "investigator", text: `${v.decision}${sure}: ${v.reason}`, brief: `${v.decision}${sure}` });
   }
   const pkg = item.pkg ? state.packages[item.pkg] : null;
   if (!pkg) return steps;
-  steps.push({ agent: "planner", text: `put it in ${pkg.id}${pkg.goal ? `: ${pkg.goal}` : ""}` });
-  steps.push({ agent: "engineer", text: pkg.applied.includes(item.id) ? `applied the edit${pkg.commit ? ` (commit ${pkg.commit.slice(0, 8)})` : ""}` : "applied the package" });
-  for (const t of pkg.tests) steps.push({ agent: "tester", text: t.ok ? `${t.stage}: passed` : `${t.stage}: failed (${t.newFailures.join(", ") || "see the log"})` });
+  steps.push({ agent: "planner", text: `put it in ${pkg.id}${pkg.goal ? `: ${pkg.goal}` : ""}`, brief: pkg.id });
+  const commit = pkg.commit ? ` (commit ${pkg.commit.slice(0, 8)})` : "";
+  steps.push({ agent: "engineer", text: pkg.applied.includes(item.id) ? `applied the edit${commit}` : "applied the package", brief: "applied" });
+  for (const t of pkg.tests) {
+    const failed = `${t.stage}: failed (${t.newFailures.join(", ") || "see the log"})`;
+    steps.push({ agent: "tester", text: t.ok ? `${t.stage}: passed` : failed, brief: t.ok ? "tests pass" : "tests fail" });
+  }
   if (pkg.validation) {
     const p = pkg.validation.probes;
     const probes = p ? `${p.n_cases} probe cases, ${p.same ? "same behavior" : `${(p.mismatches || []).length} differ`}` : "no probes";
-    steps.push({ agent: "validator", text: `${pkg.validation.ok ? "passed" : "failed"}: ${probes}` });
+    const brief = p ? `${p.n_cases} probes, ${p.same ? "same" : "differ"}` : pkg.validation.ok ? "checks pass" : "checks fail";
+    steps.push({ agent: "validator", text: `${pkg.validation.ok ? "passed" : "failed"}: ${probes}`, brief });
   }
-  if (pkg.repair) steps.push({ agent: "fixer", text: `${pkg.repair.outcome.replace(/_/g, " ")}${pkg.repair.turns ? ` after ${pkg.repair.turns} turns` : ""}` });
+  if (pkg.repair) {
+    const outcome = pkg.repair.outcome.replace(/_/g, " ");
+    steps.push({ agent: "fixer", text: `${outcome}${pkg.repair.turns ? ` after ${pkg.repair.turns} turns` : ""}`, brief: outcome });
+  }
   const done = state.decisions.find((d) => d.rule === "package_done" && d.pkg === pkg.id);
-  if (done) steps.push({ agent: done.agent || "manager", text: done.text });
+  if (done) steps.push({ agent: done.agent || "manager", text: done.text, brief: (done.status || "done").replace(/_/g, " ") });
   return steps;
 }
 

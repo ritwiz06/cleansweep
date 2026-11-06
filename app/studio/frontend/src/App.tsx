@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DarkContext } from "./components/Code";
+import { ThemeToggle } from "./components/PresentShell";
 import { BeforeAfter } from "./screens/BeforeAfter";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
@@ -7,6 +8,7 @@ import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScree
 import { Evaluation } from "./screens/Evaluation";
 import { Home } from "./screens/Home";
 import { Launcher } from "./screens/Launcher";
+import { Present } from "./screens/Present";
 import { Results } from "./screens/Results";
 import { RunView } from "./screens/RunView";
 import { RunsScreen } from "./screens/Runs";
@@ -78,7 +80,8 @@ export function App() {
       // not saved; the theme still applies
     }
   }, [theme]);
-  const active = route === "run" || route === "replay" || route === "after" ? "runs" : route;
+  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : route;
+  const presenting = route === "present" || q.get("present") === "1";
   let screen;
   switch (route) {
     case "home":
@@ -92,7 +95,12 @@ export function App() {
       screen = <RunView key={`${route}:${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={route === "run"} />;
       break;
     case "after":
-      screen = <BeforeAfter key={`${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} />;
+      screen = (
+        <BeforeAfter key={`${q.get("root")}:${q.get("path")}:${presenting}`} root={q.get("root") || ""} path={q.get("path") || ""} present={presenting} />
+      );
+      break;
+    case "present":
+      screen = <Present key={`${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={q.get("live") === "1"} />;
       break;
     case "compare":
       screen = <Compare a={q.get("a") || ""} b={q.get("b") || ""} onChange={(a, b) => go("compare", { a, b })} />;
@@ -132,27 +140,31 @@ export function App() {
   }
   return (
     <DarkContext.Provider value={theme === "dark"}>
-      <div className="app">
-        <nav className="sidebar" aria-label="Screens">
-          <a className="brand" href="#/home">
-            CleanSweep <span>Studio</span>
-          </a>
-          {NAV.map((group) => (
-            <div key={group.section} className="nav-group">
-              <div className="nav-section">{group.section}</div>
-              {group.links.map(([key, label]) => (
-                <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
-                  {label}
-                </a>
+      <ThemeToggle.Provider value={{ dark: theme === "dark", toggle: () => setTheme(theme === "dark" ? "light" : "dark") }}>
+        <div className={presenting ? "app present" : "app"}>
+          {!presenting && (
+            <nav className="sidebar" aria-label="Screens">
+              <a className="brand" href="#/home">
+                CleanSweep <span>Studio</span>
+              </a>
+              {NAV.map((group) => (
+                <div key={group.section} className="nav-group">
+                  <div className="nav-section">{group.section}</div>
+                  {group.links.map(([key, label]) => (
+                    <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
+                      {label}
+                    </a>
+                  ))}
+                </div>
               ))}
-            </div>
-          ))}
-          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">
-            {theme === "dark" ? "☀ Light theme" : "☾ Dark theme"}
-          </button>
-        </nav>
-        <main className="content">{screen}</main>
-      </div>
+              <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">
+                {theme === "dark" ? "☀ Light theme" : "☾ Dark theme"}
+              </button>
+            </nav>
+          )}
+          <main className="content">{screen}</main>
+        </div>
+      </ThemeToggle.Provider>
     </DarkContext.Provider>
   );
 }

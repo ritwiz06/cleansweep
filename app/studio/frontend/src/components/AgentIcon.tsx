@@ -1,4 +1,6 @@
-import { SQUADS, roleOf } from "../state/fold";
+import { SQUADS, agentName, roleOf } from "../state/fold";
+
+export { agentName };
 
 // One stroke icon per agent role (24x24, currentColor); the role's name goes with it.
 const PATHS: Record<string, string> = {
@@ -14,13 +16,6 @@ const PATHS: Record<string, string> = {
   reporter: "M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5",
   solo: "M12 4a4 4 0 1 0 0 8a4 4 0 1 0 0-8M4 21c1-4 4-6 8-6s7 2 8 6",
 };
-
-export function agentName(agent: string): string {
-  const [role, instance] = agent.split("#");
-  const name = role === "solo" ? "Single agent" : role.charAt(0).toUpperCase() + role.slice(1);
-  if (!instance) return name;
-  return /^\d+$/.test(instance) ? `${name} #${instance}` : `${name} (${instance})`;
-}
 
 export function AgentIcon({ agent, label }: { agent: string; label?: boolean }) {
   const role = roleOf(agent);

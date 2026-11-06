@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, runHash, useApi, type RunDetail } from "../api";
-import { AgentTag } from "../components/AgentIcon";
+import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
+import { AgentIcon, AgentTag, agentName } from "../components/AgentIcon";
+import { PresentShell } from "../components/PresentShell";
 import { Async, Card, Empty, ErrorBox, Loading, Status } from "../components/common";
 import { treeFiles, useProjectFiles } from "../components/ProjectView";
 import { SideBySide } from "../components/SideBySide";
@@ -8,7 +9,9 @@ import { StateChip } from "../components/states";
 import { annotateFile, categoryLabel, decisionSteps, packageChecks, type HunkNote } from "../state/annotate";
 import { fileStats, fileTrees, metrics, type FileTree, type Metrics, type Pair } from "../state/beforeAfter";
 import { parseDiff, type DiffFile } from "../state/diff";
-import { fold, type RunState, type StudioEvent } from "../state/fold";
+import { itemLabel } from "../state/caption";
+import { fold, type Item, type RunState, type StudioEvent } from "../state/fold";
+import { SLIDE_MS, afterSlides, type Slide } from "../state/present";
 import { useEvents } from "../state/hooks";
 
 const SMALL = 60;
@@ -272,7 +275,8 @@ function FileDiff({ file, state }: { file: DiffFile; state: RunState }) {
   );
 }
 
-function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent[]; diff: string }) {
+// Everything both views draw: the folded run, the parsed diff, both trees and the numbers.
+function useAfterModel(detail: RunDetail, events: StudioEvent[], diff: string) {
   const files = useProjectFiles(detail.root, detail.path);
   const state = useMemo(() => fold(events), [events]);
   const parsed = useMemo(() => parseDiff(diff), [diff]);
@@ -281,6 +285,11 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
   const name = (state.repo || detail.target || "project").replace(/^local:/, "");
   const trees = useMemo(() => fileTrees(stats, name), [stats, name]);
   const m = useMemo(() => metrics(state, stats, Boolean(files.data?.complete), detail.report?.stats), [state, stats, files.data, detail]);
+  return { files, state, parsed, list, trees, m, name };
+}
+
+function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent[]; diff: string }) {
+  const { files, state, parsed, list, trees, m } = useAfterModel(detail, events, diff);
   const [chosen, setChosen] = useState("");
   const [all, setAll] = useState<boolean | null>(null);
   const diffRef = useRef<HTMLDivElement>(null);
@@ -318,17 +327,125 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
   );
 }
 
-export function BeforeAfter({ root, path }: { root: string; path: string }) {
+function Chain({ item, state }: { item: Item; state: RunState }) {
+  return (
+    <ol className="chain-strip" aria-label="Decisions">
+      {decisionSteps(item, state).map((s, i) => (
+        <li key={i} title={s.text}>
+          <AgentIcon agent={s.agent} />
+          <span>
+            <b>{agentName(s.agent)}</b> {s.brief}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ChangeSlide({ slide, state }: { slide: Extract<Slide, { kind: "change" }>; state: RunState }) {
+  const items = slide.note.items.map((id) => state.items[id]);
+  const main = items[0];
+  const pkg = main?.pkg ? state.packages[main.pkg] : null;
+  const removed = slide.file.status === "removed";
+  return (
+    <div className="change-slide">
+      <div className="caption" aria-label="Caption">
+        {main && <span className="category-chip">{categoryLabel(main.category)}</span>}
+        <p>
+          {main ? <code>{itemLabel(main)}</code> : "A change"} {removed ? "deleted" : "in"} <code>{slide.file.path}</code>
+          {items.length > 1 && <span className="muted"> (and {items.length - 1} more)</span>}
+        </p>
+        {main && <StateChip state={main.stage} />}
+      </div>
+      <p className="caption-detail">{main?.verdict?.reason || (slide.note.match === "none" ? "No applied candidate is in this file." : " ")}</p>
+      {main && <Chain item={main} state={state} />}
+      <div className="slide-diff">
+        <SideBySide hunk={slide.file.hunks[slide.hunk]} path={slide.file.path} only={removed ? "left" : slide.file.status === "added" ? "right" : undefined} />
+      </div>
+      {pkg && (
+        <ul className="check-chips" aria-label="Checks">
+          {packageChecks(pkg).map((c, i) => (
+            <li key={i} className={c.ok === true ? "ok" : c.ok === false ? "fail" : "info"}>
+              <span aria-hidden>{c.ok === true ? "✓" : c.ok === false ? "✗" : "·"}</span> {c.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PresentAfter({ detail, events, diff }: { detail: RunDetail; events: StudioEvent[]; diff: string }) {
+  const { state, parsed, trees, m, name } = useAfterModel(detail, events, diff);
+  const slides = useMemo(() => afterSlides(parsed, state), [parsed, state]);
+  const [at, setAt] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const go = (k: number) => setAt(Math.max(0, Math.min(slides.length - 1, k)));
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setInterval(() => {
+      setAt((a) => {
+        if (a >= slides.length - 1) {
+          setPlaying(false);
+          return a;
+        }
+        return a + 1;
+      });
+    }, SLIDE_MS);
+    return () => clearInterval(timer);
+  }, [playing, slides.length]);
+  const slide = slides[Math.min(at, slides.length - 1)];
+  const changes = slides.length - 2;
+  return (
+    <PresentShell
+      title={`Before / after: ${name}`}
+      position={slide.kind === "change" ? `change ${slide.n} of ${slide.of}` : `${changes} changes`}
+      progress={slides.length > 1 ? at / (slides.length - 1) : 1}
+      playing={playing}
+      onPlay={() => {
+        if (at >= slides.length - 1) setAt(0);
+        setPlaying(!playing);
+      }}
+      onNext={() => go(at + 1)}
+      onPrev={() => go(at - 1)}
+      exit={afterHash(detail)}
+      nextLabel="Next change"
+    >
+      {slide.kind === "summary" ? (
+        <div className="summary-slide">
+          <div className="caption" aria-label="Caption">
+            <p>
+              {slide.first ? `${changes} changes, each one checked before it was kept.` : "That is the whole cleanup."} Result: <b>{m.verdict || "not finished"}</b>
+            </p>
+          </div>
+          <p className="caption-detail">Behavior that nothing tests isn't covered: the tests and the probes check only the code they run.</p>
+          <div className="ba-top">
+            <TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={false} />
+            <TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={false} />
+            <MetricsCard m={m} />
+          </div>
+        </div>
+      ) : (
+        <ChangeSlide key={at} slide={slide} state={state} />
+      )}
+    </PresentShell>
+  );
+}
+
+export function BeforeAfter({ root, path, present = false }: { root: string; path: string; present?: boolean }) {
   const res = useApi<RunDetail>(`${root}/${path}`, () => api("/api/run", { root, path }));
   const diff = useApi<{ text: string }>(`diff:${root}/${path}`, () => api("/api/run/diff", { root, path }));
   const feed = useEvents<StudioEvent>(root, path, false);
   if (!root || !path) return <Empty>Pick a run on the Runs screen.</Empty>;
   return (
-    <div className="screen before-after">
-      <header className="screen-head">
-        <h2>Before / after: {path.split("/").pop()}</h2>
-        <a href={runHash({ root, path })}>Replay</a>
-      </header>
+    <div className={`screen before-after ${present ? "present-screen" : ""}`}>
+      {!present && (
+        <header className="screen-head">
+          <h2>Before / after: {path.split("/").pop()}</h2>
+          <a href={runHash({ root, path })}>Replay</a>
+          <a href={`${afterHash({ root, path })}&present=1`}>Present</a>
+        </header>
+      )}
       <Async res={res} what="Loading the run">
         {(d) =>
           d.kind !== "v2" ? (
@@ -337,6 +454,8 @@ export function BeforeAfter({ root, path }: { root: string; path: string }) {
             <ErrorBox error={feed.error} />
           ) : !feed.done || diff.loading ? (
             <Loading what="Loading the recording" />
+          ) : present ? (
+            <PresentAfter detail={d} events={feed.events} diff={diff.data?.text || ""} />
           ) : (
             <View detail={d} events={feed.events} diff={diff.data?.text || ""} />
           )

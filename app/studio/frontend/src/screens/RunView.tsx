@@ -148,10 +148,16 @@ export function RunView({ root, path, live }: { root: string; path: string; live
               {[d.kind, d.target, d.mode].filter(Boolean).join(" · ")} · model{" "}
               {d.model || (d.report?.stats?.llm_calls ? "not recorded" : d.finished ? "none" : "-")}
               {d.kind === "v2" && (
-                <a className="link" href={afterHash({ root, path })}>
-                  {" "}
-                  Before / after
-                </a>
+                <>
+                  <a className="link" href={afterHash({ root, path })}>
+                    {" "}
+                    Before / after
+                  </a>
+                  <a className="link" href={`#/present?${new URLSearchParams({ root, path, ...(live ? { live: "1" } : {}) })}`}>
+                    {" "}
+                    Present
+                  </a>
+                </>
               )}
               {d.live && !live && (
                 <a className="link" href={`#/run?${new URLSearchParams({ root, path })}`}>

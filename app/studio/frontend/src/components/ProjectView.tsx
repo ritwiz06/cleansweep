@@ -169,6 +169,69 @@ function NodeDetail({ node, state, detail, onPick }: { node: TreeNode; state: Ru
   );
 }
 
+export type TreeView = ReturnType<typeof useTreeView>;
+
+// Which nodes are open; with `follow`, the latest action is opened and scrolled into view
+// (inside the tree's own box, never the page).
+export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
+  const [open, setOpen] = useState<Set<string> | null>(null);
+  const treeRef = useRef<HTMLDivElement>(null);
+  const expanded = open ?? defaultExpanded(tree);
+  const path = focusPath(tree).join(",");
+  useEffect(() => {
+    if (!follow || !path) return;
+    setOpen((o) => new Set([...(o ?? defaultExpanded(tree)), ...path.split(",")]));
+  }, [follow, path]);
+  useEffect(() => {
+    const row = treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
+    const box = treeRef.current?.parentElement;
+    if (!follow || !row || !box) return;
+    const r = row.getBoundingClientRect();
+    const b = box.getBoundingClientRect();
+    if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+    else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+  }, [follow, count, open]);
+  const rows = visibleRows(tree, expanded);
+  const toggle = (key: string) => {
+    const next = new Set(expanded);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setOpen(next);
+  };
+  // arrow keys move between rows and open or close them
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const buttons = [...(treeRef.current?.querySelectorAll<HTMLButtonElement>(".tree-label") || [])];
+    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (at < 0) return;
+    const row = rows[at];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      buttons[Math.max(0, Math.min(buttons.length - 1, at + (e.key === "ArrowDown" ? 1 : -1)))]?.focus();
+    } else if ((e.key === "ArrowRight" && !expanded.has(row.node.key)) || (e.key === "ArrowLeft" && expanded.has(row.node.key))) {
+      if (row.node.children.length) toggle(row.node.key);
+    } else return;
+    e.preventDefault();
+  };
+  return { expanded, setOpen, rows, toggle, onKey, treeRef };
+}
+
+export function TreeList({ view, chosen, onSelect }: { view: TreeView; chosen: string | null; onSelect: (key: string) => void }) {
+  return (
+    <div className="tree" role="tree" aria-label="Project tree" ref={view.treeRef} onKeyDown={view.onKey}>
+      {view.rows.map(({ node: n, depth }) => (
+        <TreeRow
+          key={n.key}
+          node={n}
+          depth={depth}
+          open={view.expanded.has(n.key)}
+          selected={n.key === chosen}
+          onToggle={() => view.toggle(n.key)}
+          onSelect={() => (chosen === n.key && n.children.length ? view.toggle(n.key) : onSelect(n.key))}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function ProjectView({
   state,
   events,
@@ -183,50 +246,13 @@ export function ProjectView({
   const list = useMemo(() => treeFiles(files, events), [files, events.length]);
   const name = (state.repo || detail.target || "project").replace(/^local:/, "");
   const tree = useMemo(() => buildTree(list, state, name), [list, state]);
-  const [open, setOpen] = useState<Set<string> | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
   const [follow, setFollow] = useState(true);
-  const treeRef = useRef<HTMLDivElement>(null);
-  const expanded = open ?? defaultExpanded(tree);
-  const path = focusPath(tree).join(",");
-  useEffect(() => {
-    if (!follow || !path) return;
-    setOpen((o) => new Set([...(o ?? defaultExpanded(tree)), ...path.split(",")]));
-  }, [follow, path]);
-  useEffect(() => {
-    // scroll the tree's own box (not the page) to the latest action
-    const row = treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
-    const box = treeRef.current?.closest(".card-body");
-    if (!follow || !row || !box) return;
-    const r = row.getBoundingClientRect();
-    const b = box.getBoundingClientRect();
-    if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
-    else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
-  }, [follow, state.count, open]);
-  const rows = visibleRows(tree, expanded);
+  const view = useTreeView(tree, follow, state.count);
   const node = chosen ? findNode(tree, chosen) : null;
-  const toggle = (key: string) => {
-    const next = new Set(expanded);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setOpen(next);
-  };
   const pick = (key: string) => {
     setChosen(key);
-    setOpen(new Set([...expanded, ...pathTo(tree, key)]));
-  };
-  // arrow keys move between rows and open or close them
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const buttons = [...(treeRef.current?.querySelectorAll<HTMLButtonElement>(".tree-label") || [])];
-    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    if (at < 0) return;
-    const row = rows[at];
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      buttons[Math.max(0, Math.min(buttons.length - 1, at + (e.key === "ArrowDown" ? 1 : -1)))]?.focus();
-    } else if ((e.key === "ArrowRight" && !expanded.has(row.node.key)) || (e.key === "ArrowLeft" && expanded.has(row.node.key))) {
-      if (row.node.children.length) toggle(row.node.key);
-    } else return;
-    e.preventDefault();
+    view.setOpen(new Set([...view.expanded, ...pathTo(tree, key)]));
   };
   const py = list.filter((f) => f.path.endsWith(".py")).length;
   const focusItem = state.focus.length ? state.items[state.focus[0]] : null;
@@ -253,22 +279,10 @@ export function ProjectView({
               {state.facts?.python_files ? ` (${py} of the ${state.facts.python_files} Python files the Explorer counted)` : ""}.
             </p>
           )}
-          {!rows.length ? (
+          {!view.rows.length ? (
             <Empty>No files yet: the Explorer lists them when the run starts.</Empty>
           ) : (
-            <div className="tree" role="tree" aria-label="Project tree" ref={treeRef} onKeyDown={onKey}>
-              {rows.map(({ node: n, depth }) => (
-                <TreeRow
-                  key={n.key}
-                  node={n}
-                  depth={depth}
-                  open={expanded.has(n.key)}
-                  selected={n.key === chosen}
-                  onToggle={() => toggle(n.key)}
-                  onSelect={() => (chosen === n.key && n.children.length ? toggle(n.key) : setChosen(n.key))}
-                />
-              ))}
-            </div>
+            <TreeList view={view} chosen={chosen} onSelect={setChosen} />
           )}
         </Card>
         <Card className="detail-card">

@@ -223,6 +223,14 @@ export function roleOf(agent: string | null | undefined): string {
   return (agent || "").split("#")[0];
 }
 
+// "investigator#3" -> "Investigator #3", "auditor#lines" -> "Auditor (lines)".
+export function agentName(agent: string): string {
+  const [role, instance] = agent.split("#");
+  const name = role === "solo" ? "Single agent" : role.charAt(0).toUpperCase() + role.slice(1);
+  if (!instance) return name;
+  return /^\d+$/.test(instance) ? `${name} #${instance}` : `${name} (${instance})`;
+}
+
 export function emptyState(): RunState {
   return {
     runId: "",
