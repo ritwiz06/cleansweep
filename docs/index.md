@@ -20,6 +20,10 @@ and `method=agentic`: how it adapts AutoData's manager, squads and OHCache to co
 Manager's phases, the 10 agents and their budgets, the message board and artifact cache,
 lessons, coverage-guided probes, the safety rules, the command line and the ablations.
 
+**[Pre-registration (v3)](preregistration_v3.md).** The v3 hypotheses H1–H4 with their metrics,
+tests and thresholds, the run sizes, the limits every method gets, the hold-out and replacement
+rules and the freeze, fixed before the first main run; later changes are dated deviations.
+
 **[Requirements](requirements.md).** The acceptance checklists for v2.0 (R1–R16, met) and v3.0
 (R17–R30): each requirement, the test that accepts it, its evidence and its status. A release is
 made only when every row of its checklist passes.
