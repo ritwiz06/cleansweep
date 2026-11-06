@@ -7,6 +7,8 @@ agentic-no_research      the team without its research squad
 agentic-single_agent     one agent that edits and checks its own edits
 agentic-adaptive         only uncertain candidates go to an Investigator
 agentic-thorough         the team in thorough mode
+agentic-m2               the team with the second model family as the agents' model (SECOND_MODEL)
+agentic-single_agent-m2  the single agent with the second model
 aider                    the external coding agent, with the fixed cleanup instruction
 cleansweep               v1 (gatekeeper judge)
 """
@@ -28,7 +30,11 @@ TEAM_VARIANTS = {
     "agentic-single_agent": {"agents": {"ablation": "single_agent"}},
     "agentic-adaptive": {"agents": {"investigate": "adaptive"}},
     "agentic-thorough": {"mode": "thorough"},
+    "agentic-m2": {"model": "second"},
+    "agentic-single_agent-m2": {"agents": {"ablation": "single_agent"}, "model": "second"},
 }
+# the second model family (docs/preregistration_v3.md); the auditor's model differs from both
+SECOND_MODEL = "deepseek-v4-1-flash"
 EXTERNAL = ["aider"]
 V1 = ["cleansweep"]
 LABELS = [*TEAM_VARIANTS, *EXTERNAL, *V1]
@@ -41,6 +47,7 @@ class Method:
     agents: dict = field(default_factory=dict)  # core.agents overrides
     reviewer: dict = field(default_factory=dict)  # reviewer overrides
     mode: str = "safe"
+    model: str = ""  # the agents' model when not VOYAGER_MODEL
 
 
 def resolve(label: str) -> Method:
@@ -53,6 +60,7 @@ def resolve(label: str) -> Method:
             dict(spec.get("agents", {})),
             dict(spec.get("reviewer", {})),
             spec.get("mode", "safe"),
+            SECOND_MODEL if spec.get("model") == "second" else "",
         )
     if label in EXTERNAL:
         return Method(label, "external")
@@ -68,6 +76,9 @@ def apply(cfg: dict, method: Method) -> dict:
     if method.mode != "safe":
         agents["mode"] = method.mode
     out = {**cfg, "core": {**core, "agents": agents}}
+    if method.model:  # read by the LLM client from this variable (as `clean --model` does)
+        os.environ["CLEANSWEEP_MODEL"] = method.model
+        out["core"]["llm"] = {**core.get("llm", {}), "model_env": "CLEANSWEEP_MODEL"}
     if method.reviewer:
         out["reviewer"] = {**cfg.get("reviewer", {}), **method.reviewer}
     return out
