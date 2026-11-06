@@ -179,6 +179,28 @@ test("presentation mode on before / after: the summary, then one change per slid
   await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
 });
 
+test("export: one self-contained HTML report that opens from file:// with no server", async ({ page, context }, info) => {
+  await open(page, `after?root=replay&path=${DEMO}`);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export HTML report" }).click();
+  const file = info.outputPath(`cleansweep-${DEMO}.html`);
+  await (await download).saveAs(file);
+  expect((await download).suggestedFilename()).toBe(`cleansweep-${DEMO}.html`);
+  const report = await context.newPage();
+  const fetched: string[] = [];
+  report.on("request", (r) => fetched.push(r.url()));
+  await report.goto(`file://${file}`);
+  await expect(report.getByRole("heading", { name: "CleanSweep cleanup: shop_app" })).toBeVisible();
+  await expect(report.getByLabel("Before and after")).toContainText(/229\s*→\s*182/);
+  await expect(report.getByRole("group", { name: "Before tree" }).locator("del", { hasText: "inventory_old.py" })).toBeVisible();
+  await expect(report.getByRole("region", { name: "change 1 of 1" }).first()).toContainText("Investigator #3");
+  await expect(report.locator("table.sbs").first()).toBeVisible();
+  await expect(report.getByText("Left for a person (10)")).toBeVisible();
+  // the page is styled (the tokens are inline) and fetched nothing but itself
+  expect(await report.locator(".state-chip").first().evaluate((el) => getComputedStyle(el).borderRadius)).not.toBe("0px");
+  expect(fetched.filter((u) => !u.startsWith("file://"))).toEqual([]);
+});
+
 test("an artifact link opens the cached artifact", async ({ page }) => {
   await open(page, `replay?root=replay&path=${V2}`);
   await page.getByRole("button", { name: "Jump to the end" }).click();

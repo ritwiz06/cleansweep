@@ -204,7 +204,10 @@ changed file for its side-by-side diff; each change has a note pointing at it wi
 the decisions behind it (Auditor, Investigator, Planner, Engineer, Tester, Validator, Manager),
 the Investigator's evidence and the checks its package passed. A recording made before v2.1
 saved no file list, so its trees show the files its events and diff name, and its file count is
-"not recorded".
+"not recorded". "Export HTML report" saves the whole before / after as one HTML file (the
+numbers, both trees, every change with its decisions and checks, the suggestions left for a
+person, the candidate tree and the result) with its styles inside: it opens from disk with no
+server and no network, for sharing or printing.
 
 ![Before / after: both trees and the numbers for the demo app cleanup](images/studio/before_after.png)
 
