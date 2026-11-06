@@ -1,5 +1,23 @@
 # Changelog
 
+## v2.1.1 (2026-11-06)
+
+Fixes and rules for the v3 evaluation, before any of its main runs. v2.0's and v2.1's tables are
+unchanged.
+
+- Containers hold their own copy of the workspace: it is streamed in at the start, its changes
+  are pushed in before every command, and the hash of every changed file is checked inside the
+  container; a file that still differs fails the command as a stale workspace. Docker Desktop's
+  file sharing could show a container a deleted file or a replaced file's old content (#167).
+- An optional LLM request limit, `core.llm.max_calls` (#167).
+- The v3 pre-registration, `docs/preregistration_v3.md` (#168).
+- One 120-minute cap and one 400-request budget for every v3 method, with timed-out runs kept in
+  every denominator; REAL baselines run three times and leave flaky tests out; AUTONOMY's
+  environment-impossible categories; Aider's changes pulled back from its container; the
+  targeted tests open one workspace per seed of the injected toy repository (#168).
+- Known limitation added: v2's container checks went through the bind mount, so a stale read is
+  possible, not measured (#167).
+
 ## v2.1 (2026-11-06)
 
 The known limitations of v2.0 fixed, a polished Studio, and the v3 evaluation's tools. v2.0's
