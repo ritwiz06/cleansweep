@@ -658,6 +658,26 @@ hooks (#139). The finished runs were made without it; this measures what it woul
 - **Outputs:** `results/raw/watch_demo/`, `results/summary/v2/watch_replay.csv`.
 - **Code version:** PR #103 branch (merged as 12caf01). Static: no LLM, no Docker.
 
+### v3: audit-miss estimate
+
+v2's diff audit checked only the edits its auditor flagged: it voted "no" on 1,223 of the 1,784
+kept code edits and those were never checked, so v2's wrong-edit counts are lower bounds.
+`scripts/experiments/v3/exp_audit_miss.py sample|run|table` estimates what they miss, measured on
+v2's edits (the auditor and the rubric are unchanged in v3). `sample` draws 25 "no"-voted edits
+per method (the team, no research squad, single agent and v1's gatekeeper; seed 572), within a
+method proportional to the target sets with at least one from each set that has any (100 draws,
+98 distinct edits). Each edit gets a targeted test written to catch any behavior a caller, a user
+or a framework could observe (`results/raw/audit_miss/tests/<edit>/`, or `no_test.txt` saying why
+the edit cannot change behavior), run before and after the edit in the run's own environment with
+`exp_audit_confirm.py`'s machinery (`run`), and a reading under the rubric above (LLM-judged,
+`readings.jsonl`). `table` writes `results/summary/v3/audit_miss.csv` in two tiers kept apart:
+confirmed (the test passes before and fails after, and the reading calls the edit wrong) and
+reading (LLM-judged). Per method and overall it gives the miss rate per "no"-voted kept code edit,
+weighted to the method's "no" population, with a 95% Wilson interval at Kish's effective sample
+size, and the corrected wrong-edit count: v2's wrong edits (confirmed and reading) plus the miss
+rate times the "no" population. All of these are estimates. `trap_census` is not sampled: it
+counts every "no"-voted injected edit of the method that the injection key's rule calls wrong.
+
 ## Getting the data
 
 Everything under `data/` except `data/splits/` is gitignored. In order:
