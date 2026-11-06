@@ -7,8 +7,9 @@ data/splits/v3_repos.json, at a fresh seed (4), for the v3 methods (methods_v3.p
     python scripts/experiments/v3/exp_inject_v3.py table
 
 prepare: the plants, their checks and the hidden test's baseline only (no method runs), so the
-runs can start from keys made ahead of time; a repository with nowhere to plant is listed, and
-the split's reserve replaces it.
+runs can start from keys made ahead of time; a repository with nowhere to plant, or no draw whose
+hidden test passes, is replaced in its place by the split's reserve taken from its far end (REAL
+takes it from the front), listed with its reason in results/raw/inject_v3/set.json.
 
 Reuses scripts/experiments/v2/exp_inject.py (plants, plant checks, the hidden test, scoring) with
 its own raw folder (results/raw/inject_v3/) and tables (results/summary/v3/injection.csv and
@@ -67,6 +68,53 @@ def inject_repos(split: Path = SPLIT) -> dict[str, str]:
     return {r["full_name"]: r["head_sha"] for r in json.loads(split.read_text())["inject"]}
 
 
+def heads(split: Path = SPLIT) -> dict[str, str]:
+    """{owner/name: head sha} of the INJECT set and the reserve."""
+    data = json.loads(split.read_text())
+    return {r["full_name"]: r["head_sha"] for r in data["inject"] + data["reserve"]}
+
+
+def prepared(v2, repo: str, seed: int, cfg: dict) -> str:
+    """An empty string once the repository has a key for the seed, else why it cannot be used.
+    A reason is kept (skip.txt, or v2's rejected.txt), so a rerun never draws again."""
+    folder = RAW / f"{repo.replace('/', '__')}-s{seed}"
+    if (folder / "key.json").exists():
+        return ""
+    if (folder / "skip.txt").exists():
+        return (folder / "skip.txt").read_text()
+    if (folder / "rejected.txt").exists():
+        return f"the hidden test fails before any cleanup in {v2.ATTEMPTS} draws"
+    try:
+        v2.prepare(repo, seed, cfg)
+        return ""
+    except ValueError as exc:  # nowhere to plant: left out, and the reserve replaces it
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "skip.txt").write_text(str(exc))
+        return str(exc)
+
+
+def usable_set(v2, seed: int, cfg: dict, split: Path = SPLIT, prepare_fn=None) -> list[str]:
+    """The INJECT set in order, each repository that cannot be used replaced in its place by the
+    reserve taken from its far end (REAL takes it from the front). Writes set.json with every
+    replacement and its reason."""
+    prepare_fn = prepare_fn or prepared
+    queue = [r["full_name"] for r in reversed(json.loads(split.read_text())["reserve"])]
+    out, log = [], []
+    for repo in inject_repos(split):
+        reason = prepare_fn(v2, repo, seed, cfg)
+        while reason and queue:
+            nxt = queue.pop(0)
+            log.append({"replaced": repo, "reason": reason, "by": nxt})
+            repo, reason = nxt, prepare_fn(v2, nxt, seed, cfg)
+        if reason:
+            log.append({"replaced": repo, "reason": reason, "by": None})
+            continue
+        out.append(repo)
+    RAW.mkdir(parents=True, exist_ok=True)
+    (RAW / "set.json").write_text(json.dumps({"set": out, "replacements": log}, indent=1))
+    return out
+
+
 def injected_base(v2, repo: str, name: str, cfg: dict) -> Path:
     """The injected clone, checked out clean at its base commit: the v3 screen's head."""
     from cleansweep.data.swebench import data_path
@@ -76,7 +124,7 @@ def injected_base(v2, repo: str, name: str, cfg: dict) -> Path:
         clone = data_path(cfg["data"]["aidev"]["clones"]) / name
         with tempfile.TemporaryDirectory() as tmp:
             archive = subprocess.Popen(
-                ["git", "archive", inject_repos()[repo]], cwd=clone, stdout=subprocess.PIPE
+                ["git", "archive", heads()[repo]], cwd=clone, stdout=subprocess.PIPE
             )
             subprocess.run(["tar", "-xf", "-", "-C", tmp], stdin=archive.stdout, check=True)
             archive.wait()
@@ -152,15 +200,13 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(
         {"reviewer": {"scope": "repo"}, "core": {"sandbox": {"aidev_clones": v2.CLONES}}}
     )
-    for repo in args.repos or list(inject_repos()):
-        for seed in args.seeds:
+    for seed in args.seeds:
+        for repo in args.repos or usable_set(v2, seed, cfg):
             folder = RAW / f"{repo.replace('/', '__')}-s{seed}"
-            if not (folder / "key.json").exists():
-                try:
-                    v2.prepare(repo, seed, cfg)
-                except ValueError as exc:  # nowhere to plant, or no valid draw: left out
-                    print(f"skip {repo}: {exc}", flush=True)
-                    continue
+            reason = prepared(v2, repo, seed, cfg)
+            if reason:
+                print(f"skip {repo}: {reason}", flush=True)
+                continue
             for label in [] if args.what == "prepare" else args.methods:
                 if (folder / f"{label}.json").exists():
                     continue
