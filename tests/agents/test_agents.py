@@ -111,6 +111,37 @@ def test_investigate_none_decides_everything_by_rules(rt):
     assert {v["stop"] for v in rt.verdicts.values()} <= {"rules", "rule"}
 
 
+def test_units_reached_by_name_stay_suggestions_unless_the_setting_is_off(
+    mini, agent_cfg, tmp_path
+):
+    import copy
+
+    (mini / "plugins.yaml").write_text("handler: shop.core.legacy_alpha\n")
+    off = copy.deepcopy(agent_cfg)
+    off["reviewer"]["dynamic_refs"] = False  # YAML's bare off
+    runs = {}
+    for name, cfg in (("on", agent_cfg), ("off", off)):
+        ws, _ = prepare_workspace(mini, tmp_path / f"ws_{name}", cfg["core"]["sandbox"])
+        rt = Runtime(ws, cfg, None, tmp_path / f"out_{name}")
+        auditor.run(rt)
+        investigator.run(rt)
+        item = next(i for i in rt.items.values() if i.unit.key == "shop/core.py::legacy_alpha")
+        runs[name] = (rt, item)
+    rt, item = runs["on"]
+    why = '"shop.core.legacy_alpha" named in plugins.yaml:1'
+    assert item.lane == "suggest" and why in item.reason
+    assert f"reached by name: {why}" in item.evidence
+    assert investigator.uncertain(rt, item) == "reached by name"
+    assert f"reached by name: {why}" in investigator.task_text(rt, item, [])
+    assert why in rt.tools.call("check_dynamic_use", {"name": "legacy_alpha"})
+    assert rt.verdicts[item.item_id]["decision"] == "suggest"
+    rt, item = runs["off"]  # the team without the resolver: today's behavior
+    assert item.lane == "safe" and rt.verdicts[item.item_id]["decision"] == "safe"
+    assert investigator.uncertain(rt, item) == "a public name in a package module"
+    assert "reached by name" not in investigator.task_text(rt, item, [])
+    assert "reached by name" not in rt.tools.call("check_dynamic_use", {"name": "legacy_alpha"})
+
+
 def test_planner_packages_and_blueprint(rt):
     _ready(rt)
     planner.run(rt)
