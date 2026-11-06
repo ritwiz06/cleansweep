@@ -44,3 +44,18 @@ aidev:
   scope_history_cache: data/processed/aidev_scope_history  # longer first-parent windows for the agent scope only (repos with no agent commit in the last 300; DECISIONS)
   labels: data/processed/aidev_labels.parquet
   slop_cache: data/processed/aidev_slop  # per-commit static slop for the Scheduler replay
+
+aidev_v3:                              # v3 repository set (scripts/data/data_v3_select.py)
+  max_candidates: 360                  # the same seeded sample as aidev, made larger; v2's 116 are a prefix of it
+  licenses: [MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, GPL-3.0, GPL-2.0, AGPL-3.0, LGPL-3.0, MIT-0, CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0, ODbL-1.0]   # allow local use; NOASSERTION and none are left out
+  workers: 3
+  select_hours: 7
+  target_new_kept: 45                  # stop once this many new candidates pass the screen
+  seed: 4
+  inject: 10                           # new repositories for injection (seed 4)
+  real: 15                             # new repositories for the real-project evaluation
+  real_two_runs: 5                     # the first five REAL repositories run twice (variance)
+  min_py_files: 8
+  max_test_seconds: 300
+  autonomy: 30
+  autonomy_quotas: {no_tests: 4, unittest: 4, src_layout: 4, poetry_uv: 4, notebooks: 3, monorepo: 2, install_failed: 4, tox_nox_make: 2}

@@ -77,3 +77,50 @@ def test_a_relative_run_folder_never_lands_in_the_workspace(mini, agent_cfg, tmp
     agent_cfg["core"]["sandbox"]["keep_workspace"] = True
     report = run_sweep(str(mini), agent_cfg, method="agentic")
     assert report.stats["agentic"]["run_dir"] == str(tmp_path / "runs" / "r0")
+
+
+def test_clean_resume_and_interruptions_from_the_command_line(mini, tmp_path, capsys, monkeypatch):
+    from cleansweep.agents.run import Interrupted
+
+    assert main(["clean"]) == 2 and "--resume RUN" in capsys.readouterr().err
+    assert main(["clean", str(mini), "--resume", "x"]) == 2
+    assert main(["clean", "--resume", str(tmp_path / "none")]) == 1
+    assert "no run to resume" in capsys.readouterr().err
+
+    def interrupted(*args, **kwargs):
+        raise Interrupted(tmp_path / "out")
+
+    monkeypatch.setattr("cleansweep.agents.clean_project", interrupted)
+    assert main(["clean", str(mini), "--no-llm"]) == 130
+    assert f"cleansweep clean --resume {tmp_path / 'out'}" in capsys.readouterr().err
+    seen = {}
+
+    def resumed(ref, cfg, on_event=None, approve=None):
+        seen["ref"] = ref
+        summary = {"verdict": "stopped: OSError: x, nothing applied", "applied": 0}
+        summary |= {"lines_removed": 0, "files_removed": 0, "suggested": 0}
+        return {"summary": summary, "branch": None, "files": []}
+
+    monkeypatch.setattr("cleansweep.agents.run.resume_project", resumed)
+    assert main(["clean", "--resume", "run-1", "--quiet"]) == 1  # a stopped run is an error
+    assert seen["ref"] == "run-1"
+    assert "Result: stopped: OSError: x, nothing applied." in capsys.readouterr().out
+
+
+def test_clean_says_which_sandbox_it_uses(mini, capsys, monkeypatch):
+    seen = {}
+
+    def fake_clean(path, cfg, **kwargs):
+        seen.update(kwargs)
+        summary = {"verdict": "nothing applied", "applied": 0, "lines_removed": 0}
+        summary |= {"files_removed": 0, "suggested": 0}
+        return {"summary": summary, "branch": None, "files": []}
+
+    monkeypatch.setattr("cleansweep.agents.clean_project", fake_clean)
+    assert main(["clean", str(mini), "--no-llm", "--sandbox", "auto"]) == 0
+    assert "Sandbox: docker (not a git repository)" in capsys.readouterr().out
+    assert seen["sandbox"] == "auto" and not seen["untrusted"]
+    assert main(["clean", str(mini), "--untrusted"]) == 2  # the tests run with sandbox none
+    assert "--untrusted needs the docker sandbox" in capsys.readouterr().err
+    assert main(["clean", str(mini), "--untrusted", "--sandbox", "docker"]) == 0
+    assert "Sandbox: docker (--untrusted)" in capsys.readouterr().out
