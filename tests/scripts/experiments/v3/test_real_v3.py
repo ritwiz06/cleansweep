@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[4] / "scripts" / "experiments" / "v3" / "exp_real_v3.py"
@@ -69,3 +70,23 @@ def test_a_second_run_gets_its_own_caches(tmp_path):
     assert load().run_cfg(1, tmp_path)["core"]["llm"]["cache_path"] != str(
         tmp_path / "caches" / "llm.sqlite"
     )
+
+
+def test_unusable_repositories_are_replaced_by_the_reserve_in_order(tmp_path, monkeypatch):
+    real = load()
+    monkeypatch.setattr(real, "RAW", tmp_path)
+    skip = {"o/one_module", "r/also_bad"}
+
+    def prepare(full_name, entry, cfg):
+        return {"skip": "fewer than two test modules"} if full_name in skip else {"base": "b"}
+
+    repos = {"o/a": {"runs": 2}, "o/one_module": {"runs": 2}, "o/c": {"runs": 1}}
+    spare = [{"full_name": "r/also_bad"}, {"full_name": "r/good"}, {"full_name": "r/unused"}]
+    out = real.usable_set(repos, spare, {}, prepare)
+    assert [n for n, _, _ in out] == ["o/a", "r/good", "o/c"]
+    assert out[1][1]["runs"] == 2 and out[1][1]["replaces"] == "r/also_bad"
+    log = json.loads((tmp_path / "set.json").read_text())["replacements"]
+    assert [(x["replaced"], x["by"]) for x in log] == [
+        ("o/one_module", "r/also_bad"),
+        ("r/also_bad", "r/good"),
+    ]

@@ -11,6 +11,9 @@ prepare: a held-out clone per repository (data/raw/aidev/heldout/<owner>__<name>
 *_test.py, half of them, seeded; conftest.py and helpers stay). The whole suite runs on the base
 commit in a container to record which tests pass before any cleanup; a project none of whose
 held-out tests pass is skipped. Writes results/raw/real_v3/<name>/split.json.
+A repository that cannot be used (fewer than two test modules, or no held-out test passes before
+any cleanup) is replaced by the split's next reserve, in order; results/raw/real_v3/set.json lists
+the set and every replacement with its reason.
 run: one record per repository, method and run in results/raw/real_v3/<name>/<method>-r<run>/
 (report.json, final.diff, summary.json, heldout.json; for the agent team also the run's
 events.jsonl and reports, as exp_case_study.py records them, so the review and the diff audit
@@ -61,6 +64,37 @@ COPY = ["CLEANUP_REPORT.md", "blueprint.md", "PR_DESCRIPTION.md", "events.jsonl"
 def real_repos(split: Path = SPLIT) -> dict[str, dict]:
     """{owner/name: its split entry} for the REAL set."""
     return {r["full_name"]: r for r in json.loads(split.read_text())["real"]}
+
+
+def reserve(split: Path = SPLIT) -> list[dict]:
+    """The split's ordered reserve; REAL takes replacements from its front (INJECT, if it ever
+    needs one, from its back), so the two never take the same repository."""
+    return json.loads(split.read_text()).get("reserve", [])
+
+
+def usable_set(repos: dict[str, dict], spare: list[dict], cfg: dict, prepare_fn=None) -> list:
+    """[(owner/name, entry, split)] for the REAL set in order, each repository that cannot be
+    used (prepare says skip) replaced by the next reserve, which keeps its place and run count.
+    Writes results/raw/real_v3/set.json with every replacement and its reason."""
+    prepare_fn = prepare_fn or prepare
+    queue, out, log = list(spare), [], []
+    for full_name, entry in repos.items():
+        split = prepare_fn(full_name, entry, cfg)
+        while split.get("skip") and queue:
+            nxt = queue.pop(0)
+            log.append({"replaced": full_name, "reason": split["skip"], "by": nxt["full_name"]})
+            entry = {**nxt, "runs": entry.get("runs", 1), "replaces": full_name}
+            full_name = nxt["full_name"]
+            split = prepare_fn(full_name, entry, cfg)
+        if split.get("skip"):
+            log.append({"replaced": full_name, "reason": split["skip"], "by": None})
+            continue
+        out.append((full_name, entry, split))
+    RAW.mkdir(parents=True, exist_ok=True)
+    (RAW / "set.json").write_text(
+        json.dumps({"set": [n for n, _, _ in out], "replacements": log}, indent=1)
+    )
+    return out
 
 
 def is_test_module(path: str) -> bool:
@@ -284,17 +318,24 @@ def main(argv: list[str] | None = None) -> int:
     on_start()
     cfg = load_config({"core": {"sandbox": {"aidev_clones": CLONES}}})
     repos = real_repos()
-    for full_name in args.repos or list(repos):
-        entry = repos[full_name]
-        try:
+    if args.repos:
+        chosen = []
+        for full_name in args.repos:
+            entry = repos.get(full_name) or next(
+                r for r in reserve() if r["full_name"] == full_name
+            )
             split = prepare(full_name, entry, cfg)
-        except Exception as exc:  # record and go on
-            print(f"error prepare {full_name}: {type(exc).__name__}: {exc}", flush=True)
-            continue
-        if split.get("skip"):
-            print(f"skip {full_name}: {split['skip']}", flush=True)
-            continue
-        if args.what == "prepare" or (args.run == 2 and entry.get("runs", 1) < 2):
+            if split.get("skip"):
+                print(f"skip {full_name}: {split['skip']}", flush=True)
+                continue
+            chosen.append((full_name, entry, split))
+    else:
+        chosen = usable_set(repos, reserve(), cfg)
+    if args.what == "prepare":
+        print(json.dumps([n for n, _, _ in chosen]), flush=True)
+        return 0
+    for full_name, entry, split in chosen:
+        if args.run == 2 and entry.get("runs", 1) < 2:
             continue
         for label in args.methods:
             folder = RAW / full_name.replace("/", "__") / f"{label}-r{args.run}"
