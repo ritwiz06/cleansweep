@@ -10,6 +10,7 @@ import concurrent.futures as cf
 from pathlib import Path
 
 from cleansweep.core.models import CleanupItem
+from cleansweep.reviewer.detectors import dynamic_refs_on
 
 from .protocol import load_prompt, react
 
@@ -51,6 +52,12 @@ def _framework(rt, item: CleanupItem) -> str | None:
     return rt.graph.framework_callback(item.unit.key) if item.unit.name else None
 
 
+def _by_name(rt, item: CleanupItem) -> list[str]:
+    """How something reaches the item's unit by name (analysis/dynamic_refs.py); empty when
+    reviewer.dynamic_refs is off."""
+    return rt.graph.dynamic_refs(item.unit.key) if dynamic_refs_on(rt.cfg) else []
+
+
 def _public_in_package(rt, item: CleanupItem) -> bool:
     """A public name in a package module (its folder has __init__.py), outside the tests."""
     path = Path(item.unit.path)
@@ -69,6 +76,8 @@ def uncertain(rt, item: CleanupItem) -> str | None:
         return "a dependency removal"
     if _framework(rt, item):
         return "a framework-convention method"
+    if _by_name(rt, item):
+        return "reached by name"
     if item.unit.name and rt.graph.dynamic_risk(item.unit.key):
         return "possible dynamic use"
     if item.category == "dead_code" and _public_in_package(rt, item):
@@ -89,6 +98,8 @@ def task_text(rt, item: CleanupItem, lessons: list[dict]) -> str:
     ]
     if item.keep_target:
         lines.append(f"the copy that would be kept: {item.keep_target}")
+    if refs := _by_name(rt, item):
+        lines.append("reached by name: " + "; ".join(refs[:6]))
     if lessons:
         lines.append("Lessons that fit this candidate (cite them):")
         lines += [f"- {les['lesson_id']}: {les['reason']}" for les in lessons]
@@ -116,9 +127,10 @@ def _checker(lessons: list[dict]):
     return check
 
 
-def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
+def first_checks(rt, item: CleanupItem, agent: str, start: int = 0) -> list[dict]:
     """The checks every investigation starts with, run before the LLM is asked: references,
-    dynamic use and lessons. Their results are R1, R2, ... in the task."""
+    dynamic use and lessons. Their results are R1, R2, ... in the task (numbered from start + 1
+    when a batch has earlier candidates)."""
     name = _short(item)
     calls = [("find_references", {"name": name})]
     if item.unit.name:
@@ -129,7 +141,7 @@ def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
     for tool_name, args in calls:
         call = rt.log.emit("tool_call", agent=agent, payload={"tool": tool_name, "args": args})
         result = rt.tools.call(tool_name, args)[:1500]
-        rid = f"R{len(steps) + 1}"
+        rid = f"R{start + len(steps) + 1}"
         rt.log.emit(
             "tool_result",
             agent=agent,
@@ -225,14 +237,18 @@ def investigate_rules(rt, item: CleanupItem, n: int) -> dict:
         return result
 
     framework = _framework(rt, item)
+    refs = _by_name(rt, item)
     lessons = rt.lessons.matching(item, framework) if rt.ablation != "no_lessons" else []
-    if item.category in ("dead_code", "duplicate", "wrapper") and item.unit.name:
+    if (item.category in ("dead_code", "duplicate", "wrapper") and item.unit.name) or refs:
         use("check_dynamic_use", {"name": _short(item)})
     if rt.ablation != "no_lessons":
         use("query_lessons", {"pattern": _short(item)})
     if lessons:
         decision = "suggest"
         reason = f"A lesson from an earlier rollback fits: {lessons[0]['reason']}"
+    elif refs:
+        more = f" (and {len(refs) - 1} more)" if len(refs) > 1 else ""
+        decision, reason = "suggest", f"Something reaches it by name: {refs[0]}{more}."
     elif framework or rt.graph.dynamic_risk(item.unit.key):
         decision = "suggest"
         reason = (
@@ -414,7 +430,11 @@ def _isolated(fn):
 def run(rt) -> None:
     """INVESTIGATE: a verdict for every candidate, up to `parallel_llm` Investigators at once.
     core.agents.investigate: all (every candidate the rules do not settle goes to an
-    Investigator), adaptive (only the uncertain ones; the rest by rules) or none (all by rules)."""
+    Investigator), adaptive (only the uncertain ones; the rest by rules) or none (all by rules).
+    core.agents.investigate_batch: on asks about candidates with the same pattern together
+    (agents/batching.py)."""
+    from .batching import batch_on, investigate_batched
+
     pending = [i for i in rt.items.values() if i.item_id not in rt.verdicts]
     mode = rt.acfg.get("investigate", "all")
     use_llm = rt.llm is not None and rt.ablation != "no_research" and mode != "none"
@@ -431,9 +451,12 @@ def run(rt) -> None:
         text = f"{len(asked)} of {len(asked) + len(ruled)} candidates go to the Investigators"
         rt.log.emit("decision", agent=NAME, payload={"rule": "adaptive", "text": text})
     by_llm, by_rules = _isolated(investigate_llm), _isolated(investigate_rules)
-    with cf.ThreadPoolExecutor(max(1, int(rt.acfg.get("parallel_llm", 3)))) as pool:
-        for verdict in pool.map(lambda job: by_llm(rt, job[1], job[0]), asked):
-            rt.verdicts[verdict["item_id"]] = verdict
+    if asked and batch_on(rt.acfg):
+        investigate_batched(rt, asked, by_llm)
+    else:
+        with cf.ThreadPoolExecutor(max(1, int(rt.acfg.get("parallel_llm", 3)))) as pool:
+            for verdict in pool.map(lambda job: by_llm(rt, job[1], job[0]), asked):
+                rt.verdicts[verdict["item_id"]] = verdict
     for n, item in ruled:
         rt.verdicts[item.item_id] = by_rules(rt, item, n)
     for item in pending:

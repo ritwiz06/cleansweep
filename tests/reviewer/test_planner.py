@@ -11,6 +11,14 @@ def test_plan_sorted_and_matches_expected_lanes(toy_ws, toy_expected):
         assert by_key.get(row["key"]) == row["expected_lane"], row["key"]
 
 
+def test_v1_plan_does_not_apply_the_dynamic_refs_step(tmp_path):
+    (tmp_path / "plugins.yaml").write_text("handler: tools.legacy\n")
+    (tmp_path / "tools.py").write_text("def legacy(x):\n    return x * 2\n")
+    plan = build_plan(str(tmp_path), use_llm=False)
+    item = next(i for i in plan.items if i.unit.key == "tools.py::legacy")
+    assert item.lane == "safe"  # v1 unchanged (R15); the agent team's Auditor moves it
+
+
 def test_reviewer_stub(monkeypatch, toy_repo, toy_expected):
     from cleansweep.reviewer import stub
 
