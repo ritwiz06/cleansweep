@@ -11,35 +11,45 @@ def load():
     return module
 
 
-def test_a_run_completes_only_with_a_report_a_known_verdict_and_no_traceback():
+def test_a_run_completes_only_with_a_cleanup_verdict_and_no_traceback():
     auto = load()
     out = "progress\nResult: not verified by tests. 0 edits applied; 0 lines and 0 files removed.\n"
     assert auto.verdict_of(out) == "not verified by tests"
-    assert auto.classify(1, out, "", report=True) == (True, "")
-    assert auto.classify(1, out, "Traceback (most recent call last):\n", report=True) == (
+    report = {"stats": {"agentic": {"verdict": "stopped: setup.py failed, nothing applied"}}}
+    assert auto.verdict_of("", report) == "stopped: setup.py failed, nothing applied"
+    assert auto.classify(1, "not verified by tests", out, "") == (True, True, "")
+    assert auto.classify(1, "everything runs", "", "Traceback (most recent call last):") == (
+        False,
         False,
         "crash",
     )
-    assert auto.classify(None, "", "", report=False) == (False, "timeout")
-    assert auto.classify(1, "", "cleansweep clean: install failed for x", report=False) == (
-        False,
-        "install",
-    )
-    assert auto.classify(0, "Result: something new.", "", report=True) == (
-        False,
-        "unknown verdict",
-    )
+    stop = "stopped: Docker is not running; start it, nothing applied"
+    assert auto.classify(1, stop, "", "") == (True, False, "docker")
+    assert auto.classify(None, "", "", "") == (False, False, "timeout")
+    assert auto.classify(0, "something new", "", "") == (False, False, "unknown verdict")
 
 
 def test_summary_counts_each_pass_with_a_wilson_interval():
     auto = load()
     rows = [
-        {"pass": 1, "completed": True, "verdict": "everything runs", "failure": ""},
-        {"pass": 1, "completed": False, "verdict": "", "failure": "crash"},
-        {"pass": 2, "completed": True, "verdict": "nothing applied", "failure": ""},
+        {
+            "pass": 1,
+            "completed": True,
+            "valid_verdict": True,
+            "verdict": "everything runs",
+            "failure": "",
+        },
+        {"pass": 1, "completed": False, "valid_verdict": False, "verdict": "", "failure": "crash"},
+        {
+            "pass": 2,
+            "completed": True,
+            "valid_verdict": True,
+            "verdict": "nothing applied",
+            "failure": "",
+        },
     ]
     first, second = auto.summarize(rows)
     assert (first["runs"], first["completed"], first["rate"]) == (2, 1, 0.5)
     assert first["failures"] == "crash: 1" and first["verdicts"] == "everything runs: 1"
-    assert first["ci_low"] < 0.5 < first["ci_high"]
+    assert first["ci_low"] < 0.5 < first["ci_high"] and first["valid_verdict"] == 1
     assert second["rate"] == 1.0

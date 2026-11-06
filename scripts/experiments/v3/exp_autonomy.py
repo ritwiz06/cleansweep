@@ -1,7 +1,10 @@
 """Autonomy benchmark (v3): `cleansweep clean` on each AUTONOMY repository of
 data/splits/v3_repos.json, as a user would run it: the agent team, safe mode, the Docker sandbox
-on, no human help. A run completes when it ends with a report and one of the verdicts below,
-with no traceback; anything else is a failure, sorted into a small taxonomy.
+on, no human help. Every run should end with a report and one of clean's verdicts (agents/
+reporter.py VERDICTS). A run completes when its verdict is a cleanup outcome (everything runs,
+nothing applied, not verified by tests, not verified); a "stopped: <reason>" verdict is valid but
+not completed, and its reason is classified; no report, an unknown verdict, a traceback on the
+terminal or the time cap are failures too.
 
     python scripts/experiments/v3/exp_autonomy.py run [--repos owner/name ...] [--pass 1|2]
     python scripts/experiments/v3/exp_autonomy.py table
@@ -36,15 +39,17 @@ RAW = ROOT / "results" / "raw" / "autonomy"
 SUMMARY = ROOT / "results" / "summary" / "v3"
 SPLIT = ROOT / "data" / "splits" / "v3_repos.json"
 CLONES = ROOT / "data" / "raw" / "aidev" / "repos"
-VERDICTS = ("everything runs", "nothing applied", "not verified by tests", "stopped")
+OUTCOMES = ("everything runs", "nothing applied", "not verified by tests", "not verified")
 CAP_MINUTES = 75
 BUDGET = "minutes=60"
-FAILURES = [  # (class, text in stderr or stdout), first match wins
-    ("docker", "docker"),
-    ("install", "install failed"),
-    ("llm", "LLMError"),
+FAILURES = [  # (class, text in the stop reason, stderr or stdout), first match wins
     ("timeout", "<cap>"),
-    ("crash", "Traceback"),
+    ("docker", "docker"),
+    ("install", "install"),
+    ("llm", "llm"),
+    ("budget", "budget"),
+    ("interrupted", "interrupt"),
+    ("crash", "traceback"),
 ]
 
 
@@ -81,25 +86,31 @@ def clean_command(project: Path, out: Path) -> list[str]:
     ]
 
 
-def verdict_of(stdout: str) -> str:
-    """The verdict from clean's last "Result: <verdict>." line, or ""."""
+def verdict_of(stdout: str, report: dict | None = None) -> str:
+    """The run's verdict: from its report.json when there is one, else clean's "Result:" line."""
+    if report:
+        verdict = report.get("stats", {}).get("agentic", {}).get("verdict")
+        if verdict:
+            return verdict
     for line in reversed(stdout.splitlines()):
         if line.startswith("Result: "):
-            return line.removeprefix("Result: ").split(".", 1)[0].strip()
+            return line.removeprefix("Result: ").rsplit(". ", 1)[0].rstrip(".")
     return ""
 
 
-def classify(code: int | None, stdout: str, stderr: str, report: bool) -> tuple[bool, str]:
-    """(completed, failure class): completed means a report, a known verdict, no traceback."""
-    verdict = verdict_of(stdout)
-    known = any(verdict.startswith(v) for v in VERDICTS)
-    if code is not None and report and known and "Traceback" not in stderr:
-        return True, ""
-    text = stderr + stdout + ("<cap>" if code is None else "")
+def classify(code: int | None, verdict: str, stdout: str, stderr: str) -> tuple[bool, bool, str]:
+    """(valid verdict, completed, failure class)."""
+    stopped = verdict.startswith("stopped:")
+    valid = code is not None and (verdict in OUTCOMES or stopped) and "Traceback" not in stderr
+    if valid and not stopped:
+        return True, True, ""
+    text = (verdict + "\n" + stderr + stdout + ("<cap>" if code is None else "")).lower()
     for name, needle in FAILURES:
         if needle in text:
-            return False, name
-    return False, "no report" if not report else "unknown verdict"
+            return valid, False, name
+    if stopped:
+        return valid, False, "other stop"
+    return valid, False, "no verdict" if not verdict else "unknown verdict"
 
 
 def run_one(full_name: str, entry: dict, k: int) -> dict:
@@ -130,13 +141,16 @@ def run_one(full_name: str, entry: dict, k: int) -> dict:
             found = sorted(out.glob(f"**/{name}")) if out.exists() else []
             if found:
                 shutil.copy(found[0], folder / name)
-        completed, failure = classify(code, stdout, stderr, bool(reports))
+        report = json.loads(reports[0].read_text()) if reports else None
+        verdict = verdict_of(stdout, report)
+        valid, completed, failure = classify(code, verdict, stdout, stderr)
         result = {
             "repo": full_name,
             "pass": k,
             "traits": entry.get("traits", []),
             "exit_code": code,
-            "verdict": verdict_of(stdout),
+            "verdict": verdict,
+            "valid_verdict": valid,
             "completed": completed,
             "failure": failure,
             "minutes": round((time.time() - t0) / 60, 2),
@@ -161,6 +175,7 @@ def summarize(rows: list[dict]) -> list[dict]:
     for k in sorted({int(r["pass"]) for r in rows}):
         mine = [r for r in rows if int(r["pass"]) == k]
         done = sum(str(r["completed"]) == "True" for r in mine)
+        valid = sum(str(r.get("valid_verdict")) == "True" for r in mine)
         low, high = wilson(done, len(mine))
         verdicts = Counter(r["verdict"] or "-" for r in mine if str(r["completed"]) == "True")
         failures = Counter(r["failure"] for r in mine if str(r["completed"]) != "True")
@@ -168,6 +183,7 @@ def summarize(rows: list[dict]) -> list[dict]:
             {
                 "pass": k,
                 "runs": len(mine),
+                "valid_verdict": valid,
                 "completed": done,
                 "rate": round(done / len(mine), 3) if mine else "",
                 "ci_low": low,
