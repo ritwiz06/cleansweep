@@ -24,9 +24,16 @@ class Relay:
 
     PATH = "/v1/chat/completions"
 
-    def __init__(self, base_url: str, key: str, timeout_s: float = REQUEST_TIMEOUT_S + 60):
+    def __init__(
+        self,
+        base_url: str,
+        key: str,
+        timeout_s: float = REQUEST_TIMEOUT_S + 60,
+        max_requests: int | None = None,
+    ):
         self.target = base_url.rstrip("/") + "/chat/completions"
         self.key, self.timeout_s = key, timeout_s
+        self.max_requests = max_requests  # answered requests; then 400 "LLM budget exhausted"
         self.requests: list[dict] = []
         relay = self
 
@@ -54,6 +61,15 @@ class Relay:
             handler.send_error(403)
             return
         body = handler.rfile.read(int(handler.headers.get("Content-Length") or 0))
+        answered = sum(r.get("status") == 200 for r in self.requests)
+        if self.max_requests is not None and answered >= self.max_requests:
+            self.requests.append({"t": round(time.time(), 2), "refused": "budget"})
+            message = json.dumps({"error": {"message": "LLM budget exhausted"}}).encode()
+            handler.send_response(400)
+            handler.send_header("Content-Type", "application/json")
+            handler.end_headers()
+            handler.wfile.write(message)
+            return
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.key}"}
         request = urllib.request.Request(self.target, data=body, headers=headers, method="POST")
         record, start, sent = {"t": round(time.time(), 2)}, time.time(), False

@@ -4,7 +4,11 @@ on, no human help. Every run should end with a report and one of clean's verdict
 reporter.py VERDICTS). A run completes when its verdict is a cleanup outcome (everything runs,
 nothing applied, not verified by tests, not verified); a "stopped: <reason>" verdict is valid but
 not completed, and its reason is classified; no report, an unknown verdict, a traceback on the
-terminal or the time cap are failures too.
+terminal or the time cap are failures too. A run that did not complete is also put in one of the
+environment-impossible categories fixed in docs/preregistration_v3.md when its evidence says so:
+it needs a GPU, needs the network after the install, needs a native toolchain or a service the
+image lacks, or is not a Python project. The table reports the raw completion rate (R19 is judged
+on it) and the rate without those runs.
 
     python scripts/experiments/v3/exp_autonomy.py run [--repos owner/name ...] [--pass 1|2]
     python scripts/experiments/v3/exp_autonomy.py table
@@ -25,6 +29,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +56,33 @@ FAILURES = [  # (class, text in the stop reason, stderr or stdout), first match 
     ("interrupted", "interrupt"),
     ("crash", "traceback"),
 ]
+
+
+# (category, evidence pattern in the verdict, the terminal and error.log), first match wins
+ENVIRONMENT = [
+    ("needs a GPU", r"cuda|cudnn|nvidia|nccl|no gpu|gpu is required"),
+    (
+        "needs the network after install",
+        r"name resolution|name or service not known|network is unreachable|"
+        r"nodename nor servname|max retries exceeded with url|connectionerror",
+    ),
+    (
+        "needs a native toolchain or a service",
+        r"\bgcc\b|\bg\+\+|\bclang\b|cmake|pkg-config|rustc|cargo build|libpq|postgres|"
+        r"mysql|redis|mongo|elasticsearch|docker daemon|xvfb|cannot open display",
+    ),
+]
+
+
+def environment(verdict: str, stdout: str, stderr: str, py_files: int) -> str:
+    """The environment-impossible category a run's evidence shows, or ""."""
+    if py_files == 0:
+        return "not a Python project"
+    text = f"{verdict}\n{stdout}\n{stderr}".lower()
+    for name, pattern in ENVIRONMENT:
+        if re.search(pattern, text):
+            return name
+    return ""
 
 
 def autonomy_repos(split: Path = SPLIT) -> dict[str, dict]:
@@ -137,13 +169,21 @@ def run_one(full_name: str, entry: dict, k: int) -> dict:
         (folder / "stdout.txt").write_text(stdout)
         (folder / "stderr.txt").write_text(stderr)
         reports = sorted(out.glob("**/report.json")) if out.exists() else []
-        for name in ("report.json", "CLEANUP_REPORT.md", "events.jsonl"):
+        for name in ("report.json", "CLEANUP_REPORT.md", "events.jsonl", "error.log"):
             found = sorted(out.glob(f"**/{name}")) if out.exists() else []
             if found:
                 shutil.copy(found[0], folder / name)
         report = json.loads(reports[0].read_text()) if reports else None
         verdict = verdict_of(stdout, report)
         valid, completed, failure = classify(code, verdict, stdout, stderr)
+        # the evidence: the verdict, the terminal and error.log, never the report's code excerpts
+        error_log = (
+            (folder / "error.log").read_text(errors="replace")
+            if (folder / "error.log").exists()
+            else ""
+        )
+        py_files = sum(1 for _ in project.rglob("*.py"))
+        env = "" if completed else environment(verdict, stdout + error_log, stderr, py_files)
         result = {
             "repo": full_name,
             "pass": k,
@@ -153,6 +193,7 @@ def run_one(full_name: str, entry: dict, k: int) -> dict:
             "valid_verdict": valid,
             "completed": completed,
             "failure": failure,
+            "environment": env,
             "minutes": round((time.time() - t0) / 60, 2),
         }
         (folder / "result.json").write_text(json.dumps(result, indent=1))
@@ -176,6 +217,8 @@ def summarize(rows: list[dict]) -> list[dict]:
         mine = [r for r in rows if int(r["pass"]) == k]
         done = sum(str(r["completed"]) == "True" for r in mine)
         valid = sum(str(r.get("valid_verdict")) == "True" for r in mine)
+        possible = [r for r in mine if not r.get("environment")]
+        adj_low, adj_high = wilson(done, len(possible))
         low, high = wilson(done, len(mine))
         verdicts = Counter(r["verdict"] or "-" for r in mine if str(r["completed"]) == "True")
         failures = Counter(r["failure"] for r in mine if str(r["completed"]) != "True")
@@ -188,6 +231,10 @@ def summarize(rows: list[dict]) -> list[dict]:
                 "rate": round(done / len(mine), 3) if mine else "",
                 "ci_low": low,
                 "ci_high": high,
+                "environment_impossible": len(mine) - len(possible),
+                "rate_without_them": round(done / len(possible), 3) if possible else "",
+                "adjusted_ci_low": adj_low,
+                "adjusted_ci_high": adj_high,
                 "verdicts": "; ".join(f"{v}: {n}" for v, n in sorted(verdicts.items())),
                 "failures": "; ".join(f"{f}: {n}" for f, n in sorted(failures.items())),
             }

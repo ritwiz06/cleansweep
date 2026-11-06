@@ -69,3 +69,15 @@ def test_context_window_from_the_endpoint_or_the_default(upstream, reachable):
         assert seen == [("GET", "/v1/models/model_a", f"Bearer {KEY}", b"")]
     else:
         assert context == {"max_input_tokens": 32768, "source": "not reported: 32768"}
+
+
+def test_relay_refuses_requests_past_its_budget(upstream):
+    relay_module = load()
+    url, seen = upstream
+    body = {"model": "openai/model_a", "messages": [{"role": "user", "content": "hi"}]}
+    with relay_module.Relay(url, KEY, max_requests=2) as relay:
+        assert post(relay.port, relay.PATH, body)[0] == 200
+        assert post(relay.port, relay.PATH, body)[0] == 200
+        status, reply = post(relay.port, relay.PATH, body)
+    assert status == 400 and b"LLM budget exhausted" in reply
+    assert [r.get("refused") for r in relay.requests] == [None, None, "budget"]
