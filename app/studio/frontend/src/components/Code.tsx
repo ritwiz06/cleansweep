@@ -73,6 +73,13 @@ export function parseDiff(text: string): DiffFile[] {
   return files;
 }
 
+// The part of a diff that changes one file (the whole diff if no file matches).
+export function filterDiff(text: string, path: string): string {
+  const files = parseDiff(text);
+  const hit = files.filter((f) => f.path === path);
+  return (hit.length ? hit : files).map((f) => [...f.header, ...f.lines].join("\n")).join("\n");
+}
+
 function DiffFileView({ file }: { file: DiffFile }) {
   const dark = useContext(DarkContext);
   const [open, setOpen] = useState(true);

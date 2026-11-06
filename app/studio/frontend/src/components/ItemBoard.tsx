@@ -22,7 +22,7 @@ function describe(e: { kind: string; payload: any }): string {
   return `${p.result_id ? p.result_id + " " : ""}${p.tool}: ${result.slice(0, 400)}`;
 }
 
-function ItemDetail({ item, state }: { item: Item; state: RunState }) {
+export function ItemDetail({ item, state }: { item: Item; state: RunState }) {
   const v = item.verdict;
   const lessons = (v?.lessons || []).map((id) => state.lessons.find((l) => l.id === id) || { id, reason: "(from an earlier run)", pattern: {} });
   return (

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const V2 = "20261101_toy_clean_offline";
 const V1 = "20261030_demo_feature_advisory_v1";
+const DEMO = "20261102_demo_feature_agentic";
 const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 
 async function open(page: Page, route: string) {
@@ -45,6 +46,7 @@ test("replay of a v2 run: transport, timeline, agents, boards, packages and repo
   await open(page, `replay?root=replay&path=${V2}`);
   const transport = page.getByLabel("Replay controls");
   await expect(transport).toContainText("event 0 of 234");
+  await page.getByRole("tab", { name: "Agents" }).click();
   await page.getByRole("button", { name: "Next decision" }).click();
   await expect(page.getByLabel("Manager decisions")).toContainText("P1 kept");
   await page.getByRole("button", { name: "Step" }).click();
@@ -77,6 +79,29 @@ test("replay of a v2 run: transport, timeline, agents, boards, packages and repo
 
   await page.getByRole("tab", { name: "Report" }).click();
   await expect(page.locator(".markdown").first()).toContainText("everything runs");
+});
+
+test("project view: the tree follows the events, and a node shows its evidence, diff and checks", async ({ page }) => {
+  await open(page, `replay?root=replay&path=${DEMO}`);
+  const tree = page.getByRole("tree", { name: "Project tree" });
+  await expect(page.getByText("This run saved no file list")).toBeVisible();
+  // mid-investigation: an Investigator is on _print_low_stock
+  await page.getByLabel("Scrubber").fill("69");
+  const unit = tree.locator('[data-key="unit:bookshelf/inventory.py::_print_low_stock"]');
+  await expect(unit).toHaveClass(/st-investigating/);
+  await expect(unit.locator('svg[data-role="investigator"]')).toHaveCount(1);
+  await expect(unit.getByRole("treeitem")).toHaveAttribute("aria-label", /investigating, last Investigator #3/);
+  await page.getByRole("button", { name: "Jump to the end" }).click();
+  await expect(tree.locator('[data-key="file:bookshelf/inventory_old.py"]')).toHaveClass(/st-kept/);
+  await expect(unit).toHaveClass(/st-kept/);
+  await tree.getByRole("treeitem", { name: /^_round_money\(\)/ }).click();
+  const details = page.getByLabel("Details");
+  await expect(details).toContainText("rolled back");
+  await expect(details).toContainText("Evidence chain");
+  await expect(details.locator(".diff")).toContainText("def _round_money");
+  await expect(details).toContainText("differ");
+  await page.getByRole("tab", { name: /Items/ }).click();
+  await expect(page.getByLabel("Item board")).toContainText("Suggest");
 });
 
 test("an artifact link opens the cached artifact", async ({ page }) => {

@@ -98,6 +98,10 @@ def create_app(
     def run_diff(root: str, path: str) -> dict:
         return {"text": runs.final_diff(folder(root, path))}
 
+    @app.get("/api/run/files")
+    def run_files(root: str, path: str) -> dict:
+        return runs.project_files(folder(root, path))
+
     @app.get("/api/run/artifact")
     def run_artifact(root: str, path: str, id: str) -> dict:
         return runs.artifact(folder(root, path), id)

@@ -68,6 +68,7 @@ trust, or run CleanSweep inside a container when you don't.
 | `patches/` | the same commits as patch files |
 | `PR_DESCRIPTION.md`, `CHANGELOG_ENTRY.md` | text for a pull request and a changelog |
 | `report.json`, `events.jsonl`, `cache/` | the run's numbers, its event log and the agents' artifacts (Studio replays them) |
+| `project_files.json` | the project's files and their line counts before the cleanup (Studio's tree) |
 
 The result is one of three. **Everything runs**: tests ran, and the final suite is at least as
 good as the baseline. **Nothing applied**: a dry run, or no package survived its checks.
@@ -167,6 +168,14 @@ in this session are listed with their status, output and a stop button.
 ![Launch: what to run, the target, the mode and the budgets](images/studio/launch.png)
 
 **Live run** and **Replay** show a run as it happens or from its recording:
+- the Project tab (the default): the project's file tree. Every file, class, function and line
+  range a detector flagged has the color, glyph and name of its state (candidate,
+  investigating, safe, suggest, in package, kept, rolled back) and the icon of the agent that
+  acted on it last; the latest action is outlined, and "Follow the action" opens the tree to it.
+  Click a node for its evidence chain (the verdict, the evidence, the Investigator's tool calls,
+  the lessons it cited), its diff and the checks its work package passed. A run saves its file
+  list (`project_files.json`), so the tree shows every file with its line count; for a recording
+  made before v2.1 the tree shows the files the events name, and says so;
 - the metrics bar: slop meter, packages done, test runs, probe cases, probe coverage, LLM calls
   and tokens, elapsed time, with gauges against the run's budgets;
 - the phase timeline: time per phase, step-backs outlined, the Manager's decisions as marks;
@@ -179,6 +188,8 @@ in this session are listed with their status, output and a stop button.
 
 Replay adds play/pause, step, a 1–50x speed, a scrubber and "Next decision"; a click on a
 decision jumps to it. A run folder from `cleansweep clean` replays as it is.
+
+![Replay of the demo app cleanup: the project tree, and a rolled-back duplicate's evidence](images/studio/project.png)
 
 ![Replay of the demo app cleanup: metrics, phase timeline, agent graph and the Manager's decisions](images/studio/replay.png)
 

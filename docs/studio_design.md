@@ -48,7 +48,7 @@ theme and lightened for the dark one until text in them reaches 4.5:1 on `--surf
 | investigating | ◐ | `#965800` | `#e9a93a` | an Investigator is gathering evidence |
 | safe | ◇ | `#1a6a92` | `#79c4ec` | the Investigator cleared it; waiting for a package |
 | suggest | ? | `#a8457c` | `#dc93bb` | reported for a person to decide, not applied |
-| dropped | – | `#6f6d68` | `#9a988f` | the Investigator said leave it |
+| dropped | ⊘ | `#6f6d68` | `#9a988f` | the Investigator said leave it |
 | in package | ▣ | `#6a3fb0` | `#a98be6` | in a work package being applied and checked |
 | kept | ✓ | `#00744f` | `#3cc79b` | applied, every check passed, committed |
 | rolled back | ↺ | `#ad4500` | `#ff8f52` | a check failed; undone (a lesson was written) |

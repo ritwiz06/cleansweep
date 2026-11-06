@@ -45,7 +45,7 @@ export function AgentTag({ agent, short = false }: { agent: string; short?: bool
   const role = roleOf(agent);
   const squad = SQUADS[role] === "single" ? "manager" : SQUADS[role] || "manager";
   return (
-    <span className={`agent-tag squad-${squad}`} data-agent={role}>
+    <span className={`agent-tag squad-${squad}`} data-role={role}>
       <AgentIcon agent={agent} />
       <span className="agent-label">{short ? agentName(role) : agentName(agent)}</span>
     </span>

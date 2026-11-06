@@ -6,7 +6,7 @@ export const STATE_GLYPH: Record<string, string> = {
   investigating: "◐",
   safe: "◇",
   suggest: "?",
-  dropped: "–",
+  dropped: "⊘",
   in_package: "▣",
   kept: "✓",
   repaired: "✓",
@@ -16,7 +16,6 @@ export const STATE_GLYPH: Record<string, string> = {
 };
 
 const LABEL: Record<string, string> = {
-  safe: "cleared",
   dropped: "left alone",
   in_package: "in package",
   rolled_back: "rolled back",
