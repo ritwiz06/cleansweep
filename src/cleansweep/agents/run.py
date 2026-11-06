@@ -16,6 +16,7 @@ from cleansweep.reviewer.planner import scope_report
 from cleansweep.sandbox import open_workspace
 from cleansweep.sandbox.local import default_work_dir
 
+from .batching import batch_on
 from .delivery import default_out, inside, prepare_workspace
 from .listing import save_project_files
 from .llm import AgentLLM
@@ -76,6 +77,7 @@ def build_report(rt, started: str, t0: float, seed: int = 0) -> SweepReport:
             "mode": rt.mode,
             "ablation": rt.ablation,
             "investigate": rt.acfg.get("investigate", "all"),
+            "investigate_batch": "on" if batch_on(rt.acfg) else "off",
             "verdict": rt.summary.get("verdict"),
             "phases": rt.phases.order(),
             "phase_seconds": rt.phases.seconds(),
@@ -90,6 +92,7 @@ def build_report(rt, started: str, t0: float, seed: int = 0) -> SweepReport:
                 for d in ("safe", "suggest", "drop")
             },
             "budget_exhausted": sum(v.get("stop") == "budget" for v in rt.verdicts.values()),
+            "verdicts_reused": sum(v.get("stop") == "reused" for v in rt.verdicts.values()),
             "packages": [
                 {
                     "package": p.package_id,
