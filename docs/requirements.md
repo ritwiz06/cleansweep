@@ -1,4 +1,4 @@
-# CleanSweep v2 requirements
+# CleanSweep v2 and v3 requirements
 
 The acceptance checklist for v2.0 (10-day plan: Day 1 = 2026-10-31, release planned for Day 10 =
 2026-11-09, made on Day 6 = 2026-11-05). Each row has the requirement, the test that accepts it, the evidence, and its status.
@@ -26,3 +26,30 @@ met, the rest scheduled), **open** (not started).
 | R14 | Release: v2.0, the CHANGELOG, new raw results in the archive, the submission bundle refreshed. | Tag v2.0 and its GitHub release exist; `verify_archive.py` reports 0 mismatches; the tarball hash is recorded. | `CHANGELOG.md` v2.0; tag `v2.0` and its GitHub release, after a fresh-clone rehearsal of the release commit; `../cleansweep-archive/` with the v2 raw results (`raw/cleansweep/results_raw/`), what only the v2 clones and `../case_studies/` held, and `tools/verify_archive.py` (0 mismatches); the tarball's sha256 in `.notes/archive_tarball.sha256`; the submission bundle refreshed (local) | met at the v2.0 tag (2026-11-05) |
 | R15 | v1 results unchanged (regression proof). | `method=cleansweep` gives the same offline toy sweep as at `pre-tidy`; every v1 table rebuilds byte-identical; every v1 test passes. | #81–#86 (each PR: 66 of 66 tables and figures identical to tag `pre-tidy`, offline toy sweep identical); the v1 tests in the offline suite, passing on every PR through #95 | met so far (rechecked after every phase) |
 | R16 | Studio covers every dashboard page (Live sweep, Scheduler, Baselines, Data, Guard, Replay); then `app/dashboard/` is removed (git history keeps it) and the docs updated. | Each dashboard page has a Studio screen showing the same data; after that, `app/dashboard/` is gone and no doc or script refers to it. | Studio's dashboard-parity screens (#111: Live sweep and Replay of v1 runs, Scheduler, Baselines, Data, Guard); the helpers v1 scripts import moved to `src/cleansweep/runlog.py` (exp_collect and make_assets outputs byte-identical) ; `run_live` moved to `src/cleansweep/live.py` (#119; Studio's v1 worker and the v2 eval runner no longer import `app.dashboard`); the dashboard's home page (any saved sweep report) is Studio's Saved reports screen (#120); `app/dashboard/`, its tests and the streamlit and plotly requirements removed, and the README, docs, demo script and CHANGELOG point to Studio (#121) | met |
+
+## v3.0 requirements (R17–R30)
+
+The acceptance checklist for v3.0 (Day 1 = 2026-11-06; v2.1 on 2026-11-08; results freeze
+2026-11-13 12:00; v3.0 on 2026-11-15). v2.0 stays the course baseline: its tag, tables and
+conclusion do not change. v3 results go in `results/summary/v3/` and `results/figures/v3/`.
+v3.0 is released only when every row passes; R23 accepts runs labeled "not run by the freeze".
+Run sizes follow the schedule override in the v3 plan: AUTONOMY 30 repositories, INJECT 10 new
+repositories on seed 4, REAL 15 new repositories (two runs on 5), a second model on 5 REAL and
+5 INJECT repositories, and an audit-miss sample of 100.
+
+| ID | Requirement | Acceptance test | Evidence | Status |
+|---|---|---|---|---|
+| R17 | Dynamic-reference resolver: a unit reachable by name (entry points, names in config files, decorator registries, `__all__`, literal `getattr`/`import_module`, `__subclasses__` discovery, framework base classes) goes to the suggest lane with its evidence. | A test per pattern; its effect measured out of sample only (INJECT seed 4, the team with and without it), never by re-scoring v2 runs. | | open |
+| R18 | Docker sandbox: `cleansweep clean --sandbox docker\|none`, docker by default for a folder that is not a git repository you own or with `--untrusted`; a published image definition and a one-line `docker run` quick start. | Docker tests: the original folder is unchanged, and the network is off after install. | | open |
+| R19 | Autonomy: `clean` finishes on its own on any Python project folder (test-command detection, environments, a no-tests mode, `--resume`, never a stack trace). | At least 90% of AUTONOMY runs end with a valid verdict and no human help, or the failures are explained and fixed where possible; both passes reported with the failure taxonomy. | | open |
+| R20 | Investigation batching (`core.agents.investigate_batch`). | Requests and safety measured against the team on INJECT and REAL; the default stays off unless safety matches at no more than 60% of the requests. | | open |
+| R21 | Studio: home screen, Project view (file tree by live state), before/after (trees, annotated diffs, metrics card). | vitest for the tree and diff state; Playwright replays the shipped recordings through every screen in both themes at 1280×720. | | open |
+| R22 | Studio: presentation mode and a self-contained HTML export of a run. | Playwright covers both; the exported file opens with no server. | | open |
+| R23 | The v3 evaluation runs: out-of-sample injection (INJECT) and the real-project evaluation (REAL) with held-out real tests, the blinded audit and the UI check. | Every planned run finished, or is labeled "not run by the freeze" (never estimated); tables with CIs in `results/summary/v3/`. | | open |
+| R24 | External baseline: Aider with the same model and endpoint and a fixed cleanup instruction written before any result. | Its runs judged by the same hidden checks, held-out tests and audit; version and settings recorded. | | open |
+| R25 | Second model family for the team and the single agent. | Runs on 5 REAL and 5 INJECT repositories; the auditor's model differs from both. | | open |
+| R26 | Audit miss estimate. | A stratified random sample of "no"-voted kept edits with targeted tests; the estimated share of missed wrong edits with CIs, labeled as an estimate. | | open |
+| R27 | Human-rating packet, and kappa if it is filled in. | 100 stratified, blinded items with a rubric and two rater sheets; Cohen's kappa between the humans and against the LLM labels, or "not human-validated". | | open |
+| R28 | v3 figures. | `scripts/report/make_figures_v3.py` writes safety vs yield, ablation bars with CIs, audit tiers per method, the autonomy failure taxonomy and cost per method to `results/figures/v3/`; Studio's Evaluation screen shows the same data. | | open |
+| R29 | Course report and slides updated with the v3 results. | ≤ 8 pages before the references, 0 overfull boxes, a number audit with no mismatch; slides exported with about 4 minutes of notes and the new clip. | | open |
+| R30 | Paper draft and v3.0 release. | A workshop-length ACM sigconf draft with every RQ filled in from the frozen tables and every citation verified; tag v3.0 and its GitHub release after a fresh-clone rehearsal with 0 failures; archive verified and tarball rebuilt. | | open |
