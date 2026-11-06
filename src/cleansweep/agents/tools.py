@@ -12,7 +12,7 @@ from pathlib import Path
 
 from cleansweep.analysis.graph import is_test_file
 from cleansweep.analysis.minhash import _normalized_tokens, _shingles, body_text
-from cleansweep.reviewer.detectors import _dependency_mentions
+from cleansweep.reviewer.detectors import _dependency_mentions, dynamic_refs_on
 
 from .secrets import is_secret_file
 
@@ -155,13 +155,18 @@ def check_dynamic_use(rt, name: str) -> str:
             f"reachable from an entry point {'yes' if rt.graph.is_reachable(key) else 'no'}; "
             f"in __all__ {'yes' if name in _all_names(rt.ws.path, path) else 'no'}"
         )
+    if dynamic_refs_on(getattr(rt, "cfg", None)):
+        files = [u.key for u in rt.graph.units() if u.kind == "file" and Path(u.path).stem == name]
+        for key in [*keys, *files]:
+            if refs := rt.graph.dynamic_refs(key):
+                rows.append(f"{key}: reached by name: {'; '.join(refs[:MAX_HITS])}")
     quoted = [
         f"{p}:{n}"
         for p, n, t in _grep(rt.ws.path, name)
         if f'"{name}"' in t or f"'{name}'" in t or "getattr(" in t
     ]
     rows.append(f"string or getattr mentions: {len(quoted)} {quoted[:MAX_HITS]}")
-    return "\n".join(rows) if keys else f"no unit named {name}\n" + rows[-1]
+    return "\n".join(rows if keys else [f"no unit named {name}", *rows])
 
 
 def find_related_tests(rt, path: str) -> str:

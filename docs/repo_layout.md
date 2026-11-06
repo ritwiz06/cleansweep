@@ -37,6 +37,8 @@ cleansweep/
 │                                         state/ with the event folds and their vitest tests),
 │                                         e2e/ (Playwright; guide.spec.ts takes the user guide's
 │                                         screenshots); dist/ and node_modules/ are ignored
+├── docker/                               Dockerfile: CleanSweep in a container (`clean --sandbox`,
+│                                         the `docker run` quick start)
 ├── demo/                                 bookstore demo app (shop_app/), its answer key and hidden
 │                                         tests, feature.patch, prepare_demo.sh, run_demo.md,
 │                                         replay/ (recorded runs for offline Replay)
@@ -46,6 +48,10 @@ cleansweep/
 │   ├── experiments/v1/                   v1 runners and table builders (exp_*.py), archive_paths.py,
 │   │                                     shotgun_ui_harness.py
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
+│   ├── experiments/v3/                   v3 runs: methods_v3.py, exp_inject_v3.py, exp_real_v3.py,
+│   │                                     exp_autonomy.py, exp_external.py (Aider: prompts/ holds its
+│   │                                     fixed instruction, aider/ its image), exp_human_packet.py,
+│   │                                     exp_human_kappa.py
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
 │   │                                     make_recording.py (Studio recordings), coverage.sh,
@@ -54,8 +60,10 @@ cleansweep/
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)
 │   ├── summary/v2/                       committed v2 tables (CSV and Markdown)
+│   ├── summary/v3/                       committed v3 tables (CSV and Markdown)
 │   ├── figures/v1/                       committed v1 figures
 │   ├── figures/v2/                       v2 figures (empty: the v2 results are tables)
+│   ├── figures/v3/                       v3 figures (scripts/report/make_figures_v3.py)
 │   ├── data_summary/                     mined-data summaries (taxonomy, rules, funnel, detection);
 │   │                                     the v2 knowledge base reads them
 │   └── raw/                              per-run reports (git-ignored; archived copies in
@@ -77,8 +85,9 @@ cleansweep/
 ```
 
 Where things go:
-- A new experiment script goes in `scripts/experiments/v2/`; its tables in `results/summary/v2/`
-  and its figures in `results/figures/v2/`; `scripts/reproduce_tables.sh` rebuilds them.
+- A new experiment script goes in `scripts/experiments/v3/`; its tables in `results/summary/v3/`
+  and its figures in `results/figures/v3/`; `scripts/reproduce_tables.sh` rebuilds them. v1's and
+  v2's folders stay as they were released.
 - Raw run output goes in `results/raw/<folder>/` (git-ignored) and is archived before a release.
 - A test goes in the `tests/` folder that mirrors the code it tests.
 - Local notes (status docs, report sources, scratch) live in `.notes/`, which git never sees.

@@ -13,7 +13,6 @@ import subprocess
 
 from cleansweep.core.models import EditResult
 from cleansweep.guard import apply_edit
-from cleansweep.reviewer import build_plan
 from cleansweep.sandbox.workspace import GIT_ID
 
 from . import auditor, reporter, tester
@@ -46,8 +45,7 @@ class Solo:
     def find_candidates(self, category: str = "", offset: int = 0) -> str:
         rt = self.rt
         if not rt.items:
-            plan = build_plan(rt.ws, rt.graph, llm=None, use_llm=False, cfg=rt.cfg)
-            for item in [*plan.items, *auditor.line_items(rt, NAME)]:
+            for item in [*auditor.detector_items(rt), *auditor.line_items(rt, NAME)]:
                 rt.items[item.item_id] = item
         items = [i for i in rt.items.values() if not category or i.category == category]
         page = items[offset : offset + PAGE]
