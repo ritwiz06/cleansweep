@@ -15,6 +15,7 @@ owned."""
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import shlex
 import subprocess
@@ -25,6 +26,8 @@ from .aidev_docker import IMAGE, JUNIT, MOUNT, AidevWorkspace, _docker
 from .workspace import UNITTEST_PY
 
 SANDBOXES = ("auto", "docker", "none")
+PREFIX = "cs-clean-"
+OWNER_LABEL = "cleansweep.owner"  # the pid of the run that started the container
 INSTALL_TIMEOUT = 900
 TOOLS = [["pip", "install", "pytest", "coverage"]]  # the test runner and the probes' coverage
 
@@ -136,8 +139,8 @@ def open_container(
     check_docker()
     path = Path(path).resolve()
     stamp = hashlib.sha1(f"{path}{time.time_ns()}".encode()).hexdigest()[:8]
-    name = re.sub(r"[^a-zA-Z0-9_.-]", "-", f"cs-clean-{path.parent.name}-{stamp}").lower()
-    env = ["-e", "PYTHONDONTWRITEBYTECODE=1"]
+    name = re.sub(r"[^a-zA-Z0-9_.-]", "-", f"{PREFIX}{path.parent.name}-{stamp}").lower()
+    env = ["--label", f"{OWNER_LABEL}={os.getpid()}", "-e", "PYTHONDONTWRITEBYTECODE=1"]
     if (path / "src").is_dir():
         env += ["-e", f"PYTHONPATH={MOUNT}/src"]
     run = ["run", "-d", "--name", name, *env, "-v", f"{path}:{MOUNT}", "-w", MOUNT]

@@ -100,3 +100,20 @@ def test_the_startup_sweep_removes_only_old_orphans(tmp_path):
     removed = sweep_orphans({"work_dir": str(work)})
     assert sorted(Path(p).name for p in removed) == ["cs_probe_x", "proj-1", "proj-2"]
     assert all(p.exists() for p in [*kept, young])
+
+
+def test_the_startup_sweep_removes_containers_of_killed_clean_runs(monkeypatch):
+    from cleansweep.sandbox import cleanup
+
+    listed = f"cs-clean-a-1 {os.getpid()}\ncs-clean-b-2 999999999\ncs-clean-c-3 \n"
+    calls = []
+
+    def docker(cmd, **kwargs):
+        calls.append(cmd)
+        out = listed if cmd[1] == "ps" else ""
+        return subprocess.CompletedProcess(cmd, 0, out, "")
+
+    monkeypatch.setattr(cleanup.shutil, "which", lambda name: "docker")
+    monkeypatch.setattr(cleanup.subprocess, "run", docker)
+    assert cleanup.sweep_containers() == ["cs-clean-b-2", "cs-clean-c-3"]  # this run's stays
+    assert calls[1:] == [["docker", "rm", "-f", n] for n in ("cs-clean-b-2", "cs-clean-c-3")]

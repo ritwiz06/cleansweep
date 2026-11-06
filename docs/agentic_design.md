@@ -462,7 +462,8 @@ python -m cleansweep clean <path> [--sandbox auto|docker|none] [--untrusted] ...
   does not count: it could name its authors), docker otherwise; `--untrusted` forces docker.
   The choice and its reason are printed and written to the report. Docker missing or not
   running ends the run with "stopped: Docker is not ..., nothing applied". The container is
-  removed when the run ends (the workspace folder stays); a resumed run starts a new one.
+  removed when the run ends (the workspace folder stays), and a killed run's container at the
+  next start (`sandbox.cleanup.sweep_containers`); a resumed run starts a new one.
   `docker/Dockerfile` builds an image with CleanSweep installed (`CLEANSWEEP_SANDBOX=none`
   inside: that container is the sandbox); see the README for the one-line `docker run`.
 - `--resume` (`agents/checkpoint.py`): at each safe point (a phase entered, a work package
