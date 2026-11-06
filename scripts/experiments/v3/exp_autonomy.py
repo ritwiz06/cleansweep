@@ -35,6 +35,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 from collections import Counter
 from pathlib import Path
 
@@ -89,11 +90,23 @@ def autonomy_repos(split: Path = SPLIT) -> dict[str, dict]:
     return {r["full_name"]: r for r in json.loads(split.read_text())["autonomy"]}
 
 
+# Git LFS files stay pointer files (as data_aidev_select.py clones them): a filter.lfs.process
+# set globally without git-lfs installed would make the archive fail.
+LFS_OFF = [
+    "-c",
+    "filter.lfs.required=false",
+    "-c",
+    "filter.lfs.smudge=",
+    "-c",
+    "filter.lfs.process=",
+]
+
+
 def export_tree(full_name: str, sha: str, dest: Path) -> None:
     """The repository's files at sha (no .git), as a plain folder."""
     clone = CLONES / full_name.replace("/", "__")
     dest.mkdir(parents=True)
-    archive = subprocess.Popen(["git", "archive", sha], cwd=clone, stdout=subprocess.PIPE)
+    archive = subprocess.Popen(["git", *LFS_OFF, "archive", sha], cwd=clone, stdout=subprocess.PIPE)
     subprocess.run(["tar", "-xf", "-", "-C", str(dest)], stdin=archive.stdout, check=True)
     if archive.wait() != 0:
         raise RuntimeError(f"git archive failed for {full_name}@{sha}")
@@ -274,7 +287,12 @@ def main(argv: list[str] | None = None) -> int:
             first = folder / "pass1" / "result.json"
             if not first.exists() or json.loads(first.read_text())["completed"]:
                 continue
-        print(json.dumps(run_one(full_name, repos[full_name], args.k)), flush=True)
+        try:
+            print(json.dumps(run_one(full_name, repos[full_name], args.k)), flush=True)
+        except Exception as exc:  # a harness error, not a run's outcome: logged, retried later
+            (folder / f"error_pass{args.k}.txt").parent.mkdir(parents=True, exist_ok=True)
+            (folder / f"error_pass{args.k}.txt").write_text(traceback.format_exc())
+            print(f"error {full_name}: {type(exc).__name__}: {exc}", flush=True)
     print(*table(), sep="\n")
     return 0
 
