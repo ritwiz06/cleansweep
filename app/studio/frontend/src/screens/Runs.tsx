@@ -2,7 +2,7 @@ import { useState } from "react";
 import { afterHash, api, runHash, useApi, type RunRow } from "../api";
 import { Async, Badge, Status } from "../components/common";
 
-const KIND_LABEL: Record<string, string> = { v2: "agent team (clean)", v1: "v1 sweep", watch: "watch" };
+const KIND_LABEL: Record<string, string> = { v2: "agent team", v1: "v1 sweep", watch: "watch" };
 
 export function useRuns() {
   return useApi<RunRow[]>("runs", () => api("/api/runs"));

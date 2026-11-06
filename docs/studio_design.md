@@ -16,6 +16,9 @@ Studio is presented at 1280×720 on a projector, so the rules favor legibility o
 | `--text-2xl` | 28px | presentation captions, the metric numbers of before / after |
 | `--text-3xl` | 40px | presentation mode's headline |
 
+Presentation mode raises the whole scale (15, 17, 19, 22, 28, 34 and 46px) and hides the sidebar,
+so the same components read from the back of a room.
+
 Line height 1.45 for text, 1.35 for code. Numbers in tables and metrics use tabular figures.
 Weights: 400 for text, 600 for labels and buttons, 700 for titles and values.
 
@@ -78,7 +81,8 @@ least 4.5:1 and marks at least 3:1 on `--surface` in both themes.
 spinner, the current phase's pulse and a message travelling on the agent graph. With
 `prefers-reduced-motion: reduce` every animation and transition is off, charts skip their
 entry animation and the agent graph shows messages without the travelling dot. Replay speed
-is the reader's choice (1–50×), except in presentation mode, where it is fixed.
+is the reader's choice (1–50×), except in presentation mode, where it is fixed: 1.5 s per
+captioned step of a run and 5 s per before / after slide, whatever the step took in the run.
 
 ## Legibility at 1280×720
 

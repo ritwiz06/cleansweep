@@ -1931,6 +1931,10 @@ details summary {
   margin: 0 0 var(--space-3);
 }
 
+.ba-tools button {
+  margin-left: auto;
+}
+
 .ba-tools .check {
   display: flex;
   align-items: center;
@@ -2137,6 +2141,336 @@ table.sbs.only-right td:nth-child(2) {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Presentation mode: no sidebar, large type, one caption per step */
+.app.present {
+  --text-xs: 15px;
+  --text-sm: 17px;
+  --text-md: 19px;
+  --text-lg: 22px;
+  --text-xl: 28px;
+  --text-2xl: 34px;
+  --text-3xl: 46px;
+  grid-template-columns: minmax(0, 1fr);
+  font-size: var(--text-md);
+}
+
+.app.present .content {
+  padding: var(--space-3) var(--space-5);
+}
+
+.present-shell {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2 * var(--space-3));
+  gap: var(--space-2);
+}
+
+.present-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.present-bar h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.present-pos {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.present-bar button,
+.present-exit {
+  white-space: nowrap;
+  font-size: var(--text-sm);
+}
+
+kbd {
+  font-family: var(--mono);
+  font-size: 0.75em;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+button.primary kbd {
+  background: transparent;
+  color: inherit;
+}
+
+.present-progress {
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.present-progress div {
+  height: 100%;
+  background: var(--accent);
+}
+
+.present-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xl);
+  line-height: 1.25;
+  min-height: 1.4em;
+}
+
+.caption p {
+  margin: 0;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.caption .agent-icon {
+  width: 1.3em;
+  height: 1.3em;
+  stroke-width: 2;
+}
+
+.caption .category-chip {
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.caption-detail {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--text-md);
+  min-height: 1.45em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.present-run {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: var(--space-3);
+}
+
+.present-tree {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-2);
+}
+
+.present-tree .tree {
+  --tree-indent: 22px;
+}
+
+.spotlight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-3);
+  overflow: auto;
+}
+
+.spot-agent {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.spot-agent .agent-icon {
+  width: 56px;
+  height: 56px;
+  stroke-width: 1.6;
+}
+
+.spot-agent.squad-manager {
+  color: var(--agent-manager);
+}
+
+.spot-agent.squad-research {
+  color: var(--agent-research);
+}
+
+.spot-agent.squad-development {
+  color: var(--agent-development);
+}
+
+.spot-name {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.spot-role {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.phase-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-xs);
+}
+
+.phase-steps li {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.phase-steps li.seen {
+  color: var(--text-2);
+}
+
+.phase-steps li.now {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.counters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.counter {
+  border-top: 3px solid var(--st, var(--border));
+  padding-top: var(--space-1);
+}
+
+.counter-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--st, var(--text));
+  line-height: 1.1;
+}
+
+.counter-label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.present-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.trail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.trail li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.present .ba-tree .card-body {
+  max-height: calc(100vh - 230px);
+}
+
+.present .metrics-card .card-body {
+  max-height: calc(100vh - 230px);
+  overflow: auto;
+}
+
+.summary-slide,
+.change-slide {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.chain-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+}
+
+.chain-strip li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.chain-strip li + li::before {
+  content: "→";
+  color: var(--muted);
+  margin-right: var(--space-1);
+}
+
+.slide-diff {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.check-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+}
+
+.check-chips .ok span {
+  color: var(--st-kept);
+  font-weight: 700;
+}
+
+.check-chips .fail span {
+  color: var(--st-rolled-back);
+  font-weight: 700;
 }
 
 @media (max-width: 1100px) {

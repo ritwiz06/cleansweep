@@ -1,8 +1,8 @@
 // Before and after a cleanup: both file trees and the numbers, from the project's file list,
 // the final diff and the folded events.
-import type { DiffFile } from "./diff";
-import type { RunState } from "./fold";
-import type { FileEntry } from "./tree";
+import { parseDiff, type DiffFile } from "./diff";
+import { fold, repoName, type RunState, type StudioEvent } from "./fold";
+import { filesFromEvents, type FileEntry } from "./tree";
 
 export type FileStatus = "removed" | "edited" | "added" | "unchanged";
 
@@ -187,4 +187,28 @@ export function metrics(state: RunState, stats: Record<string, FileStat>, comple
     verdict: state.verdict,
     finished: state.finished,
   };
+}
+
+export interface AfterModel {
+  state: RunState;
+  parsed: DiffFile[];
+  list: FileEntry[];
+  trees: { before: FileTree; after: FileTree; gone: string[] };
+  m: Metrics;
+  name: string;
+}
+
+// Before / after from a run's events, its final diff, its saved file list (if any) and its report.
+export function afterModel(
+  events: StudioEvent[],
+  diff: string,
+  files: { files: FileEntry[]; complete: boolean } | null,
+  run: { target?: string | null; report?: { stats?: any } | null },
+): AfterModel {
+  const state = fold(events);
+  const parsed = parseDiff(diff);
+  const list = files?.complete ? files.files : filesFromEvents(events).map((path) => ({ path, lines: null }));
+  const stats = fileStats(list, parsed);
+  const name = repoName(state.repo || run.target || "project");
+  return { state, parsed, list, trees: fileTrees(stats, name), m: metrics(state, stats, Boolean(files?.complete), run.report?.stats), name };
 }

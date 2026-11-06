@@ -58,6 +58,23 @@ test("user guide screenshots: before_after and before_after_diff", async ({ page
   await page.screenshot({ path: `${OUT}/before_after_diff.png` });
 });
 
+test("user guide screenshots: present and present_after", async ({ page }) => {
+  await page.goto("/#/present?root=replay&path=20261102_demo_feature_agentic");
+  const controls = page.getByLabel("Presentation controls");
+  await expect(controls).toContainText("step 1 of");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  for (let i = 0; i < 6; i++) await page.keyboard.press("ArrowRight");
+  await expect(controls).toContainText("step 28 of");
+  await page.screenshot({ path: `${OUT}/present.png` });
+  await page.goto("/#/after?root=replay&path=20261102_demo_feature_agentic&present=1");
+  await expect(controls).toContainText("5 changes");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("Space");
+  await expect(controls).toContainText("change 3 of 5");
+  await page.screenshot({ path: `${OUT}/present_after.png` });
+});
+
 for (const [route, name, end, tab] of SHOTS) {
   test(`user guide screenshot: ${name}`, async ({ page }) => {
     await shot(page, route, name, end, tab);
