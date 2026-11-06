@@ -161,6 +161,15 @@ def check_edit(ws, base: str, folder: Path, record: dict) -> dict:
     }
 
 
+def workspace_key(record: dict) -> str:
+    """Edits that open the same workspace: the project and its run folder. The injected toy
+    repository is "local:repo" on every seed, so its seed folder is part of the key too (before
+    this, seeds 2 and 3 were checked on seed 1's tree)."""
+    report = Path(record["report"])
+    key = f"{record['project']}|{report.parent.parent.name}"
+    return f"{key}|{report.parent.name}" if record["project"] == "local:repo" else key
+
+
 def todo(only: list[str] | None = None) -> dict[str, list[tuple[str, dict]]]:
     """workspace target -> [(test folder's edit, audit record of an edit it covers)]."""
     audit = json.loads((OUT / "audit.json").read_text())
@@ -173,8 +182,7 @@ def todo(only: list[str] | None = None) -> dict[str, list[tuple[str, dict]]]:
         for covered in [edit, *copies.get(edit, [])]:
             if covered in audit:
                 record = {**audit[covered], "edit": covered}
-                key = f"{record['project']}|{Path(record['report']).parent.parent.name}"
-                out.setdefault(key, []).append((edit, record))
+                out.setdefault(workspace_key(record), []).append((edit, record))
     return out
 
 

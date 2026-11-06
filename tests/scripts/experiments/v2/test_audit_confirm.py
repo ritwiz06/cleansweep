@@ -86,3 +86,12 @@ def test_package_names_compare_as_pip_normalizes_them():
     confirm = load()
     assert confirm._name("Pydantic_Settings") == confirm._name("pydantic-settings")
     assert confirm._name("python.dotenv") == "python-dotenv"
+
+
+def test_the_toy_repository_opens_one_workspace_per_seed():
+    confirm = load()
+    run = "results/raw/inject/{}/agentic.json"
+    toy = [{"project": "local:repo", "report": run.format(f"toy-s{s}")} for s in (1, 2)]
+    assert confirm.workspace_key(toy[0]) != confirm.workspace_key(toy[1])
+    aidev = [{"project": "aidev:o/x@abc", "report": run.format(f"o__x-s{s}")} for s in (1, 2)]
+    assert confirm.workspace_key(aidev[0]) == confirm.workspace_key(aidev[1])

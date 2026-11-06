@@ -184,14 +184,6 @@ def opened(record: dict) -> tuple[str, dict]:
     return confirm.opened(record["project"], Path(record["report"]))
 
 
-def workspace_key(record: dict) -> str:
-    """Edits that open the same workspace. The injected toy repository is "local:repo" on every
-    seed, so its run folder (one per seed) is part of the key."""
-    report = Path(record["report"])
-    key = f"{record['project']}|{report.parent.parent.name}"
-    return f"{key}|{report.parent.name}" if record["project"] == "local:repo" else key
-
-
 def run(only: list[str] | None = None) -> Path:
     edits, _ = collect()
     results = json.loads(RESULTS.read_text()) if RESULTS.exists() else {}
@@ -202,7 +194,7 @@ def run(only: list[str] | None = None) -> Path:
         if (only and edit not in only) or (not only and edit in results):
             continue
         record = {**edits[edit], "edit": edit}
-        groups.setdefault(workspace_key(record), []).append(record)
+        groups.setdefault(confirm.workspace_key(record), []).append(record)
     for key, records in groups.items():
         confirm._wait_for_load()
         target, sandbox = opened(records[0])
