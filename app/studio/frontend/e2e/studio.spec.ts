@@ -8,6 +8,30 @@ async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
 }
 
+test("home: clean a folder with readable errors, and the recent runs", async ({ page }) => {
+  await open(page, "");
+  await expect(page.getByRole("heading", { name: "Clean a folder" })).toBeVisible();
+  const folder = page.getByLabel("Folder to clean");
+  const start = page.getByRole("button", { name: "Start" });
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("Paste the path of a folder first.");
+  await folder.fill("relative/folder");
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("absolute path");
+  await folder.fill("/no/such/folder");
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("There is no folder at /no/such/folder.");
+  await page.getByLabel("Mode").getByText("Thorough").click();
+  await expect(page.getByRole("radio", { name: "Thorough" })).toBeChecked();
+  await expect(page.getByText("Also LLM rewrites")).toBeVisible();
+  await page.getByRole("button", { name: "Toy repo" }).click();
+  await expect(folder).toHaveValue(/toy_repo$/);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  const recent = page.getByLabel("Recent runs");
+  await recent.locator(`[data-run="${V2}"]`).getByRole("link", { name: "Open" }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
+});
+
 test("runs list offers the shipped recordings and opens a replay", async ({ page }) => {
   await open(page, "runs");
   const row = page.locator(`tr[data-run="${V2}"]`);
@@ -176,6 +200,7 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
 test("every screen renders in both themes at 1280x720", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // finished charts in the screenshots
   const routes = [
+    "home",
     "runs",
     "launch",
     `replay?root=replay&path=${V2}`,

@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
+import functools
 import importlib.util
+import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -14,6 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 from cleansweep.agents.budgets import parse_budget
+from cleansweep.analysis.graph import iter_py_files
 from cleansweep.core.models import METHODS
 
 from .files import ROOT
@@ -21,6 +26,7 @@ from .files import ROOT
 KINDS = ("clean", "sweep", "watch")
 MODES = ("safe", "thorough")
 JUDGE_MODES = ("gatekeeper", "advisory", "off")
+SANDBOXES = ("auto", "docker", "none")
 TARGETS = {
     "toy": ROOT / "tests" / "fixtures" / "toy_repo",
     "demo": ROOT / "demo" / "shop_app",
@@ -48,7 +54,28 @@ def targets() -> list[dict]:
         "demo": "Demo app",
         "demo-prepared": "Prepared demo app + feature (demo/prepare_demo.sh)",
     }
-    return [{"key": k, "label": labels[k]} for k, p in TARGETS.items() if p.is_dir()]
+    return [
+        {"key": k, "label": labels[k], "path": str(p)} for k, p in TARGETS.items() if p.is_dir()
+    ]
+
+
+@functools.cache
+def clean_flags() -> frozenset[str]:
+    """The options `cleansweep clean` accepts, read once from its --help."""
+    from cleansweep import cli
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        try:
+            cli.main(["clean", "--help"])
+        except SystemExit:
+            pass
+    return frozenset(re.findall(r"--[a-z][a-z-]+", out.getvalue()))
+
+
+def sandbox_available() -> bool:
+    """True once `cleansweep clean` takes --sandbox."""
+    return "--sandbox" in clean_flags()
 
 
 @dataclass
@@ -86,10 +113,25 @@ class Job:
 def _target(value: str) -> Path:
     if value in TARGETS:
         return TARGETS[value]
-    path = Path(value).expanduser()
-    if not path.is_absolute() or not path.is_dir():
-        raise JobError(f"not a folder (give an absolute path): {value}")
+    if not value.strip():
+        raise JobError("paste the path of the folder to clean")
+    path = Path(value.strip()).expanduser()
+    if not path.is_absolute():
+        raise JobError(f"give the folder's absolute path, starting with /: {value}")
+    if not path.exists():
+        raise JobError(f"there is no folder at {path}")
+    if not path.is_dir():
+        raise JobError(f"{path} is a file; give the project's folder")
     return path.resolve()
+
+
+def _cleanable(target: Path, runs: Path) -> None:
+    if not iter_py_files(target):
+        raise JobError(f"no Python files in {target}; give the project's root folder")
+    if runs.resolve() == target or target in runs.resolve().parents:
+        raise JobError(
+            f"Studio's runs folder is inside {target}; start Studio with --runs somewhere else"
+        )
 
 
 def command(spec: dict, run_id: str, runs: Path) -> tuple[list[str], Path, dict]:
@@ -117,7 +159,9 @@ def command(spec: dict, run_id: str, runs: Path) -> tuple[list[str], Path, dict]
         raise JobError(f"mode must be one of {MODES}")
     flags = ["--no-llm"] if spec.get("no_llm") else []
     if kind == "clean":
+        _cleanable(target, runs)
         argv = [*py, "cleansweep", "clean", str(target), "--out", str(folder), "--mode", mode]
+        argv += _sandbox(spec.get("sandbox") or "auto")
         if spec.get("budget"):
             parse_budget(spec["budget"])
             argv += ["--budget", spec["budget"]]
@@ -138,6 +182,19 @@ def command(spec: dict, run_id: str, runs: Path) -> tuple[list[str], Path, dict]
     argv += ["--polls", str(polls), "--interval", str(interval)]
     argv += ["--budget-tests", str(budget_tests)]
     return argv + flags, folder, env
+
+
+def _sandbox(sandbox: str) -> list[str]:
+    """--sandbox for the clean command, passed only once the command takes it."""
+    if sandbox not in SANDBOXES:
+        raise JobError(f"sandbox must be one of {SANDBOXES}")
+    if sandbox == "docker" and shutil.which("docker") is None:
+        raise JobError("Docker is not installed here; choose the sandbox auto or none")
+    if not sandbox_available():
+        if sandbox == "docker":
+            raise JobError("this CleanSweep version has no Docker sandbox yet; choose auto or none")
+        return []
+    return ["--sandbox", sandbox]
 
 
 class JobManager:

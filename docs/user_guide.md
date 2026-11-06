@@ -143,7 +143,16 @@ It reads three folders: its runs folder (`results/raw/studio/`, or `--runs`), `r
 sends goes through the same redactor the agents use. Everything except Launch works offline;
 `demo/replay/` ships four agent-team recordings beside v1's (the toy repo, the demo app with the
 feature patch, a Manager step-back scenario and the Skill_Seekers case study; see the README).
-The theme button switches between light and dark.
+The theme button switches between light and dark. [studio_design.md](studio_design.md) has the
+rules every screen follows (type, spacing, the colors and glyphs of each item state, motion).
+
+**Home** is where Studio opens. Paste a project's absolute path into "Clean a folder", choose
+safe or thorough mode and the sandbox (auto, docker or none; docker needs a CleanSweep that has
+the Docker sandbox), and Start: Studio runs `cleansweep clean` on a copy and opens the live run.
+A path that can't be cleaned gets a one-line reason (no such folder, a file, no Python files).
+"Try it on" fills in the toy repo or the demo app. Below are the most recent cleanups.
+
+![Home: clean a folder, and the recent runs](images/studio/home.png)
 
 **Runs** lists every recorded run (agent-team cleanups, v1 sweeps, watch folders) with its
 target, mode, model and result. Open one in Replay, follow a live one, or send it to Compare.

@@ -192,6 +192,8 @@ def create_app(
             "modes": list(jobs.MODES),
             "judge_modes": list(jobs.JUDGE_MODES),
             "watch": jobs.watch_available(),
+            "sandboxes": list(jobs.SANDBOXES),
+            "sandbox": jobs.sandbox_available(),
         }
 
     @app.get("/api/jobs")
