@@ -140,6 +140,38 @@ def test_keep_framework_callbacks_moves_callbacks_to_suggest(tmp_path):
         keep_framework_callbacks(items(), graph, "auto")
 
 
+def test_keep_dynamic_refs_moves_units_reached_by_name_to_suggest(tmp_path):
+    from cleansweep.analysis import build_graph
+    from cleansweep.core.models import CodeUnit
+    from cleansweep.reviewer.detectors import keep_dynamic_refs, make_item
+
+    (tmp_path / "web.py").write_text(
+        "@app.route('/')\ndef index():\n    pass\n\ndef helper():\n    pass\n"
+    )
+    graph = build_graph(str(tmp_path))
+
+    def items(category="dead_code"):
+        return [
+            make_item(
+                CodeUnit("web.py", "function", n), category, "delete_unit", "safe", "r", [], []
+            )
+            for n in ("index", "helper")
+        ]
+
+    moved = keep_dynamic_refs(items(), graph, "on")
+    assert [i.lane for i in moved] == ["suggest", "safe"]
+    assert moved[0].reason == (
+        "reached by name (registered by @app.route); nothing in the project calls it"
+    )
+    assert moved[0].evidence == ["reached by name: registered by @app.route"]
+    assert keep_dynamic_refs(items("duplicate"), graph, True)[0].lane == "suggest"
+    assert keep_dynamic_refs(items("wrapper"), graph, "on")[0].lane == "safe"
+    assert [i.lane for i in keep_dynamic_refs(items(), graph, "off")] == ["safe", "safe"]
+    assert [i.lane for i in keep_dynamic_refs(items(), graph, False)] == ["safe", "safe"]
+    with pytest.raises(ValueError, match="dynamic_refs"):
+        keep_dynamic_refs(items(), graph, "auto")
+
+
 def test_formatting_follows_the_project_line_length(tmp_path):
     from cleansweep.reviewer.detectors import detect_formatting
 

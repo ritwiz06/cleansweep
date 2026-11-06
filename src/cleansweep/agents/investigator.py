@@ -10,6 +10,7 @@ import concurrent.futures as cf
 from pathlib import Path
 
 from cleansweep.core.models import CleanupItem
+from cleansweep.reviewer.detectors import dynamic_refs_on
 
 from .protocol import load_prompt, react
 
@@ -51,6 +52,12 @@ def _framework(rt, item: CleanupItem) -> str | None:
     return rt.graph.framework_callback(item.unit.key) if item.unit.name else None
 
 
+def _by_name(rt, item: CleanupItem) -> list[str]:
+    """How something reaches the item's unit by name (analysis/dynamic_refs.py); empty when
+    reviewer.dynamic_refs is off."""
+    return rt.graph.dynamic_refs(item.unit.key) if dynamic_refs_on(rt.cfg) else []
+
+
 def _public_in_package(rt, item: CleanupItem) -> bool:
     """A public name in a package module (its folder has __init__.py), outside the tests."""
     path = Path(item.unit.path)
@@ -69,6 +76,8 @@ def uncertain(rt, item: CleanupItem) -> str | None:
         return "a dependency removal"
     if _framework(rt, item):
         return "a framework-convention method"
+    if _by_name(rt, item):
+        return "reached by name"
     if item.unit.name and rt.graph.dynamic_risk(item.unit.key):
         return "possible dynamic use"
     if item.category == "dead_code" and _public_in_package(rt, item):
@@ -89,6 +98,8 @@ def task_text(rt, item: CleanupItem, lessons: list[dict]) -> str:
     ]
     if item.keep_target:
         lines.append(f"the copy that would be kept: {item.keep_target}")
+    if refs := _by_name(rt, item):
+        lines.append("reached by name: " + "; ".join(refs[:6]))
     if lessons:
         lines.append("Lessons that fit this candidate (cite them):")
         lines += [f"- {les['lesson_id']}: {les['reason']}" for les in lessons]
@@ -225,14 +236,18 @@ def investigate_rules(rt, item: CleanupItem, n: int) -> dict:
         return result
 
     framework = _framework(rt, item)
+    refs = _by_name(rt, item)
     lessons = rt.lessons.matching(item, framework) if rt.ablation != "no_lessons" else []
-    if item.category in ("dead_code", "duplicate", "wrapper") and item.unit.name:
+    if (item.category in ("dead_code", "duplicate", "wrapper") and item.unit.name) or refs:
         use("check_dynamic_use", {"name": _short(item)})
     if rt.ablation != "no_lessons":
         use("query_lessons", {"pattern": _short(item)})
     if lessons:
         decision = "suggest"
         reason = f"A lesson from an earlier rollback fits: {lessons[0]['reason']}"
+    elif refs:
+        more = f" (and {len(refs) - 1} more)" if len(refs) > 1 else ""
+        decision, reason = "suggest", f"Something reaches it by name: {refs[0]}{more}."
     elif framework or rt.graph.dynamic_risk(item.unit.key):
         decision = "suggest"
         reason = (

@@ -37,6 +37,7 @@ DEFAULTS = {
     "overengineering_budget_chars": 5000,
     "keep_public_api": "auto",
     "framework_callbacks": "on",
+    "dynamic_refs": "on",
     "exclude": [],
 }
 SEVERITY = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
@@ -321,10 +322,7 @@ def keep_framework_callbacks(
     no caller in the project, neither the graph nor the Guard can see that they are used."""
     if setting is None:
         setting = _settings().get("framework_callbacks", "on")
-    setting = {True: "on", False: "off"}.get(setting, setting)  # YAML reads bare on/off as bools
-    if setting not in ("on", "off"):
-        raise ValueError(f"reviewer.framework_callbacks must be on or off, got {setting!r}")
-    if setting == "off" or graph is None:
+    if not is_on("framework_callbacks", setting) or graph is None:
         return items
     for item in items:
         framework = graph.framework_callback(item.unit.key)
@@ -334,6 +332,43 @@ def keep_framework_callbacks(
         if item.lane == "safe":
             item.lane, item.reason = "suggest", reason
         item.evidence.append(f"framework callback: {reason}")
+    return items
+
+
+DYNAMIC_REFS_REASON = "reached by name ({evidence}); nothing in the project calls it"
+
+
+def is_on(name: str, setting) -> bool:
+    """A reviewer on/off setting as a bool (YAML reads bare on/off as booleans)."""
+    setting = {True: "on", False: "off"}.get(setting, setting)
+    if setting not in ("on", "off"):
+        raise ValueError(f"reviewer.{name} must be on or off, got {setting!r}")
+    return setting == "on"
+
+
+def dynamic_refs_on(cfg: dict | None = None) -> bool:
+    """reviewer.dynamic_refs of a run's config (or of the config files)."""
+    return is_on("dynamic_refs", _settings(cfg).get("dynamic_refs", "on"))
+
+
+def keep_dynamic_refs(items: list[CleanupItem], graph, setting=None) -> list[CleanupItem]:
+    """reviewer.dynamic_refs: "on" (default) moves dead-code and duplicate items on units that
+    something reaches by name (analysis/dynamic_refs.py: entry points, config files, registries,
+    __all__, getattr strings, __subclasses__, framework base classes) to the suggest lane, with
+    the evidence; "off" never does. The agent team's Auditor applies it; v1's plan does not."""
+    if setting is None:
+        setting = _settings().get("dynamic_refs", "on")
+    if not is_on("dynamic_refs", setting) or graph is None:
+        return items
+    for item in items:
+        if item.category not in ("dead_code", "duplicate"):
+            continue
+        refs = graph.dynamic_refs(item.unit.key)
+        if not refs:
+            continue
+        if item.lane == "safe":
+            item.lane, item.reason = "suggest", DYNAMIC_REFS_REASON.format(evidence=refs[0])
+        item.evidence += [f"reached by name: {r}" for r in refs]
     return items
 
 
