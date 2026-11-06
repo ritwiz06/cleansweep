@@ -45,9 +45,6 @@ cleansweep/
 │   ├── experiments/v1/                   v1 runners and table builders (exp_*.py), archive_paths.py,
 │   │                                     shotgun_ui_harness.py
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
-│   ├── experiments/v3/                   v3 runs: exp_external.py (an external coding agent),
-│   │                                     methods_v3.py, prompts/ (its fixed instruction),
-│   │                                     aider/ (its image and a logging wrapper)
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
 │   │                                     make_recording.py (Studio recordings), coverage.sh,
