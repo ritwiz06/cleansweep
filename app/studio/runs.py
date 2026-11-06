@@ -233,6 +233,14 @@ def final_diff(folder: Path) -> str:
     return (report.get("stats") or {}).get("final_diff") or ""
 
 
+def project_files(folder: Path) -> dict:
+    """The project's files before the cleanup (path, lines), when the run saved them."""
+    data = files.read_json(folder / "project_files.json")
+    if isinstance(data, dict) and isinstance(data.get("files"), list):
+        return {"files": data["files"], "complete": True}
+    return {"files": [], "complete": False}
+
+
 def artifact(folder: Path, art_id: str) -> dict:
     """A cached artifact by id (art:<kind>:<sha8>), as JSON or text."""
     m = ARTIFACT.match(art_id)

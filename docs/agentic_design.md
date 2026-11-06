@@ -391,6 +391,8 @@ still work on an agentic run.
 python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minutes=60,tests=80]
                                   [--approve-plan] [--dry-run] [--out <dir>] [--model M]
                                   [--no-llm] [--config FILE] [--quiet]
+python -m cleansweep clean --resume <out dir or run id> [--quiet]
+python -m cleansweep clean <path> [--sandbox auto|docker|none] [--untrusted] ...
 ```
 
 - `--mode safe` (default): deterministic edits only, every package fully verified, anything
@@ -419,8 +421,66 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
   `exclude`, `test_args`, `install` and `model` for the project; the options above override it.
 - `--no-llm` runs offline: the Investigator gathers the same evidence with its tools and decides
   by rules (keep the detector lane unless a lesson fits or the code may be used dynamically).
-- Exit code 0 when the result is "everything runs" or nothing was applied, 1 otherwise or on an
-  error (one readable line), 2 for a bad option.
+- The test command (`agents/runners.py`, recorded in the brief with where it came from): pytest
+  when the project has pytest settings (pytest.ini, `[tool.pytest.ini_options]`,
+  `[tool:pytest]`, tox.ini `[pytest]`); else the pytest or unittest command that tox
+  (`[testenv] commands`, `[tool.tox]`), nox (`session.run`) or the Makefile's `test` target runs,
+  with its test paths (tox, nox and make themselves are not run); else pytest when there is a
+  `conftest.py`; `python -m unittest discover` from the test files' folder when every test file
+  is `unittest.TestCase` only (a runner writes a JUnit report, so each test has its own status);
+  `make test` as one pass/fail result when the target runs something else; pytest for the other
+  test files; none without test files. `--test-args` asks for pytest.
+- The environment (`agents/environment.py install_plan`): `pip install -e .[extras]` for a
+  package (`[project]`, `[tool.poetry]`, a build system, setup.py or setup.cfg; test/dev extras
+  from pyproject or setup), PEP 735 dependency groups and poetry's test/dev groups (names only),
+  and `requirements.txt` plus the dev/test requirement files (every `requirements*.txt` for a
+  project with neither). With `poetry.lock` and poetry installed, `poetry install --with <test
+  groups>`; with `uv.lock` and uv, `uv sync --frozen`; both install into the run's venv, and pip
+  is their fallback. A `src/` folder with a package or module goes first on `PYTHONPATH`.
+- No usable tests (`core.agents.no_tests`, `probes` for `clean`, `plan` for experiment runs):
+  when the baseline gives no test result (no test files, the test command fails, nothing
+  collected), `plan` delivers the plan as suggestions, as v2.0 did; `probes` goes on with static
+  evidence and probes only. Before PLAN, file and dependency removals and removals of public API
+  stay suggestions; each package then needs the probes to cover every edit (a removal: its
+  module imported before the change and the module check passed; any other edit: the probes ran
+  at least `coverage_target` of its changed lines; an AST-equal edit is covered by that check),
+  else it is rolled back with no lesson. FINAL VERIFY has nothing to run.
+- Notebooks (`core.agents.notebooks`, `hold` for `clean`, `ignore` for experiment runs): no test
+  runs a notebook, so a function, class, file or dependency that a notebook's code cells name
+  stays a suggestion (`auditor.hold_notebook_uses`, before PLAN).
+- `--sandbox` (`sandbox/container.py`; Studio passes the same `sandbox` value): `docker` runs
+  every command that runs the project's code (the install, the tests, compile and import
+  checks, probes, the UI harness) in a `python:3.11` container with the workspace mounted at
+  `/repo`, installs the project there with pip from the same install plan (no poetry or uv in
+  the container) plus pytest and coverage, then `docker network disconnect`s it before any of
+  the project's code runs, as the AIDev workspace does; the detectors, ruff and git stay on the
+  host and only read files, and for a sandboxed git repository no git command that reads its
+  working tree runs in the original (its `.git/config` could name a filter or fsmonitor
+  command). `none` runs on the host as before. `auto` (the CLI's default, also from
+  `CLEANSWEEP_SANDBOX`) is none for a folder in a git repository with at least one commit whose
+  author email is the user's `git config --global user.email` (the repository's own config
+  does not count: it could name its authors), docker otherwise; `--untrusted` forces docker.
+  The choice and its reason are printed and written to the report. Docker missing or not
+  running ends the run with "stopped: Docker is not ..., nothing applied". The container is
+  removed when the run ends (the workspace folder stays), and a killed run's container at the
+  next start (`sandbox.cleanup.sweep_containers`); a resumed run starts a new one.
+  `docker/Dockerfile` builds an image with CleanSweep installed (`CLEANSWEEP_SANDBOX=none`
+  inside: that container is the sandbox); see the README for the one-line `docker run`.
+- `--resume` (`agents/checkpoint.py`): at each safe point (a phase entered, a work package
+  finished) the run's state goes to `checkpoint.json` in the output folder, and `run.json` holds
+  the options it started with. A resumed run resets the workspace to the checkpoint's commit
+  (a package cut off half way starts again), restores the state, appends to `events.jsonl` and
+  goes on from that phase; the report says where it resumed.
+- Every run that gets as far as its output folder ends with `CLEANUP_REPORT.md`, `report.json`
+  and one verdict from a fixed set (`agents/reporter.py VERDICTS`): "everything runs" (tests
+  ran, the final suite is at least as good as the baseline), "nothing applied" (a dry run, or
+  nothing survived its checks), "not verified by tests" (no usable tests; the edits applied are
+  probe-covered), "not verified" (edits applied, the final check could not confirm them),
+  "stopped: <reason>, nothing applied" (an agent or the setup failed before anything was
+  applied, or Ctrl-C; the error's trace goes to `error.log`, never to the terminal).
+- Exit code 0 when the result is "everything runs" or "nothing applied", 130 after Ctrl-C (with
+  the `--resume` command to continue), 1 otherwise or on an error (one readable line), 2 for a
+  bad option.
 
 `run_sweep(target, cfg, method="agentic", seed, on_event)` runs the same team for experiments and
 returns a normal `SweepReport`, so v1's collection and statistics scripts read it unchanged.

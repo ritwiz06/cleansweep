@@ -13,6 +13,7 @@ import jsonschema
 from cleansweep.core.io import to_dict
 from cleansweep.core.models import EditResult
 
+from . import auditor, checkpoint, validator
 from .llm import acting
 from .protocol import REASONING_OFF, load_prompt
 
@@ -261,6 +262,8 @@ def _needs_replan(rt, pkg) -> bool:
 def decide(rt) -> str | None:
     """The agent that works next, or None when the run is over."""
     while True:
+        if rt.resumable:
+            checkpoint.save(rt)
         rt.turns += 1
         phase = rt.phases.phase
         if phase not in ("FINAL_VERIFY", "REPORT", "DONE") and rt.stopped is None:
@@ -295,7 +298,15 @@ def decide(rt) -> str | None:
                     "Snapshot every screen and widget for the UI check",
                     kind="ui_baseline",
                 )
-            if not rt.baseline["ok"]:
+            if not rt.baseline["ok"] and rt.acfg.get("no_tests", "plan") == "probes":
+                rt.untested = True
+                _decide(
+                    rt,
+                    "baseline_failed",
+                    f"no usable tests ({rt.baseline.get('reason')}); only edits the probes cover "
+                    "will be applied, not verified by tests",
+                )
+            elif not rt.baseline["ok"]:
                 rt.plan_only = True
                 _decide(
                     rt,
@@ -324,6 +335,10 @@ def decide(rt) -> str | None:
             _advance(rt, "PLAN", f"{len(rt.safe_items())} items are safe to apply")
         elif phase == "PLAN":
             if not rt.planned:
+                if rt.acfg.get("notebooks") == "hold":
+                    auditor.hold_notebook_uses(rt)
+                if rt.untested:
+                    validator.hold_unprobed(rt)
                 return _task(
                     rt, "planner", "Turn the safe items into work packages and write blueprint.md"
                 )

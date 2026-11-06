@@ -49,6 +49,7 @@ from cleansweep.workflow.sweep import make_llm  # noqa: E402
 FIXTURES = ROOT / "tests" / "fixtures" / "scenarios"
 RAW = ROOT / "results" / "raw" / "manager_scenarios"
 OUT = ROOT / "results" / "summary" / "v2" / "manager_scenarios.csv"
+V2_CLEAN = {"no_tests": "plan", "notebooks": "ignore"}  # `clean` as v2.0 ran it
 SCENARIOS = {
     "rollbacks": {
         "agents": {"format_policy": "always"},
@@ -110,7 +111,7 @@ def run_one(scenario: str, manager: str, repeat: int) -> dict:
     out = RAW / scenario / f"{manager}-r{repeat}"
     if out.exists():
         shutil.rmtree(out)
-    agents = {"install": "off", "baseline_runs": 3, "manager": manager}
+    agents = {"install": "off", "baseline_runs": 3, "manager": manager, **V2_CLEAN}
     agents |= SCENARIOS[scenario]["agents"]
     cfg = load_config(
         {

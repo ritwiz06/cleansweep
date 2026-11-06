@@ -291,6 +291,7 @@ def probe_with_coverage(
         values = list(result.get("cases", {}).values()) if result.get("ok") else []
         cases[key] = cases.get(key, 0) + len(values)
         observed[key] = observed.get(key, 0) + sum(v != "None" for v in values)
+    imported = (first[0].get("modules") or {}) if first else {}
     loaded = (first[0].get("scripts") or {}) if first else {}
     stubbed = sorted({m for r in loaded.values() for m in r.get("stubbed", [])})
     if scripts:
@@ -308,6 +309,7 @@ def probe_with_coverage(
         "target_lines": sum(len(s) for s in wanted.values()),
         "cases_by_target": cases,
         "observed_by_target": observed,
+        "modules_checked": sorted(m for m, r in imported.items() if r.get("ok")),
         "note": f"{probed}/{len(targets)} targets probed, {len(checks)} module checks ({mode} mode)"
         + (f"; {note}" if note else ""),
     }

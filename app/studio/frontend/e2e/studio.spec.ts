@@ -2,11 +2,36 @@ import { expect, test, type Page } from "@playwright/test";
 
 const V2 = "20261101_toy_clean_offline";
 const V1 = "20261030_demo_feature_advisory_v1";
+const DEMO = "20261102_demo_feature_agentic";
 const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 
 async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
 }
+
+test("home: clean a folder with readable errors, and the recent runs", async ({ page }) => {
+  await open(page, "");
+  await expect(page.getByRole("heading", { name: "Clean a folder" })).toBeVisible();
+  const folder = page.getByLabel("Folder to clean");
+  const start = page.getByRole("button", { name: "Start" });
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("Paste the path of a folder first.");
+  await folder.fill("relative/folder");
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("absolute path");
+  await folder.fill("/no/such/folder");
+  await start.click();
+  await expect(page.getByRole("alert")).toContainText("There is no folder at /no/such/folder.");
+  await page.getByLabel("Mode").getByText("Thorough").click();
+  await expect(page.getByRole("radio", { name: "Thorough" })).toBeChecked();
+  await expect(page.getByText("Also LLM rewrites")).toBeVisible();
+  await page.getByRole("button", { name: "Toy repo" }).click();
+  await expect(folder).toHaveValue(/toy_repo$/);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  const recent = page.getByLabel("Recent runs");
+  await recent.locator(`[data-run="${V2}"]`).getByRole("link", { name: "Open" }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
+});
 
 test("runs list offers the shipped recordings and opens a replay", async ({ page }) => {
   await open(page, "runs");
@@ -21,6 +46,7 @@ test("replay of a v2 run: transport, timeline, agents, boards, packages and repo
   await open(page, `replay?root=replay&path=${V2}`);
   const transport = page.getByLabel("Replay controls");
   await expect(transport).toContainText("event 0 of 234");
+  await page.getByRole("tab", { name: "Agents" }).click();
   await page.getByRole("button", { name: "Next decision" }).click();
   await expect(page.getByLabel("Manager decisions")).toContainText("P1 kept");
   await page.getByRole("button", { name: "Step" }).click();
@@ -53,6 +79,126 @@ test("replay of a v2 run: transport, timeline, agents, boards, packages and repo
 
   await page.getByRole("tab", { name: "Report" }).click();
   await expect(page.locator(".markdown").first()).toContainText("everything runs");
+});
+
+test("project view: the tree follows the events, and a node shows its evidence, diff and checks", async ({ page }) => {
+  await open(page, `replay?root=replay&path=${DEMO}`);
+  const tree = page.getByRole("tree", { name: "Project tree" });
+  await expect(page.getByText("This run saved no file list")).toBeVisible();
+  // mid-investigation: an Investigator is on _print_low_stock
+  await page.getByLabel("Scrubber").fill("69");
+  const unit = tree.locator('[data-key="unit:bookshelf/inventory.py::_print_low_stock"]');
+  await expect(unit).toHaveClass(/st-investigating/);
+  await expect(unit.locator('svg[data-role="investigator"]')).toHaveCount(1);
+  await expect(unit.getByRole("treeitem")).toHaveAttribute("aria-label", /investigating, last Investigator #3/);
+  await page.getByRole("button", { name: "Jump to the end" }).click();
+  await expect(tree.locator('[data-key="file:bookshelf/inventory_old.py"]')).toHaveClass(/st-kept/);
+  await expect(unit).toHaveClass(/st-kept/);
+  await tree.getByRole("treeitem", { name: /^_round_money\(\)/ }).click();
+  const details = page.getByLabel("Details");
+  await expect(details).toContainText("rolled back");
+  await expect(details).toContainText("Evidence chain");
+  await expect(details.locator(".diff")).toContainText("def _round_money");
+  await expect(details).toContainText("differ");
+  await page.getByRole("tab", { name: /Items/ }).click();
+  await expect(page.getByLabel("Item board")).toContainText("Suggest");
+});
+
+test("before / after: both trees, the numbers, and each change with the decisions behind it", async ({ page }) => {
+  await open(page, "runs");
+  await page.locator(`tr[data-run="${DEMO}"]`).getByRole("link", { name: "Before / after" }).click();
+  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+  const before = page.getByRole("group", { name: "Before tree" });
+  const after = page.getByRole("group", { name: "After tree" });
+  await expect(before.locator("del", { hasText: "inventory_old.py" })).toBeVisible();
+  await expect(before).toContainText("removed");
+  await expect(after).not.toContainText("inventory_old.py");
+  await expect(after.getByRole("button", { name: /^reports\.py/ })).toContainText("+2");
+  const numbers = page.getByLabel("Before and after");
+  await expect(numbers).toContainText(/229\s*→\s*182/);
+  await expect(numbers).toContainText(/12\s*→\s*12/);
+  await expect(numbers).toContainText("1 removed: isbn_checksum_ok");
+  await expect(page.getByLabel("Slop by category")).toContainText("leftover file");
+  await expect(page.getByText("Behavior that nothing tests isn't covered")).toBeVisible();
+  await before.getByRole("button", { name: /^reports\.py/ }).click();
+  const change = page.getByRole("region", { name: "change 1 of 1" });
+  await expect(change).toContainText("duplicate");
+  await expect(change).toContainText("Investigator #6");
+  await expect(change).toContainText("P5 kept");
+  await expect(change).toContainText("public names unchanged");
+  await expect(change.getByRole("table")).toContainText("normalize_isbn");
+  await page.getByRole("link", { name: "Replay", exact: true }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+});
+
+test("presentation mode: large captions, a fixed pace, and the space bar jumps to the next decision", async ({ page }) => {
+  await open(page, `replay?root=replay&path=${DEMO}`);
+  await page.getByRole("link", { name: "Present" }).click();
+  await expect(page.locator("nav.sidebar")).toHaveCount(0);
+  const caption = page.getByLabel("Caption");
+  const controls = page.getByLabel("Presentation controls");
+  await expect(caption).toContainText("Manager starts cleaning shop_app in safe mode");
+  expect(await caption.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(32);
+  await page.keyboard.press("Space");
+  await expect(caption).toContainText("Manager decides to continue");
+  await expect(controls).toContainText("step 9 of 158");
+  await page.keyboard.press("ArrowRight");
+  await expect(caption).toContainText("Manager moves on to the baseline");
+  await expect(page.getByLabel("Active agent")).toContainText("runs the phases");
+  // one step every 1.5 s, whatever the step took in the run
+  await page.keyboard.press("p");
+  await expect(controls).toContainText("step 11 of 158", { timeout: 2500 });
+  await page.keyboard.press("p");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(controls).toContainText("step 22 of 158");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+  await expect(caption).toContainText("Investigator #1 checks who uses bookshelf/inventory_old.py");
+  await expect(page.getByRole("tree", { name: "Project tree" }).locator(".tree-row.focus").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+});
+
+test("presentation mode on before / after: the summary, then one change per slide", async ({ page }) => {
+  await open(page, `after?root=replay&path=${DEMO}`);
+  await page.getByRole("link", { name: "Present" }).click();
+  const controls = page.getByLabel("Presentation controls");
+  await expect(controls).toContainText("5 changes");
+  await expect(page.getByLabel("Caption")).toContainText("everything runs");
+  await expect(page.getByText("Behavior that nothing tests isn't covered").first()).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(controls).toContainText("change 1 of 5");
+  await expect(page.getByLabel("Decisions")).toContainText("Manager");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(page.getByLabel("Caption")).toContainText("_clean_isbn()");
+  await expect(page.getByLabel("Checks")).toContainText("public names unchanged");
+  await page.keyboard.press("Shift+Space");
+  await expect(controls).toContainText("change 2 of 5");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+});
+
+test("export: one self-contained HTML report that opens from file:// with no server", async ({ page, context }, info) => {
+  await open(page, `after?root=replay&path=${DEMO}`);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export HTML report" }).click();
+  const file = info.outputPath(`cleansweep-${DEMO}.html`);
+  await (await download).saveAs(file);
+  expect((await download).suggestedFilename()).toBe(`cleansweep-${DEMO}.html`);
+  const report = await context.newPage();
+  const fetched: string[] = [];
+  report.on("request", (r) => fetched.push(r.url()));
+  await report.goto(`file://${file}`);
+  await expect(report.getByRole("heading", { name: "CleanSweep cleanup: shop_app" })).toBeVisible();
+  await expect(report.getByLabel("Before and after")).toContainText(/229\s*→\s*182/);
+  await expect(report.getByRole("group", { name: "Before tree" }).locator("del", { hasText: "inventory_old.py" })).toBeVisible();
+  await expect(report.getByRole("region", { name: "change 1 of 1" }).first()).toContainText("Investigator #3");
+  await expect(report.locator("table.sbs").first()).toBeVisible();
+  await expect(report.getByText("Left for a person (10)")).toBeVisible();
+  // the page is styled (the tokens are inline) and fetched nothing but itself
+  expect(await report.locator(".state-chip").first().evaluate((el) => getComputedStyle(el).borderRadius)).not.toBe("0px");
+  expect(fetched.filter((u) => !u.startsWith("file://"))).toEqual([]);
 });
 
 test("an artifact link opens the cached artifact", async ({ page }) => {
@@ -173,9 +319,52 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   await expect(page).toHaveURL(/tab=audit/);
 });
 
+// One screen as the user guide's review needs it: loaded, no error, nothing wider than 1280 px.
+async function checkScreen(page: Page, label: string, shot: string) {
+  await expect(page.locator("main h2").first(), label).toBeVisible();
+  await expect(page.locator(".state.loading"), label).toHaveCount(0);
+  await expect(page.locator(".state.error"), label).toHaveCount(0);
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(width, `${label} fits 1280 px`).toBeLessThanOrEqual(1280);
+  await page.screenshot({ path: `test-results/recordings/${shot}.png` });
+}
+
+test("every shipped recording through every screen, in both themes at 1280x720", async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const runs: { root: string; path: string; name: string; kind: string }[] = await (await page.request.get("/api/runs")).json();
+  const shipped = runs.filter((r) => r.root === "replay");
+  expect(shipped.filter((r) => r.kind === "v2").length).toBeGreaterThanOrEqual(4);
+  for (const theme of ["light", "dark"]) {
+    await open(page, "runs");
+    if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== theme) await page.getByRole("button", { name: "Switch theme" }).click();
+    for (const run of shipped) {
+      const q = `root=replay&path=${run.path}`;
+      await open(page, `replay?${q}`);
+      await page.getByRole("button", { name: "Jump to the end" }).click();
+      await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
+      if (run.kind === "v1") {
+        await checkScreen(page, `${run.name} replay`, `${theme}-${run.name}-replay`);
+        await open(page, `reports?root=replay&path=${run.path}/report.json`);
+        await checkScreen(page, `${run.name} saved report`, `${theme}-${run.name}-report`);
+        continue;
+      }
+      for (const tab of ["Project", "Agents", "Message board", "Items", "Work packages", "Report"]) {
+        await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
+        await checkScreen(page, `${run.name} ${tab}`, `${theme}-${run.name}-${tab.replace(" ", "_")}`);
+      }
+      for (const [route, view] of [[`after?${q}`, "after"], [`present?${q}`, "present"], [`after?${q}&present=1`, "present_after"]]) {
+        await open(page, route);
+        await checkScreen(page, `${run.name} ${view}`, `${theme}-${run.name}-${view}`);
+      }
+    }
+  }
+});
+
 test("every screen renders in both themes at 1280x720", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // finished charts in the screenshots
   const routes = [
+    "home",
     "runs",
     "launch",
     `replay?root=replay&path=${V2}`,
@@ -195,6 +384,10 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "guard",
     "replay?root=replay&path=20261101_manager_conflict_step_back",
     "replay?root=replay&path=20261102_demo_feature_agentic",
+    `after?root=replay&path=${DEMO}`,
+    `after?root=replay&path=${V2}`,
+    `present?root=replay&path=${DEMO}`,
+    `after?root=replay&path=${DEMO}&present=1`,
   ];
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");

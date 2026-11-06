@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { api, runHash, useApi, type RunRow } from "../api";
+import { afterHash, api, runHash, useApi, type RunRow } from "../api";
 import { Async, Badge, Status } from "../components/common";
 
-const KIND_LABEL: Record<string, string> = { v2: "agent team (clean)", v1: "v1 sweep", watch: "watch" };
+const KIND_LABEL: Record<string, string> = { v2: "agent team", v1: "v1 sweep", watch: "watch" };
 
 export function useRuns() {
   return useApi<RunRow[]>("runs", () => api("/api/runs"));
@@ -88,6 +88,7 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
                         ) : (
                           <>
                             <a href={runHash(r)}>Replay</a>
+                            {r.kind === "v2" && r.finished && <a href={afterHash(r)}>Before / after</a>}
                             {r.live && <a href={runHash(r, "live")}>Live</a>}
                             <a href={`#/compare?${new URLSearchParams({ a: `${r.root}:${r.path}` })}`}>Compare</a>
                           </>

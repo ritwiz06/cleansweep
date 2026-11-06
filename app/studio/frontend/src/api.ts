@@ -132,6 +132,10 @@ export function imageUrl(root: string, path: string): string {
   return `/api/image?${new URLSearchParams({ root, path })}`;
 }
 
+export function afterHash(row: { root: string; path: string }): string {
+  return `#/after?${new URLSearchParams({ root: row.root, path: row.path })}`;
+}
+
 export function runHash(row: { root: string; path: string; kind?: string }, mode: "live" | "replay" = "replay"): string {
   return `#/${mode === "live" ? "run" : "replay"}?${new URLSearchParams({ root: row.root, path: row.path })}`;
 }

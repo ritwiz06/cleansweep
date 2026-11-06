@@ -12,6 +12,7 @@ from pathlib import Path
 from cleansweep.analysis.frameworks import FRAMEWORKS
 from cleansweep.analysis.graph import is_test_file, iter_py_files
 
+from . import environment, runners
 from .protocol import load_prompt, react
 from .secrets import is_secret_file, public_findings
 from .tools import Tool, ToolSet, read_code
@@ -97,18 +98,6 @@ def _pyproject(root: Path) -> dict:
         return {}
 
 
-def install_command(root: Path, project: dict) -> str:
-    """How to install the project for its tests, from its packaging files."""
-    extras = project.get("optional-dependencies", {})
-    test_extra = next((e for e in ("test", "tests", "dev", "testing") if e in extras), None)
-    if project or (root / "setup.py").exists() or (root / "setup.cfg").exists():
-        return f"pip install -e .[{test_extra}]" if test_extra else "pip install -e ."
-    reqs = sorted(p.name for p in root.glob("requirements*.txt"))
-    if reqs:
-        return " && ".join(f"pip install -r {r}" for r in reqs)
-    return "none needed (no packaging or requirements files)"
-
-
 def enforced_formatter(root: Path) -> str | None:
     """The formatter the project's CI or pre-commit hooks run, e.g. "ruff format
     (.pre-commit-config.yaml)", or None when nothing enforces one."""
@@ -160,6 +149,8 @@ def project_facts(repo_dir: str, graph) -> dict:
     project = pyproject.get("project", {})
     scripts = sorted(project.get("scripts", {}))
     tests = [p for p in py if is_test_file(p)]
+    plan = environment.install_plan(root)
+    runner = runners.detect(root)
     return {
         "name": project.get("name") or root.name,
         "languages": dict(languages.most_common(6)),
@@ -168,8 +159,11 @@ def project_facts(repo_dir: str, graph) -> dict:
         "frameworks": frameworks,
         "ui_framework": next((f for f in UI_FRAMEWORKS if imports.get(f)), None),
         "entry_points": sorted(graph.entries)[:20] + [f"script: {s}" for s in scripts],
-        "install_command": install_command(root, project),
-        "test_command": "pytest",
+        "install_command": environment.describe(plan),
+        "install_plan": plan,
+        "test_command": runner["command"],
+        "test_source": runner["source"],
+        "tests": runner,
         "ci_files": [c for c in CI_FILES if (root / c).exists()],
         "formatter": enforced_formatter(root),
         "formatter_paths": formatter_paths(root),
@@ -225,6 +219,7 @@ def run(rt) -> None:
             "summary": summary,
             "frameworks": facts["frameworks"],
             "test_command": facts["test_command"],
+            "test_source": facts["test_source"],
             "install_command": facts["install_command"],
             "entry_points": facts["entry_points"],
             "languages": facts["languages"],
@@ -249,10 +244,15 @@ def run(rt) -> None:
 
 def _task(facts: dict, summary: str) -> str:
     return (
-        f"Project facts found by the tools:\n{facts}\n\nREADME start: {summary or '(none)'}\n\n"
+        f"Project facts found by the tools:\n{_shown(facts)}\n\n"
+        f"README start: {summary or '(none)'}\n\n"
         "Read what you need, then give a two- or three-sentence summary of what the project does "
         "and up to three notes that matter for cleaning it up safely."
     )
+
+
+def _shown(facts: dict) -> dict:
+    return {k: v for k, v in facts.items() if k not in ("install_plan", "tests")}
 
 
 def _tools(rt) -> ToolSet:
