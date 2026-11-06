@@ -1,9 +1,14 @@
 """Out-of-sample injection (v3): v2's slop-injection benchmark on the INJECT repositories of
 data/splits/v3_repos.json, at a fresh seed (4), for the v3 methods (methods_v3.py).
 
+    python scripts/experiments/v3/exp_inject_v3.py prepare [--repos owner/name ...] [--seeds 4]
     python scripts/experiments/v3/exp_inject_v3.py run [--repos owner/name ...] [--seeds 4]
         [--methods agentic agentic-no_resolver ...]
     python scripts/experiments/v3/exp_inject_v3.py table
+
+prepare: the plants, their checks and the hidden test's baseline only (no method runs), so the
+runs can start from keys made ahead of time; a repository with nowhere to plant is listed, and
+the split's reserve replaces it.
 
 Reuses scripts/experiments/v2/exp_inject.py (plants, plant checks, the hidden test, scoring) with
 its own raw folder (results/raw/inject_v3/) and tables (results/summary/v3/injection.csv and
@@ -122,7 +127,7 @@ def run_one(v2, repo: str, seed: int, label: str, cfg: dict) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("what", choices=["run", "table"])
+    parser.add_argument("what", choices=["prepare", "run", "table"])
     parser.add_argument("--repos", nargs="+")
     parser.add_argument("--seeds", nargs="+", type=int, default=SEEDS)
     parser.add_argument("--methods", nargs="+", default=METHODS, choices=LABELS)
@@ -147,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
                 except ValueError as exc:  # nowhere to plant, or no valid draw: left out
                     print(f"skip {repo}: {exc}", flush=True)
                     continue
-            for label in args.methods:
+            for label in [] if args.what == "prepare" else args.methods:
                 if (folder / f"{label}.json").exists():
                     continue
                 try:
@@ -157,7 +162,8 @@ def main(argv: list[str] | None = None) -> int:
                     errors.mkdir(exist_ok=True)
                     (errors / f"{label}.txt").write_text(traceback.format_exc())
                     print(f"error {repo} {label}: {type(exc).__name__}: {exc}", flush=True)
-    print(*v2.table(), sep="\n")
+    if args.what == "run":
+        print(*v2.table(), sep="\n")
     return 0
 
 
