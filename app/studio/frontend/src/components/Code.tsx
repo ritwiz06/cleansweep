@@ -2,6 +2,7 @@ import { Highlight, themes } from "prism-react-renderer";
 import { createContext, useContext, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { parseDiff, type DiffFile } from "../state/diff";
 import { Empty } from "./common";
 
 export const DarkContext = createContext(false);
@@ -37,40 +38,6 @@ export function CodeBlock({ code, language = "plain", maxHeight = 480 }: { code:
       {lines.length > MAX_LINES && <div className="muted small">{lines.length - MAX_LINES} more lines not shown</div>}
     </div>
   );
-}
-
-interface DiffFile {
-  path: string;
-  header: string[];
-  lines: string[];
-  added: number;
-  removed: number;
-}
-
-export function parseDiff(text: string): DiffFile[] {
-  const files: DiffFile[] = [];
-  let current: DiffFile | null = null;
-  for (const line of text.split("\n")) {
-    if (line.startsWith("diff --git ")) {
-      const path = line.split(" b/").pop() || line;
-      current = { path, header: [line], lines: [], added: 0, removed: 0 };
-      files.push(current);
-      continue;
-    }
-    if (!current) {
-      if (!line.trim()) continue;
-      current = { path: "(diff)", header: [], lines: [], added: 0, removed: 0 };
-      files.push(current);
-    }
-    if (!current.lines.length && /^(index |--- |\+\+\+ |new file|deleted file|similarity|rename|old mode|new mode)/.test(line)) {
-      current.header.push(line);
-      continue;
-    }
-    current.lines.push(line);
-    if (line.startsWith("+")) current.added += 1;
-    else if (line.startsWith("-")) current.removed += 1;
-  }
-  return files;
 }
 
 // The part of a diff that changes one file (the whole diff if no file matches).
