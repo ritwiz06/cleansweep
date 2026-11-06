@@ -664,6 +664,7 @@ Wrong edits of the kept code edits, all tiers, with the confirmed count in brack
 - **What the checks missed:** none of the team's 18 failed a test, probe or hidden check in its run. This is the gap between "everything runs" and "nothing changed".
 - **What the audit does not check:**
   - Only edits the auditor flagged are checked. The 1,223 of 1,784 audited edits it voted "no" are not, so the wrong counts are lower bounds.
+  - Stale files, possible, not measured: until v2.1.1 the containers saw the workspace through Docker Desktop's file sharing, which can briefly show a deleted file or a replaced file's old content. A stale read in a Guard check, a hidden check or a targeted test would have hidden a change; the logs cannot tell whether one happened. The targeted tests of the injected toy repository's seeds 2 and 3 also ran on seed 1's tree.
   - On the demo app it voted "no" on all 11 of the single agent's deletions of command functions (`bookshelf/commands.py`), which the app dispatches through `getattr`. Those runs failed visible tests (Ablations above), but the audit counts these edits as neither wrong nor checked.
 - **Debatable:**
   - 252 edits remove code reachable only from outside the project.
