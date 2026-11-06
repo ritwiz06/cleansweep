@@ -10,6 +10,7 @@ core:
     max_retries: 2          # retries for 429, 5xx (incl. 524) and dropped connections; timeouts are not retried
     timeout_s: 600
     extra_body: null       # provider options for every request (probes add their own)
+    max_calls: null        # stop with LLMError after this many requests (cache hits are free)
   sandbox:
     work_dir: null         # null = <system temp>/cleansweep/ws
     quarantine_dir: .cleansweep/quarantine

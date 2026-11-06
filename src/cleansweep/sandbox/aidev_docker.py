@@ -1,7 +1,11 @@
 """AIDev targets: an untrusted GitHub repository, run only inside a python:3.11 container.
 
-The workspace folder (a git repo with a `base` commit, like a local workspace) is mounted at
-/repo, so edits on the host are visible in the container at once. The container installs the
+The workspace folder (a git repo with a `base` commit, like a local workspace) is copied into
+the container's own /repo, not mounted: Docker Desktop's file sharing can show a container a
+deleted file or the old content of a file git or an atomic write replaced, for a moment, even
+when idle. Before every command the workspace's changes are pushed in, and the hash of every
+file changed since the start is checked inside the container; a file that still differs after
+one retry fails the command as a stale workspace, never passes it. The container installs the
 project with network access, then is cut off from the network before any of the project's
 own code runs (tests, imports, probes). Static tools on the host only parse files.
 """
@@ -9,12 +13,15 @@ own code runs (tests, imports, probes). Static tools on the host only parse file
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import os
 import re
 import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 from pathlib import Path
@@ -26,6 +33,7 @@ from .workspace import GIT_ID, Workspace, junit_statuses, parse_junit
 
 IMAGE = "python:3.11"
 MOUNT = "/repo"
+STALE_CODE = 75  # the exit code a command gets when the container's files could not be made fresh
 JUNIT = "/tmp/cs_junit.xml"  # in the container
 # Runs inside the container (python:3.11): install the project with whatever test/dev extras
 # and dependency groups it declares, its requirements files, then pytest.
@@ -131,6 +139,57 @@ def _docker(args: list[str], timeout: float | None = None) -> subprocess.Complet
         return subprocess.CompletedProcess(exc.cmd, 124, out, f"timeout after {timeout}s")
 
 
+# Runs inside the container: the sha256 of each path read from stdin, null when absent.
+HASH_PY = r"""
+import hashlib, json, sys
+out = {}
+for path in json.load(sys.stdin):
+    try:
+        with open(path, "rb") as f:
+            out[path] = hashlib.sha256(f.read()).hexdigest()
+    except OSError:
+        out[path] = None
+print(json.dumps(out))
+"""
+# Runs inside the container: remove each path read from stdin.
+REMOVE_PY = r"""
+import json, os, shutil, sys
+for path in json.load(sys.stdin):
+    if os.path.isdir(path) and not os.path.islink(path):
+        shutil.rmtree(path, ignore_errors=True)
+    elif os.path.lexists(path):
+        os.remove(path)
+"""
+
+
+class StaleWorkspace(RuntimeError):
+    """The container's copy still differs from the workspace after a retry."""
+
+
+def scan(root: str | Path) -> dict[str, tuple[int, int]]:
+    """{path: (size, mtime in ns)} of every file under root but .git."""
+    root = str(root)
+    out = {}
+    for folder, dirs, files in os.walk(root):
+        if folder == root:
+            dirs[:] = [d for d in dirs if d != ".git"]
+        for name in files:
+            full = os.path.join(folder, name)
+            try:
+                st = os.lstat(full)
+            except OSError:
+                continue
+            out[os.path.relpath(full, root)] = (st.st_size, st.st_mtime_ns)
+    return out
+
+
+def host_hash(path: Path) -> str | None:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
 class AidevWorkspace(Workspace):
     """A git workspace whose commands run in a network-less python:3.11 container."""
 
@@ -141,8 +200,85 @@ class AidevWorkspace(Workspace):
         super().__init__(path, repo_id, cfg)
         self.container = container
         self.install_log = ""
+        self._files: dict[str, tuple[int, int]] = {}  # the copy the container holds
+        self._touched: set[str] = set()  # paths changed since the first copy
+        self.stale_retries = 0
+
+    def copy_in(self) -> None:
+        """Copy the whole workspace, .git included, into the container's /repo."""
+        self._send(sorted(os.listdir(self.path)))
+        self._files = scan(self.path)
+
+    def _send(self, paths: list[str]) -> None:
+        """Stream these workspace paths into the container as a tar archive."""
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w") as tar:
+            for rel in paths:
+                tar.add(os.path.join(self.path, rel), arcname=rel)
+        proc = subprocess.run(
+            ["docker", "exec", "-i", self.container, "tar", "-C", MOUNT, "-xf", "-"],
+            input=buf.getvalue(),
+            capture_output=True,
+        )
+        if proc.returncode != 0:
+            raise StaleWorkspace(f"could not copy files into the container: {proc.stderr[-300:]}")
+
+    def _container_py(self, script: str, paths: list[str]) -> str:
+        proc = subprocess.run(
+            ["docker", "exec", "-i", "-w", MOUNT, self.container, "python", "-c", script],
+            input=json.dumps(paths),
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise StaleWorkspace(f"could not check the container's files: {proc.stderr[-300:]}")
+        return proc.stdout
+
+    def _push(self, changed: list[str], gone: list[str]) -> None:
+        if gone:
+            self._container_py(REMOVE_PY, gone)
+        if changed:
+            self._send(changed)
+
+    def _mismatched(self) -> list[str]:
+        """Changed paths whose content in the container differs from the workspace's."""
+        paths = sorted(self._touched)
+        inside = json.loads(self._container_py(HASH_PY, paths))
+        root = Path(self.path)
+        return [p for p in paths if inside.get(p) != host_hash(root / p)]
+
+    def sync(self) -> None:
+        """Push the workspace's changes into the container, then check the hash of every file
+        changed since the first copy; push again once on a difference, then raise
+        StaleWorkspace."""
+        now = scan(self.path)
+        changed = [p for p, st in now.items() if self._files.get(p) != st]
+        gone = [p for p in self._files if p not in now]
+        if changed or gone:
+            self._push(changed, gone)
+            self._touched.update(changed, gone)
+        self._files = now
+        if not self._touched:
+            return
+        bad = self._mismatched()
+        if bad:
+            self.stale_retries += 1
+            self._push([p for p in bad if p in now], [p for p in bad if p not in now])
+            bad = self._mismatched()
+        if bad:
+            raise StaleWorkspace(f"stale workspace: {len(bad)} file(s) differ, e.g. {bad[0]}")
+
+    def fetch(self, rel_path: str) -> None:
+        """Copy a file the container wrote under /repo back into the workspace."""
+        dest = Path(self.path) / rel_path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        _docker(["cp", f"{self.container}:{MOUNT}/{rel_path}", str(dest)])
 
     def _exec(self, cmd: str, timeout: float) -> tuple[int, str]:
+        try:
+            self.sync()
+        except StaleWorkspace as exc:
+            return STALE_CODE, str(exc)
         args = ["exec", "-w", MOUNT, self.container, "timeout", "-s", "KILL", str(int(timeout))]
         proc = _docker([*args, "bash", "-c", cmd], timeout=timeout + 60)
         code = 124 if proc.returncode == 137 else proc.returncode
@@ -192,7 +328,9 @@ class AidevWorkspace(Workspace):
             _docker(["cp", f"{self.container}:{xml}", str(local)])
             _docker(["exec", self.container, "rm", "-f", xml])
             if not local.exists():
-                failed = "<timeout>" if code == 124 else f"<pytest exit {code}>"
+                failed = {124: "<timeout>", STALE_CODE: "<stale workspace>"}.get(
+                    code, f"<pytest exit {code}>"
+                )
                 return RunResult(
                     ok=False, errors=1, failed_ids=[failed], duration_s=time.time() - start
                 )
@@ -279,12 +417,13 @@ def open_aidev(target: str, cfg: dict | None = None) -> AidevWorkspace:
     )
     if cfg.get("agent_scope", True):
         write_scope(dest, str(clone), full_name, sha or "HEAD")
-    run = ["run", "-d", "--name", name, "-v", f"{dest}:{MOUNT}", "-w", MOUNT]
+    run = ["run", "-d", "--name", name, "-w", MOUNT]
     proc = _docker([*run, cfg.get("aidev_image", IMAGE), "sleep", "infinity"], timeout=300)
     if proc.returncode != 0:
         shutil.rmtree(dest, ignore_errors=True)
         raise RuntimeError(f"could not start {IMAGE}: {proc.stderr.strip()[-300:]}")
     ws = AidevWorkspace(dest, target, cfg, name)
+    ws.copy_in()
     if cfg.get("install", True) and not ws.install(int(cfg.get("install_timeout_s", 600))):
         ws.close()
         raise RuntimeError(f"install failed for {target}: {ws.install_log[-300:]}")

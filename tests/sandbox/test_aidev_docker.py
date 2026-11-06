@@ -110,3 +110,118 @@ def test_aidev_workspace_hides_and_restores_packages(tmp_path, sandbox_cfg):
         assert ws.run_tests(None).ok
     finally:
         ws.close()
+
+
+class _FakeContainer:
+    """Stands in for docker: a dict of the container's files; `stale` paths keep old content."""
+
+    def __init__(self):
+        self.files: dict[str, bytes] = {}
+        self.stale: set[str] = set()
+
+
+def _fake_workspace(tmp_path, monkeypatch):
+    import hashlib
+    import json
+
+    from cleansweep.sandbox import aidev_docker
+
+    root = tmp_path / "ws"
+    (root / "pkg").mkdir(parents=True)
+    (root / "pkg" / "a.py").write_text("A = 1\n")
+    (root / "gone.py").write_text("B = 2\n")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run([*GIT, "add", "-A"], cwd=root, check=True)
+    subprocess.run([*GIT, "commit", "-q", "-m", "c"], cwd=root, check=True)
+    box = _FakeContainer()
+    ws = aidev_docker.AidevWorkspace(root, "aidev:o/x", {}, "cs-fake")
+
+    def send(paths):
+        for rel in paths:
+            full = root / rel
+            files = [full] if full.is_file() else [p for p in full.rglob("*") if p.is_file()]
+            for f in files:
+                key = str(f.relative_to(root))
+                if key not in box.stale:
+                    box.files[key] = f.read_bytes()
+
+    def container_py(script, paths):
+        if script == aidev_docker.REMOVE_PY:
+            for p in paths:
+                if p not in box.stale:
+                    box.files.pop(p, None)
+            return ""
+        return json.dumps(
+            {p: hashlib.sha256(box.files[p]).hexdigest() if p in box.files else None for p in paths}
+        )
+
+    monkeypatch.setattr(ws, "_send", send)
+    monkeypatch.setattr(ws, "_container_py", container_py)
+    ws.copy_in()
+    return ws, box, root
+
+
+def test_sync_pushes_changes_and_deletions_and_checks_their_hashes(tmp_path, monkeypatch):
+    ws, box, root = _fake_workspace(tmp_path, monkeypatch)
+    assert box.files["pkg/a.py"] == b"A = 1\n" and not any(k.startswith(".git/") for k in ws._files)
+    (root / "pkg" / "a.py").write_text("A = 2\n")
+    (root / "gone.py").unlink()
+    (root / "new.py").write_text("C = 3\n")
+    ws.sync()
+    assert box.files["pkg/a.py"] == b"A = 2\n" and box.files["new.py"] == b"C = 3\n"
+    assert "gone.py" not in box.files
+    assert ws._touched == {"pkg/a.py", "gone.py", "new.py"} and ws.stale_retries == 0
+
+
+def test_a_file_that_stays_stale_fails_the_command_never_passes_it(tmp_path, monkeypatch):
+    from cleansweep.sandbox import aidev_docker
+
+    ws, box, root = _fake_workspace(tmp_path, monkeypatch)
+    box.stale.add("gone.py")  # the container keeps showing a deleted file
+    (root / "gone.py").unlink()
+    with pytest.raises(aidev_docker.StaleWorkspace, match="gone.py"):
+        ws.sync()
+    assert ws.stale_retries == 1
+    monkeypatch.setattr(aidev_docker, "_docker", lambda *a, **k: None)  # nothing may run
+    code, out = ws._exec("python -m pytest", 60)
+    assert code == aidev_docker.STALE_CODE and "stale workspace" in out
+    result = ws._junit_run(["python", "-m", "pytest"], 60)
+    assert not result.ok and result.failed_ids == ["<stale workspace>"]
+
+
+@pytest.mark.docker
+@needs_docker
+def test_the_container_sees_every_delete_and_replace_at_once(tmp_path, sandbox_cfg):
+    """Regression: through a bind mount the container could see a deleted file, or the old
+    content of a file git or an atomic write replaced; the copied workspace never does."""
+    import os
+
+    from cleansweep.sandbox import open_workspace
+
+    clone = tmp_path / "clones" / "o__tiny"
+    clone.mkdir(parents=True)
+    (clone / "mod.py").write_text("A = 0\n" * 50)
+    (clone / "gone.py").write_text("B = 2\n")
+    subprocess.run(["git", "init", "-q"], cwd=clone, check=True)
+    subprocess.run([*GIT, "add", "-A"], cwd=clone, check=True)
+    subprocess.run([*GIT, "commit", "-q", "-m", "c"], cwd=clone, check=True)
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=clone, capture_output=True, text=True
+    ).stdout.strip()
+    cfg = {**sandbox_cfg, "aidev_clones": str(tmp_path / "clones"), "install": False}
+    ws = open_workspace(f"aidev:o/tiny@{sha}", cfg)
+    try:
+        for i in range(25):
+            os.remove(f"{ws.path}/gone.py")
+            assert ws.run(["test", "!", "-e", "gone.py"])[0] == 0
+            subprocess.run([*GIT, "checkout", "-q", "--", "gone.py"], cwd=ws.path, check=True)
+            body = f"A = {i}\n" * 50
+            with open(f"{ws.path}/.tmp", "w") as f:
+                f.write(body)
+            os.replace(f"{ws.path}/.tmp", f"{ws.path}/mod.py")
+            check = f"print(open('mod.py').read() == {body!r})"
+            code, out = ws.run(["python", "-c", check])
+            assert code == 0 and out.strip() == "True"
+        assert ws.stale_retries == 0
+    finally:
+        ws.close()

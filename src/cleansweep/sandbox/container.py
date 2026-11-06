@@ -1,7 +1,8 @@
 """`clean --sandbox docker`: the project's code runs only in a python:3.11 container.
 
 The mechanics are the AIDev workspace's: the workspace folder stays on the host (the agents'
-static tools only parse its files) and is mounted at /repo; the container installs the project
+static tools only parse its files) and is copied into the container's /repo, its changes pushed
+in and checked by hash before every command (see aidev_docker); the container installs the project
 with network access, then is cut off from the network before any of the project's own code
 runs (tests, imports, probes). Removing the container leaves the workspace folder, which holds
 the delivered branch.
@@ -143,13 +144,14 @@ def open_container(
     env = ["--label", f"{OWNER_LABEL}={os.getpid()}", "-e", "PYTHONDONTWRITEBYTECODE=1"]
     if (path / "src").is_dir():
         env += ["-e", f"PYTHONPATH={MOUNT}/src"]
-    run = ["run", "-d", "--name", name, *env, "-v", f"{path}:{MOUNT}", "-w", MOUNT]
+    run = ["run", "-d", "--name", name, *env, "-w", MOUNT]
     image = cfg.get("clean_image", IMAGE)
     proc = _docker([*run, image, "sleep", "infinity"], timeout=900)
     if proc.returncode != 0:
         _docker(["rm", "-f", name])
         raise SandboxError(f"could not start the {image} container: {proc.stderr.strip()[-300:]}")
     ws = ContainerWorkspace(path, repo_id, cfg, name)
+    ws.copy_in()
     ws.install_info = ws.install(install)
     cut = _docker(["network", "disconnect", "bridge", name])
     if cut.returncode != 0:
