@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DarkContext } from "./components/Code";
+import { BeforeAfter } from "./screens/BeforeAfter";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
 import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
@@ -77,7 +78,7 @@ export function App() {
       // not saved; the theme still applies
     }
   }, [theme]);
-  const active = route === "run" || route === "replay" ? "runs" : route;
+  const active = route === "run" || route === "replay" || route === "after" ? "runs" : route;
   let screen;
   switch (route) {
     case "home":
@@ -89,6 +90,9 @@ export function App() {
     case "run":
     case "replay":
       screen = <RunView key={`${route}:${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={route === "run"} />;
+      break;
+    case "after":
+      screen = <BeforeAfter key={`${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} />;
       break;
     case "compare":
       screen = <Compare a={q.get("a") || ""} b={q.get("b") || ""} onChange={(a, b) => go("compare", { a, b })} />;

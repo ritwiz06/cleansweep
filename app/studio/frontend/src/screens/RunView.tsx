@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, useApi, type RunDetail } from "../api";
+import { afterHash, api, useApi, type RunDetail } from "../api";
 import { AgentGraph } from "../components/AgentGraph";
 import { RunContext } from "../components/Artifact";
 import { DiffView } from "../components/Code";
@@ -147,6 +147,12 @@ export function RunView({ root, path, live }: { root: string; path: string; live
             <span className="muted">
               {[d.kind, d.target, d.mode].filter(Boolean).join(" · ")} · model{" "}
               {d.model || (d.report?.stats?.llm_calls ? "not recorded" : d.finished ? "none" : "-")}
+              {d.kind === "v2" && (
+                <a className="link" href={afterHash({ root, path })}>
+                  {" "}
+                  Before / after
+                </a>
+              )}
               {d.live && !live && (
                 <a className="link" href={`#/run?${new URLSearchParams({ root, path })}`}>
                   {" "}

@@ -193,6 +193,23 @@ decision jumps to it. A run folder from `cleansweep clean` replays as it is.
 
 ![Replay of the demo app cleanup: metrics, phase timeline, agent graph and the Manager's decisions](images/studio/replay.png)
 
+**Before / after** (from Runs, Home or a replay's header) shows a finished cleanup's result:
+the project's tree before and after side by side (removed files struck through, edited files
+with their +/− line counts, folders that disappeared marked), and a card with the numbers before
+and after: files, Python files, lines of code (non-test Python), the tests passing (with the
+baseline's failing and flaky tests and any new failures), the probe cases and the coverage of the
+changed lines, the public names the cleanup removed, the slop found and left by category, and
+the result. One line says what no check can: behavior that nothing tests isn't covered. Click a
+changed file for its side-by-side diff; each change has a note pointing at it with its category,
+the decisions behind it (Auditor, Investigator, Planner, Engineer, Tester, Validator, Manager),
+the Investigator's evidence and the checks its package passed. A recording made before v2.1
+saved no file list, so its trees show the files its events and diff name, and its file count is
+"not recorded".
+
+![Before / after: both trees and the numbers for the demo app cleanup](images/studio/before_after.png)
+
+![Before / after: one change of the demo app cleanup with the decisions behind it](images/studio/before_after_diff.png)
+
 In the step-back recording, FINAL VERIFY finds the full suite worse than the baseline, and the
 Manager goes back to EXECUTE and undoes only the package that broke a test (outlined on the
 timeline):

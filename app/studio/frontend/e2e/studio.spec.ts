@@ -104,6 +104,33 @@ test("project view: the tree follows the events, and a node shows its evidence, 
   await expect(page.getByLabel("Item board")).toContainText("Suggest");
 });
 
+test("before / after: both trees, the numbers, and each change with the decisions behind it", async ({ page }) => {
+  await open(page, "runs");
+  await page.locator(`tr[data-run="${DEMO}"]`).getByRole("link", { name: "Before / after" }).click();
+  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+  const before = page.getByRole("group", { name: "Before tree" });
+  const after = page.getByRole("group", { name: "After tree" });
+  await expect(before.locator("del", { hasText: "inventory_old.py" })).toBeVisible();
+  await expect(before).toContainText("removed");
+  await expect(after).not.toContainText("inventory_old.py");
+  await expect(after.getByRole("button", { name: /^reports\.py/ })).toContainText("+2");
+  const numbers = page.getByLabel("Before and after");
+  await expect(numbers).toContainText(/229\s*→\s*182/);
+  await expect(numbers).toContainText(/12\s*→\s*12/);
+  await expect(numbers).toContainText("1 removed: isbn_checksum_ok");
+  await expect(page.getByLabel("Slop by category")).toContainText("leftover file");
+  await expect(page.getByText("Behavior that nothing tests isn't covered")).toBeVisible();
+  await before.getByRole("button", { name: /^reports\.py/ }).click();
+  const change = page.getByRole("region", { name: "change 1 of 1" });
+  await expect(change).toContainText("duplicate");
+  await expect(change).toContainText("Investigator #6");
+  await expect(change).toContainText("P5 kept");
+  await expect(change).toContainText("public names unchanged");
+  await expect(change.getByRole("table")).toContainText("normalize_isbn");
+  await page.getByRole("link", { name: "Replay", exact: true }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+});
+
 test("an artifact link opens the cached artifact", async ({ page }) => {
   await open(page, `replay?root=replay&path=${V2}`);
   await page.getByRole("button", { name: "Jump to the end" }).click();
@@ -245,6 +272,8 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
     "guard",
     "replay?root=replay&path=20261101_manager_conflict_step_back",
     "replay?root=replay&path=20261102_demo_feature_agentic",
+    `after?root=replay&path=${DEMO}`,
+    `after?root=replay&path=${V2}`,
   ];
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");

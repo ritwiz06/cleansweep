@@ -48,6 +48,16 @@ test("user guide screenshot: project", async ({ page }) => {
   await page.screenshot({ path: `${OUT}/project.png` });
 });
 
+test("user guide screenshots: before_after and before_after_diff", async ({ page }) => {
+  await page.goto("/#/after?root=replay&path=20261102_demo_feature_agentic");
+  await expect(page.getByLabel("Before and after")).toContainText("everything runs");
+  await page.screenshot({ path: `${OUT}/before_after.png` });
+  await page.getByRole("group", { name: "Before tree" }).getByRole("button", { name: /^reports\.py/ }).click();
+  await page.getByRole("region", { name: "change 1 of 1" }).scrollIntoViewIfNeeded();
+  await page.evaluate(() => document.querySelector(".file-diff")?.scrollIntoView({ block: "start" }));
+  await page.screenshot({ path: `${OUT}/before_after_diff.png` });
+});
+
 for (const [route, name, end, tab] of SHOTS) {
   test(`user guide screenshot: ${name}`, async ({ page }) => {
     await shot(page, route, name, end, tab);

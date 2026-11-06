@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, post, runHash, useApi, type RunRow } from "../api";
+import { afterHash, api, post, runHash, useApi, type RunRow } from "../api";
 import { Async, Badge, Status } from "../components/common";
 import { useRuns } from "./Runs";
 
@@ -85,6 +85,7 @@ function RecentRuns() {
                     {r.verdict ? <Status value={r.verdict} /> : <span className="muted">{r.finished ? "finished" : "unfinished"}</span>}
                     {r.live && <a href={runHash(r, "live")}>Follow live</a>}
                     <a href={runHash(r)}>Open</a>
+                    {r.finished && <a href={afterHash(r)}>Before / after</a>}
                   </span>
                   <span className="run-meta">
                     {r.target || "?"} · {r.mode || "?"} mode · model {r.model || "none"}
