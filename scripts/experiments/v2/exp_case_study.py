@@ -95,7 +95,14 @@ def agent_cfg(args) -> dict:
     budget = parse_budget(args.budget) if args.budget else {}
     ablation = {"ablation": args.ablation} if args.ablation else {}
     investigate = {"investigate": args.investigate} if args.investigate else {}
-    return {"mode": args.mode, **({"budget": budget} if budget else {}), **ablation, **investigate}
+    v2 = {"no_tests": "plan", "notebooks": "ignore"}  # `clean` as v2.0 ran it
+    return {
+        "mode": args.mode,
+        **({"budget": budget} if budget else {}),
+        **ablation,
+        **investigate,
+        **v2,
+    }
 
 
 def run_container(args, out: Path) -> dict:

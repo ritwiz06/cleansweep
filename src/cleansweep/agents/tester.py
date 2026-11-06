@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from cleansweep.core.io import to_dict
+from cleansweep.core.models import RunResult
 from cleansweep.guard.guard import static_checks
 
 from . import environment
@@ -24,11 +25,22 @@ def _run(rt, paths: list[str] | None = None):
     return result, dict(rt.ws.last_statuses)
 
 
+def chosen_command(rt) -> dict:
+    """The detected test command; --test-args (pytest arguments) ask for pytest."""
+    found = (rt.brief or {}).get("tests") or {}
+    if rt.ws.pytest_args and found.get("runner") not in (None, "pytest"):
+        return {"runner": "pytest", "command": "pytest", "paths": [], "source": "--test-args"}
+    return found
+
+
 def baseline(rt) -> None:
     """BASELINE: set up the project's environment, run the suite several times and record what
     already fails or flakes."""
     rt.environment = environment.prepare(rt)
+    rt.ws.test_command = chosen_command(rt)
     runs = max(1, int(rt.acfg.get("baseline_runs", 3)))
+    if rt.ws.test_command.get("runner") == "none":
+        runs = 0  # nothing to run: the baseline records no tests
     results, statuses = [], []
     for n in range(runs):
         rt.log.emit("tool_call", agent=NAME, payload={"tool": "run_tests", "args": {"run": n + 1}})
@@ -43,17 +55,29 @@ def baseline(rt) -> None:
     failing = sorted(t for t in ids if all(s.get(t) in BAD for s in statuses))
     flaky = sorted(set(ids) - set(stable) - set(failing))
     crashed = all(any(f.startswith("<pytest exit") for f in r.failed_ids) for r in results)
+    durations = sorted(r.duration_s for r in results) or [0.0]
+    reason = None
+    if not results:
+        reason = "no test files"
+    elif crashed:
+        reason = f"the test command failed ({results[-1].failed_ids[0]})"
+    elif not ids:
+        reason = "no test gave a result"
+    elif not stable and rt.acfg.get("no_tests") == "probes":
+        reason = "no test passes"  # every test fails or flakes: none can show a change
     rt.baseline = {
-        "ok": not crashed and bool(ids),  # no test gave a result: nothing can be verified
+        "ok": reason is None,  # no test gave a result: nothing can be verified
         "runs": runs,
         "passed": len(stable),
         "failed": len(failing),
-        "errors": min(r.errors for r in results),
+        "errors": min((r.errors for r in results), default=0),
         "flaky": flaky,
         "failing": failing,
         "stable_pass": stable,
-        "duration_s": round(sorted(r.duration_s for r in results)[len(results) // 2], 2),
-        "result": results[-1],
+        "duration_s": round(durations[len(durations) // 2], 2),
+        "result": results[-1] if results else RunResult(ok=False),
+        "command": rt.ws.test_command.get("command", "pytest"),
+        "reason": reason,
     }
     art = rt.artifact("test_statuses", {"runs": statuses})
     log = rt.artifact("test_log", getattr(rt.ws, "last_test_output", "")[-20000:])
@@ -96,6 +120,11 @@ def check_package(rt, pkg) -> bool:
     ok, log = static_checks(rt.ws, pkg.start)
     if not ok:
         return _fail(rt, pkg, "compile", log, [])
+    if rt.untested:  # no usable tests: the Validator's probes must cover every edit
+        pkg.verify["tests"] = "not run: no usable tests"
+        body = {"package": pkg.package_id, "ok": True, "new_failures": [], "stage": "no tests"}
+        rt.board.post("test_result", NAME, body)
+        return True
     if rt.run_budget.out_of_tests(rt.ws.test_runs):
         return _fail(rt, pkg, "budget", "the run's test-run budget is used up", [])
     related = related_tests(rt.graph, pkg.files)
@@ -150,7 +179,13 @@ def _fail(rt, pkg, stage: str, log: str, new: list[str]) -> bool:
 
 
 def final_check(rt) -> bool:
-    """FINAL VERIFY: the full suite against the baseline."""
+    """FINAL VERIFY: the full suite against the baseline (nothing to run without tests)."""
+    if rt.untested:
+        rt.final = {"ok": True, "untested": True, "new_failures": [], "tests_removed": []}
+        rt.final |= {"passed": 0, "baseline_passed": 0, "result": None}
+        body = {"ok": True, "new_failures": [], "passed": 0, "baseline_passed": 0}
+        rt.board.post("final_check", NAME, body)
+        return True
     result, statuses = _run(rt)
     new, removed = compare(rt, result, statuses)
     passed = sum(s == "passed" for s in statuses.values())

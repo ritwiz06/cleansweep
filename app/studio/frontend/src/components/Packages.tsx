@@ -58,10 +58,7 @@ function ProbeTable({ probes }: { probes: any }) {
 }
 
 function PackageDetail({ pkg, state, detail }: { pkg: Package; state: RunState; detail: RunDetail | null }) {
-  const run = useContext(RunContext);
   const fallback = (detail?.report?.results || []).filter((r) => pkg.items.includes(r.item_id) && r.diff);
-  const checks = pkg.validation?.checks || {};
-  const testLog = pkg.log.filter((e) => e.payload?.tool === "run_tests" || e.kind === "check");
   return (
     <div className="package-detail">
       <h3>
@@ -84,6 +81,18 @@ function PackageDetail({ pkg, state, detail }: { pkg: Package; state: RunState; 
           <Empty>{pkg.status === "planned" ? "Not applied yet." : "No diff in this recording."}</Empty>
         )}
       </Card>
+      <PackageChecks pkg={pkg} />
+    </div>
+  );
+}
+
+// A package's tests, checks and probes, as the events report them.
+export function PackageChecks({ pkg }: { pkg: Package }) {
+  const run = useContext(RunContext);
+  const checks = pkg.validation?.checks || {};
+  const testLog = pkg.log.filter((e) => e.payload?.tool === "run_tests" || e.kind === "check");
+  return (
+    <>
       <div className="grid two">
         <Card title="Tests">
           {pkg.tests.length ? (
@@ -144,7 +153,7 @@ function PackageDetail({ pkg, state, detail }: { pkg: Package; state: RunState; 
       <Card title="Probes: before vs. after">
         <ProbeTable probes={pkg.validation?.probes} />
       </Card>
-    </div>
+    </>
   );
 }
 

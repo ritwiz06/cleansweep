@@ -94,14 +94,27 @@ cleansweep clean path/to/project --dry-run   # plan only: writes blueprint.md, c
 cleansweep clean path/to/project             # safe mode: deterministic edits, each one verified
 cleansweep clean path/to/project --mode thorough --budget llm=150,minutes=60,tests=80
 cleansweep clean tests/fixtures/toy_repo --no-llm   # try it offline on the toy repo
+cleansweep clean path/to/their/project --untrusted   # their code runs only in a Docker container
 ```
 
-The original folder is never changed. `clean` copies the project into
+Or run CleanSweep itself in a container (`docker build -t cleansweep -f docker/Dockerfile .`
+once; the key comes from your environment, never from the image):
+
+```bash
+docker run --rm -e VOYAGER_API_KEY -e VOYAGER_BASE_URL -e VOYAGER_MODEL -v "$PWD:/project:ro" -v "$PWD-cleanup:/out" cleansweep clean /project --out /out
+```
+
+The original folder is never changed. `--sandbox auto` (the default) runs the project's
+code on your machine only for a git repository you own, and in a network-less Docker
+container otherwise (`--sandbox docker|none` to choose). `clean` copies the project into
 `<project>-cleanup-<time>/` next to it (or `--out`), and the agent team cleans the copy one work
 package at a time, keeping a package only if the tests and the probes still pass. It ends with a
 git branch in that copy (one commit per package), `CLEANUP_REPORT.md`, `blueprint.md`, the
 patches and a PR description; apply the branch yourself after reading the report. The exit code
-is 0 when the result is "everything runs" or "nothing applied".
+is 0 when the result is "everything runs" or "nothing applied"; the other results are "not
+verified by tests" (no usable tests: only probe-covered edits applied), "not verified" and
+"stopped: <reason>, nothing applied" ([user guide](docs/user_guide.md#the-result)). An
+interrupted run continues with `cleansweep clean --resume <its output folder>`.
 
 Settings that a project always wants go in a `.cleansweep.yaml` at its root (or any file passed
 with `--config`); a command-line option overrides the file:

@@ -104,7 +104,8 @@ def rollback(rt, pkg: Package) -> str:
             diff=rt.item_diffs.get(iid, ""),
             notes=f"{failure.get('stage')} failed: " + failure.get("log", "")[-2000:],
         )
-    if rt.ablation != "no_lessons" and len(pkg.applied) == 1:
+    # "untested": no probe reached the edit; that says nothing about the code, so no lesson
+    if rt.ablation != "no_lessons" and len(pkg.applied) == 1 and failure.get("stage") != "untested":
         item = rt.items[pkg.applied[0]]
         framework = rt.graph.framework_callback(item.unit.key) if item.unit.name else None
         first = next((ln.strip() for ln in failure.get("log", "").splitlines() if ln.strip()), "")

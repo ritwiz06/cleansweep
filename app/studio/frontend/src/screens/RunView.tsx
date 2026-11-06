@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, useApi, type RunDetail } from "../api";
+import { afterHash, api, useApi, type RunDetail } from "../api";
 import { AgentGraph } from "../components/AgentGraph";
 import { RunContext } from "../components/Artifact";
 import { DiffView } from "../components/Code";
@@ -9,12 +9,13 @@ import { MessageBoard } from "../components/MessageBoard";
 import { Decisions, MetricsBar } from "../components/Metrics";
 import { DocFile, Packages } from "../components/Packages";
 import { PhaseTimeline } from "../components/PhaseTimeline";
+import { ProjectView, useProjectFiles } from "../components/ProjectView";
 import { Transport } from "../components/Transport";
 import type { Decision, StudioEvent } from "../state/fold";
 import { useEvents, useFolded, usePlayer } from "../state/hooks";
 import { V1Run } from "./V1Run";
 
-type Tab = "overview" | "messages" | "items" | "packages" | "report";
+type Tab = "project" | "overview" | "messages" | "items" | "packages" | "report";
 
 function ReportTab({ detail }: { detail: RunDetail }) {
   const docs = detail.docs.filter((d) => d.endsWith(".md"));
@@ -43,12 +44,21 @@ function ReportTab({ detail }: { detail: RunDetail }) {
   );
 }
 
-function V2Run({ detail, live }: { detail: RunDetail; live: boolean }) {
+function V2Run({ detail, live, reload }: { detail: RunDetail; live: boolean; reload: () => void }) {
   const feed = useEvents<StudioEvent>(detail.root, detail.path, live);
   const player = usePlayer(feed.events);
   const count = live ? feed.events.length : player.count;
   const state = useFolded(feed.events, count);
-  const [tab, setTab] = useState<Tab>("overview");
+  const files = useProjectFiles(detail.root, detail.path);
+  const [tab, setTab] = useState<Tab>("project");
+  // a live run writes its file list and report as it goes: read them again once events arrive
+  // and when it ends
+  const started = feed.events.length > 0;
+  useEffect(() => {
+    if (!live || !started) return;
+    reload();
+    files.reload();
+  }, [live, started, feed.done]);
   const end = feed.events.length ? feed.events[feed.events.length - 1].t : 0;
   const pick = (d: Decision) => {
     if (!live) player.setCount(feed.events.findIndex((e) => e.id === d.eventId) + 1);
@@ -67,6 +77,7 @@ function V2Run({ detail, live }: { detail: RunDetail; live: boolean }) {
       <PhaseTimeline state={state} onDecision={pick} />
       <Tabs
         tabs={[
+          { key: "project", label: "Project" },
           { key: "overview", label: "Agents" },
           { key: "messages", label: `Message board (${state.messages.length})` },
           { key: "items", label: `Items (${state.itemOrder.length})` },
@@ -76,6 +87,7 @@ function V2Run({ detail, live }: { detail: RunDetail; live: boolean }) {
         value={tab}
         onChange={setTab}
       />
+      {tab === "project" && <ProjectView state={state} events={feed.events} detail={detail} files={files.data} />}
       {tab === "overview" && (
         <div className="grid overview">
           <Card title="Agent team">
@@ -133,7 +145,20 @@ export function RunView({ root, path, live }: { root: string; path: string; live
         <Async res={res}>
           {(d) => (
             <span className="muted">
-              {d.kind} · {d.target || "?"} · {d.mode || ""} · model {d.model || (d.report?.stats?.llm_calls ? "not recorded" : "none")}
+              {[d.kind, d.target, d.mode].filter(Boolean).join(" · ")} · model{" "}
+              {d.model || (d.report?.stats?.llm_calls ? "not recorded" : d.finished ? "none" : "-")}
+              {d.kind === "v2" && (
+                <>
+                  <a className="link" href={afterHash({ root, path })}>
+                    {" "}
+                    Before / after
+                  </a>
+                  <a className="link" href={`#/present?${new URLSearchParams({ root, path, ...(live ? { live: "1" } : {}) })}`}>
+                    {" "}
+                    Present
+                  </a>
+                </>
+              )}
               {d.live && !live && (
                 <a className="link" href={`#/run?${new URLSearchParams({ root, path })}`}>
                   {" "}
@@ -150,7 +175,7 @@ export function RunView({ root, path, live }: { root: string; path: string; live
             This is a watch folder. <a href={`#/watch?${new URLSearchParams({ root, path })}`}>Open it on the Watch screen.</a>
           </Empty>
         ) : (
-          <V2Run detail={d} live={live} />
+          <V2Run detail={d} live={live} reload={res.reload} />
         ))}
       </Async>
     </div>

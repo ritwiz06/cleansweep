@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
+import { StateChip, stateOf } from "./states";
 
 // charts skip their entry animation when the reader asks for reduced motion (and the
 // screenshots show finished charts)
@@ -96,6 +97,8 @@ export const STATUS_TONE: Record<string, string> = {
 
 export function Status({ value }: { value: string | null | undefined }) {
   if (!value) return <span className="muted">-</span>;
+  const state = stateOf(value);
+  if (state) return <StateChip state={state} label={value.replace(/_/g, " ")} />;
   return <Badge tone={STATUS_TONE[value] || "neutral"}>{value.replace(/_/g, " ")}</Badge>;
 }
 
@@ -194,7 +197,10 @@ export function DataTable({
           {rows.map((row, r) => (
             <tr key={r}>
               {row.map((v, c) => (
-                <td key={c}>{cell(v)}</td>
+                // a long text gets a readable width instead of a column squeezed to a few words
+                <td key={c} className={typeof v === "string" && v.length > 60 ? "wrap" : undefined}>
+                  {cell(v)}
+                </td>
               ))}
             </tr>
           ))}

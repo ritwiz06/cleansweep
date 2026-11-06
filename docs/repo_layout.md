@@ -70,8 +70,9 @@ cleansweep/
 ├── data/splits/                          committed tier and repository splits (data/raw and
 │                                         data/processed are git-ignored)
 ├── docs/                                 index, user guide, architecture, agentic design,
-│                                         requirements, experiments, results, this file;
-│                                         images/studio/ (the user guide's screenshots)
+│                                         requirements, experiments, results, Studio design,
+│                                         this file; images/studio/ (the user guide's
+│                                         screenshots)
 └── tests/                                mirrors the code: one folder per package (core/, llm/,
     │                                     sandbox/, analysis/, reviewer/, guard/, ranking/,
     │                                     scheduler/, workflow/, agents/, eval/, data/, mining/)

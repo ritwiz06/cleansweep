@@ -2,7 +2,8 @@
 
     python scripts/tools/make_recording.py RUN_DIR NAME [--report REPORT_JSON] [--redact WORD=NEW]
 
-Copies events.jsonl, report.json (or --report), the Markdown reports, final.diff and cache/;
+Copies events.jsonl, report.json (or --report), the Markdown reports, final.diff,
+project_files.json and cache/;
 never the workspace, patches or quarantine. The run folder's absolute path becomes
 demo/replay/NAME, and other paths under this repository or a sibling run copy become relative.
 Each --redact replaces a word in every copied file, ignoring case and keeping it (for product
@@ -34,6 +35,7 @@ FILES = [
     "CHANGELOG_ENTRY.md",
     "blueprint.md",
     "final.diff",
+    "project_files.json",
 ]
 HOME = re.compile(r"/(Users|home)/[^/\s\"'`]+/")
 COUNT = {1: "one", 2: "two", 3: "three", 4: "four"}

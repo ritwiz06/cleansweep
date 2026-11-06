@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { DarkContext } from "./components/Code";
+import { ThemeToggle } from "./components/PresentShell";
+import { BeforeAfter } from "./screens/BeforeAfter";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
 import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
 import { Evaluation } from "./screens/Evaluation";
+import { Home } from "./screens/Home";
 import { Launcher } from "./screens/Launcher";
+import { Present } from "./screens/Present";
 import { Results } from "./screens/Results";
 import { RunView } from "./screens/RunView";
 import { RunsScreen } from "./screens/Runs";
@@ -16,6 +20,7 @@ const NAV: { section: string; links: [string, string][] }[] = [
   {
     section: "Studio",
     links: [
+      ["home", "Home"],
       ["runs", "Runs"],
       ["launch", "Launch"],
       ["compare", "Compare"],
@@ -41,7 +46,7 @@ const NAV: { section: string; links: [string, string][] }[] = [
 function parseHash(): { route: string; q: URLSearchParams } {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const [route, query = ""] = raw.split("?");
-  return { route: route || "runs", q: new URLSearchParams(query) };
+  return { route: route || "home", q: new URLSearchParams(query) };
 }
 
 function go(route: string, params: Record<string, string>) {
@@ -75,15 +80,27 @@ export function App() {
       // not saved; the theme still applies
     }
   }, [theme]);
-  const active = route === "run" || route === "replay" ? "runs" : route;
+  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : route;
+  const presenting = route === "present" || q.get("present") === "1";
   let screen;
   switch (route) {
+    case "home":
+      screen = <Home />;
+      break;
     case "launch":
       screen = <Launcher />;
       break;
     case "run":
     case "replay":
       screen = <RunView key={`${route}:${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={route === "run"} />;
+      break;
+    case "after":
+      screen = (
+        <BeforeAfter key={`${q.get("root")}:${q.get("path")}:${presenting}`} root={q.get("root") || ""} path={q.get("path") || ""} present={presenting} />
+      );
+      break;
+    case "present":
+      screen = <Present key={`${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={q.get("live") === "1"} />;
       break;
     case "compare":
       screen = <Compare a={q.get("a") || ""} b={q.get("b") || ""} onChange={(a, b) => go("compare", { a, b })} />;
@@ -123,27 +140,31 @@ export function App() {
   }
   return (
     <DarkContext.Provider value={theme === "dark"}>
-      <div className="app">
-        <nav className="sidebar" aria-label="Screens">
-          <a className="brand" href="#/runs">
-            CleanSweep <span>Studio</span>
-          </a>
-          {NAV.map((group) => (
-            <div key={group.section} className="nav-group">
-              <div className="nav-section">{group.section}</div>
-              {group.links.map(([key, label]) => (
-                <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
-                  {label}
-                </a>
+      <ThemeToggle.Provider value={{ dark: theme === "dark", toggle: () => setTheme(theme === "dark" ? "light" : "dark") }}>
+        <div className={presenting ? "app present" : "app"}>
+          {!presenting && (
+            <nav className="sidebar" aria-label="Screens">
+              <a className="brand" href="#/home">
+                CleanSweep <span>Studio</span>
+              </a>
+              {NAV.map((group) => (
+                <div key={group.section} className="nav-group">
+                  <div className="nav-section">{group.section}</div>
+                  {group.links.map(([key, label]) => (
+                    <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
+                      {label}
+                    </a>
+                  ))}
+                </div>
               ))}
-            </div>
-          ))}
-          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">
-            {theme === "dark" ? "☀ Light theme" : "☾ Dark theme"}
-          </button>
-        </nav>
-        <main className="content">{screen}</main>
-      </div>
+              <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">
+                {theme === "dark" ? "☀ Light theme" : "☾ Dark theme"}
+              </button>
+            </nav>
+          )}
+          <main className="content">{screen}</main>
+        </div>
+      </ThemeToggle.Provider>
     </DarkContext.Provider>
   );
 }

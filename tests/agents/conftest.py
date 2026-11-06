@@ -39,6 +39,12 @@ def tree_hash(root: Path) -> str:
     return h.hexdigest()
 
 
+@pytest.fixture(autouse=True)
+def _on_this_machine(monkeypatch):
+    """`clean` from the command line runs the projects here unless a test asks for Docker."""
+    monkeypatch.setenv("CLEANSWEEP_SANDBOX", "none")
+
+
 @pytest.fixture
 def mini(tmp_path) -> Path:
     """A small project: an unused import and two dead functions named legacy_*."""

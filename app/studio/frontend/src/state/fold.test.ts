@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { fold, itemsByStage, parseMismatch, phaseSeconds, type StudioEvent } from "./fold";
+import { agentName, fold, itemsByStage, parseMismatch, phaseSeconds, repoName, type StudioEvent } from "./fold";
 
 let n = 0;
 function ev(kind: string, agent: string | null, payload: object, extra: Partial<StudioEvent> = {}): StudioEvent {
@@ -77,6 +77,35 @@ describe("fold", () => {
     expect(itemsByStage(s).kept.map((i) => i.id)).toEqual(["a"]);
   });
 
+  it("keeps a suggest-lane item a suggestion after a safe verdict, except a thorough duplicate", () => {
+    const run = (mode: string) => {
+      n = 0;
+      return fold([
+        ev("run_start", "manager", { repo_id: "local:proj", mode }),
+        msg("auditor", "candidates", {
+          items: [
+            { item_id: "a", unit: "x.py::f", category: "dead_code", lane: "suggest" },
+            { item_id: "b", unit: "x.py::g", category: "duplicate", lane: "suggest" },
+          ],
+        }, ["manager"]),
+        msg("investigator#1", "verdict", { item_id: "a", decision: "safe", evidence: [] }, ["manager"]),
+        msg("investigator#2", "verdict", { item_id: "b", decision: "safe", evidence: [] }, ["manager"]),
+      ]);
+    };
+    expect([run("safe").items.a.stage, run("safe").items.b.stage]).toEqual(["suggest", "suggest"]);
+    expect([run("thorough").items.a.stage, run("thorough").items.b.stage]).toEqual(["suggest", "safe"]);
+  });
+
+  it("records which agent acted on each item last, and the latest action's items", () => {
+    const s = fold(scenario());
+    expect(s.items.a.actor).toBe("manager");
+    expect(s.items.b.actor).toBe("investigator#2");
+    expect(s.focus).toEqual(["a"]);
+    const early = fold(scenario().slice(0, 6));
+    expect(early.items.a.actor).toBe("investigator#1");
+    expect(early.focus).toEqual(["a"]); // its first tool call names f
+  });
+
   it("collects a package's diff, tests, probes, coverage, UI check and commit", () => {
     const p = fold(scenario()).packages.P1;
     expect(p.status).toBe("kept");
@@ -111,6 +140,11 @@ describe("fold", () => {
     expect(s.finished).toBe(false);
     expect(s.lastMessage?.type).toBe("verdict");
     expect(s.active).toBe("investigator");
+  });
+
+  it("names agents and repositories the way the screens show them", () => {
+    expect([agentName("investigator#3"), agentName("auditor#lines"), agentName("solo")]).toEqual(["Investigator #3", "Auditor (lines)", "Single agent"]);
+    expect([repoName("local:shop_app"), repoName("aidev:owner/Some_Repo@5b5d8df")]).toEqual(["shop_app", "Some_Repo"]);
   });
 
   it("parses probe mismatches into before and after", () => {

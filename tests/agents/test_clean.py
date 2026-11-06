@@ -1,3 +1,4 @@
+import json
 import subprocess
 
 import pytest
@@ -54,6 +55,7 @@ def test_offline_clean_of_the_toy_repo_end_to_end(toy_repo, agent_cfg, tmp_path)
         "PR_DESCRIPTION.md",
         "CHANGELOG_ENTRY.md",
         "report.json",
+        "project_files.json",
     ):
         assert (out / name).exists()
     assert len(list((out / "patches").glob("*.patch"))) == len(kept)
@@ -130,12 +132,93 @@ def test_a_git_project_is_cloned_and_its_branch_applies(mini, agent_cfg, tmp_pat
     )
 
 
-def test_a_project_without_tests_gets_the_plan_only(agent_cfg, tmp_path):
+def test_without_tests_only_probe_covered_edits_are_applied(agent_cfg, tmp_path):
     files = {k: v for k, v in MINI.items() if not k.startswith("tests/")}
     project = write_project(tmp_path / "untested", files)
     before = tree_hash(project)
     result = clean_project(str(project), agent_cfg, out=str(tmp_path / "out"), use_llm=False)
     summary = result["summary"]
-    assert summary["verdict"] == "nothing applied" and summary["applied"] == 0
+    assert summary["verdict"] == "not verified by tests" and summary["untested"]
     assert result["report"].stats["agentic"]["baseline"]["ok"] is False
-    assert tree_hash(project) == before
+    status = {r.item_id: r.status for r in result["report"].results}
+    by_key = {i.unit.key: (status[i.item_id], i.reason) for i in result["report"].plan.items}
+    assert by_key["shop/core.py::os"][0] == "kept"  # the module check covers it
+    for name in ("total", "legacy_alpha"):  # public API: code outside may use it
+        assert by_key[f"shop/core.py::{name}"][0] == "skipped"
+        assert "no usable tests, and it is public API" in by_key[f"shop/core.py::{name}"][1]
+    report = (tmp_path / "out" / "CLEANUP_REPORT.md").read_text()
+    assert "Not verified by tests." in report and tree_hash(project) == before
+
+
+def test_without_tests_the_plan_only_setting_applies_nothing(agent_cfg, tmp_path):
+    agent_cfg["core"]["agents"]["no_tests"] = "plan"
+    files = {k: v for k, v in MINI.items() if not k.startswith("tests/")}
+    project = write_project(tmp_path / "untested", files)
+    result = clean_project(str(project), agent_cfg, out=str(tmp_path / "out"), use_llm=False)
+    summary = result["summary"]
+    assert summary["verdict"] == "nothing applied" and summary["applied"] == 0
+
+
+def test_a_unittest_project_in_a_src_layout(agent_cfg, tmp_path):
+    files = {
+        "src/calc/__init__.py": "",
+        "src/calc/ops.py": "import os\n\n\ndef add(a, b):\n    return a + b\n",
+        "tests/__init__.py": "",
+        "tests/test_calc.py": (
+            "import unittest\n\nfrom calc.ops import add\n\n\nclass T(unittest.TestCase):\n"
+            "    def test_add(self):\n        self.assertEqual(add(1, 2), 3)\n"
+        ),
+    }
+    project = write_project(tmp_path / "calc", files)
+    result = clean_project(str(project), agent_cfg, out=str(tmp_path / "out"), use_llm=False)
+    agentic = result["report"].stats["agentic"]
+    assert agentic["baseline"]["passed"] == 1 and agentic["baseline"]["command"].startswith(
+        "python -m unittest discover -s tests"
+    )
+    assert result["summary"]["verdict"] == "everything runs" and result["summary"]["applied"] == 1
+    report = (tmp_path / "out" / "CLEANUP_REPORT.md").read_text()
+    assert "(test files that are all unittest.TestCase)" in report
+
+
+def test_what_a_notebook_uses_stays_a_suggestion(mini, agent_cfg, tmp_path):
+    cell = {
+        "cell_type": "code",
+        "source": ["from shop.core import legacy_alpha\n", "legacy_alpha(2)"],
+    }
+    (mini / "explore.ipynb").write_text(json.dumps({"cells": [cell], "nbformat": 4}))
+    result = clean_project(str(mini), agent_cfg, out=str(tmp_path / "out"), use_llm=False)
+    status = {r.item_id: r.status for r in result["report"].results}
+    by_key = {i.unit.key: (status[i.item_id], i.reason) for i in result["report"].plan.items}
+    assert by_key["shop/core.py::legacy_alpha"][0] == "skipped"
+    assert "Held: explore.ipynb uses it" in by_key["shop/core.py::legacy_alpha"][1]
+    assert by_key["shop/extra.py::legacy_beta"][0] == "kept"
+
+
+def test_docker_not_running_stops_the_run_with_a_report(mini, agent_cfg, tmp_path, monkeypatch):
+    from cleansweep.sandbox import container
+
+    def down():
+        raise container.SandboxError("Docker is not running; start it")
+
+    monkeypatch.setattr(container, "check_docker", down)
+    before = tree_hash(mini)
+    out = tmp_path / "out"
+    result = clean_project(str(mini), agent_cfg, out=str(out), use_llm=False, sandbox="docker")
+    verdict = "stopped: Docker is not running; start it, nothing applied"
+    assert result["summary"]["verdict"] == verdict and tree_hash(mini) == before
+    assert f"**Result: {verdict}.**" in (out / "CLEANUP_REPORT.md").read_text()
+
+
+@pytest.mark.docker
+def test_clean_in_the_docker_sandbox_leaves_the_original_unchanged(mini, agent_cfg, tmp_path):
+    before = tree_hash(mini)
+    out = tmp_path / "out"
+    result = clean_project(str(mini), agent_cfg, out=str(out), use_llm=False, sandbox="auto")
+    assert tree_hash(mini) == before
+    summary = result["summary"]
+    assert summary["verdict"] == "everything runs" and summary["applied"] > 0
+    report = (out / "CLEANUP_REPORT.md").read_text()
+    assert "- Sandbox: docker (not a git repository)." in report
+    assert "network off after the install" in report
+    names = subprocess.run(["docker", "ps", "-a", "--format", "{{.Names}}"], capture_output=True)
+    assert f"cs-clean-{out.name}-" not in names.stdout.decode()  # its container is gone
