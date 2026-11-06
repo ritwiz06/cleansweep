@@ -473,7 +473,7 @@ def runner(name: str, argv: list[str]) -> int:
         return exp_eval.main(argv)
     import exp_inject
 
-    parser = argparse.ArgumentParser(prog="exp_external.py inject", allow_abbrev=False)
+    parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     parser.add_argument("--raw", default=str(ROOT / "results" / "raw" / "v3" / "inject"))
     parser.add_argument("--summary", default=str(ROOT / "results" / "summary" / "v3"))
     args, rest = parser.parse_known_args(argv)
