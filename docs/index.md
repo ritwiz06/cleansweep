@@ -20,6 +20,9 @@ and `method=agentic`: how it adapts AutoData's manager, squads and OHCache to co
 Manager's phases, the 10 agents and their budgets, the message board and artifact cache,
 lessons, coverage-guided probes, the safety rules, the command line and the ablations.
 
+**[SlopBench data card](slopbench.md).** The slop-injection benchmark: what a seed plants, how it
+is scored, the repositories at commits and their licenses; no third-party code is copied.
+
 **[Pre-registration (v3)](preregistration_v3.md).** The v3 hypotheses H1–H4 with their metrics,
 tests and thresholds, the run sizes, the limits every method gets, the hold-out and replacement
 rules and the freeze, fixed before the first main run; later changes are dated deviations.

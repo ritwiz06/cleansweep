@@ -25,4 +25,5 @@ fi
 "$PYTHON" scripts/experiments/v1/exp_scheduler_tradeoff.py > /dev/null
 "$PYTHON" scripts/experiments/v2/exp_tables_v2.py > /dev/null
 "$PYTHON" scripts/experiments/v2/exp_real_ablation.py table > /dev/null
+"$PYTHON" scripts/experiments/v3/slopbench.py list > /dev/null
 echo "reproduce_tables: rebuilt the tables and figures in ${CLEANSWEEP_RESULTS:-results}"
