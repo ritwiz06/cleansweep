@@ -17,6 +17,7 @@ from cleansweep.sandbox import open_workspace
 from cleansweep.sandbox.local import default_work_dir
 
 from .delivery import default_out, inside, prepare_workspace
+from .listing import save_project_files
 from .llm import AgentLLM
 from .runtime import Runtime
 from .team import run_team
@@ -128,6 +129,7 @@ def run_agentic(
         )
         rt.workspace_info = {}
         rt.make_patches = False
+        save_project_files(ws.path, out)
         run_team(rt)
         report = build_report(rt, started, t0, seed)
         if cfg.get("run_id"):
@@ -214,6 +216,7 @@ def clean_project(
         reviewer["exclude"] = [*reviewer.get("exclude", []), *exclude]
     ws, info = prepare_workspace(src, out_dir / "workspace", cfg["core"].get("sandbox"))
     ws.pytest_args = list(test_args or [])
+    save_project_files(ws.path, out_dir)
     client = (llm or _make_llm(cfg)) if use_llm else None
     rt = Runtime(
         ws,
