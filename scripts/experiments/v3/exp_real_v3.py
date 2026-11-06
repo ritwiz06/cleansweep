@@ -8,14 +8,15 @@ test modules; the other half, held out by a fixed seed, is the hidden check.
 
 prepare: a held-out clone per repository (data/raw/aidev/heldout/<owner>__<name>): commit
 "base" is the screened head; commit "visible" deletes the held-out test modules (test_*.py and
-*_test.py, half of them, seeded; conftest.py and helpers stay). The held-out modules run on the
-base commit in a container to record which pass before any cleanup. Writes
-results/raw/real_v3/<name>/split.json.
+*_test.py, half of them, seeded; conftest.py and helpers stay). The whole suite runs on the base
+commit in a container to record which tests pass before any cleanup; a project none of whose
+held-out tests pass is skipped. Writes results/raw/real_v3/<name>/split.json.
 run: one record per repository, method and run in results/raw/real_v3/<name>/<method>-r<run>/
 (report.json, final.diff, summary.json, heldout.json; for the agent team also the run's
 events.jsonl and reports, as exp_case_study.py records them, so the review and the diff audit
 read them the same way). The held-out check applies the final diff to the base commit and runs
-the held-out modules again: a module that passed before and fails after is a behavior change.
+the whole suite again: a held-out test that passed before and does not pass after is a behavior
+change (the hidden check); a visible one that stops passing is a break the method could have seen.
 Run 2 (only on the repositories the split marks for two runs) uses its own LLM cache, so it is
 a second model run, not a replay.
 """
@@ -102,25 +103,38 @@ def heldout_tree(full_name: str, head_sha: str, cfg: dict) -> Path:
     return tree
 
 
-def run_tests_at(target: str, tests: list[str], cfg: dict, diff: str = "") -> dict:
-    """The given test modules at a target, optionally after a diff, in a fresh container."""
+def run_suite(target: str, cfg: dict, diff: str = "") -> dict:
+    """The whole test suite at a target, optionally after a diff, in a fresh container:
+    {applied, passed, failed, errors, statuses: {test id: passed | failed | error | skipped}}."""
     from cleansweep.sandbox import open_workspace
 
     ws = open_workspace(target, cfg["core"].get("sandbox"))
     try:
         if diff.strip() and not ws.apply_patch(diff):
             return {"applied": False}
-        result = ws.run_tests(tests)
+        result = ws.run_tests(None)
         return {
             "applied": True,
-            "ok": result.ok,
             "passed": result.passed,
             "failed": result.failed,
             "errors": result.errors,
-            "failed_ids": sorted(result.failed_ids),
+            "statuses": dict(sorted(ws.last_statuses.items())),
         }
     finally:
         ws.close()
+
+
+def in_modules(test_id: str, paths: list[str]) -> bool:
+    """True if a JUnit test id (classname::name, or a collection error naming the module)
+    belongs to one of the test module paths."""
+    head = test_id.split("::", 1)[0]
+    for path in paths:
+        dotted = path[:-3].replace("/", ".")
+        if head == path or head == dotted or head.startswith(dotted + "."):
+            return True
+        if test_id.startswith(path) or test_id.endswith("::" + dotted):
+            return True
+    return False
 
 
 def prepare(full_name: str, entry: dict, cfg: dict) -> dict:
@@ -142,25 +156,38 @@ def prepare(full_name: str, entry: dict, cfg: dict) -> dict:
         _git(tree, "commit", "-q", "--no-verify", "-m", f"hold out tests (seed {SEED})")
         split["visible_sha"] = _git(tree, "rev-parse", "HEAD")
         _git(tree, "tag", "-f", "visible", split["visible_sha"])
-        split["baseline"] = run_tests_at(f"aidev:{full_name}@{base}", held, cfg)
-        if not split["baseline"].get("passed"):
+        split["baseline"] = run_suite(f"aidev:{full_name}@{base}", cfg)
+        passing = [t for t, s in split["baseline"]["statuses"].items() if s == "passed"]
+        split["held_passing"] = sum(in_modules(t, held) for t in passing)
+        if not split["held_passing"]:
             split["skip"] = "no held-out test passes before any cleanup"
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "split.json").write_text(json.dumps(split, indent=1))
     return split
 
 
-def heldout_check(full_name: str, split: dict, diff: str, cfg: dict) -> dict:
-    """The held-out modules on the base commit after the final diff, against their baseline."""
-    after = run_tests_at(f"aidev:{full_name}@{split['base']}", split["held"], cfg, diff)
-    if not after.get("applied"):
-        return {"applied": False, "behavior_changed": None}
-    newly = sorted(set(after["failed_ids"]) - set(split["baseline"]["failed_ids"]))
+def compare(split: dict, after: dict) -> dict:
+    """Tests that passed on the base commit and do not pass after the final diff, split into
+    held-out (the hidden check) and visible (what the method could see)."""
+    before = split["baseline"]["statuses"]
+    changed = sorted(
+        t for t, s in before.items() if s == "passed" and after["statuses"].get(t) != "passed"
+    )
+    held = [t for t in changed if in_modules(t, split["held"])]
     return {
-        **after,
-        "newly_failing": newly,
-        "behavior_changed": bool(newly) or after["passed"] < split["baseline"]["passed"],
+        "held_changed": held,
+        "visible_changed": [t for t in changed if t not in held],
+        "behavior_changed": bool(held),
+        "visible_broken": len(changed) > len(held),
     }
+
+
+def heldout_check(full_name: str, split: dict, diff: str, cfg: dict) -> dict:
+    """The whole suite on the base commit after the final diff, against its baseline."""
+    after = run_suite(f"aidev:{full_name}@{split['base']}", cfg, diff)
+    if not after.get("applied"):
+        return {"applied": False, "behavior_changed": None, "visible_broken": None}
+    return {**after, **compare(split, after)}
 
 
 def run_cfg(run: int, folder: Path) -> dict:

@@ -23,30 +23,43 @@ def test_split_holds_out_half_the_test_modules_by_seed():
     assert (visible, held) != real.split_tests(files, seed=5)
 
 
-def test_heldout_check_reports_modules_that_newly_fail(monkeypatch):
+def test_tests_are_matched_to_their_modules():
+    real = load()
+    held = ["tests/test_a.py", "pkg/core_test.py"]
+    assert real.in_modules("tests.test_a.TestX::test_one", held)
+    assert real.in_modules("tests.test_a::test_two", held)
+    assert real.in_modules("pkg.core_test::test_x", held)
+    assert real.in_modules("::tests.test_a", held)
+    assert not real.in_modules("tests.test_ab::test_one", held)
+    assert not real.in_modules("tests.test_b::test_one", held)
+
+
+def test_compare_splits_newly_failing_tests_into_held_out_and_visible():
     real = load()
     split = {
-        "base": "b",
         "held": ["tests/test_a.py"],
-        "baseline": {"failed_ids": ["x"], "passed": 5},
-    }
-    monkeypatch.setattr(
-        real,
-        "run_tests_at",
-        lambda target, tests, cfg, diff="": {
-            "applied": True,
-            "passed": 4,
-            "failed_ids": ["x", "y"],
+        "baseline": {
+            "statuses": {
+                "tests.test_a::t1": "passed",
+                "tests.test_a::t2": "failed",
+                "tests.test_b::t3": "passed",
+                "tests.test_b::t4": "passed",
+            }
         },
-    )
-    out = real.heldout_check("o/a", split, "diff", {})
-    assert out["newly_failing"] == ["y"] and out["behavior_changed"] is True
-    monkeypatch.setattr(
-        real,
-        "run_tests_at",
-        lambda target, tests, cfg, diff="": {"applied": True, "passed": 5, "failed_ids": ["x"]},
-    )
-    assert real.heldout_check("o/a", split, "diff", {})["behavior_changed"] is False
+    }
+    after = {
+        "statuses": {
+            "tests.test_a::t1": "failed",
+            "tests.test_a::t2": "failed",
+            "tests.test_b::t3": "passed",
+        }
+    }
+    out = real.compare(split, after)
+    assert out["held_changed"] == ["tests.test_a::t1"]
+    assert out["visible_changed"] == ["tests.test_b::t4"]
+    assert out["behavior_changed"] is True and out["visible_broken"] is True
+    same = {"statuses": dict(split["baseline"]["statuses"])}
+    assert real.compare(split, same)["behavior_changed"] is False
 
 
 def test_a_second_run_gets_its_own_caches(tmp_path):
