@@ -392,6 +392,7 @@ python -m cleansweep clean <path> [--mode safe|thorough] [--budget llm=150,minut
                                   [--approve-plan] [--dry-run] [--out <dir>] [--model M]
                                   [--no-llm] [--config FILE] [--quiet]
 python -m cleansweep clean --resume <out dir or run id> [--quiet]
+python -m cleansweep clean <path> [--sandbox auto|docker|none] [--untrusted] ...
 ```
 
 - `--mode safe` (default): deterministic edits only, every package fully verified, anything
@@ -447,6 +448,23 @@ python -m cleansweep clean --resume <out dir or run id> [--quiet]
 - Notebooks (`core.agents.notebooks`, `hold` for `clean`, `ignore` for experiment runs): no test
   runs a notebook, so a function, class, file or dependency that a notebook's code cells name
   stays a suggestion (`auditor.hold_notebook_uses`, before PLAN).
+- `--sandbox` (`sandbox/container.py`; Studio passes the same `sandbox` value): `docker` runs
+  every command that runs the project's code (the install, the tests, compile and import
+  checks, probes, the UI harness) in a `python:3.11` container with the workspace mounted at
+  `/repo`, installs the project there with pip from the same install plan (no poetry or uv in
+  the container) plus pytest and coverage, then `docker network disconnect`s it before any of
+  the project's code runs, as the AIDev workspace does; the detectors, ruff and git stay on the
+  host and only read files, and for a sandboxed git repository no git command that reads its
+  working tree runs in the original (its `.git/config` could name a filter or fsmonitor
+  command). `none` runs on the host as before. `auto` (the CLI's default, also from
+  `CLEANSWEEP_SANDBOX`) is none for a folder in a git repository with at least one commit whose
+  author email is the user's `git config --global user.email` (the repository's own config
+  does not count: it could name its authors), docker otherwise; `--untrusted` forces docker.
+  The choice and its reason are printed and written to the report. Docker missing or not
+  running ends the run with "stopped: Docker is not ..., nothing applied". The container is
+  removed when the run ends (the workspace folder stays); a resumed run starts a new one.
+  `docker/Dockerfile` builds an image with CleanSweep installed (`CLEANSWEEP_SANDBOX=none`
+  inside: that container is the sandbox); see the README for the one-line `docker run`.
 - `--resume` (`agents/checkpoint.py`): at each safe point (a phase entered, a work package
   finished) the run's state goes to `checkpoint.json` in the output folder, and `run.json` holds
   the options it started with. A resumed run resets the workspace to the checkpoint's commit

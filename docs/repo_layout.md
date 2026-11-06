@@ -11,6 +11,7 @@ cleansweep/
 ├── configs/                              settings: base.yaml (core, guard, agents), data.yaml,
 │                                         exp.yaml, reviewer.yaml
 ├── .github/workflows/                    CI definition (lint, offline tests, contract check)
+├── docker/                               Dockerfile (CleanSweep in a container) and its ignore file
 ├── src/cleansweep/                       the package
 │   ├── core/                             contracts (models.py, contracts.py), config, JSON io
 │   ├── llm/                              LLM client with disk cache; FakeLLM for tests

@@ -26,6 +26,7 @@ from .workspace import GIT_ID, Workspace, junit_statuses, parse_junit
 
 IMAGE = "python:3.11"
 MOUNT = "/repo"
+JUNIT = "/tmp/cs_junit.xml"  # in the container
 # Runs inside the container (python:3.11): install the project with whatever test/dev extras
 # and dependency groups it declares, its requirements files, then pytest.
 INSTALL_PY = r"""
@@ -173,13 +174,17 @@ class AidevWorkspace(Workspace):
 
     def run_tests(self, test_paths: list[str] | None = None, timeout: int = 900) -> RunResult:
         """pytest in the container with a JUnit report copied back to the host."""
-        self.test_runs += 1
-        xml = "/tmp/cs_junit.xml"
         # an optional dependency missing in one module must not stop the whole run
-        cmd = ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={xml}"]
+        cmd = ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={JUNIT}"]
         cmd.append("--continue-on-collection-errors")
+        return self._junit_run([*cmd, *(test_paths or [])], timeout)
+
+    def _junit_run(self, cmd: list[str], timeout: int) -> RunResult:
+        """Run a test command that writes JUNIT in the container; read the report back."""
+        self.test_runs += 1
+        xml = JUNIT
         start = time.time()
-        code, out = self._exec(shlex.join([*cmd, *(test_paths or [])]), timeout)
+        code, out = self._exec(shlex.join(cmd), timeout)
         self.last_test_output = out
         self.last_statuses = {}
         with tempfile.TemporaryDirectory() as tmp:

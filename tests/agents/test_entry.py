@@ -105,3 +105,22 @@ def test_clean_resume_and_interruptions_from_the_command_line(mini, tmp_path, ca
     assert main(["clean", "--resume", "run-1", "--quiet"]) == 1  # a stopped run is an error
     assert seen["ref"] == "run-1"
     assert "Result: stopped: OSError: x, nothing applied." in capsys.readouterr().out
+
+
+def test_clean_says_which_sandbox_it_uses(mini, capsys, monkeypatch):
+    seen = {}
+
+    def fake_clean(path, cfg, **kwargs):
+        seen.update(kwargs)
+        summary = {"verdict": "nothing applied", "applied": 0, "lines_removed": 0}
+        summary |= {"files_removed": 0, "suggested": 0}
+        return {"summary": summary, "branch": None, "files": []}
+
+    monkeypatch.setattr("cleansweep.agents.clean_project", fake_clean)
+    assert main(["clean", str(mini), "--no-llm", "--sandbox", "auto"]) == 0
+    assert "Sandbox: docker (not a git repository)" in capsys.readouterr().out
+    assert seen["sandbox"] == "auto" and not seen["untrusted"]
+    assert main(["clean", str(mini), "--untrusted"]) == 2  # the tests run with sandbox none
+    assert "--untrusted needs the docker sandbox" in capsys.readouterr().err
+    assert main(["clean", str(mini), "--untrusted", "--sandbox", "docker"]) == 0
+    assert "Sandbox: docker (--untrusted)" in capsys.readouterr().out

@@ -191,3 +191,33 @@ def test_what_a_notebook_uses_stays_a_suggestion(mini, agent_cfg, tmp_path):
     assert by_key["shop/core.py::legacy_alpha"][0] == "skipped"
     assert "Held: explore.ipynb uses it" in by_key["shop/core.py::legacy_alpha"][1]
     assert by_key["shop/extra.py::legacy_beta"][0] == "kept"
+
+
+def test_docker_not_running_stops_the_run_with_a_report(mini, agent_cfg, tmp_path, monkeypatch):
+    from cleansweep.sandbox import container
+
+    def down():
+        raise container.SandboxError("Docker is not running; start it")
+
+    monkeypatch.setattr(container, "check_docker", down)
+    before = tree_hash(mini)
+    out = tmp_path / "out"
+    result = clean_project(str(mini), agent_cfg, out=str(out), use_llm=False, sandbox="docker")
+    verdict = "stopped: Docker is not running; start it, nothing applied"
+    assert result["summary"]["verdict"] == verdict and tree_hash(mini) == before
+    assert f"**Result: {verdict}.**" in (out / "CLEANUP_REPORT.md").read_text()
+
+
+@pytest.mark.docker
+def test_clean_in_the_docker_sandbox_leaves_the_original_unchanged(mini, agent_cfg, tmp_path):
+    before = tree_hash(mini)
+    out = tmp_path / "out"
+    result = clean_project(str(mini), agent_cfg, out=str(out), use_llm=False, sandbox="auto")
+    assert tree_hash(mini) == before
+    summary = result["summary"]
+    assert summary["verdict"] == "everything runs" and summary["applied"] > 0
+    report = (out / "CLEANUP_REPORT.md").read_text()
+    assert "- Sandbox: docker (not a git repository)." in report
+    assert "network off after the install" in report
+    names = subprocess.run(["docker", "ps", "-a", "--format", "{{.Names}}"], capture_output=True)
+    assert f"cs-clean-{out.name}-" not in names.stdout.decode()  # its container is gone
