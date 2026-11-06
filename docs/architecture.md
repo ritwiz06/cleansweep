@@ -65,7 +65,7 @@ default for SWE-bench and AIDev, so they get the project's setup).
 | `core` | Data contracts (`models.py`: `CodeUnit`, `CleanupItem`, `CleanupPlan`, `EditResult`, `RunResult`, `SweepReport`, `CommitEvent`), JSON input and output, config loading, the stub registry, and the interface table (`contracts.py`) |
 | `llm` | `LLMClient`, an OpenAI-compatible chat client with a SQLite response cache, retries for rate limits, server errors and dropped connections, and JSON replies (`chat_json`). `FakeLLM` serves tests |
 | `sandbox` | `Workspace` (checkpoint, rollback, diff, apply a patch, run tests with a JUnit report, coverage) and its local, SWE-bench and AIDev variants. `hide_packages` / `restore_packages` let the Guard run tests without a removed dependency |
-| `analysis` | Code graph (`build_graph`, `CodeGraph`: callers, callees, reachability, `dynamic_risk`, `framework_callback`), framework conventions (`frameworks.py`), duplicate finding, features, and the agent scope (`scope.py`: what an agent wrote, from its patch commit or from git blame over agent commits) |
+| `analysis` | Code graph (`build_graph`, `CodeGraph`: callers, callees, reachability, `dynamic_risk`, `framework_callback`, `dynamic_refs`), framework conventions (`frameworks.py`), the dynamic-reference resolver (`dynamic_refs.py`), duplicate finding, features, and the agent scope (`scope.py`: what an agent wrote, from its patch commit or from git blame over agent commits) |
 | `reviewer` | Detectors: leftover files, dead code (vulture, checked against the graph), unused imports, unused dependencies, security, formatting, one-use wrappers, duplicates. Also the LLM judge, the over-engineering review (report only), deterministic rewrites for duplicates and wrappers, the repair prompt, the planner and its policies |
 | `guard` | `apply_edit` for every action (delete a file or unit, remove an import or dependency, format, merge a duplicate, inline a wrapper), the `Guard`, and the differential probes (`difftest.py`, `probe_harness.py`) |
 | `scheduler` | Batching and bisection, sweep policies (`should_sweep`: daily, after each agent PR, every n commits, adaptive) and the history replay (`simulate`) |
@@ -102,6 +102,22 @@ Security findings always stay in the suggest lane. Two policies run after the ju
   `ast.NodeVisitor` (`visit_*`), PyTorch and Lightning modules (`forward`, `training_step`,
   `on_*`) and hatchling build hooks (`initialize`).
 
+The agent team's Auditor runs one more policy after these (v1's plan does not, so v1 results
+stay as they were):
+
+- `dynamic_refs` (on): dead code and duplicates on units something reaches by name go to the
+  suggest lane, with the evidence. `analysis/dynamic_refs.py` finds them: entry points
+  (`[project.scripts]`, `[project.gui-scripts]`, `[project.entry-points.*]`, Poetry scripts and
+  plugins, `setup.cfg` and `setup.py`), in-tree PEP 517 backends and hatchling custom hooks,
+  dotted names in toml, yaml, json, ini and cfg files and in `.py` strings (settings lists such
+  as `INSTALLED_APPS` are named), decorator registries (`@app.route`, `@click.command`,
+  `@pytest.fixture`, `@receiver`, `@x.register`, ...), `__all__`, `getattr`/`hasattr` and
+  `import_module`/`__import__` with literal strings, `__subclasses__()` discovery, pytest and
+  hatch hook functions, and classes a framework finds by their base class (the
+  `DISCOVERED_BASES` table in `frameworks.py`: Django models, app configs, management commands,
+  migrations and test cases, `unittest.TestCase`, hatchling hooks). The Investigator treats
+  these units as uncertain and shows the evidence.
+
 Format items and format edits run `ruff format` with the project's own ruff settings when it
 has them (`ruff.toml`, `.ruff.toml` or `[tool.ruff]` in `pyproject.toml`), and with ruff's
 defaults otherwise, so detection and the edit always agree.
@@ -119,6 +135,7 @@ optional. The main ones:
 | `judge_items(items, repo_dir, llm, batch_size=None, mode=None, graph=None, cfg=None)` | every item stays in the plan; the mode decides lanes |
 | `Guard(workspace, llm, cfg, repair_fn=None, graph=None)` | `check_batch(items) -> bool`, `results()` |
 | `CodeGraph.framework_callback(unit_key)` | the framework that calls a method by name, or `None` |
+| `CodeGraph.dynamic_refs(unit_key)` | how something reaches a unit by name: one evidence line per way, resolved on first use |
 | `run_hidden_checks(target, final_diff, cfg)` | hidden tests before and after the diff |
 
 ## Configuration
@@ -142,6 +159,7 @@ A sweep's `cfg` is the merged dictionary; a caller can override any section.
 | `reviewer.scope` | `auto` | `agent` (only what the agent wrote), `repo`, or agent for SWE-bench and AIDev targets |
 | `reviewer.keep_public_api` | `auto` | `on`, `off`, `auto` |
 | `reviewer.framework_callbacks` | `on` | `on`, `off` |
+| `reviewer.dynamic_refs` | `on` | `on`, `off`; the agent team only |
 | `reviewer.exclude` | `[]` | path prefixes the Reviewer leaves alone (detectors and the over-engineering review) |
 | `reviewer.vulture_min_confidence`, `duplicate_threshold` | 60, 0.8 | detector thresholds |
 | `reviewer.overengineering` | true | the over-engineering review (report only) |

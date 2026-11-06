@@ -28,5 +28,11 @@ keep_public_api: auto
 # nothing in the project calls them, so neither the graph nor the Guard can see that they are used.
 #   on | off
 framework_callbacks: on
+# The agent team only (v1's plan never applies it): dead code and duplicates on units something
+# reaches by name go to the suggest lane with the evidence. Entry points, names in config files
+# and settings lists, decorator registries, __all__, getattr/import_module with literal strings,
+# __subclasses__() discovery, framework base classes (src/cleansweep/analysis/dynamic_refs.py).
+#   on | off
+dynamic_refs: on
 # Folders or files the Reviewer leaves alone (path prefixes), e.g. [tests/fixtures/, demo/]
 exclude: []
