@@ -1,12 +1,14 @@
-"""The deletions among the shell commands Aider proposed (which auto-yes declined), run after it
-exits: rm or git rm with only -r/-f flags, on plain relative paths that exist in the workspace.
-Everything else is refused and recorded with the reason."""
+"""What Aider meant to delete, done after it exits: the deletions among the shell commands it
+proposed (which auto-yes declined), that is rm or git rm with only -r/-f flags on plain relative
+paths that exist in the workspace (everything else is refused and recorded with the reason); and
+the files it emptied, its other way to remove a leftover file."""
 
 from __future__ import annotations
 
 import re
 import shlex
 import shutil
+import subprocess
 from pathlib import Path, PurePosixPath
 
 DELETE_FLAGS = {"-r", "-f", "-rf", "-fr", "-R"}
@@ -71,3 +73,22 @@ def run_deletions(commands: list[str], root: Path) -> dict:
                         path.unlink()
                 executed.append(part)
     return {"executed": executed, "refused": refused}
+
+
+def delete_emptied(root: Path, base: str) -> list[str]:
+    """Delete the files left empty or whitespace-only that were not empty at the base commit;
+    return their paths."""
+    git = ["git", "-c", "core.quotePath=false"]
+    changed = subprocess.run(
+        [*git, "diff", "-z", "--name-only", base], cwd=root, capture_output=True, check=True
+    ).stdout.decode()
+    emptied = []
+    for rel in filter(None, changed.split("\0")):
+        path = root / rel
+        if path.is_symlink() or not path.is_file() or path.read_bytes().strip():
+            continue
+        before = subprocess.run([*git, "show", f"{base}:{rel}"], cwd=root, capture_output=True)
+        if before.stdout.strip():
+            path.unlink()
+            emptied.append(rel)
+    return emptied

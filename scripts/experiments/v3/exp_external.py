@@ -14,7 +14,8 @@ instruction as its one message, auto-yes, no commits, the project's tests with a
 container has network while Aider runs (the judging, on the final diff, stays network-less); the
 key stays on the host (llm_relay.Relay). Root files that would reconfigure Aider are moved aside
 during the run. Auto-yes declines the shell commands Aider proposes; afterwards the plain
-deletions among them run in the workspace. A run stops at the time cap, keeping its diff.
+deletions among them run in the workspace, and files it emptied are deleted (its other way to
+remove a file). A run stops at the time cap, keeping its diff.
 """
 
 from __future__ import annotations
@@ -38,7 +39,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
 
 from llm_relay import RELAY_HOST, REQUEST_TIMEOUT_S, Relay, context_window  # noqa: E402
-from shell_deletions import run_deletions  # noqa: E402
+from shell_deletions import delete_emptied, run_deletions  # noqa: E402
 
 from cleansweep.agents.protocol import REASONING_OFF  # noqa: E402
 from cleansweep.analysis.graph import is_test_file  # noqa: E402
@@ -169,7 +170,8 @@ def settings(model: str, test_cmd: str, cap_s: int, context: dict) -> dict:
             "retries": "Aider's own: backoff from 0.25 s, doubling, until it passes 60 s",
         },
         "shell_commands": "auto-yes declines them; afterwards the runner runs the plain "
-        "deletions among them (rm, git rm with -r/-f, existing relative paths)",
+        "deletions among them (rm, git rm with -r/-f, existing relative paths); files it "
+        "left empty or whitespace-only that were not empty at the base are deleted too",
         "network": "on while Aider runs; the judging runs network-less",
     }
 
@@ -317,7 +319,10 @@ def run_aider(
         "stopped": "time cap" if capped else None,
         "seconds": round(seconds, 1),
         "moved_aside": hidden,
-        "deletions": run_deletions(counts["shell_commands"], root),
+        "deletions": {
+            **run_deletions(counts["shell_commands"], root),
+            "emptied": delete_emptied(root, ws.base),
+        },
         "secrets_found": redact(logs, secrets),
         **counts,
     }

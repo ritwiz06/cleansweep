@@ -27,6 +27,7 @@ def workspace(tmp_path):
     (src / "pkg").mkdir(parents=True)
     (src / "pkg" / "a.py").write_text("import os\n\nVALUE = 1\n")
     (src / "scratch.py").write_text("print(1)\n")
+    (src / "notes.py").write_text("NOTE = 1\n")
     (src / ".env").write_text("SOMETHING=1\n")
     ws = open_local(str(src), {"work_dir": str(tmp_path / "ws")})
     ws.container = "cs-test"
@@ -58,6 +59,7 @@ def fake_exec(ws, calls, code=0, sleep=0.0):
         (io / "log.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
         (io / "chat_history.md").write_text("> aider\n> Run shell command? [Yes]: n\n")
         (Path(ws.path) / "pkg" / "a.py").write_text("VALUE = 1\n")
+        (Path(ws.path) / "notes.py").write_text("\n")  # emptied, Aider's way to remove a file
         (Path(ws.path) / ".aider.tags.cache.v4").mkdir()
         time.sleep(sleep)
         return code, f"Aider v0.86.2\nerror reply quoting {KEY}\n"
@@ -114,12 +116,13 @@ def test_run_aider_relays_counts_deletes_and_restores(tmp_path, monkeypatch, ups
         assert (out["prompt_tokens"], out["completion_tokens"]) == (900, 50)
         assert out["stopped"] is None and out["exit_status"] == 0
         assert out["deletions"]["executed"] == ["rm scratch.py"]
+        assert out["deletions"]["emptied"] == ["notes.py"]
         assert [r["command"] for r in out["deletions"]["refused"]] == ["rm -rf /tmp/elsewhere"]
         assert out["moved_aside"] == [".env"] and (Path(ws.path) / ".env").exists()
         assert out["secrets_found"] == {"key": 1, "endpoint": 0}
         assert not list(Path(ws.path).glob(".aider.tags.cache*"))
         diff = ws.diff(ws.base)
-        assert "deleted file mode" in diff and diff.count("diff --git") == 2
+        assert diff.count("deleted file mode") == 2 and diff.count("diff --git") == 3
     finally:
         ws.close()
     assert seen[0][2] == f"Bearer {KEY}"  # the relay added the key
@@ -161,12 +164,17 @@ def test_run_writes_the_result_json_with_settings(tmp_path, monkeypatch, upstrea
     assert result["aider_version"] == "0.86.2" and result["image"] == "cs-aider:0.86.2"
     assert result["time_cap_s"] == 30 and "--auto-test" in result["argv"]
     assert result["context_window"]["max_input_tokens"] == 262144
-    assert result["files_removed"] == 1 and result["deletions"]["executed"] == ["rm scratch.py"]
+    assert result["files_removed"] == 2 and result["deletions"]["executed"] == ["rm scratch.py"]
     saved = json.loads((tmp_path / "run" / "result.json").read_text())
     assert saved["model"] == "openai/model_a" and saved["stopped"] is None
     report = json.loads((tmp_path / "run" / "report.json").read_text())
     assert report["method"] == "aider"
-    assert [i["action"] for i in report["plan"]["items"]] == ["apply_patch", "delete_file"]
+    actions = [(i["unit"]["path"], i["action"]) for i in report["plan"]["items"]]
+    assert actions == [
+        ("notes.py", "delete_file"),
+        ("pkg/a.py", "apply_patch"),
+        ("scratch.py", "delete_file"),
+    ]
     assert (tmp_path / "run" / "aider" / "requests.jsonl").exists()
     for path in (tmp_path / "run").rglob("*"):
         if path.is_file():

@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -39,3 +40,25 @@ def test_only_plain_deletions_of_existing_workspace_paths_run(tmp_path):
     assert reasons["rm -r ."].startswith("not a plain relative path")
     left = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
     assert left == [".git/HEAD", "folder/a.py", "keep.py"]
+
+
+def test_files_left_empty_are_deleted_unless_they_were_empty_at_base(tmp_path):
+    deletions = load()
+    root = tmp_path / "repo"
+    (root / "pkg").mkdir(parents=True)
+    files = {"pkg/old.py": "x = 1\n", "kept.py": "y = 2\n", "pkg/__init__.py": ""}
+    for name, text in files.items():
+        (root / name).write_text(text)
+    git = ["git", "-c", "user.name=agent_a", "-c", "user.email=agent_a@example.com"]
+    subprocess.run([*git, "init", "-q"], cwd=root, check=True)
+    subprocess.run([*git, "add", "-A"], cwd=root, check=True)
+    subprocess.run([*git, "commit", "-q", "-m", "base"], cwd=root, check=True)
+    base = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    (root / "pkg" / "old.py").write_text("  \n\n")
+    (root / "kept.py").write_text("y = 3\n")
+    (root / "new.py").write_text("")
+    assert deletions.delete_emptied(root, base) == ["pkg/old.py"]
+    assert not (root / "pkg" / "old.py").exists()
+    assert (root / "pkg" / "__init__.py").exists() and (root / "new.py").exists()
