@@ -127,9 +127,10 @@ def _checker(lessons: list[dict]):
     return check
 
 
-def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
+def first_checks(rt, item: CleanupItem, agent: str, start: int = 0) -> list[dict]:
     """The checks every investigation starts with, run before the LLM is asked: references,
-    dynamic use and lessons. Their results are R1, R2, ... in the task."""
+    dynamic use and lessons. Their results are R1, R2, ... in the task (numbered from start + 1
+    when a batch has earlier candidates)."""
     name = _short(item)
     calls = [("find_references", {"name": name})]
     if item.unit.name:
@@ -140,7 +141,7 @@ def first_checks(rt, item: CleanupItem, agent: str) -> list[dict]:
     for tool_name, args in calls:
         call = rt.log.emit("tool_call", agent=agent, payload={"tool": tool_name, "args": args})
         result = rt.tools.call(tool_name, args)[:1500]
-        rid = f"R{len(steps) + 1}"
+        rid = f"R{start + len(steps) + 1}"
         rt.log.emit(
             "tool_result",
             agent=agent,
@@ -429,7 +430,11 @@ def _isolated(fn):
 def run(rt) -> None:
     """INVESTIGATE: a verdict for every candidate, up to `parallel_llm` Investigators at once.
     core.agents.investigate: all (every candidate the rules do not settle goes to an
-    Investigator), adaptive (only the uncertain ones; the rest by rules) or none (all by rules)."""
+    Investigator), adaptive (only the uncertain ones; the rest by rules) or none (all by rules).
+    core.agents.investigate_batch: on asks about candidates with the same pattern together
+    (agents/batching.py)."""
+    from .batching import batch_on, investigate_batched
+
     pending = [i for i in rt.items.values() if i.item_id not in rt.verdicts]
     mode = rt.acfg.get("investigate", "all")
     use_llm = rt.llm is not None and rt.ablation != "no_research" and mode != "none"
@@ -446,9 +451,12 @@ def run(rt) -> None:
         text = f"{len(asked)} of {len(asked) + len(ruled)} candidates go to the Investigators"
         rt.log.emit("decision", agent=NAME, payload={"rule": "adaptive", "text": text})
     by_llm, by_rules = _isolated(investigate_llm), _isolated(investigate_rules)
-    with cf.ThreadPoolExecutor(max(1, int(rt.acfg.get("parallel_llm", 3)))) as pool:
-        for verdict in pool.map(lambda job: by_llm(rt, job[1], job[0]), asked):
-            rt.verdicts[verdict["item_id"]] = verdict
+    if asked and batch_on(rt.acfg):
+        investigate_batched(rt, asked, by_llm)
+    else:
+        with cf.ThreadPoolExecutor(max(1, int(rt.acfg.get("parallel_llm", 3)))) as pool:
+            for verdict in pool.map(lambda job: by_llm(rt, job[1], job[0]), asked):
+                rt.verdicts[verdict["item_id"]] = verdict
     for n, item in ruled:
         rt.verdicts[item.item_id] = by_rules(rt, item, n)
     for item in pending:

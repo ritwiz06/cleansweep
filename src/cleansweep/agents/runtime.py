@@ -9,6 +9,7 @@ from pathlib import Path
 from cleansweep.analysis import build_graph
 from cleansweep.core.models import CleanupItem, EditResult
 
+from .batching import batch_on
 from .board import MessageBoard
 from .budgets import Budget, RunBudget
 from .cache import ArtifactCache
@@ -84,6 +85,7 @@ class Runtime:
             raise ValueError(f"unknown ablation {self.ablation!r}")
         if self.acfg.get("investigate", "all") not in INVESTIGATE:
             raise ValueError("investigate must be all, adaptive or none")
+        batch_on(self.acfg)  # raises on anything but on or off
         self.ws = ws
         self.out = Path(out_dir).resolve()  # commands run in the workspace: never relative
         self.out.mkdir(parents=True, exist_ok=True)
@@ -142,6 +144,7 @@ class Runtime:
         self.revert_all = False  # FINAL VERIFY: undo every kept package, not just the last ones
         self.before_verdict: dict[str, tuple] = {}  # an item as the Investigator found it
         self.retry: set[str] = set()  # items to investigate again with twice the steps
+        self.pattern_verdicts: dict[tuple, dict] = {}  # investigate_batch: cautious verdicts
 
     def budget(self, role: str) -> Budget:
         """A fresh budget for one instance of an agent."""
