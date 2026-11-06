@@ -77,3 +77,31 @@ def test_a_relative_run_folder_never_lands_in_the_workspace(mini, agent_cfg, tmp
     agent_cfg["core"]["sandbox"]["keep_workspace"] = True
     report = run_sweep(str(mini), agent_cfg, method="agentic")
     assert report.stats["agentic"]["run_dir"] == str(tmp_path / "runs" / "r0")
+
+
+def test_clean_resume_and_interruptions_from_the_command_line(mini, tmp_path, capsys, monkeypatch):
+    from cleansweep.agents.run import Interrupted
+
+    assert main(["clean"]) == 2 and "--resume RUN" in capsys.readouterr().err
+    assert main(["clean", str(mini), "--resume", "x"]) == 2
+    assert main(["clean", "--resume", str(tmp_path / "none")]) == 1
+    assert "no run to resume" in capsys.readouterr().err
+
+    def interrupted(*args, **kwargs):
+        raise Interrupted(tmp_path / "out")
+
+    monkeypatch.setattr("cleansweep.agents.clean_project", interrupted)
+    assert main(["clean", str(mini), "--no-llm"]) == 130
+    assert f"cleansweep clean --resume {tmp_path / 'out'}" in capsys.readouterr().err
+    seen = {}
+
+    def resumed(ref, cfg, on_event=None, approve=None):
+        seen["ref"] = ref
+        summary = {"verdict": "stopped: OSError: x, nothing applied", "applied": 0}
+        summary |= {"lines_removed": 0, "files_removed": 0, "suggested": 0}
+        return {"summary": summary, "branch": None, "files": []}
+
+    monkeypatch.setattr("cleansweep.agents.run.resume_project", resumed)
+    assert main(["clean", "--resume", "run-1", "--quiet"]) == 1  # a stopped run is an error
+    assert seen["ref"] == "run-1"
+    assert "Result: stopped: OSError: x, nothing applied." in capsys.readouterr().out
