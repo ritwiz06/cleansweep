@@ -29,6 +29,9 @@ class CodeGraph:
     def framework_callback(self, unit_key: str) -> str | None:
         return None
 
+    def dynamic_refs(self, unit_key: str) -> list[str]:
+        return []
+
 
 def build_graph(repo_dir: str) -> CodeGraph:
     return CodeGraph(repo_dir)
