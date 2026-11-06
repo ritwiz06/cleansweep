@@ -569,6 +569,15 @@ code-level edits comes from the rest:
   On the demo app it passed all 11 of the
   single agent's deletions of command functions the app dispatches through `getattr`, though
   those runs failed visible tests.
+- **Containers read files through Docker Desktop's file sharing until v2.1.1.** In v2.0 and
+  v2.1, the checks that run in containers (the Guard's tests and probes on AIDev and injected
+  targets, the hidden checks and the diff audit's targeted tests) saw the workspace through a
+  bind mount, which can briefly show a container a deleted file or the old content of a file
+  git or an atomic write replaced (2 to 3 of every 60 to 100 such operations in a reproduction,
+  idle or under load). Whether any v2 check read a stale file is possible, not measured: the
+  logs record outcomes, not file hashes. A stale read hides a change, so it can only have made a
+  check pass that should have failed. From v2.1.1 each container holds its own copy, synced and
+  checked by hash before every command.
 - **Probes check only what the model thinks to call.** A target that needs files, the network
   or the clock gets no probe cases; direct-mode probes can't set up a framework (runner mode,
   the default in containers, can).

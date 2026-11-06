@@ -89,6 +89,7 @@ class LLMClient:
         timeout_s: float = 600,
         openai_client=None,
         extra_body: dict | None = None,
+        max_calls: int | None = None,
     ):
         if openai_client is None:
             from openai import OpenAI
@@ -101,6 +102,7 @@ class LLMClient:
         self.model = model
         self.max_retries = max_retries
         self.extra_body = extra_body or None
+        self.max_calls = max_calls  # requests (cache hits are free); None: no limit
         self._cache = _Cache(cache_path) if cache_path else None
         self._seed_ok = True
         self._usage = {"llm_calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
@@ -161,6 +163,9 @@ class LLMClient:
         key = self._key(messages, temperature, seed, extra)
         if self._cache and (hit := self._cache.get(key)) is not None:
             return hit
+        if self.max_calls is not None and self._usage["llm_calls"] >= self.max_calls:
+            self._event("budget")
+            raise LLMError(f"LLM budget exhausted ({self.max_calls} requests)")
         resp = self._create(messages, temperature, seed, extra)
         reply = resp.choices[0].message.content or ""
         with self._usage_lock:
@@ -233,4 +238,5 @@ def get_client(cfg: dict | None = None) -> LLMClient:
         max_retries=cfg.get("max_retries", 2),
         timeout_s=cfg.get("timeout_s", 600),
         extra_body=cfg.get("extra_body"),
+        max_calls=cfg.get("max_calls"),
     )
