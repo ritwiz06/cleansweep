@@ -1,5 +1,45 @@
 # Changelog
 
+## v2.1 (2026-11-06)
+
+The known limitations of v2.0 fixed, a polished Studio, and the v3 evaluation's tools. v2.0's
+tables and conclusion are unchanged; v3 results go in `results/summary/v3/`.
+
+### Safety and autonomy
+- A dynamic-reference resolver: code something reaches by name (entry points, names in config files
+  and settings lists, registry decorators, `__all__`, literal `getattr`/`import_module`,
+  `__subclasses__()` discovery, classes a framework finds by base class) stays a suggestion with
+  its evidence (`reviewer.dynamic_refs`, the agent team only; v1 is unchanged) (#156).
+- `clean --sandbox auto|docker|none` and `--untrusted`: a folder that is not a git repository you
+  own runs in a Docker container, cut off from the network after the install; a `docker/Dockerfile`
+  and a one-line `docker run` quick start (#161).
+- `clean` finishes on its own: test-command detection (pytest, unittest, tox, nox, a Makefile
+  `test` target), pip/poetry/uv environments and a `src/` layout, a no-tests mode that keeps an edit
+  only when probes cover it ("not verified by tests"), a fixed set of verdicts with "stopped:
+  <reason>, nothing applied" instead of a stack trace, and `clean --resume` (#160).
+- Investigation batching, off by default (`core.agents.investigate_batch`): up to five similar
+  candidates per Investigator request, cautious verdicts reused within a run (#157).
+
+### Studio
+- One design system (type and spacing scales, state colors with glyphs and labels, light and
+  dark, reduced motion); a Home screen ("Clean a folder"); the Project view (the file tree by live
+  state, the acting agent on each node); Before / after (both trees, annotated side-by-side diffs,
+  a metrics card) (#162).
+- Presentation mode (large type, one caption per step, a fixed pace, Space to the next decision)
+  and a self-contained HTML export of a run; every shipped recording through every screen in both
+  themes in Playwright; all user-guide screenshots retaken (#163).
+
+### Evaluation tools (v3)
+- The v3 repository set: a larger license-checked screen of the AIDev pool, split into INJECT,
+  REAL and AUTONOMY with an ordered reserve (#159).
+- The external baseline: Aider 0.86.2 with the agents' model, a fixed cleanup instruction written
+  before any run, the key kept on the host by a relay, judged by the same checks (#158).
+- The human-rating packet builder and Cohen's kappa (#155); the audit-miss estimate on v2's
+  "no"-voted edits, with the injection key's trap census (#164).
+- Runners for out-of-sample injection, real projects with held-out real tests, and the autonomy
+  benchmark (#165).
+- The v3.0 requirements R17–R30 (#154).
+
 ## v2.0 (2026-11-05)
 
 The agent team: `cleansweep clean` and `method=agentic`. v1 (`method=cleansweep`) and every v1
