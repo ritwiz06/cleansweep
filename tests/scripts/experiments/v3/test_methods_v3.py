@@ -1,5 +1,7 @@
 import importlib.util
+import os
 import signal
+import sys
 import time
 from pathlib import Path
 
@@ -11,6 +13,7 @@ SCRIPT = Path(__file__).resolve().parents[4] / "scripts" / "experiments" / "v3" 
 def load():
     spec = importlib.util.spec_from_file_location("methods_v3", SCRIPT)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # its dataclass looks its module up while it is defined
     spec.loader.exec_module(module)
     return module
 
@@ -71,3 +74,14 @@ def test_a_run_at_the_cap_or_the_budget_is_timed_out():
     assert methods.timed_out({"llm_calls": methods.LLM_BUDGET}, 10) == "LLM budget"
     assert methods.timed_out({"external": {"stopped": "LLM budget"}}, 10) == "LLM budget"
     assert methods.timed_out({"llm_calls": 3, "agentic": {"stopped": None}}, 10) == ""
+
+
+def test_the_second_model_variants_set_the_agents_model(monkeypatch):
+    methods = load()
+    monkeypatch.delenv("CLEANSWEEP_MODEL", raising=False)
+    single = methods.resolve("agentic-single_agent-m2")
+    assert single.model == methods.SECOND_MODEL and single.agents == {"ablation": "single_agent"}
+    cfg = methods.apply({"core": {"llm": {"cache_path": "c.sqlite"}}}, single)
+    assert cfg["core"]["llm"] == {"cache_path": "c.sqlite", "model_env": "CLEANSWEEP_MODEL"}
+    assert os.environ["CLEANSWEEP_MODEL"] == methods.SECOND_MODEL
+    assert methods.resolve("agentic").model == ""
