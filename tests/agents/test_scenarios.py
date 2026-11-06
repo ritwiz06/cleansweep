@@ -29,7 +29,7 @@ def _says(where: str, choice: str) -> ScriptedLLM:
 def _run(scenario, agent_cfg, tmp_path, manager_llm=None):
     script = _script()
     agents = agent_cfg["core"]["agents"]
-    agents.update(script.SCENARIOS[scenario]["agents"], baseline_runs=3)
+    agents.update(script.SCENARIOS[scenario]["agents"], baseline_runs=3, **script.V2_CLEAN)
     out = tmp_path / scenario
     clean_project(
         str(script.FIXTURES / scenario),

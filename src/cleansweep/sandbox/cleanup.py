@@ -10,6 +10,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from .container import OWNER_LABEL, PREFIX
 from .local import default_work_dir
 from .workspace import OWNER_FILE
 
@@ -70,6 +71,35 @@ def sweep_orphans(sandbox: dict | None = None, max_age_s: float = DAY) -> list[s
     return [str(p) for p in found]
 
 
+def sweep_containers() -> list[str]:
+    """Remove `clean --sandbox docker` containers whose run is no longer alive (a killed run
+    cannot remove its own); return their names."""
+    docker = shutil.which("docker")
+    if not docker:
+        return []
+    fmt = f'{{{{.Names}}}} {{{{.Label "{OWNER_LABEL}"}}}}'
+    try:
+        proc = subprocess.run(
+            [docker, "ps", "-a", "--filter", f"name=^{PREFIX}", "--format", fmt],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired:
+        return []
+    stale = []
+    for line in proc.stdout.splitlines() if proc.returncode == 0 else []:
+        name, _, pid = line.partition(" ")
+        if name.startswith(PREFIX) and not (pid.isdigit() and _alive(int(pid))):
+            stale.append(name)
+    for name in stale:
+        try:
+            subprocess.run([docker, "rm", "-f", name], capture_output=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            pass
+    return stale
+
+
 def _exit(signum, frame) -> None:
     raise SystemExit(128 + signum)
 
@@ -88,4 +118,4 @@ def exit_on_signals() -> None:
 def on_start(sandbox: dict | None = None) -> list[str]:
     """A runner's start: clean up on signals from here on, and sweep earlier runs' orphans."""
     exit_on_signals()
-    return sweep_orphans(sandbox)
+    return sweep_orphans(sandbox) + sweep_containers()

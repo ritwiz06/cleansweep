@@ -8,6 +8,7 @@ import re
 
 from cleansweep.core.io import to_dict
 from cleansweep.guard import ui_check
+from cleansweep.guard.difftest import import_name
 from cleansweep.guard.guard import ast_unchanged, check_dependencies
 from cleansweep.reviewer.detectors import has_package_metadata, is_public_api
 
@@ -17,6 +18,9 @@ from .llm import acting
 NAME = "validator"
 EXTRA_ROUNDS = {"thorough": 2}  # probe rounds beyond probe_rounds
 REWRITES = ("replace_with", "apply_patch")  # code rewrites, not deletions
+# with no usable tests: removals a module check covers, and edits no probe can cover
+REMOVALS = ("delete_unit", "remove_import")
+UNPROBED = ("delete_file", "remove_dependency")
 
 
 def check_package(rt, pkg) -> bool:
@@ -58,8 +62,9 @@ def check_package(rt, pkg) -> bool:
                 checks,
             )
         guard_cfg = rt.cfg.get("core", {}).get("guard", {})
+        settings = rt.acfg.get(NAME) or {}
+        outcome, info = None, {}
         if guard_cfg.get("diff_tests", True):
-            settings = rt.acfg.get(NAME) or {}
             with acting(NAME, budget):
                 outcome, info = probe_with_coverage(
                     rt.ws,
@@ -112,12 +117,45 @@ def check_package(rt, pkg) -> bool:
                     f"would not show: {blind}"
                 )
                 return _fail(rt, pkg, "unverified", log, checks)
+        if rt.untested:
+            gaps = unprobed(items, outcome, info, float(settings.get("coverage_target", 0.9)))
+            if gaps:
+                log = f"no usable tests, and the probes do not cover these edits: {gaps}"
+                return _fail(rt, pkg, "untested", log, checks)
         checks["ui"], log = _ui(rt, pkg, items)
         if log:
             return _fail(rt, pkg, "ui", log, checks)
         return _pass(rt, pkg, checks)
     finally:
         rt.record_usage(NAME, budget)
+
+
+def unprobed(items, outcome, info: dict, target: float) -> list[str]:
+    """With no usable tests, the edits the probes did not cover. A removal is covered when its
+    module imported before the change and the module check passed; any other edit when the
+    probes ran at least `target` of the changed lines. Nothing is covered when the probes did
+    not run or found a difference."""
+    if outcome is None or not outcome.same:
+        return [i.unit.key for i in items]
+    checked = set(info.get("modules_checked", []))
+    reached = info.get("coverage") or 0.0
+    return [
+        i.unit.key
+        for i in items
+        if not (import_name(i.unit.path) in checked if i.action in REMOVALS else reached >= target)
+    ]
+
+
+def hold_unprobed(rt) -> None:
+    """With no usable tests, these stay suggestions: file and dependency removals (no probe
+    covers them) and removals of public API (code outside the project may use it)."""
+    for item in rt.safe_items():
+        if item.action in UNPROBED:
+            item.lane = "suggest"
+            item.reason += " Held: no usable tests, and no probe can check this removal."
+        elif item.action == "delete_unit" and is_public_api(rt.ws.path, item.unit):
+            item.lane = "suggest"
+            item.reason += " Held: no usable tests, and it is public API."
 
 
 def pinned_spec(text: str, name: str) -> str | None:

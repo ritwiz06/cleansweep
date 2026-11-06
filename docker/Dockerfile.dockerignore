@@ -1,0 +1,10 @@
+# the build context is the repository: leave out secrets, local-only files, data and caches
+.*
+*.md
+**/.env
+**/.env.*
+data
+results/raw
+app/studio/frontend/node_modules
+**/__pycache__
+**/*.pyc

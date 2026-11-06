@@ -3,27 +3,36 @@
 from __future__ import annotations
 
 import copy
+import json
+import os
+import subprocess
 import tempfile
 import time
+import traceback
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from cleansweep.analysis.graph import iter_py_files
 from cleansweep.core.io import save_json
 from cleansweep.core.models import CleanupPlan, EditResult, SweepReport
 from cleansweep.reviewer.planner import scope_report
 from cleansweep.sandbox import open_workspace
+from cleansweep.sandbox.container import ContainerWorkspace, SandboxError, choose, open_container
 from cleansweep.sandbox.local import default_work_dir
+from cleansweep.sandbox.workspace import Workspace
 
+from . import checkpoint
 from .batching import batch_on
 from .delivery import default_out, inside, prepare_workspace
+from .environment import install_plan
 from .listing import save_project_files
 from .llm import AgentLLM
 from .runtime import Runtime
 from .team import run_team
 
 USER_CACHE = Path.home() / ".cache" / "cleansweep"
+RUN_FILE = "run.json"  # how a `clean` run started, for --resume
+STUDIO_RUNS = Path("results") / "raw" / "studio"
 
 
 def _now() -> str:
@@ -193,17 +202,21 @@ def clean_project(
     test_args: list[str] | None = None,
     exclude: list[str] | None = None,
     manager_llm=None,
+    sandbox: str = "none",
+    untrusted: bool = False,
 ) -> dict:
     """`cleansweep clean <path>`: clean a scratch copy of a project and deliver a branch.
 
     Returns {"out", "workspace", "branch", "summary", "files", "report"}. The original folder is
     never written to. manager_llm gives the Manager its own LLM (the scenario experiments run
-    the other agents without one)."""
+    the other agents without one). sandbox is "none" (this machine), "docker" or "auto"
+    (sandbox.container.choose); untrusted forces docker. Once the output folder exists, every
+    outcome is a report with a verdict; an error stops the run with "stopped: <reason>, nothing
+    applied", and an interruption (Interrupted) can be resumed with resume_project."""
     src = Path(path).expanduser().resolve()
     if not src.is_dir():
         raise FileNotFoundError(f"no such folder: {path}")
-    if not iter_py_files(str(src)):
-        raise ValueError(f"no Python files in {src}")
+    where, why = choose(src, sandbox, untrusted)
     out_dir = Path(out).expanduser().resolve() if out else default_out(src)
     if inside(out_dir, src):
         raise ValueError(
@@ -212,39 +225,197 @@ def clean_project(
     if out_dir.exists() and any(out_dir.iterdir()):
         raise FileExistsError(f"the output folder is not empty: {out_dir}")
     out_dir.mkdir(parents=True, exist_ok=True)
-    started, t0 = _now(), time.time()
     cfg = clean_config(cfg, out_dir)
+    agents = cfg["core"].setdefault("agents", {})
+    agents["no_tests"] = agents.get("no_tests") or "probes"
+    agents["notebooks"] = agents.get("notebooks") or "hold"
     if exclude:
         reviewer = cfg.setdefault("reviewer", {})
         reviewer["exclude"] = [*reviewer.get("exclude", []), *exclude]
-    ws, info = prepare_workspace(src, out_dir / "workspace", cfg["core"].get("sandbox"))
-    ws.pytest_args = list(test_args or [])
-    save_project_files(ws.path, out_dir)
-    client = (llm or _make_llm(cfg)) if use_llm else None
-    rt = Runtime(
-        ws,
-        cfg,
-        client,
-        out_dir,
-        run_id=out_dir.name,
-        on_event=on_event,
-        mode=mode,
-        dry_run=dry_run,
-        approve=approve,
-    )
-    rt.workspace_info = info
-    rt.make_patches = True
-    if manager_llm is not None:
-        rt.manager_llm = AgentLLM(manager_llm, rt.redact, rt.log, rt.run_budget)
-    run_team(rt)
-    report = build_report(rt, started, t0)
+    model_env = cfg["core"].get("llm", {}).get("model_env", "VOYAGER_MODEL")
+    run = {
+        "path": str(src),
+        "mode": mode,
+        "dry_run": dry_run,
+        "approve": approve is not None,
+        "use_llm": use_llm,
+        "test_args": list(test_args or []),
+        "model": os.environ.get(model_env),
+        "started": _now(),
+        "sandbox": where,
+        "sandbox_why": why,
+        "cfg": {k: v for k, v in cfg.items() if k != "llm_client"},
+    }
+    _save_run(out_dir, run)
+
+    def start():
+        trusted = where == "none"
+        ws, info = prepare_workspace(
+            src, out_dir / "workspace", cfg["core"].get("sandbox"), trusted
+        )
+        info["sandbox"] = f"{where} ({why})"
+        save_project_files(ws.path, out_dir)
+        if not trusted:
+            ws = _container(ws.path, ws.repo_id, cfg)
+        ws.pytest_args = list(test_args or [])
+        _save_run(out_dir, {**run, "repo_id": ws.repo_id, "info": info})
+        return ws, info
+
+    return _clean(out_dir, cfg, run, start, None, on_event, approve, llm, manager_llm)
+
+
+def resume_project(
+    ref: str,
+    cfg: dict | None = None,
+    on_event: Callable[[dict], None] | None = None,
+    approve: Callable[[str], bool] | None = None,
+    llm=None,
+    manager_llm=None,
+) -> dict:
+    """`cleansweep clean --resume <out dir or run id>`: go on from the run's last checkpoint
+    with the options it started with. Returns what clean_project returns."""
+    out_dir = find_run(ref)
+    run = json.loads((out_dir / RUN_FILE).read_text(encoding="utf-8"))
+    data = checkpoint.load(out_dir)
+    if data is None or "info" not in run:
+        raise ValueError(f"{out_dir} stopped before its first checkpoint; start the run again")
+    if data["phase"] == "DONE":
+        raise ValueError(f"the run in {out_dir} has finished; see its CLEANUP_REPORT.md")
+    run_cfg = run["cfg"]
+    if cfg and "llm_client" in cfg:
+        run_cfg["llm_client"] = cfg["llm_client"]
+    if run["use_llm"] and run.get("model"):  # the model the run started with
+        os.environ["CLEANSWEEP_MODEL"] = run["model"]
+        run_cfg["core"]["llm"]["model_env"] = "CLEANSWEEP_MODEL"
+    for name in ("CLEANUP_REPORT.md", "report.json", "error.log"):
+        (out_dir / name).unlink(missing_ok=True)  # the interrupted run's stopped report
+
+    def start():
+        folder = out_dir / "workspace"
+        base = data["workspace"]["base"]
+        for args in (["reset", "-q", "--hard", base], ["clean", "-q", "-fd"]):
+            subprocess.run(["git", *args], cwd=folder, capture_output=True, check=True)
+        if run.get("sandbox") == "docker":  # a new container: install, then the network goes
+            return _container(folder, run["repo_id"], run_cfg), run["info"]
+        return Workspace(folder, run["repo_id"], run_cfg["core"].get("sandbox")), run["info"]
+
+    approve = approve if run.get("approve") else None
+    return _clean(out_dir, run_cfg, run, start, data, on_event, approve, llm, manager_llm)
+
+
+def find_run(ref: str) -> Path:
+    """A run's output folder from its path or its name (the run id), looked up in the current
+    folder and in Studio's runs folder."""
+    from cleansweep.core.config import REPO_ROOT
+
+    for folder in (Path(ref).expanduser(), Path.cwd() / ref, REPO_ROOT / STUDIO_RUNS / ref):
+        if (folder / RUN_FILE).is_file():
+            return folder.resolve()
+    raise FileNotFoundError(f"no run to resume at {ref}; give its output folder")
+
+
+class Interrupted(KeyboardInterrupt):
+    """Ctrl-C during `clean`: the run's folder has a stopped report and a checkpoint."""
+
+    def __init__(self, out: Path):
+        super().__init__(str(out))
+        self.out = out
+
+
+def _container(path: str | Path, repo_id: str, cfg: dict) -> ContainerWorkspace:
+    """The workspace in a network-less container, the project installed with pip."""
+    steps = install_plan(path, which=lambda tool: None)["steps"]  # no poetry or uv in there
+    return open_container(path, repo_id, cfg["core"].get("sandbox"), steps)
+
+
+def _save_run(out_dir: Path, run: dict) -> None:
+    (out_dir / RUN_FILE).write_text(json.dumps(run, indent=1, default=str), encoding="utf-8")
+
+
+def _clean(out_dir, cfg, run, start, data, on_event, approve, llm, manager_llm) -> dict:
+    """Run the team on a prepared (or resumed) workspace; any failure ends in a stopped report."""
+    rt = ws = None
+    t0 = time.time() - (data["seconds"] if data else 0)
+    try:
+        ws, info = start()
+        client = (llm or _make_llm(cfg)) if run["use_llm"] else None
+        rt = Runtime(
+            ws,
+            cfg,
+            client,
+            out_dir,
+            run_id=out_dir.name,
+            on_event=on_event,
+            mode=run["mode"],
+            dry_run=run["dry_run"],
+            approve=approve,
+            resume=data is not None,
+        )
+        rt.workspace_info = info
+        rt.make_patches = True
+        rt.resumable = True
+        if manager_llm is not None:
+            rt.manager_llm = AgentLLM(manager_llm, rt.redact, rt.log, rt.run_budget)
+        if data is not None:
+            checkpoint.restore(rt, data)
+        run_team(rt)
+        report = build_report(rt, run["started"], t0)
+        save_json(report, out_dir / "report.json")
+        return {
+            "out": str(out_dir),
+            "workspace": ws.path,
+            "base": ws.base,
+            "branch": rt.branch,
+            "summary": rt.summary,
+            "files": [str(out_dir / f) for f in rt.files],
+            "report": report,
+        }
+    except KeyboardInterrupt:
+        _stopped(out_dir, run, "interrupted", rt)
+        raise Interrupted(out_dir) from None
+    except SystemExit:  # SIGTERM or SIGHUP (sandbox.cleanup.exit_on_signals)
+        _stopped(out_dir, run, "stopped by a signal", rt)
+        raise
+    except SandboxError as exc:
+        return _stopped(out_dir, run, str(exc), rt)
+    except Exception as exc:
+        return _stopped(out_dir, run, f"{type(exc).__name__}: {exc}", rt, traceback.format_exc())
+    finally:
+        if isinstance(ws, ContainerWorkspace):
+            ws.close()  # the container goes; the workspace folder stays
+
+
+def _stopped(out_dir: Path, run: dict, reason: str, rt=None, trace: str = "") -> dict:
+    """The report of a run that ended on an error or an interruption: nothing applied."""
+    from .reporter import stopped
+
+    redact = rt.redact if rt is not None else str
+    reason = redact(reason)
+    verdict = stopped(reason)
+    name = Path(run["path"]).name
+    summary = {"verdict": verdict, "applied": 0, "lines_removed": 0, "files_removed": 0}
+    summary |= {"suggested": 0, "stopped": reason}
+    lines = [f"# Cleanup report: {name}", "", f"**Result: {verdict}.**", ""]
+    lines.append("No edits were delivered, and the original folder was not changed.")
+    if checkpoint.load(out_dir) is not None:
+        lines.append(f"Continue the run with `cleansweep clean --resume {out_dir}`.")
+    if trace:
+        (out_dir / "error.log").write_text(redact(trace), encoding="utf-8")
+        lines.append("The error's details are in error.log.")
+    (out_dir / "CLEANUP_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    repo_id = run.get("repo_id") or f"local:{name}"
+    stats = {"agentic": {"verdict": verdict, "stopped": reason, "run_dir": str(out_dir)}}
+    plan = CleanupPlan(repo_id, run["started"], [])
+    report = SweepReport(repo_id, "agentic", "now", 0, run["started"], _now(), plan, [], stats)
     save_json(report, out_dir / "report.json")
+    if rt is not None:
+        rt.log.emit("run_end", agent="manager", payload={"phases": [], "summary": summary})
     return {
         "out": str(out_dir),
-        "workspace": ws.path,
-        "base": ws.base,
-        "branch": rt.branch,
-        "summary": rt.summary,
-        "files": [str(out_dir / f) for f in rt.files],
+        "workspace": str(out_dir / "workspace"),
+        "base": None,
+        "branch": None,
+        "summary": summary,
+        "files": [str(out_dir / "CLEANUP_REPORT.md")],
         "report": report,
     }

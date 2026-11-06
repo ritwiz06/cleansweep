@@ -59,11 +59,9 @@ class EventLog:
         on_event: Callable[[dict], None] | None = None,
         v1_hook: Callable[[str, dict], None] | None = None,
         redact: Callable[[str], str] | None = None,
+        append: bool = False,
     ):
         self.path = Path(path) if path else None
-        if self.path:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text("", encoding="utf-8")
         self.run_id = run_id
         self.on_event = on_event
         self.v1_hook = v1_hook
@@ -73,6 +71,13 @@ class EventLog:
         self.phase: str | None = None
         self._lock = threading.Lock()
         self._n = 0
+        if self.path and append and self.path.exists():  # a resumed run goes on with its log
+            earlier = read_events(self.path)
+            self._n = len(earlier)
+            self.t0 -= earlier[-1]["t"] if earlier else 0.0
+        elif self.path:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text("", encoding="utf-8")
 
     def _clean(self, value):
         if self.redact is None:
