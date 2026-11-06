@@ -36,6 +36,8 @@ core:
     manager_budget: {llm_calls: 12}  # the LLM-guided Manager's decisions; the run budget caps time
     ablation: null         # no_research | broadcast | inline_artifacts | no_lessons | no_coverage | single_agent
     investigate: all       # all | adaptive: only uncertain candidates go to an Investigator, the rest by rules | none
+    investigate_batch: off # on: candidates with the same pattern share one Investigator request (at most 5),
+                           # and a suggest/drop verdict is reused for an identical pattern | off
     parallel_llm: 3        # LLM requests at once (Investigators)
     baseline_runs: 3       # test runs for the baseline (flaky tests are those that change)
     related_first_s: 20    # run related tests before the full suite when the suite takes longer

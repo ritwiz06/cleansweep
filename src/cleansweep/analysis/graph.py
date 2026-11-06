@@ -5,6 +5,7 @@ import os
 import re
 import tomllib
 from collections import defaultdict, deque
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -100,6 +101,7 @@ class CodeGraph:
         self._dyn_modules: set[str] = set()
         self._strings: set[str] = set()
         self._prefixes: set[str] = set()
+        self._refs: dict[str, list[str]] | None = None  # resolved on first use
 
     def units(self) -> list[CodeUnit]:
         """All file, class and function units."""
@@ -127,6 +129,15 @@ class CodeGraph:
     def framework_callback(self, unit_key: str) -> str | None:
         """The framework that calls this method by name (see analysis/frameworks.py), or None."""
         return self._framework.get(unit_key)
+
+    def dynamic_refs(self, unit_key: str) -> list[str]:
+        """How something reaches this unit by name (analysis/dynamic_refs.py), one evidence line
+        per way; empty when nothing does. Resolved for the whole graph on the first call."""
+        if self._refs is None:
+            from .dynamic_refs import resolve_dynamic_refs
+
+            self._refs = resolve_dynamic_refs(self)
+        return list(self._refs.get(unit_key, ()))
 
     def file_of(self, unit_key: str) -> str:
         return unit_key.split("::", 1)[0]
@@ -377,13 +388,14 @@ def _find_dynamic(g: CodeGraph, by_name: dict[str, _Module]) -> None:
             g._dynamic.add(key)
 
 
-def _class_framework(
+def external_bases(
     mod: _Module, name: str, by_name: dict[str, _Module], seen: set[tuple[str, str]]
-) -> str | None:
-    """The framework a class inherits from, following bases through the project's modules."""
+) -> Iterator[str]:
+    """Dotted names of the bases outside the project a class inherits from, depth first,
+    following bases through the project's modules."""
     node = mod.defs.get(name)
     if not isinstance(node, ast.ClassDef) or (mod.path, name) in seen:
-        return None
+        return
     seen.add((mod.path, name))
     for base in node.bases:
         base = base.value if isinstance(base, ast.Subscript) else base  # Screen[None]
@@ -392,20 +404,26 @@ def _class_framework(
         head, *rest = ast.unparse(base).split(".")
         alias = mod.aliases.get(head)
         if alias is None:
-            found = _class_framework(mod, head, by_name, seen) if not rest else None
+            if not rest:
+                yield from external_bases(mod, head, by_name, seen)
         elif alias[0] == "module":
             module = ".".join([alias[1], *rest[:-1]])
             if module in by_name:
-                found = _class_framework(by_name[module], rest[-1] if rest else "", by_name, seen)
+                yield from external_bases(by_name[module], rest[-1] if rest else "", by_name, seen)
             else:
-                found = framework_for(module)
+                yield ".".join([alias[1], *rest])
         elif alias[1] in by_name:
-            found = _class_framework(by_name[alias[1]], alias[2], by_name, seen)
+            yield from external_bases(by_name[alias[1]], alias[2], by_name, seen)
         else:
-            found = framework_for(alias[1] or "")
-        if found:
-            return found
-    return None
+            yield ".".join([alias[1] or "", alias[2], *rest])
+
+
+def _class_framework(
+    mod: _Module, name: str, by_name: dict[str, _Module], seen: set[tuple[str, str]]
+) -> str | None:
+    """The framework a class inherits from, following bases through the project's modules."""
+    bases = external_bases(mod, name, by_name, seen)
+    return next((fw for base in bases if (fw := framework_for(base))), None)
 
 
 def _find_framework_callbacks(g: CodeGraph, by_name: dict[str, _Module]) -> None:

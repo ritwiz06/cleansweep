@@ -16,9 +16,9 @@ and `method=agentic`: how it adapts AutoData's manager, squads and OHCache to co
 Manager's phases, the 10 agents and their budgets, the message board and artifact cache,
 lessons, coverage-guided probes, the safety rules, the command line and the ablations.
 
-**[Requirements](requirements.md).** The v2.0 acceptance checklist (R1–R16): each requirement,
-the test that accepts it, its evidence and its status. v2.0 is released only when every row
-passes.
+**[Requirements](requirements.md).** The acceptance checklists for v2.0 (R1–R16, met) and v3.0
+(R17–R30): each requirement, the test that accepts it, its evidence and its status. A release is
+made only when every row of its checklist passes.
 
 **[Experiments](experiments.md).** For every experiment: the command, the commit it ran at, its
 inputs and outputs, the models, runtime and data needs, and which script writes each committed
