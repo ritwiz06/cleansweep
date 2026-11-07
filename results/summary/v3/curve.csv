@@ -1,9 +1,9 @@
 method,projects,finished,lines_removed,kept_code_edits,wrong_all_tiers (incl. LLM-judged readings),wrong_confirmed
-agentic,5,2,46,37,1,0
-agentic-batch,5,2,50,37,2,0
-agentic-no_research,5,2,60,45,6,0
-agentic-single_agent,5,2,0,9,1,0
-aider,5,1,0,0,0,0
-cleansweep,5,1,34,4,2,0
-agentic-thorough,5,1,60,28,2,0
-agentic-adaptive,5,0,0,0,0,0
+agentic,5,3,167,40,1,0
+agentic-batch,5,3,171,40,2,0
+agentic-no_research,5,3,181,48,6,0
+agentic-single_agent,5,3,371,51,28,27
+aider,5,2,9,1,0,0
+cleansweep,5,2,34,22,5,0
+agentic-thorough,5,3,181,43,3,0
+agentic-adaptive,5,3,181,43,3,0

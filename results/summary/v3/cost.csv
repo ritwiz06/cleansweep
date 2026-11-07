@@ -6,9 +6,9 @@ INJECT,agentic-no_research,4,9.0,12508.0,15.7
 INJECT,agentic-single_agent,4,84.8,1329090.0,10.9
 INJECT,aider,4,2.8,74790.0,1.7
 INJECT,cleansweep,3,19.3,166921.0,25.2
-REAL,agentic,2,243.5,581932.0,39.6
-REAL,agentic-batch,2,67.0,146350.0,13.8
-REAL,agentic-no_research,2,9.0,9052.0,36.6
-REAL,agentic-single_agent,2,95.0,1678248.0,28.6
-REAL,aider,1,3.0,131686.0,23.5
-REAL,cleansweep,1,32.0,293953.0,59.5
+REAL,agentic,3,243.0,557938.0,28.7
+REAL,agentic-batch,3,74.7,161506.0,11.0
+REAL,agentic-no_research,3,8.0,7409.0,24.7
+REAL,agentic-single_agent,3,94.7,1494963.0,20.1
+REAL,aider,2,3.5,105886.0,27.6
+REAL,cleansweep,2,40.5,300087.0,88.9
