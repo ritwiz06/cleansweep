@@ -1,0 +1,14 @@
+set,method,finished_runs,llm_requests_mean,tokens_mean,minutes_mean
+INJECT,agentic,0,,,
+INJECT,agentic-no_resolver,0,,,
+INJECT,agentic-batch,0,,,
+INJECT,agentic-no_research,0,,,
+INJECT,agentic-single_agent,0,,,
+INJECT,aider,0,,,
+INJECT,cleansweep,0,,,
+REAL,agentic,1,372.0,936496.0,74.1
+REAL,agentic-batch,0,,,
+REAL,agentic-no_research,0,,,
+REAL,agentic-single_agent,0,,,
+REAL,aider,0,,,
+REAL,cleansweep,0,,,
