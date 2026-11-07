@@ -12,6 +12,9 @@ copied or redistributed; anyone rebuilds the benchmark from the listed commits.
 - **Repositories:** `results/summary/v3/slopbench_repos.csv`, written by
   `scripts/experiments/v3/slopbench.py list`: each repository's commit, license, clone URL and seeds.
   Nine come from v2's evaluation (seeds 1–3) and ten from v3's out-of-sample set (seed 4).
+  Three of the split's ten v3 repositories could not be used (one had too few modules to plant
+  in, two had a hidden test that failed before any cleanup) and were replaced from the split's
+  reserve, as the runs did; the CSV's `replaces` column names each one and why.
 
 ## What a seed plants
 Into three of the project's own package modules, chosen by the seed: a leftover file, a dead
