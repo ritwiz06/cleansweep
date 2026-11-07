@@ -44,6 +44,7 @@ def test_every_figure_builds_from_its_table_and_missing_tables_are_skipped(tmp_p
             {
                 "set": "real v3",
                 "method": "agentic",
+                "runs": 2,
                 "kept_code_edits": 20,
                 "share_confirmed": 0.05,
                 "share_all_tiers": 0.1,
@@ -103,3 +104,22 @@ def test_autonomy_counts_whole_runs_and_needs_a_legend_only_for_two_passes(tmp_p
     _csv(tmp_path / "autonomy_runs.csv", [{"pass": 1, **stop}, {"pass": 2, **stop}])
     figures.autonomy()
     assert kept[-1].axes[0].get_legend() is not None
+
+
+def test_the_audit_figure_keeps_a_method_that_ran_but_kept_no_code_edit(tmp_path, monkeypatch):
+    figures = load()
+    monkeypatch.setattr(figures, "SUMMARY", tmp_path)
+    kept = []
+    monkeypatch.setattr(figures, "save", lambda fig, name: kept.append(fig) or tmp_path / name)
+    row = {"set": "real v3", "share_confirmed": "", "share_all_tiers": ""}
+    _csv(
+        tmp_path / "audit.csv",
+        [
+            {**row, "method": "agentic", "runs": 2, "kept_code_edits": 20, "share_all_tiers": 0.1},
+            {**row, "method": "aider", "runs": 1, "kept_code_edits": 0},
+            {**row, "method": "cleansweep", "runs": 0, "kept_code_edits": 0},
+        ],
+    )
+    figures.audit_tiers()
+    labels = [t.get_text() for t in kept[-1].axes[0].texts]
+    assert labels == ["n=20", "n=0"]
