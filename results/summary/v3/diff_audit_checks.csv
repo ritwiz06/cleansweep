@@ -1,0 +1,7 @@
+edit,verdict,evidence,checked_by,kind
+129ca9bf9b81,fine,removes planted slop only (the benchmark's key),rule: injection key,
+2a761fc5fd1b,wrong,"deletes SMACrossover.init, the Strategy hook backtesting.py's Backtest calls before next(); next() then reads self.sma_fast and self.sma_slow, which only init defined, so the example no longer runs. No targeted test: The edit deletes SMACrossover.init in examples/backtesting_py_strategy.py: the hook backtesting.py's Backtest calls before next(), which then reads self.sma_fast and self.sma_slow that init defined. The example imports the backtesting package, which the project does not declare and its environment does not have (ModuleNotFoundError before the edit too), so no test can run it before and after; the verdict stays a reading.",reading (LLM-judged),dynamic handler or stub
+639c68a59a1b,fine,removes planted slop only (the benchmark's key),rule: injection key,
+a4138f8a488d,fine,removes planted slop only (the benchmark's key),rule: injection key,
+aa75f9cb46ae,fine,removes planted slop only (the benchmark's key),rule: injection key,
+ef93d1d840f1,fine,removes planted slop only (the benchmark's key),rule: injection key,
