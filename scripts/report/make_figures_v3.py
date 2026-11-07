@@ -102,16 +102,25 @@ def safety_yield() -> Path | None:
         return None
     fig, (ax,) = axes(height=3.4)
     ax.grid(axis="y", color=GRID, linewidth=0.6)
-    for r in data:
+    wrong_of = {r["method"]: num(r["wrong_all_tiers (incl. LLM-judged readings)"]) for r in data}
+    xspan = max(num(r["lines_removed"]) for r in data) or 1
+    yspan = max(wrong_of.values()) or 1
+    above = []  # points labeled above; a label close to one of them goes below its own point
+    for r in sorted(data, key=lambda r: num(r["lines_removed"])):
         x, color = num(r["lines_removed"]), COLORS[r["method"]]
-        wrong = num(r["wrong_all_tiers (incl. LLM-judged readings)"])
+        wrong = wrong_of[r["method"]]
         confirmed = num(r["wrong_confirmed"])
         ax.scatter([x], [wrong], s=48, color=color, edgecolor=SURFACE, linewidth=1.5, zorder=3)
         ax.scatter([x], [confirmed], s=48, facecolor=SURFACE, edgecolor=color, linewidth=1.5)
+        near = any(
+            abs(x - px) < 0.25 * xspan and abs(wrong - py) < 0.05 * yspan for px, py in above
+        )
+        if not near:
+            above.append((x, wrong))
         ax.annotate(
             NAMES[r["method"]],
             (x, wrong),
-            xytext=(5, 3),
+            xytext=(5, -11 if near else 3),
             textcoords="offset points",
             fontsize=8,
             color=INK,
@@ -150,9 +159,7 @@ def injection_recall() -> Path | None:
 
 
 def audit_tiers() -> Path | None:
-    data = [
-        r for r in rows("audit.csv") if r["method"] in COLORS and int(r["kept_code_edits"] or 0)
-    ]
+    data = [r for r in rows("audit.csv") if r["method"] in COLORS and int(r["runs"] or 0)]
     if not data:
         return None
     sets = [s for s in ("injected v3", "real v3") if any(r["set"] == s for r in data)]
@@ -162,8 +169,8 @@ def audit_tiers() -> Path | None:
     y = list(range(len(order)))
     for n, (ax, s) in enumerate(zip(axs, sets, strict=True)):
         mine = {r["method"]: r for r in data if r["set"] == s}
-        confirmed = [num(mine[m]["share_confirmed"]) if m in mine else 0.0 for m in order]
-        total = [num(mine[m]["share_all_tiers"]) if m in mine else 0.0 for m in order]
+        confirmed = [num(mine[m]["share_confirmed"] or 0) if m in mine else 0.0 for m in order]
+        total = [num(mine[m]["share_all_tiers"] or 0) if m in mine else 0.0 for m in order]
         colors = [COLORS[m] for m in order]
         ax.barh(y, confirmed, height=0.6, color=colors, edgecolor=SURFACE, linewidth=2)
         reading = [t - c for t, c in zip(total, confirmed, strict=True)]
@@ -183,7 +190,7 @@ def audit_tiers() -> Path | None:
         for yy, m in zip(y, order, strict=True):
             if m in mine:
                 ax.text(
-                    num(mine[m]["share_all_tiers"]) + 0.002,
+                    num(mine[m]["share_all_tiers"] or 0) + 0.002,  # n=0: a run kept nothing
                     yy,
                     f"n={mine[m]['kept_code_edits']}",
                     va="center",
