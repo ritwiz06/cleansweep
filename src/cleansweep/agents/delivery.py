@@ -81,7 +81,7 @@ def prepare_workspace(
             )
             info["uncommitted_changes"] = True
     else:
-        shutil.copytree(src, dest, ignore=SKIP)
+        shutil.copytree(src, dest, symlinks=True, ignore=SKIP)
         _git(dest, "init", "-q")
         _write_exclude(dest)
         _git(dest, "add", "-A")

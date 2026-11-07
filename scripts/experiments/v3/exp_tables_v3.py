@@ -13,7 +13,12 @@ results/summary/v3/:
 - audit.csv: per set and method, kept code edits of finished runs and the wrong ones in two
   tiers (confirmed: a targeted test, the UI check or a rule; reading: LLM-judged) with a bootstrap
   interval over projects, and Fisher's exact test against the team.
-- cost.csv and curve.csv (safety against yield on REAL).
+- cost.csv; curve.csv: safety against yield on the curve's projects (the first five REAL), for
+  every method that ran there, thorough and adaptive included.
+- second_model.csv: the team and the single agent with each model on the same first five INJECT
+  and REAL projects.
+A rerun that replayed its first attempt's LLM cache takes that attempt's time and requests
+(REPLAYED).
 - hypotheses.csv: H1-H4 exactly as docs/preregistration_v3.md states them, each "supported",
   "not supported" or "not run by the freeze".
 Every LLM-judged number is in a column that says so.
@@ -34,7 +39,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 import exp_autonomy  # noqa: E402
 import exp_diff_audit_v3  # noqa: E402
-from methods_v3 import LABELS  # noqa: E402
+from methods_v3 import LABELS, SECOND_MODEL  # noqa: E402
 
 from cleansweep.eval.stats import mcnemar, wilcoxon  # noqa: E402
 
@@ -57,6 +62,22 @@ REAL_METHODS = [
     "aider",
     "cleansweep",
 ]
+CURVE_METHODS = [*REAL_METHODS, "agentic-thorough", "agentic-adaptive"]
+M2_METHODS = ["agentic", "agentic-m2", "agentic-single_agent", "agentic-single_agent-m2"]
+KINDS = ("slop", "trap")
+FIRST = 5  # the second model and the curve run on the first five of each settled set
+# reruns whose check alone was spoiled replay the first attempt's LLM cache, so the cleanup is the
+# same (final.diff identical); time, requests and tokens are the first attempt's
+REPLAYED = {
+    ("xgboosted__pandas-ta-classic", "agentic-no_research", 1): {
+        "minutes": 71.15,
+        "seconds": 4269.1,
+        "llm_requests": 7,
+        "prompt_tokens": 6586,
+        "completion_tokens": 2996,
+        "test_runs": 38,
+    },
+}
 CONFIRMED = {"targeted test", "UI check", "rule: injection key", "rule: agent patch"}
 N_BOOT, SEED = 10000, 572
 NOT_RUN = "not run by the freeze"
@@ -123,6 +144,7 @@ def real_records(raws: list[Path], run: int = 1) -> dict[tuple[str, str], dict]:
                 continue
             method = folder.name.rpartition("-r")[0]
             record = json.loads(summary.read_text())
+            record.update(REPLAYED.get((folder.parent.name, method, run), {}))
             if held.exists():
                 record["heldout"] = json.loads(held.read_text())
             out[(folder.parent.name, method)] = record
@@ -282,7 +304,7 @@ def cost_table(inject: dict, real: dict) -> list[dict]:
     ):
         for method in methods:
             mine = [r for (_, m), r in records.items() if m == method and not r.get("timed_out")]
-            requests = [r.get("llm_calls") or r.get("llm_requests") or 0 for r in mine]
+            requests = [_requests(r) for r in mine]
             tokens = [
                 (r.get("prompt_tokens") or 0) + (r.get("completion_tokens") or 0) for r in mine
             ]
@@ -299,27 +321,72 @@ def cost_table(inject: dict, real: dict) -> list[dict]:
     return out
 
 
-def curve_table(real: dict, cells: dict, finished: dict) -> list[dict]:
-    """Safety against yield on REAL run 1: wrong kept code edits (two tiers) against lines
-    removed, per method, finished runs."""
+def curve_table(real: dict, cells: dict, planned: list[str]) -> list[dict]:
+    """Safety against yield on REAL run 1, on the curve's projects: wrong kept code edits (two
+    tiers) against lines removed, per method, finished runs."""
     out = []
-    for method in sorted({m for _, m in real}):
-        mine = _pool(cells, "real v3", method, finished)
-        lines = sum(
-            r.get("lines_removed") or 0
-            for (_, m), r in real.items()
-            if m == method and not r.get("timed_out")
-        )
+    for method in CURVE_METHODS:
+        done = [
+            p for p in planned if (p, method) in real and not real[(p, method)].get("timed_out")
+        ]
+        mine = [cells.get(("real v3", method, f"{p}/r1"), {}) for p in done]
         out.append(
             {
                 "method": method,
-                "lines_removed": lines,
-                "kept_code_edits": sum(c["edits"] for c in mine),
-                "wrong_all_tiers (incl. LLM-judged readings)": sum(c["wrong"] for c in mine),
-                "wrong_confirmed": sum(c["wrong_confirmed"] for c in mine),
+                "projects": len(planned),
+                "finished": len(done),
+                "lines_removed": sum(real[(p, method)].get("lines_removed") or 0 for p in done),
+                **_wrong(mine),
             }
         )
     return out
+
+
+def second_model_table(inject: dict, real: dict, cells: dict, inject5: list, real5: list) -> list:
+    """The team and the single agent with each model on the same five projects of each set;
+    removal and safety on finished runs."""
+    out = []
+    for source, records, planned, run in (
+        ("injected v3", inject, inject5, "{}"),
+        ("real v3", real, real5, "{}/r1"),
+    ):
+        for method in M2_METHODS:
+            ran = [x for x in planned if (x, method) in records]
+            done = [records[(x, method)] for x in ran if not records[(x, method)].get("timed_out")]
+            plants = [p for r in done for p in r.get("inject", {}).get("plants", [])]
+            slop, traps = (sum(p["removed"] for p in plants if p["kind"] == k) for k in KINDS)
+            mine = [cells.get((source, method, run.format(x)), {}) for x in ran]
+            out.append(
+                {
+                    "set": source,
+                    "method": method,
+                    "model": SECOND_MODEL if method.endswith("-m2") else "first",
+                    "planned": len(planned),
+                    "finished": len(done),
+                    "timed_out": len(ran) - len(done),
+                    NOT_RUN: len(planned) - len(ran),
+                    "slop_removed (INJECT)": slop,
+                    "traps_removed (INJECT)": traps,
+                    "lines_removed (REAL)": sum(r.get("lines_removed") or 0 for r in done),
+                    "behavior_changes": sum(changed(r) for r in done),
+                    **_wrong(mine),
+                    "llm_requests_mean": _r(_mean([_requests(r) for r in done]), 1),
+                    "minutes_mean": _r(_mean([r.get("minutes") or 0 for r in done]), 1),
+                }
+            )
+    return out
+
+
+def _wrong(cells: list[dict]) -> dict:
+    return {
+        "kept_code_edits": sum(c.get("edits", 0) for c in cells),
+        "wrong_all_tiers (incl. LLM-judged readings)": sum(c.get("wrong", 0) for c in cells),
+        "wrong_confirmed": sum(c.get("wrong_confirmed", 0) for c in cells),
+    }
+
+
+def _requests(record: dict) -> int:
+    return record.get("llm_calls") or record.get("llm_requests") or 0
 
 
 def _pool(cells: dict, source: str, method: str, finished: dict[str, set]) -> list[dict]:
@@ -513,7 +580,11 @@ def main(argv: list[str] | None = None) -> int:
         write("audit.csv", audit_table(cells, finished)),
         write("hypotheses.csv", hypotheses(cells, finished, inject, real, autonomy)),
         write("cost.csv", cost_table(inject, real)),
-        write("curve.csv", curve_table(real, cells, finished)),
+        write("curve.csv", curve_table(real, cells, real_planned[:FIRST])),
+        write(
+            "second_model.csv",
+            second_model_table(inject, real, cells, inject_planned[:FIRST], real_planned[:FIRST]),
+        ),
     ]
     print(*paths, sep="\n")
     return 0
