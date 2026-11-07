@@ -124,3 +124,35 @@ def test_unusable_repositories_are_replaced_by_the_reserve_in_order(tmp_path, mo
         ("o/one_module", "r/also_bad"),
         ("r/also_bad", "r/good"),
     ]
+
+
+def test_a_diff_made_against_lf_applies_to_the_crlf_original(tmp_path):
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "a.py").write_bytes(b"x = 1\r\ny = 2\r\nz = 3\r\n")
+    diff = "--- a/a.py\n+++ b/a.py\n@@ -1,3 +1,2 @@\n x = 1\n-y = 2\n z = 3\n"
+    assert load().apply_loose(str(tmp_path), diff)
+    assert b"y = 2" not in (tmp_path / "a.py").read_bytes()
+
+
+def test_recheck_redoes_only_the_checks_whose_diff_did_not_apply(tmp_path, monkeypatch):
+    real = load()
+    project = tmp_path / "o__a"
+    (project / "agentic-r1").mkdir(parents=True)
+    (project / "aider-r1").mkdir()
+    (project / "split.json").write_text(json.dumps({"base": "b"}))
+    (project / "agentic-r1" / "heldout.json").write_text(json.dumps({"applied": False}))
+    (project / "agentic-r1" / "final.diff").write_text("d\n")
+    (project / "aider-r1" / "heldout.json").write_text(json.dumps({"applied": True}))
+    seen = []
+
+    def check(full_name, split, diff, cfg):
+        seen.append((full_name, split["base"], diff))
+        return {"applied": True, "behavior_changed": True}
+
+    monkeypatch.setattr(real, "heldout_check", check)
+    out = real.recheck(tmp_path, 1)
+    assert seen == [("o/a", "b", "d\n")]
+    assert [r["record"] for r in out] == ["o__a/agentic-r1"]
+    assert json.loads((project / "agentic-r1" / "heldout.json").read_text())["behavior_changed"]
