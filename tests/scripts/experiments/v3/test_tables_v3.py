@@ -75,3 +75,22 @@ def test_ratio_ci_brackets_the_pooled_ratio():
     tables = load()
     point, low, high = tables.ratio_ci([(1, 10), (3, 10), (2, 10)])
     assert point == 0.2 and low <= 0.2 <= high
+
+
+def test_sets_and_autonomy_are_read_from_every_raw_folder(tmp_path):
+    import json
+
+    tables = load()
+    real_raw, inject_raw, auto_raw = (tmp_path / n for n in ("real", "inject", "auto"))
+    (inject_raw / "inject_v3").mkdir(parents=True)
+    (inject_raw / "inject_v3" / "set.json").write_text(json.dumps({"set": ["r/far", "o/b"]}))
+    (real_raw / "real_v3").mkdir(parents=True)
+    (real_raw / "real_v3" / "set.json").write_text(json.dumps({"set": ["r/front"]}))
+    result = auto_raw / "autonomy" / "o__x" / "pass1"
+    result.mkdir(parents=True)
+    (result / "result.json").write_text(json.dumps({"repo": "o/x", "pass": 1}))
+    raws = [real_raw, inject_raw, auto_raw]
+    assert tables.planned_set(raws, "inject_v3", ["o/a", "o/b"]) == ["r/far", "o/b"]
+    assert tables.planned_set(raws, "real_v3", ["o/c"]) == ["r/front"]
+    assert tables.planned_set([auto_raw], "real_v3", ["o/c"]) == ["o/c"]
+    assert [r["repo"] for r in tables.autonomy_records(raws)] == ["o/x"]

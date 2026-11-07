@@ -83,6 +83,25 @@ def fisher(a: int, n: int, b: int, m: int) -> float:
     return float(fisher_exact([[a, n - a], [b, m - b]])[1])
 
 
+def planned_set(raws: list[Path], folder: str, split_names: list[str]) -> list[str]:
+    """The set a runner settled on (its set.json, replacements in place) from the first --raw
+    folder that has one, else the split's list."""
+    for raw in raws:
+        path = raw / folder / "set.json"
+        if path.exists():
+            return json.loads(path.read_text())["set"]
+    return split_names
+
+
+def autonomy_records(raws: list[Path]) -> list[dict]:
+    """Every AUTONOMY result under any --raw folder."""
+    return [
+        json.loads(p.read_text())
+        for raw in raws
+        for p in sorted((raw / "autonomy").glob("*/pass*/result.json"))
+    ]
+
+
 def inject_records(raws: list[Path]) -> dict[tuple[str, str], dict]:
     """{(repository, method): stats} of every INJECT run with a record."""
     out = {}
@@ -481,20 +500,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     raws = args.raw or [ROOT / "results" / "raw"]
     split = json.loads(SPLIT.read_text())
-    inject_planned = [r["full_name"].replace("/", "__") + "-s4" for r in split["inject"]]
-    real_set = ROOT / "results" / "raw" / "real_v3" / "set.json"
-    names = (
-        json.loads(real_set.read_text())["set"]
-        if real_set.exists()
-        else [r["full_name"] for r in split["real"]]
-    )
-    real_planned = [n.replace("/", "__") for n in names]
+    inject_names = planned_set(raws, "inject_v3", [r["full_name"] for r in split["inject"]])
+    inject_planned = [n.replace("/", "__") + "-s4" for n in inject_names]
+    real_names = planned_set(raws, "real_v3", [r["full_name"] for r in split["real"]])
+    real_planned = [n.replace("/", "__") for n in real_names]
     inject, real = inject_records(raws), real_records(raws)
     cells, finished = wrong_by_run(raws), finished_runs(inject, real)
-    exp_autonomy.RAW = raws[0] / "autonomy"
-    autonomy = [
-        json.loads(p.read_text()) for p in sorted(exp_autonomy.RAW.glob("*/pass*/result.json"))
-    ]
+    autonomy = autonomy_records(raws)
     paths = [
         write("injection.csv", injection_table(inject, inject_planned)),
         write("real.csv", real_table(real, real_planned)),
