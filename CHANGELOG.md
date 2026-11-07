@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.1.2 (2026-11-07)
+
+Fixes from AUTONOMY pass 1 of the v3 evaluation (27 of 30 repositories completed), and fixes to the
+v3 runners. The INJECT and REAL main runs keep v2.1.1's `clean`; AUTONOMY pass 2 runs on this
+release. v2.0's and v2.1's tables are unchanged.
+
+- A project's Git LFS filter never runs in CleanSweep's scratch workspace: a project that
+  configures LFS where git-lfs is not installed no longer stops the run (#176).
+- Workspace copies keep a project's symbolic links as links: a link loop or a link to a missing
+  file no longer stops the run before any cleanup, and a fork no longer turns a link into a file
+  (#177).
+- v3 runners: INJECT replaces a repository it cannot use from the far end of the reserve (#173);
+  the v3 tables read each runner's settled set from every run folder (#174); Aider's inputs reach
+  a copied AIDev workspace and its logs come back, and an Aider run without a single LLM request
+  is an error rather than a result (#175).
+
 ## v2.1.1 (2026-11-06)
 
 Fixes and rules for the v3 evaluation, before any of its main runs. v2.0's and v2.1's tables are
