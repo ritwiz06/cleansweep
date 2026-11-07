@@ -96,7 +96,8 @@ def hbars(ax, labels: list[str], values: list[float], colors: list[str], title: 
 
 
 def safety_yield() -> Path | None:
-    data = [r for r in rows("curve.csv") if r["method"] in COLORS]
+    # a method with no finished run on the curve's projects has no point to place
+    data = [r for r in rows("curve.csv") if r["method"] in COLORS and r.get("finished", "1") != "0"]
     if not data:
         return None
     fig, (ax,) = axes(height=3.4)
@@ -214,13 +215,15 @@ def heldout() -> Path | None:
     for y, r in enumerate(data):
         broken = r["visible_broken_projects (finished)"]
         ax.text(
-            num(r["heldout_changed_projects (finished)"]) + 0.1,
+            num(r["heldout_changed_projects (finished)"]) + 0.05,
             y,
             f"{r['heldout_changed_projects (finished)']} (visible broken: {broken})",
             va="center",
             fontsize=8,
             color=INK,
         )
+    ax.set_xlim(0, max([*values, 1]) + 1)  # counts: never a negative axis, room for the labels
+    ax.xaxis.get_major_locator().set_params(integer=True)
     return save(fig, "heldout.png")
 
 
@@ -264,14 +267,16 @@ def cost() -> Path | None:
     if not data:
         return None
     sets = sorted({r["set"] for r in data})
-    fig, axs = axes(len(sets), height=0.45 * max(len(data) // len(sets), 1) + 1)
-    for ax, s in zip(axs, sets, strict=True):
-        mine = [r for r in data if r["set"] == s]
+    order = [m for m in COLORS if any(r["method"] == m for r in data)]  # one order, both panels
+    fig, axs = axes(len(sets), height=0.45 * len(order) + 1)
+    fig.subplots_adjust(wspace=0.12)
+    for n, (ax, s) in enumerate(zip(axs, sets, strict=True)):
+        mine = {r["method"]: num(r["llm_requests_mean"]) for r in data if r["set"] == s}
         hbars(
             ax,
-            [NAMES[r["method"]] for r in mine],
-            [num(r["llm_requests_mean"]) for r in mine],
-            [COLORS[r["method"]] for r in mine],
+            [NAMES[m] if n == 0 else "" for m in order],
+            [mine.get(m, 0.0) for m in order],
+            [COLORS[m] for m in order],
             f"{s}: LLM requests per finished run",
         )
     return save(fig, "cost.png")

@@ -255,10 +255,16 @@ def summarize(rows: list[dict]) -> list[dict]:
     return out
 
 
+def no_paths(text: str) -> str:
+    """The text with quoted absolute paths (the run's scratch folders) replaced by <path>."""
+    return re.sub(r"(['\"])/[^'\"]*\1", r"\1<path>\1", text)
+
+
 def table() -> tuple[Path, Path]:
     rows = [json.loads(p.read_text()) for p in sorted(RAW.glob("*/pass*/result.json"))]
     for r in rows:
         r["traits"] = " ".join(r["traits"])
+        r["verdict"] = no_paths(r["verdict"] or "")
     SUMMARY.mkdir(parents=True, exist_ok=True)
     runs, summary = SUMMARY / "autonomy_runs.csv", SUMMARY / "autonomy.csv"
     for path, data in ((runs, rows), (summary, summarize(rows))):
