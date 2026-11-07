@@ -87,3 +87,19 @@ def test_every_figure_builds_from_its_table_and_missing_tables_are_skipped(tmp_p
         )
     ]
     assert all(p is not None and p.exists() and p.stat().st_size > 1000 for p in made)
+
+
+def test_autonomy_counts_whole_runs_and_needs_a_legend_only_for_two_passes(tmp_path, monkeypatch):
+    figures = load()
+    monkeypatch.setattr(figures, "SUMMARY", tmp_path)
+    kept = []
+    monkeypatch.setattr(figures, "save", lambda fig, name: kept.append(fig) or tmp_path / name)
+    stop = {"completed": "False", "failure": "other stop", "environment": ""}
+    _csv(tmp_path / "autonomy_runs.csv", [{"pass": 1, **stop}] * 3)
+    figures.autonomy()
+    ax = kept[-1].axes[0]
+    assert ax.get_legend() is None and ax.get_title(loc="left").endswith("(pass 1)")
+    assert all(t == int(t) for t in ax.get_xticks())
+    _csv(tmp_path / "autonomy_runs.csv", [{"pass": 1, **stop}, {"pass": 2, **stop}])
+    figures.autonomy()
+    assert kept[-1].axes[0].get_legend() is not None
