@@ -1,11 +1,11 @@
 set,method,runs,kept_code_edits,wrong_all_tiers (incl. LLM-judged readings),wrong_confirmed,debatable (LLM-judged),share_all_tiers,share_ci_low,share_ci_high,share_confirmed,confirmed_ci_low,confirmed_ci_high,fisher_p_vs_team_all,fisher_p_vs_team_confirmed
-injected v3,agentic,5,177,3,2,2,0.017,0.0,0.073,0.011,0.0,0.049,,
-injected v3,agentic-no_resolver,5,177,3,2,2,0.017,0.0,0.073,0.011,0.0,0.049,1.0,1.0
-injected v3,agentic-batch,5,177,4,3,2,0.023,0.0,0.098,0.017,0.0,0.073,1.0,1.0
-injected v3,agentic-no_research,5,182,5,4,2,0.027,0.0,0.109,0.022,0.0,0.087,0.724,0.685
-injected v3,agentic-single_agent,5,67,13,12,18,0.194,0.021,0.36,0.179,0.021,0.34,0.0,0.0
+injected v3,agentic,6,184,3,2,2,0.016,0.0,0.065,0.011,0.0,0.043,,
+injected v3,agentic-no_resolver,6,184,3,2,2,0.016,0.0,0.065,0.011,0.0,0.043,1.0,1.0
+injected v3,agentic-batch,6,186,4,3,2,0.022,0.0,0.087,0.016,0.0,0.065,1.0,1.0
+injected v3,agentic-no_research,6,192,5,4,2,0.026,0.0,0.097,0.021,0.0,0.078,0.724,0.685
+injected v3,agentic-single_agent,6,85,18,17,21,0.212,0.084,0.338,0.2,0.082,0.324,0.0,0.0
 injected v3,aider,5,7,5,4,0,0.714,0.4,1.0,0.571,0.2,0.857,0.0,0.0
-injected v3,cleansweep,3,32,5,4,3,0.156,0.0,0.294,0.125,0.0,0.235,0.003,0.006
+injected v3,cleansweep,4,38,5,4,5,0.132,0.0,0.263,0.105,0.0,0.211,0.004,0.009
 real v3,agentic,3,40,1,0,2,0.025,0.0,0.083,0.0,0.0,0.0,,
 real v3,agentic-batch,3,40,2,0,1,0.05,0.0,0.091,0.0,0.0,0.0,1.0,1.0
 real v3,agentic-no_research,3,48,6,0,2,0.125,0.0,0.235,0.0,0.0,0.0,0.121,1.0

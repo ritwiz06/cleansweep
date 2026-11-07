@@ -1,11 +1,11 @@
 set,method,finished_runs,llm_requests_mean,tokens_mean,minutes_mean
-INJECT,agentic,5,188.4,405464.0,17.2
-INJECT,agentic-no_resolver,5,186.8,56801.0,11.9
-INJECT,agentic-batch,5,73.0,97928.0,16.5
-INJECT,agentic-no_research,5,10.0,15872.0,14.5
-INJECT,agentic-single_agent,5,68.8,1065076.0,10.9
+INJECT,agentic,6,186.3,397046.0,15.5
+INJECT,agentic-no_resolver,6,184.7,55121.0,10.4
+INJECT,agentic-batch,6,74.8,105977.0,14.8
+INJECT,agentic-no_research,6,9.5,14209.0,12.7
+INJECT,agentic-single_agent,6,63.5,939950.0,9.4
 INJECT,aider,5,2.8,98668.0,2.0
-INJECT,cleansweep,3,19.3,166921.0,25.2
+INJECT,cleansweep,4,22.5,179612.0,27.2
 REAL,agentic,3,243.0,557938.0,28.7
 REAL,agentic-batch,3,74.7,161506.0,11.0
 REAL,agentic-no_research,3,8.0,7409.0,24.7
