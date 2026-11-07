@@ -249,13 +249,10 @@ def autonomy() -> Path | None:
             for c in classes
         ]
         top = max(top, *counts)
-        ax.barh(
-            [i + 0.38 * k - shift for i in range(len(classes))],
-            counts,
-            height=0.36,
-            color=color,
-            label=f"pass {p}",
-        )
+        ys = [i + 0.38 * k - shift for i in range(len(classes))]
+        ax.barh(ys, counts, height=0.36, color=color, label=f"pass {p}")
+        for y, n in zip(ys, counts, strict=True):  # a pass with none still shows its 0
+            ax.text(n + 0.05, y, str(n), va="center", fontsize=8, color=INK)
     ax.set_yticks(range(len(classes)), classes, color=INK)
     ax.set_ylim(len(classes) - 0.5, -0.5)
     ax.set_xlim(0, top + 0.5)
