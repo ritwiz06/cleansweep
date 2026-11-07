@@ -145,3 +145,19 @@ def test_the_sets_table_names_each_replacement_without_local_paths(tmp_path):
         ("INJECT", "r/far", "o/bad", "too few modules"),
         ("REAL", "o/c", "", ""),
     ]
+
+
+def test_the_audit_table_counts_finished_runs_even_when_they_kept_nothing():
+    tables = load()
+    real = {("p", "aider"): {}, ("q", "aider"): {"timed_out": "time cap"}, ("p", "agentic"): {}}
+    cells = {
+        ("real v3", "agentic", "p/r1"): {
+            "edits": 4,
+            "wrong": 1,
+            "wrong_confirmed": 0,
+            "debatable": 0,
+        }
+    }
+    rows = tables.audit_table(cells, tables.finished_runs({}, real))
+    aider = next(r for r in rows if r["set"] == "real v3" and r["method"] == "aider")
+    assert (aider["runs"], aider["kept_code_edits"]) == (1, 0)
