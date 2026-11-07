@@ -256,8 +256,9 @@ def summarize(rows: list[dict]) -> list[dict]:
 
 
 def no_paths(text: str) -> str:
-    """The text with quoted absolute paths (the run's scratch folders) replaced by <path>."""
-    return re.sub(r"(['\"])/[^'\"]*\1", r"\1<path>\1", text)
+    """The text with absolute paths (the run's scratch folders) replaced by <path>, also one a
+    truncated message leaves unclosed."""
+    return re.sub(r"(?<=['\"(\[\s])/[^\s'\",)\]]+", "<path>", text)
 
 
 def table() -> tuple[Path, Path]:
