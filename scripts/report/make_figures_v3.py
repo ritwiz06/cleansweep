@@ -102,29 +102,22 @@ def safety_yield() -> Path | None:
         return None
     fig, (ax,) = axes(height=3.4)
     ax.grid(axis="y", color=GRID, linewidth=0.6)
-    wrong_of = {r["method"]: num(r["wrong_all_tiers (incl. LLM-judged readings)"]) for r in data}
-    xspan = max(num(r["lines_removed"]) for r in data) or 1
-    yspan = max(wrong_of.values()) or 1
-    above = []  # points labeled above; a label close to one of them goes below its own point
-    for r in sorted(data, key=lambda r: num(r["lines_removed"])):
+    for r in data:  # methods cluster at similar yields, so a legend names them, not labels
         x, color = num(r["lines_removed"]), COLORS[r["method"]]
-        wrong = wrong_of[r["method"]]
+        wrong = num(r["wrong_all_tiers (incl. LLM-judged readings)"])
         confirmed = num(r["wrong_confirmed"])
-        ax.scatter([x], [wrong], s=48, color=color, edgecolor=SURFACE, linewidth=1.5, zorder=3)
+        ax.scatter(
+            [x],
+            [wrong],
+            s=48,
+            color=color,
+            edgecolor=SURFACE,
+            linewidth=1.5,
+            zorder=3,
+            label=NAMES[r["method"]],
+        )
         ax.scatter([x], [confirmed], s=48, facecolor=SURFACE, edgecolor=color, linewidth=1.5)
-        near = any(
-            abs(x - px) < 0.25 * xspan and abs(wrong - py) < 0.05 * yspan for px, py in above
-        )
-        if not near:
-            above.append((x, wrong))
-        ax.annotate(
-            NAMES[r["method"]],
-            (x, wrong),
-            xytext=(5, -11 if near else 3),
-            textcoords="offset points",
-            fontsize=8,
-            color=INK,
-        )
+    ax.legend(frameon=False, fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1))
     ax.set_xlabel("lines removed (the first five REAL projects, finished runs)", color=INK_2)
     ax.set_ylabel("wrong kept code edits", color=INK_2)
     ax.set_title(
