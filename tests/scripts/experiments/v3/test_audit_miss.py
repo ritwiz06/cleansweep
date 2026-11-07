@@ -81,6 +81,31 @@ def test_the_draw_is_deterministic_stratified_and_weighted():
     assert {e["edit"] for e in traps["edits"] if e["trap"]} <= {B}
 
 
+def test_the_extension_draws_only_edits_not_yet_taken_and_reweights():
+    miss = load()
+    big = {f"{i:012x}": 1 for i in range(200)}
+    pop = {
+        ("agentic", "injected"): big,
+        ("agentic", "AIDev"): {A: 1, B: 3},
+        ("agentic-single_agent", "injected"): {C: 1},
+    }
+    edits = {e: {"project": "p", "path": "f.py"} for e in [*big, A, B, C]}
+    first = miss.draw(pop, edits)
+    more = miss.extend(first, pop, edits)
+    assert more == miss.extend(first, pop, edits)
+    team = [e for e in more["edits"] if e["method"] == "agentic"]
+    assert len(team) == miss.PER_METHOD + miss.EXTRA["agentic"]
+    assert len({e["edit"] for e in team}) == len(team)  # nothing drawn twice
+    assert [e["edit"] for e in more["edits"][: len(first["edits"])]] == [
+        e["edit"] for e in first["edits"]
+    ]
+    injected = [e for e in team if e["target_set"] == "injected"]
+    assert all(e["weight"] == 200 / len(injected) for e in injected)
+    assert {e["edit"] for e in team if e["target_set"] == "AIDev"} == {A, B}  # all of the cell
+    single = [e for e in more["edits"] if e["method"] == "agentic-single_agent"]
+    assert [e["edit"] for e in single] == [C]
+
+
 def test_no_hits_in_25_give_a_wilson_upper_bound_of_13_percent():
     miss = load()
     low, high = miss.wilson(0.0, 25)
