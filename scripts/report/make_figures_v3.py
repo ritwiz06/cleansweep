@@ -237,6 +237,8 @@ def autonomy() -> Path | None:
     ax = axs[0]
     passes = sorted({r["pass"] for r in data})
     colors = ["#0072B2", "#E69F00"]
+    shift = 0.38 * (len(passes) - 1) / 2  # centers each cause's group of bars on its label
+    top = 1
     for k, (p, color) in enumerate(zip(passes, colors, strict=False)):
         counts = [
             sum(
@@ -246,18 +248,28 @@ def autonomy() -> Path | None:
             )
             for c in classes
         ]
+        top = max(top, *counts)
         ax.barh(
-            [i + 0.38 * k for i in range(len(classes))],
+            [i + 0.38 * k - shift for i in range(len(classes))],
             counts,
             height=0.36,
             color=color,
             label=f"pass {p}",
         )
-    ax.set_yticks([i + 0.19 for i in range(len(classes))], classes, color=INK)
-    ax.invert_yaxis()
-    ax.legend(frameon=False, fontsize=8)
+    ax.set_yticks(range(len(classes)), classes, color=INK)
+    ax.set_ylim(len(classes) - 0.5, -0.5)
+    ax.set_xlim(0, top + 0.5)
+    ax.xaxis.get_major_locator().set_params(integer=True)
+    if len(passes) > 1:  # one pass needs no legend: the title names it
+        ax.legend(
+            frameon=False, fontsize=8, ncol=len(passes), loc="lower right", bbox_to_anchor=(1, 1)
+        )
+    which = f" (pass {passes[0]})" if len(passes) == 1 else ""
     ax.set_title(
-        "AUTONOMY: runs that did not complete, by cause", loc="left", color=INK, fontsize=9.5
+        f"AUTONOMY: runs that did not complete, by cause{which}",
+        loc="left",
+        color=INK,
+        fontsize=9.5,
     )
     return save(fig, "autonomy.png")
 
