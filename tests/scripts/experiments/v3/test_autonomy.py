@@ -125,3 +125,5 @@ def test_the_table_leaves_scratch_paths_out_of_verdicts():
     autonomy = load()
     verdict = "stopped: Error: [('/tmp/cs_x/proj/.cache', '/tmp/cs_y/proj/.cache', 'loop')]"
     assert autonomy.no_paths(verdict) == "stopped: Error: [('<path>', '<path>', 'loop')]"
+    cut = "stopped: Error: [('/tmp/cs_x/a', '/tmp/cs_y/b, nothing applied"
+    assert autonomy.no_paths(cut) == "stopped: Error: [('<path>', '<path>, nothing applied"
