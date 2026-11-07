@@ -68,3 +68,21 @@ def test_junit_statuses_and_last_statuses(toy_ws, tmp_path):
     }
     toy_ws.run_tests(None)
     assert toy_ws.last_statuses and set(toy_ws.last_statuses.values()) <= {"passed", "skipped"}
+
+
+def test_open_local_and_fork_keep_links_as_links(tmp_path):
+    from cleansweep.sandbox.local import open_local
+
+    src = tmp_path / "proj"
+    (src / "pkg").mkdir(parents=True)
+    (src / "pkg" / "a.py").write_text("x = 1\n")
+    (src / "pkg" / "loop").symlink_to(".")
+    (src / "logo.png").symlink_to("images/missing.png")
+    ws = open_local(str(src), {"work_dir": str(tmp_path / "ws")})
+    fork = ws.fork()
+    try:
+        for root in (Path(ws.path), Path(fork.path)):
+            assert (root / "pkg" / "loop").is_symlink() and (root / "logo.png").is_symlink()
+    finally:
+        fork.close()
+        ws.close()

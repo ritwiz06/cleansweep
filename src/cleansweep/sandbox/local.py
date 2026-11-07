@@ -47,7 +47,7 @@ def open_local(target: str, cfg: dict | None = None) -> Workspace:
         raise FileNotFoundError(f"target folder not found: {target}")
     stamp = hashlib.sha1(f"{src}{time.time_ns()}".encode()).hexdigest()[:10]
     dest = default_work_dir(cfg) / f"{src.name}-{stamp}"
-    shutil.copytree(src, dest, ignore=SKIP)
+    shutil.copytree(src, dest, symlinks=True, ignore=SKIP)
     subprocess.run(["git", "init", "-q"], cwd=dest, check=True)
     (dest / ".git" / "info").mkdir(parents=True, exist_ok=True)
     (dest / ".git" / "info" / "exclude").write_text("\n".join(WS_EXCLUDE) + "\n")

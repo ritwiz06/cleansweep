@@ -336,7 +336,7 @@ class Workspace:
     def fork(self) -> Workspace:
         """Copy this workspace into an independent one at the same state."""
         new_path = Path(tempfile.mkdtemp(prefix="cs_fork_", dir=Path(self.path).parent))
-        shutil.copytree(self.path, new_path, dirs_exist_ok=True)
+        shutil.copytree(self.path, new_path, symlinks=True, dirs_exist_ok=True)
         clone = type(self).__new__(type(self))
         clone.__dict__.update(self.__dict__)
         clone.path = str(new_path)
