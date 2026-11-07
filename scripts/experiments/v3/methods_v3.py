@@ -92,8 +92,9 @@ LLM_BUDGET = 400
 HARD_STOP_MINUTES = 5
 
 
-class Capped(Exception):
-    """A run stopped by its time cap before it finished."""
+class Capped(BaseException):
+    """A run stopped by its time cap before it finished. Not an Exception: the code a run
+    executes turns errors into skipped steps (an LLM failure, for one) and must not swallow it."""
 
 
 @contextmanager

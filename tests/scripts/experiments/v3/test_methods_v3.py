@@ -55,6 +55,20 @@ def test_time_cap_raises_capped_and_restores_the_alarm():
     assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
 
 
+def test_a_handler_for_ordinary_errors_does_not_swallow_the_cap():
+    methods = load()
+
+    def step_that_skips_its_errors():
+        try:
+            time.sleep(1)
+        except Exception:
+            return "skipped"
+
+    with pytest.raises(methods.Capped):
+        with methods.time_cap(0.001):
+            step_that_skips_its_errors()
+
+
 def test_every_method_gets_the_same_cap_and_budget():
     methods = load()
     cfg = methods.limits({"core": {"agents": {"budget": {"test_runs": 80}}}})

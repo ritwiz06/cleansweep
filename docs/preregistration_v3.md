@@ -159,3 +159,10 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
 4. **Reruns replay the LLM cache (2026-11-07).** A run rerun because only its check was spoiled
    replays its first attempt's cached LLM replies, so its cleanup is the same (its `final.diff` is
    checked to be identical). Its time and LLM requests are the first attempt's.
+5. **v1's time cap was caught as an LLM failure (2026-11-07 07:06).** The runner cuts v1 at the
+   cap by raising an exception inside the run; v1's LLM client caught it as an ordinary request
+   failure and v1 skipped that step, so INJECT shinkoku's v1 run went on to 173 minutes (a second
+   signal sent at 07:59 was caught the same way). It counts as timed out by its time, as
+   pre-registered: its record says "time cap" and the tables count nothing removed. From #189 the
+   cap is not an ordinary error, so nothing in a run can catch it; the running chains keep their
+   runner, and another v1 run past the cap would also end late and count as timed out.
