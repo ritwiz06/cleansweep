@@ -42,3 +42,27 @@ def test_a_plain_command_is_one_result(tmp_path):
     assert not result.ok and ws.last_statuses == {"<command>::make test": "failed"}
     (tmp_path / "Makefile").write_text("test:\n\ttrue\n")
     assert ws.run_tests().passed == 1
+
+
+def test_a_project_lfs_filter_never_runs_in_a_scratch_workspace(tmp_path, monkeypatch):
+    from cleansweep.sandbox.local import open_local
+
+    # as on a machine where git-lfs is configured globally but not installed
+    config = tmp_path / "gitconfig"
+    config.write_text(
+        '[filter "lfs"]\n\tprocess = no-such-git-lfs filter-process\n\trequired = true\n'
+    )
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".gitattributes").write_text("*.bin filter=lfs diff=lfs merge=lfs -text\n")
+    (project / "data.bin").write_text("version https://git-lfs.github.com/spec/v1\n")
+    (project / "mod.py").write_text("A = 1\n")
+    ws = open_local(str(project), {"work_dir": str(tmp_path / "ws")})
+    try:
+        tracked = subprocess.run(
+            ["git", "ls-files"], cwd=ws.path, capture_output=True, text=True, check=True
+        ).stdout.split()
+        assert {"data.bin", "mod.py"} <= set(tracked)
+    finally:
+        ws.close()
