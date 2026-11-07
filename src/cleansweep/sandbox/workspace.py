@@ -22,6 +22,16 @@ GIT_ID = [
     "core.hooksPath=/dev/null",
     "-c",
     "gc.auto=0",  # no background repacking in throwaway workspaces
+    # a project's Git LFS filter never runs in a scratch workspace: files are stored as they are,
+    # so a filter configured without git-lfs installed cannot stop a run (AUTONOMY, openpilot)
+    "-c",
+    "filter.lfs.required=false",
+    "-c",
+    "filter.lfs.clean=",
+    "-c",
+    "filter.lfs.smudge=",
+    "-c",
+    "filter.lfs.process=",
 ]
 OWNER_FILE = "cleansweep_owner"  # in a workspace's .git: the pid of the process that opened it
 # Runs a unittest suite with the project's interpreter and writes a JUnit file like pytest's:
