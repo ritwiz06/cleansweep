@@ -110,6 +110,7 @@ def test_second_model_and_curve_use_only_the_first_five_projects():
     assert (team["finished"], team["slop_removed (INJECT)"]) == (5, 25)
     assert (m2["slop_removed (INJECT)"], m2["traps_removed (INJECT)"]) == (15, 5)
     assert by[("real v3", "agentic-m2")][tables.NOT_RUN] == 2
+    assert by[("real v3", "agentic")]["slop_removed (INJECT)"] == ""
     curve = {r["method"]: r for r in tables.curve_table(real, cells, ["p0", "p1"])}
     assert curve["agentic"]["lines_removed"] == 20  # p2-p5 are outside the curve's projects
     thorough = curve["agentic-thorough"]
