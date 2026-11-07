@@ -72,6 +72,7 @@ SITE = "/opt/aider/lib/python3.11/site-packages"
 MODEL_MAP = f"{SITE}/litellm/model_prices_and_context_window_backup.json"
 CACHE = "/root/.aider/caches/model_prices_and_context_window.json"
 LOGS = ["chat_history.md", "llm_history.txt", "input_history.txt", "log.jsonl"]
+INPUTS = ["instruction.md", "run_aider.py", "model_settings.yml", "model_metadata.json"]
 
 
 def _now() -> str:
@@ -315,6 +316,23 @@ def pull_changes(ws: AidevWorkspace, before: dict[str, str]) -> dict:
     return {"changed": changed, "deleted": gone}
 
 
+def push_io(container: str, root: Path) -> None:
+    """Copy Aider's inputs and the exclude file into the container's copy of the workspace: they
+    sit under .git, which a sync never pushes. What moved aside stays out."""
+    _docker(["exec", container, "mkdir", "-p", f"{MOUNT}/{IO}"])
+    pairs = [(root / IO / name, f"{IO}/{name}") for name in INPUTS]
+    for src, dest in [*pairs, (root / ".git" / "info" / "exclude", ".git/info/exclude")]:
+        proc = _docker(["cp", str(src), f"{container}:{MOUNT}/{dest}"])
+        if proc.returncode != 0:
+            raise RuntimeError(f"could not copy {dest} into the container: {proc.stderr[-300:]}")
+
+
+def fetch_logs(container: str, io_dir: Path) -> None:
+    """Copy Aider's logs back from the container's copy; a log Aider never wrote stays missing."""
+    for name in LOGS:
+        _docker(["cp", f"{container}:{MOUNT}/{IO}/{name}", str(io_dir / name)])
+
+
 def _exec(cmd: list[str], timeout: int) -> tuple[int, str]:
     """Run the docker exec; a host timeout (docker itself stuck) counts as the cap."""
     try:
@@ -353,12 +371,17 @@ def run_aider(
         shutil.move(root / name, aside / name)
     argv = aider_argv(model, test_command(ws.repo_id))
     ws.sync()  # the container holds its own copy: push the files above, and what moved aside
+    copied = ws.repo_id.startswith("aidev:")  # a local target's container mounts the workspace
+    if copied:
+        push_io(ws.container, root)
     before = container_files(ws.container)
     _docker(["network", "connect", "bridge", ws.container])
     start = time.time()
     with Relay(secrets["endpoint"], secrets["key"], max_requests=budget) as relay:
         code, output = _exec(exec_command(ws.container, argv, cap_s, relay.url), cap_s + 120)
     seconds = time.time() - start
+    if copied:
+        fetch_logs(ws.container, io)
     pulled = pull_changes(ws, before)
     _docker(["network", "disconnect", "bridge", ws.container])
     for name in hidden:
@@ -373,6 +396,8 @@ def run_aider(
     (logs / "output.txt").write_text(output)
     (logs / "requests.jsonl").write_text("".join(json.dumps(r) + "\n" for r in relay.requests))
     counts = usage(relay.requests, logs / "log.jsonl")
+    if code != 0 and not relay.requests:  # a harness failure, not Aider's outcome: never scored
+        raise RuntimeError(f"Aider made no LLM request (exit {code}): {output.strip()[-300:]}")
     capped = code in (124, 137) and seconds >= cap_s  # 137 earlier is another kill (memory)
     refused = sum(r.get("refused") == "budget" for r in relay.requests)
     return {

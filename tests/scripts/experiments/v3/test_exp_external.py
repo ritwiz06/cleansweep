@@ -242,3 +242,43 @@ def test_pull_changes_brings_back_what_changed_in_the_container(tmp_path):
         assert not (root / "scratch.py").exists()
     finally:
         ws.close()
+
+
+def test_a_copied_workspace_gets_aiders_inputs_and_its_logs_back(tmp_path, monkeypatch, upstream):
+    ext = load()
+    url, _ = upstream
+    ws = workspace(tmp_path)
+    ws.repo_id = "aidev:o/x@abc"  # a container holding its own copy, as on AIDev targets
+    docker = []
+
+    def record(args, timeout=None):
+        docker.append(args)
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(ext, "_exec", fake_exec(ws, []))
+    monkeypatch.setattr(ext, "_docker", record)
+    host_as_container(ext, monkeypatch)
+    try:
+        ext.run_aider(ws, tmp_path / "out", MODEL, {"key": KEY, "endpoint": url}, 1800, {})
+    finally:
+        ws.close()
+    pushed = [a[2] for a in docker if a[0] == "cp" and a[1].startswith(str(tmp_path))]
+    assert sorted(p.rsplit("/", 1)[1] for p in pushed) == sorted([*ext.INPUTS, "exclude"])
+    assert not [p for p in pushed if "aside" in p or p.endswith(".env")]
+    fetched = [a[1] for a in docker if a[0] == "cp" and a[1].startswith("cs-test:")]
+    assert [f.rsplit("/", 1)[1] for f in fetched] == ext.LOGS
+
+
+def test_aider_that_never_starts_is_an_error_not_a_result(tmp_path, monkeypatch, upstream):
+    ext = load()
+    url, _ = upstream
+    ws = workspace(tmp_path)
+    monkeypatch.setattr(ext, "_exec", lambda cmd, timeout: (2, "can't open file 'run_aider.py'"))
+    monkeypatch.setattr(ext, "_docker", no_docker)
+    host_as_container(ext, monkeypatch)
+    try:
+        with pytest.raises(RuntimeError, match="Aider made no LLM request"):
+            ext.run_aider(ws, tmp_path / "out", MODEL, {"key": KEY, "endpoint": url}, 1800, {})
+        assert (Path(ws.path) / ".env").exists()  # moved back before the error
+    finally:
+        ws.close()
