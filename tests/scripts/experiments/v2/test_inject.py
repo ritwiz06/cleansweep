@@ -94,3 +94,21 @@ def test_the_one_shot_scope_is_what_the_plants_commit_changed(tmp_path):
     copy, applied = inject.final_tree(tree, "", base)
     assert applied and not (copy / key["plants"][0]["path"]).exists()  # the leftover file
     shutil.rmtree(copy.parent)
+
+
+def test_py_texts_never_walks_git(tmp_path, monkeypatch):
+    import os
+
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "a.py").write_text("x = 1\n")
+    (tmp_path / ".git" / "objects" / "89").mkdir(parents=True)
+    (tmp_path / ".git" / "hook.py").write_text("")
+    real = os.scandir
+
+    def scandir(path="."):
+        if ".git" in Path(path).parts:  # as if a background gc removed it mid-walk
+            raise FileNotFoundError(path)
+        return real(path)
+
+    monkeypatch.setattr(os, "scandir", scandir)
+    assert load()._py_texts(tmp_path) == {"pkg/a.py": "x = 1\n"}

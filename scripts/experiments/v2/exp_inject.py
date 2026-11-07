@@ -291,12 +291,16 @@ def _plant_dependency(root: Path, rng: random.Random) -> tuple[str, str] | None:
 
 
 def _py_texts(root: Path) -> dict[str, str]:
-    out = {}
-    for path in sorted(root.rglob("*.py")):
-        rel = path.relative_to(root)
-        if rel.parts[0] != ".git":
-            out[rel.as_posix()] = path.read_text(encoding="utf-8", errors="replace")
-    return out
+    # .git is never walked: a background `git gc` can delete its folders mid-walk
+    paths = []
+    for folder, dirs, files in os.walk(root):
+        if Path(folder) == root and ".git" in dirs:
+            dirs.remove(".git")
+        paths += [Path(folder) / f for f in files if f.endswith(".py")]
+    return {
+        path.relative_to(root).as_posix(): path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted(paths)
+    }
 
 
 def imported_names(root: Path) -> dict[str, str]:
