@@ -17,6 +17,8 @@ results/summary/v3/:
   every method that ran there, thorough and adaptive included.
 - second_model.csv: the team and the single agent with each model on the same first five INJECT
   and REAL projects.
+- sets.csv: the INJECT and REAL sets the runners settled on, each replacement with the repository
+  it replaced and why (SlopBench lists its v3 repositories from it).
 A rerun that replayed its first attempt's LLM cache takes that attempt's time and requests
 (REPLAYED).
 - hypotheses.csv: H1-H4 exactly as docs/preregistration_v3.md states them, each "supported",
@@ -112,6 +114,29 @@ def planned_set(raws: list[Path], folder: str, split_names: list[str]) -> list[s
         if path.exists():
             return json.loads(path.read_text())["set"]
     return split_names
+
+
+def sets_table(raws: list[Path], split: dict) -> list[dict]:
+    """One row per repository of the settled INJECT and REAL sets (the split's lists before any
+    run), with what each replacement replaced and why (local paths left out)."""
+    out = []
+    for name, folder in (("INJECT", "inject_v3"), ("REAL", "real_v3")):
+        found = [raw / folder / "set.json" for raw in raws if (raw / folder / "set.json").exists()]
+        data = json.loads(found[0].read_text()) if found else {}
+        repos = data.get("set") or [r["full_name"] for r in split[name.lower()]]
+        why = {r["by"]: r for r in data.get("replacements", [])}
+        for repo in repos:
+            r = why.get(repo, {})
+            reason = r.get("reason", "")
+            out.append(
+                {
+                    "set": name,
+                    "repo": repo,
+                    "replaces": r.get("replaced", ""),
+                    "reason": reason.rpartition(": ")[2] if reason.startswith("/") else reason,
+                }
+            )
+    return out
 
 
 def autonomy_records(raws: list[Path]) -> list[dict]:
@@ -581,6 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         write("hypotheses.csv", hypotheses(cells, finished, inject, real, autonomy)),
         write("cost.csv", cost_table(inject, real)),
         write("curve.csv", curve_table(real, cells, real_planned[:FIRST])),
+        write("sets.csv", sets_table(raws, split)),
         write(
             "second_model.csv",
             second_model_table(inject, real, cells, inject_planned[:FIRST], real_planned[:FIRST]),

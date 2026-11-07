@@ -128,3 +128,20 @@ def test_a_replayed_rerun_takes_its_first_attempts_cost(tmp_path):
         ("xgboosted__pandas-ta-classic", "agentic-no_research")
     ]
     assert (record["minutes"], record["llm_requests"]) == (71.15, 7)
+
+
+def test_the_sets_table_names_each_replacement_without_local_paths(tmp_path):
+    import json
+
+    tables = load()
+    (tmp_path / "inject_v3").mkdir()
+    replaced = {"replaced": "o/bad", "reason": "/home/x/o__bad: too few modules", "by": "r/far"}
+    settled = {"set": ["o/a", "r/far"], "replacements": [replaced]}
+    (tmp_path / "inject_v3" / "set.json").write_text(json.dumps(settled))
+    split = {"inject": [], "real": [{"full_name": "o/c"}]}
+    rows = tables.sets_table([tmp_path], split)
+    assert [(r["set"], r["repo"], r["replaces"], r["reason"]) for r in rows] == [
+        ("INJECT", "o/a", "", ""),
+        ("INJECT", "r/far", "o/bad", "too few modules"),
+        ("REAL", "o/c", "", ""),
+    ]

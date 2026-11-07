@@ -30,3 +30,17 @@ def test_rows_list_each_repository_at_its_commit_with_its_license():
         ("o/a", "1 2 3", "a1", "none detected"),
         ("o/b", "4", "b1", "MIT"),
     ]
+
+
+def test_the_v3_rows_follow_the_settled_set_with_reserve_replacements():
+    bench = load()
+    entry = {"license": "MIT", "clone_url": "https://x/r.git"}
+    v3_split = {
+        "inject": [{"full_name": "o/bad", "head_sha": "b0", **entry}],
+        "reserve": [{"full_name": "r/far", "head_sha": "f1", **entry}],
+    }
+    settled = [{"set": "INJECT", "repo": "r/far", "replaces": "o/bad", "reason": "too few modules"}]
+    out = bench.rows([], [], v3_split, [], settled)
+    assert [(r["repo"], r["commit"], r["replaces"]) for r in out] == [
+        ("r/far", "f1", "o/bad (too few modules)")
+    ]
