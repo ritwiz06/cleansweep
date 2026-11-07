@@ -119,3 +119,9 @@ def test_export_keeps_lfs_pointers_even_when_git_lfs_is_missing(tmp_path, monkey
     auto.export_tree("o/x", "HEAD", tmp_path / "out")
     assert (tmp_path / "out" / "mod.py").read_text() == "A = 1\n"
     assert (tmp_path / "out" / "data.bin").read_text().startswith("version https://git-lfs")
+
+
+def test_the_table_leaves_scratch_paths_out_of_verdicts():
+    autonomy = load()
+    verdict = "stopped: Error: [('/tmp/cs_x/proj/.cache', '/tmp/cs_y/proj/.cache', 'loop')]"
+    assert autonomy.no_paths(verdict) == "stopped: Error: [('<path>', '<path>', 'loop')]"
