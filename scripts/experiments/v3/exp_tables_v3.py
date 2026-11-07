@@ -10,7 +10,7 @@ results/summary/v3/:
   repositories; traps removed and hidden changes on finished runs; LLM requests and minutes.
 - real.csv: per method on REAL run 1: the same counts; projects with a held-out change and with a
   visible break (finished runs); lines removed (timed out: 0); requests and minutes.
-- audit.csv: per set and method, kept code edits of finished runs and the wrong ones in two
+- audit.csv: per set and method, finished runs, their kept code edits and the wrong ones in two
   tiers (confirmed: a targeted test, the UI check or a rule; reading: LLM-judged) with a bootstrap
   interval over projects, and Fisher's exact test against the team.
 - cost.csv; curve.csv: safety against yield on the curve's projects (the first five REAL), for
@@ -302,7 +302,7 @@ def audit_table(cells: dict, finished: dict[str, set]) -> list[dict]:
                 {
                     "set": source,
                     "method": method,
-                    "runs": len(mine),
+                    "runs": len(finished.get(f"{source}|{method}", set())),
                     "kept_code_edits": n,
                     "wrong_all_tiers (incl. LLM-judged readings)": w,
                     "wrong_confirmed": wc,
