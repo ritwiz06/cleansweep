@@ -1,8 +1,8 @@
 set,method,finished_runs,llm_requests_mean,tokens_mean,minutes_mean
 INJECT,agentic,4,189.5,404236.0,15.6
 INJECT,agentic-no_resolver,4,190.5,67804.0,13.6
-INJECT,agentic-batch,3,63.7,84643.0,12.9
-INJECT,agentic-no_research,3,7.3,7570.0,11.6
+INJECT,agentic-batch,4,68.0,89019.0,15.8
+INJECT,agentic-no_research,4,9.0,12508.0,15.7
 INJECT,agentic-single_agent,3,76.3,1149806.0,9.5
 INJECT,aider,3,3.0,88333.0,1.6
 INJECT,cleansweep,3,19.3,166921.0,25.2

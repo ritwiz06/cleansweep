@@ -1,5 +1,5 @@
 hypothesis,result,evidence
 H1,not run by the freeze,
 H2,not supported,wrong (all tiers) 3 with vs 3 without over 4 repositories (Wilcoxon p=1.0000); confirmed 2 vs 2
-H3,not supported,"request ratio 0.325 [0.237, 0.551] over 5 projects; wrong 6 vs 4 (Wilcoxon p=0.5000); behavior changes 0 vs 0 (McNemar p=1.0000)"
+H3,not supported,"request ratio 0.326 [0.250, 0.482] over 6 projects; wrong 6 vs 4 (Wilcoxon p=0.5000); behavior changes 0 vs 0 (McNemar p=1.0000)"
 H4,supported,"pass 1 completed 27 of 30 (0.900, Wilson [0.744, 0.965])"
