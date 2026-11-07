@@ -106,6 +106,19 @@ def test_autonomy_counts_whole_runs_and_needs_a_legend_only_for_two_passes(tmp_p
     assert kept[-1].axes[0].get_legend() is not None
 
 
+def test_autonomy_labels_each_bar_so_a_pass_with_none_shows_zero(tmp_path, monkeypatch):
+    figures = load()
+    monkeypatch.setattr(figures, "SUMMARY", tmp_path)
+    kept = []
+    monkeypatch.setattr(figures, "save", lambda fig, name: kept.append(fig) or tmp_path / name)
+    stop = {"completed": "False", "failure": "other stop", "environment": ""}
+    done = {"completed": "True", "failure": "", "environment": ""}
+    _csv(tmp_path / "autonomy_runs.csv", [{"pass": 1, **stop}] * 3 + [{"pass": 2, **done}])
+    figures.autonomy()
+    labels = sorted(t.get_text() for t in kept[-1].axes[0].texts)
+    assert labels == ["0", "3"]
+
+
 def test_the_audit_figure_keeps_a_method_that_ran_but_kept_no_code_edit(tmp_path, monkeypatch):
     figures = load()
     monkeypatch.setattr(figures, "SUMMARY", tmp_path)
