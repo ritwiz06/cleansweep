@@ -3,7 +3,7 @@ injected v3,agentic,first,5,5,0,0,28,0,590,0,177,3,2,188.4,17.2
 injected v3,agentic-m2,deepseek-v4-1-flash,5,5,0,0,28,0,448,0,172,0,0,165.8,17.6
 injected v3,agentic-single_agent,first,5,5,0,0,18,2,1426,2,67,13,12,68.8,10.9
 injected v3,agentic-single_agent-m2,deepseek-v4-1-flash,5,5,0,0,3,0,17,0,6,0,0,12.4,2.4
-real v3,agentic,first,5,3,1,1,,,167,1,133,1,0,243.0,28.7
+real v3,agentic,first,5,4,1,0,,,167,1,133,1,0,190.2,21.9
 real v3,agentic-m2,deepseek-v4-1-flash,5,4,1,0,,,121,1,159,0,0,76.8,5.6
-real v3,agentic-single_agent,first,5,3,0,2,,,371,1,51,28,27,94.7,20.1
+real v3,agentic-single_agent,first,5,4,0,1,,,419,2,56,33,32,84.8,15.6
 real v3,agentic-single_agent-m2,deepseek-v4-1-flash,5,5,0,0,,,0,0,0,0,0,2.0,2.3
