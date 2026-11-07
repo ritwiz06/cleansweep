@@ -115,7 +115,7 @@ def safety_yield() -> Path | None:
             fontsize=8,
             color=INK,
         )
-    ax.set_xlabel("lines removed (REAL, finished runs)", color=INK_2)
+    ax.set_xlabel("lines removed (the first five REAL projects, finished runs)", color=INK_2)
     ax.set_ylabel("wrong kept code edits", color=INK_2)
     ax.set_title(
         "Safety against yield: filled = all tiers (incl. LLM-judged), open = confirmed",

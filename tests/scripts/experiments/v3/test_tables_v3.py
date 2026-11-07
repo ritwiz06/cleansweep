@@ -94,3 +94,36 @@ def test_sets_and_autonomy_are_read_from_every_raw_folder(tmp_path):
     assert tables.planned_set(raws, "real_v3", ["o/c"]) == ["r/front"]
     assert tables.planned_set([auto_raw], "real_v3", ["o/c"]) == ["o/c"]
     assert [r["repo"] for r in tables.autonomy_records(raws)] == ["o/x"]
+
+
+def test_second_model_and_curve_use_only_the_first_five_projects():
+    tables = load()
+    repos = [f"r{i}-s4" for i in range(6)]
+    inject = {(r, "agentic"): plants(5) for r in repos}
+    inject.update({(r, "agentic-m2"): plants(3, trap=1) for r in repos[:5]})
+    real = {(f"p{i}", m): {"lines_removed": 10} for i in range(6) for m in ("agentic", "aider")}
+    real[("p0", "agentic-thorough")] = {"lines_removed": 4}
+    cells = {("real v3", "agentic-thorough", "p0/r1"): {"edits": 2, "wrong": 1}}
+    rows = tables.second_model_table(inject, real, cells, repos[:5], ["p0", "p1"])
+    by = {(r["set"], r["method"]): r for r in rows}
+    team, m2 = by[("injected v3", "agentic")], by[("injected v3", "agentic-m2")]
+    assert (team["finished"], team["slop_removed (INJECT)"]) == (5, 25)
+    assert (m2["slop_removed (INJECT)"], m2["traps_removed (INJECT)"]) == (15, 5)
+    assert by[("real v3", "agentic-m2")][tables.NOT_RUN] == 2
+    curve = {r["method"]: r for r in tables.curve_table(real, cells, ["p0", "p1"])}
+    assert curve["agentic"]["lines_removed"] == 20  # p2-p5 are outside the curve's projects
+    thorough = curve["agentic-thorough"]
+    assert (thorough["finished"], thorough["wrong_all_tiers (incl. LLM-judged readings)"]) == (1, 1)
+
+
+def test_a_replayed_rerun_takes_its_first_attempts_cost(tmp_path):
+    import json
+
+    tables = load()
+    folder = tmp_path / "real_v3" / "xgboosted__pandas-ta-classic" / "agentic-no_research-r1"
+    folder.mkdir(parents=True)
+    (folder / "summary.json").write_text(json.dumps({"minutes": 9.81, "llm_requests": 6}))
+    record = tables.real_records([tmp_path])[
+        ("xgboosted__pandas-ta-classic", "agentic-no_research")
+    ]
+    assert (record["minutes"], record["llm_requests"]) == (71.15, 7)
