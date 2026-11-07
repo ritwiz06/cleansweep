@@ -1,0 +1,31 @@
+repo,pass,traits,exit_code,verdict,valid_verdict,completed,failure,environment,minutes
+AISquare-Studio/AISquare-Studio-QA,1,install_failed src_layout,1,not verified by tests,True,True,,,3.94
+DataDog/integrations-core,1,monorepo,0,nothing applied,True,True,,,4.09
+FutureTense/keymaster,1,install_failed tox_nox_make,1,not verified by tests,True,True,,,3.41
+KartoffelToby/better_thermostat,1,install_failed poetry_uv,0,nothing applied,True,True,,,4.6
+OpenPipe/ART,1,install_failed monorepo notebooks poetry_uv src_layout,1,not verified by tests,True,True,,,15.03
+PrimeIntellect-ai/prime-rl,1,install_failed monorepo poetry_uv,0,nothing applied,True,True,,,1.75
+Xpra-org/xpra,1,install_failed monorepo unittest,1,not verified by tests,True,True,,,29.83
+circuit-synth/circuit-synth,1,install_failed poetry_uv src_layout tox_nox_make,1,not verified by tests,True,True,,,16.29
+commaai/openpilot,1,monorepo notebooks poetry_uv unittest,1,"stopped: CalledProcessError: Command '['git', '-c', 'user.name=cleansweep', '-c', 'user.email=cleansweep@localhost', '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', '-c', 'gc.auto=0', 'add', '-, nothing applied",True,False,other stop,,0.04
+davidfowl/tally,1,poetry_uv src_layout,0,everything runs,True,True,,,8.16
+e2b-dev/E2B,1,monorepo,0,nothing applied,True,True,,,1.44
+expectedparrot/edsl,1,notebooks poetry_uv tox_nox_make,1,"stopped: Error: [('<path>', '<path>, nothing applied",True,False,other stop,,0.04
+gmh5225/awesome-game-security,1,unittest,0,everything runs,True,True,,,22.25
+inoue0426/awesome-computational-biology,1,no_tests,0,nothing applied,True,True,,,0.22
+is-cool-me/register,1,no_tests,0,nothing applied,True,True,,,0.38
+kagenti/kagenti,1,monorepo poetry_uv tox_nox_make,0,everything runs,True,True,,,19.95
+kovidgoyal/kitty,1,install_failed no_tests tox_nox_make,0,nothing applied,True,True,,,3.25
+langflow-ai/langflow,1,monorepo poetry_uv tox_nox_make,1,not verified by tests,True,True,,,65.09
+maxDcb/C2TeamServer,1,,0,everything runs,True,True,,,7.95
+microsoft/debug-gym,1,install_failed notebooks,1,not verified by tests,True,True,,,4.28
+openagents-org/openagents,1,,0,everything runs,True,True,,,73.16
+pytorch/ignite,1,notebooks,1,not verified by tests,True,True,,,57.27
+roryeckel/wyoming_openai,1,install_failed src_layout,0,nothing applied,True,True,,,0.31
+run-llama/llama_index,1,monorepo notebooks poetry_uv tox_nox_make,0,everything runs,True,True,,,65.84
+tensorlakeai/tensorlake,1,install_failed monorepo poetry_uv src_layout tox_nox_make unittest,0,nothing applied,True,True,,,12.72
+tradingstrategy-ai/web3-ethereum-defi,1,notebooks poetry_uv tox_nox_make,1,"stopped: Error: [('<path>', '<path>, nothing applied",True,False,other stop,,0.14
+trailofbits/skills-curated,1,monorepo no_tests,1,not verified by tests,True,True,,,0.78
+vespa-engine/pyvespa,1,monorepo notebooks poetry_uv,0,everything runs,True,True,,,33.59
+vllm-project/vllm,1,install_failed monorepo,0,nothing applied,True,True,,,7.62
+zauberzeug/nicegui,1,monorepo poetry_uv,0,nothing applied,True,True,,,7.23
