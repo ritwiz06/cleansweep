@@ -166,3 +166,10 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
    pre-registered: its record says "time cap" and the tables count nothing removed. From #189 the
    cap is not an ordinary error, so nothing in a run can catch it; the running chains keep their
    runner, and another v1 run past the cap would also end late and count as timed out.
+6. **REAL pipecat's team run was stopped by an operator script (2026-11-07 10:38).** A script
+   meant to move the REAL chain onto a shared project queue after pipecat's v1 run matched an
+   old log line and stopped the team's pipecat run after about 113 of its 120 minutes. The run
+   is spoiled and rerun from scratch: the REAL clone's LLM cache was put back to its state when
+   the run began (the stopped attempt's replies removed), so the rerun replays nothing of it and
+   has the same budget as every other run. REAL run 1's remaining projects are taken from that
+   queue by two clones at the same commit; which clone runs a project does not change a result.
