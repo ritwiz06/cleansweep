@@ -1,7 +1,7 @@
 method,planned,finished,timed_out,not run by the freeze,recall,recall_ci_low,recall_ci_high,traps_removed (finished),hidden_changed (finished),llm_requests_mean,minutes_mean
-agentic,10,6,0,4,0.825,0.775,0.854,0,0,186.3,15.5
-agentic-no_resolver,10,6,0,4,0.825,0.775,0.854,0,0,184.7,10.4
-agentic-batch,10,6,0,4,0.825,0.775,0.854,0,0,74.8,14.8
+agentic,10,6,1,3,0.702,0.449,0.851,0,0,186.3,15.5
+agentic-no_resolver,10,6,1,3,0.702,0.449,0.851,0,0,184.7,10.4
+agentic-batch,10,6,1,3,0.702,0.449,0.851,0,0,74.8,14.8
 agentic-no_research,10,6,0,4,0.825,0.775,0.854,0,0,9.5,12.7
 agentic-single_agent,10,6,0,4,0.55,0.366,0.692,2,2,63.5,9.4
 aider,10,6,0,4,0.175,0.025,0.405,1,1,3.0,10.2

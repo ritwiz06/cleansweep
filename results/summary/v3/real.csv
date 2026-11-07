@@ -1,5 +1,5 @@
 method,planned,finished,timed_out,not run by the freeze,heldout_changed_projects (finished),visible_broken_projects (finished),lines_removed (timed out: 0),llm_requests_mean,minutes_mean
-agentic,15,3,0,12,1,0,167,243.0,28.7
+agentic,15,3,1,11,1,0,167,243.0,28.7
 agentic-batch,15,3,0,12,1,0,171,74.7,11.0
 agentic-no_research,15,3,0,12,1,0,181,8.0,24.7
 agentic-single_agent,15,3,0,12,1,0,371,94.7,20.1
