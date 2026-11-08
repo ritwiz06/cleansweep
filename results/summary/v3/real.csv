@@ -1,7 +1,7 @@
 method,planned,finished,timed_out,not run by the freeze,heldout_changed_projects (finished),visible_broken_projects (finished),lines_removed (timed out: 0),llm_requests_mean,minutes_mean
-agentic,15,7,3,5,2,0,436,184.6,20.4
-agentic-batch,15,7,1,7,1,0,1117,100.9,17.6
-agentic-no_research,15,7,1,7,1,0,1221,9.0,17.5
-agentic-single_agent,15,8,0,7,4,1,1766,93.1,17.3
+agentic,15,8,3,4,2,0,476,208.5,20.1
+agentic-batch,15,10,1,4,3,0,1296,113.2,18.6
+agentic-no_research,15,9,1,5,2,0,1377,10.4,17.3
+agentic-single_agent,15,9,0,6,5,1,1814,93.0,15.9
 aider,15,7,1,7,0,1,13,4.3,19.3
 cleansweep,15,7,1,7,1,0,1128,30.3,59.0
