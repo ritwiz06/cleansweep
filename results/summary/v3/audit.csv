@@ -1,14 +1,14 @@
 set,method,runs,kept_code_edits,wrong_all_tiers (incl. LLM-judged readings),wrong_confirmed,debatable (LLM-judged),share_all_tiers,share_ci_low,share_ci_high,share_confirmed,confirmed_ci_low,confirmed_ci_high,fisher_p_vs_team_all,fisher_p_vs_team_confirmed
-injected v3,agentic,8,195,3,2,2,0.015,0.0,0.06,0.01,0.0,0.04,,
+injected v3,agentic,9,227,3,2,2,0.013,0.0,0.05,0.009,0.0,0.033,,
 injected v3,agentic-no_resolver,8,195,3,2,2,0.015,0.0,0.06,0.01,0.0,0.04,1.0,1.0
-injected v3,agentic-batch,8,197,4,3,2,0.02,0.0,0.079,0.015,0.0,0.059,1.0,1.0
-injected v3,agentic-no_research,9,366,12,11,7,0.033,0.0,0.071,0.03,0.0,0.059,0.28,0.237
+injected v3,agentic-batch,8,197,4,3,2,0.02,0.0,0.079,0.015,0.0,0.059,0.709,0.667
+injected v3,agentic-no_research,9,366,12,11,7,0.033,0.0,0.071,0.03,0.0,0.059,0.182,0.146
 injected v3,agentic-single_agent,9,147,36,35,22,0.245,0.111,0.323,0.238,0.106,0.317,0.0,0.0
 injected v3,aider,9,14,10,9,0,0.714,0.4,0.95,0.643,0.3,0.917,0.0,0.0
-injected v3,cleansweep,7,139,32,19,14,0.23,0.0,0.282,0.137,0.0,0.171,0.0,0.0
-real v3,agentic,4,40,1,0,2,0.025,0.0,0.083,0.0,0.0,0.0,,
-real v3,agentic-batch,5,101,38,17,1,0.376,0.034,0.562,0.168,0.0,0.266,0.0,0.003
-real v3,agentic-no_research,5,111,44,17,2,0.396,0.065,0.576,0.153,0.0,0.258,0.0,0.007
+injected v3,cleansweep,8,143,32,19,14,0.224,0.0,0.277,0.133,0.0,0.166,0.0,0.0
+real v3,agentic,5,44,1,0,2,0.023,0.0,0.075,0.0,0.0,0.0,,
+real v3,agentic-batch,6,105,38,17,1,0.362,0.025,0.553,0.162,0.0,0.259,0.0,0.003
+real v3,agentic-no_research,6,116,45,18,2,0.388,0.075,0.565,0.155,0.0,0.259,0.0,0.004
 real v3,agentic-single_agent,6,88,36,34,37,0.409,0.074,0.653,0.386,0.04,0.644,0.0,0.0
-real v3,aider,5,5,2,2,1,0.4,0.0,1.0,0.4,0.0,1.0,0.029,0.01
+real v3,aider,5,5,2,2,1,0.4,0.0,1.0,0.4,0.0,1.0,0.024,0.009
 real v3,cleansweep,5,68,42,16,6,0.618,0.143,0.841,0.235,0.0,0.361,0.0,0.0
