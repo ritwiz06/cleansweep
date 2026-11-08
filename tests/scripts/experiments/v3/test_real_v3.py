@@ -124,3 +124,11 @@ def test_unusable_repositories_are_replaced_by_the_reserve_in_order(tmp_path, mo
         ("o/one_module", "r/also_bad"),
         ("r/also_bad", "r/good"),
     ]
+
+
+def test_run_two_covers_marked_projects_or_every_project():
+    real = load()
+    assert real.wants_run({"runs": 1}, 1)
+    assert not real.wants_run({"runs": 1}, 2)
+    assert real.wants_run({"runs": 2}, 2)
+    assert real.wants_run({}, 2, every=True)
