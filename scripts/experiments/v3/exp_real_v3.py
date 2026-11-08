@@ -6,6 +6,7 @@ test modules; the other half, held out by a fixed seed, is the hidden check.
 
     python scripts/experiments/v3/exp_real_v3.py prepare [--repos owner/name ...]
     python scripts/experiments/v3/exp_real_v3.py run [--repos ...] [--methods ...] [--run 1|2]
+        [--every]
     python scripts/experiments/v3/exp_real_v3.py recheck [--raw DIR] [--run 1|2]
 
 prepare: a held-out clone per repository (data/raw/aidev/heldout/<owner>__<name>): commit
@@ -24,8 +25,9 @@ events.jsonl and reports, as exp_case_study.py records them, so the review and t
 read them the same way). The held-out check applies the final diff to the base commit and runs
 the whole suite again: a held-out test that passed before and does not pass after is a behavior
 change (the hidden check); a visible one that stops passing is a break the method could have seen.
-Run 2 (only on the repositories the split marks for two runs) uses its own LLM cache, so it is
-a second model run, not a replay.
+Run 2 (only on the repositories the split marks for two runs, or on every one with --every, as
+the pre-registration allows when the slack is at least 30 hours) uses its own LLM cache, so it
+is a second model run, not a replay.
 recheck: the held-out check again for every record whose final diff did not apply (under DIR's
 real_v3, default this checkout's results/raw), now also ignoring whitespace in context lines: a
 diff made where a file's CRLF endings read as LF applies to the CRLF original.
@@ -376,12 +378,20 @@ def run_one(full_name: str, split: dict, label: str, run: int) -> dict:
     }
 
 
+def wants_run(entry: dict, run: int, every: bool = False) -> bool:
+    """Run 1 covers every project; run 2 those the split marks for two runs, or all with every."""
+    return run == 1 or every or entry.get("runs", 1) >= 2
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("what", choices=["prepare", "run", "recheck"])
     parser.add_argument("--repos", nargs="+")
     parser.add_argument("--methods", nargs="+", default=METHODS, choices=LABELS)
     parser.add_argument("--run", type=int, default=1, choices=[1, 2])
+    parser.add_argument(
+        "--every", action="store_true", help="run 2: every project, not only those marked for two"
+    )
     parser.add_argument("--raw", type=Path, help="recheck: a results/raw folder")
     args = parser.parse_args(argv)
     if args.what == "recheck":
@@ -412,7 +422,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps([n for n, _, _ in chosen]), flush=True)
         return 0
     for full_name, entry, split in chosen:
-        if args.run == 2 and entry.get("runs", 1) < 2:
+        if not wants_run(entry, args.run, args.every):
             continue
         for label in args.methods:
             folder = RAW / full_name.replace("/", "__") / f"{label}-r{args.run}"
