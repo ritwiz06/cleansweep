@@ -156,3 +156,11 @@ def test_recheck_redoes_only_the_checks_whose_diff_did_not_apply(tmp_path, monke
     assert seen == [("o/a", "b", "d\n")]
     assert [r["record"] for r in out] == ["o__a/agentic-r1"]
     assert json.loads((project / "agentic-r1" / "heldout.json").read_text())["behavior_changed"]
+
+
+def test_run_two_covers_marked_projects_or_every_project():
+    real = load()
+    assert real.wants_run({"runs": 1}, 1)
+    assert not real.wants_run({"runs": 1}, 2)
+    assert real.wants_run({"runs": 2}, 2)
+    assert real.wants_run({}, 2, every=True)
