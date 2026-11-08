@@ -158,6 +158,30 @@ def test_recheck_redoes_only_the_checks_whose_diff_did_not_apply(tmp_path, monke
     assert json.loads((project / "agentic-r1" / "heldout.json").read_text())["behavior_changed"]
 
 
+def test_the_held_out_check_leaves_out_files_created_at_held_out_paths(monkeypatch):
+    real = load()
+    code = (
+        "diff --git a/pkg/a.py b/pkg/a.py\n--- a/pkg/a.py\n+++ b/pkg/a.py\n"
+        "@@ -1 +1 @@\n-x = 1\n+x = 2\n"
+    )
+    helper = (
+        "diff --git a/test/test_util.py b/test/test_util.py\nnew file mode 100644\n"
+        "index 0000000..1111111\n--- /dev/null\n+++ b/test/test_util.py\n@@ -0,0 +1 @@\n+H = 1\n"
+    )
+    seen = []
+
+    def suite(target, cfg, diff=""):
+        seen.append(diff)
+        return {"applied": True, "statuses": {}}
+
+    monkeypatch.setattr(real, "run_suite", suite)
+    split = {"base": "b", "held": ["test/test_util.py"], "baseline": {"stable_passing": []}}
+    out = real.heldout_check("o/a", split, code + helper, {})
+    assert seen == [code]
+    assert out["held_files_left_out"] == ["test/test_util.py"]
+    assert "held_files_left_out" not in real.heldout_check("o/a", split, code, {})
+
+
 def test_run_two_covers_marked_projects_or_every_project():
     real = load()
     assert real.wants_run({"runs": 1}, 1)

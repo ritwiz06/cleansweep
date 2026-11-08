@@ -39,6 +39,7 @@ import argparse
 import importlib.util
 import json
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -281,12 +282,30 @@ def recheck(raw: Path, run: int) -> list[dict]:
     return out
 
 
+def without_held_files(diff: str, held: list[str]) -> tuple[str, list[str]]:
+    """The diff without the files it creates at held-out paths, and those paths. The run never
+    saw a held-out file (a test helper named like a test module, say), so in the full project the
+    project's own file stands."""
+    kept, dropped = [], []
+    for part in re.split(r"(?m)^(?=diff --git )", diff):
+        name = re.match(r"diff --git a/(\S+) b/(\S+)", part)
+        if name and name.group(2) in held and "\nnew file mode" in part.split("\n@@", 1)[0]:
+            dropped.append(name.group(2))
+        else:
+            kept.append(part)
+    return "".join(kept), dropped
+
+
 def heldout_check(full_name: str, split: dict, diff: str, cfg: dict) -> dict:
     """The whole suite on the base commit after the final diff, against its baseline."""
+    diff, dropped = without_held_files(diff, split["held"])
     after = run_suite(f"aidev:{full_name}@{split['base']}", cfg, diff)
     if not after.get("applied"):
         return {"applied": False, "behavior_changed": None, "visible_broken": None}
-    return {**after, **compare(split, after)}
+    out = {**after, **compare(split, after)}
+    if dropped:
+        out["held_files_left_out"] = dropped
+    return out
 
 
 def run_cfg(run: int, folder: Path) -> dict:
