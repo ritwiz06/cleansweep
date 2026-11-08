@@ -2,7 +2,7 @@ method,planned,finished,timed_out,not run by the freeze,recall,recall_ci_low,rec
 agentic,10,9,1,0,0.721,0.544,0.833,0,0,152.1,15.7
 agentic-no_resolver,10,9,1,0,0.721,0.544,0.833,0,0,150.8,11.6
 agentic-batch,10,9,1,0,0.721,0.544,0.833,0,0,66.0,14.6
-agentic-no_research,10,9,0,1,0.803,0.758,0.841,0,0,11.1,12.2
-agentic-single_agent,10,9,0,1,0.541,0.413,0.656,3,3,81.8,9.0
+agentic-no_research,10,10,0,0,0.794,0.754,0.836,0,0,10.7,14.4
+agentic-single_agent,10,10,0,0,0.529,0.414,0.636,3,3,83.0,9.3
 aider,10,9,0,1,0.23,0.067,0.403,4,3,3.9,13.3
 cleansweep,10,8,1,1,0.475,0.344,0.565,0,0,27.6,39.8
