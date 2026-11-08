@@ -180,3 +180,9 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
    the freeze; Aider's INJECT row covers the other nine repositories. From 22:12 a third clone at
    the same commit (the INJECT clone, after INJECT ended) also takes REAL projects from the queue
    in 6.
+8. **REAL run 2 on all 15 projects (2026-11-07 22:32).** The re-estimate at 22:30 left about
+   90 hours of slack (run 1 ending about 05:00–07:00 Nov 8, run 2 needing 15–25 hours on three
+   clones), so run 2 covers all 15 projects, as the plan allows. The frozen runner ran run 2 only
+   on the five marked projects, so `--every` was added on top of 13bd11f (1350cbc, #195); each
+   clone checks out 1350cbc when its run-1 chain ends, so run 2 uses run 1's runner plus that
+   flag, with its own LLM and probe caches.
