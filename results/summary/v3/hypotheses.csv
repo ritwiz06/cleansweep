@@ -1,5 +1,5 @@
 hypothesis,result,evidence
-H1,not supported,confirmed 4/191 vs 3/11 (Fisher p=0.0038); all tiers 13/191 vs 4/11 (p=0.0080); held-out changes 4 vs 0 of 10 projects (McNemar p=0.1250)
+H1,not supported,confirmed 4/191 vs 4/13 (Fisher p=0.0006); all tiers 13/191 vs 5/13 (p=0.0025); held-out changes 4 vs 0 of 10 projects (McNemar p=0.1250)
 H2,not supported,wrong (all tiers) 3 with vs 3 without over 9 repositories (Wilcoxon p=1.0000); confirmed 2 vs 2
 H3,supported,"request ratio 0.406 [0.349, 0.470] over 20 projects; wrong 16 vs 16 (Wilcoxon p=1.0000); behavior changes 3 vs 4 (McNemar p=1.0000)"
 H4,supported,"pass 1 completed 27 of 30 (0.900, Wilson [0.744, 0.965])"

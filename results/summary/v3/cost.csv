@@ -10,5 +10,5 @@ REAL,agentic,11,202.9,460558.0,25.1
 REAL,agentic-batch,13,105.3,268933.0,20.8
 REAL,agentic-no_research,14,10.4,10291.0,21.1
 REAL,agentic-single_agent,15,128.0,2699004.0,24.2
-REAL,aider,13,4.3,256819.0,16.6
+REAL,aider,14,4.5,248476.0,17.8
 REAL,cleansweep,12,31.5,266686.0,56.4
