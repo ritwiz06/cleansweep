@@ -2,6 +2,6 @@ method,planned,finished,timed_out,not run by the freeze,heldout_changed_projects
 agentic,15,11,4,0,4,0,2213,202.9,25.1
 agentic-batch,15,13,2,0,4,0,2306,105.3,20.8
 agentic-no_research,15,14,1,0,5,0,3452,10.4,21.1
-agentic-single_agent,15,14,0,1,8,1,3407,116.5,22.4
-aider,15,12,1,2,0,1,20,4.2,16.4
+agentic-single_agent,15,15,0,0,8,1,3515,128.0,24.2
+aider,15,13,1,1,0,1,20,4.3,16.6
 cleansweep,15,12,1,2,4,0,1135,31.5,56.4
