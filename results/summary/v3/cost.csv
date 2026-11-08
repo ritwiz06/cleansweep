@@ -8,7 +8,7 @@ INJECT,aider,9,3.9,112220.0,13.3
 INJECT,cleansweep,9,25.8,224516.0,37.6
 REAL,agentic,11,202.9,460558.0,25.1
 REAL,agentic-batch,13,105.3,268933.0,20.8
-REAL,agentic-no_research,12,10.2,8734.0,16.5
+REAL,agentic-no_research,13,10.7,10698.0,19.6
 REAL,agentic-single_agent,13,110.7,2145193.0,17.8
 REAL,aider,12,4.2,218994.0,16.4
 REAL,cleansweep,12,31.5,266686.0,56.4
