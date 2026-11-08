@@ -5,7 +5,7 @@ environment, with exp_audit_confirm.py's machinery) and a reading under the audi
 estimates the share of wrong edits among the unflagged ones. Measured on v2's edits (the auditor
 and its rubric are unchanged in v3); every rate and corrected count it reports is an estimate.
 
-    python scripts/experiments/v3/exp_audit_miss.py sample
+    python scripts/experiments/v3/exp_audit_miss.py sample [--extend]
     python scripts/experiments/v3/exp_audit_miss.py run [--edits ID ...]
     python scripts/experiments/v3/exp_audit_miss.py table
 
@@ -15,7 +15,11 @@ team (agentic), the team without the research squad, the single agent and v1's g
 Within a method the draw is proportional to the target sets (injected, real projects, answer keys
 and SWE-bench, AIDev; largest remainder, at least one from each set that has any), and each edit
 stands for weight = population / sampled edits of its set. An edit drawn for two methods is
-tested once. Writes results/raw/audit_miss/sample.json.
+tested once. Writes results/raw/audit_miss/sample.json. --extend adds the pre-registered 50 more
+for the team and v1 (EXTRA): drawn from each cell's edits not yet sampled for that method,
+allocated as the first draw, with their own seeded stream, so each cell's edits stay a simple
+random sample and their weight is population / all its sampled edits (the first draw is kept in
+sample_first.json).
 run: each sampled edit with results/raw/audit_miss/tests/<edit>/test_<edit>.py (and hide.txt for
 a dependency removal) runs its test before and after the edit, as exp_audit_confirm.py runs v2's;
 an edit with no_test.txt (why no test can be written) is not run. Resumable (--edits reruns those);
@@ -65,6 +69,8 @@ READINGS = RAW / "readings.jsonl"
 TABLE = ROOT / "results" / "summary" / "v3" / "audit_miss.csv"
 SEED = 572
 PER_METHOD = 25
+# docs/preregistration_v3.md: 50 more "no"-voted edits each for the team and v1
+EXTRA = {"agentic": 50, "cleansweep-gatekeeper": 50}
 # v2's method labels; v1's gatekeeper is "cleansweep" on the injected set
 METHODS = {
     "agentic": "agentic",
@@ -162,10 +168,19 @@ def draw(pop: dict[tuple[str, str], dict[str, int]], edits: dict, traps: set = f
     return {"seed": SEED, "per_method": PER_METHOD, "strata": strata, "edits": picked}
 
 
-def sample() -> Path:
+def sample(more: bool = False) -> Path:
     edits, rows = collect()
     audit = json.loads((AUDIT / "audit.json").read_text())
-    out = draw(population(rows, audit), edits, trap_removals(edits, audit))
+    pop, traps = population(rows, audit), trap_removals(edits, audit)
+    if more:
+        first = RAW / "sample_first.json"
+        if not first.exists():
+            first.write_text(SAMPLE.read_text())
+        SAMPLE.write_text(
+            json.dumps(extend(json.loads(first.read_text()), pop, edits, traps), indent=1)
+        )
+        return SAMPLE
+    out = draw(pop, edits, traps)
     for method in sorted({s["method"] for s in out["strata"]}):
         n = sum(s["sampled"] for s in out["strata"] if s["method"] == method)
         if n < PER_METHOD:
@@ -173,6 +188,42 @@ def sample() -> Path:
     RAW.mkdir(parents=True, exist_ok=True)
     SAMPLE.write_text(json.dumps(out, indent=1))
     return SAMPLE
+
+
+def extend(first: dict, pop: dict, edits: dict, traps: set = frozenset()) -> dict:
+    """The first draw plus EXTRA more edits per method from the edits it did not take."""
+    taken = {(e["method"], e["edit"]) for e in first["edits"]}
+    strata = {(s["method"], s["target_set"]): dict(s) for s in first["strata"]}
+    picked = [dict(e) for e in first["edits"]]
+    for method, extra in EXTRA.items():
+        cells = {
+            s: {e: k for e, k in cell.items() if (method, e) not in taken}
+            for (m, s), cell in pop.items()
+            if m == method
+        }
+        take = allocate({s: len(cell) for s, cell in cells.items()}, extra)
+        for target_set in sorted(cells):
+            cell = cells[target_set]
+            rng = random.Random(f"{SEED}:extra:{method}:{target_set}")
+            for edit in rng.sample(sorted(cell), take[target_set]):
+                picked.append(
+                    {
+                        "edit": edit,
+                        "method": method,
+                        "target_set": target_set,
+                        "project": edits[edit]["project"],
+                        "path": edits[edit]["path"],
+                        "population": strata[(method, target_set)]["population"],
+                        "kept": cell[edit],
+                        "trap": edit in traps,
+                        "draw": 2,
+                    }
+                )
+            strata[(method, target_set)]["sampled"] += take[target_set]
+    for e in picked:
+        e["sampled"] = strata[(e["method"], e["target_set"])]["sampled"]
+        e["weight"] = e["population"] / e["sampled"]
+    return {**first, "extra": EXTRA, "strata": list(strata.values()), "edits": picked}
 
 
 def opened(record: dict) -> tuple[str, dict]:
@@ -362,9 +413,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("what", choices=["sample", "run", "table"])
     parser.add_argument("--edits", nargs="*", help="run: only these edits (run again if done)")
+    parser.add_argument("--extend", action="store_true", help="sample: add the EXTRA draw")
     args = parser.parse_args(argv)
     if args.what == "sample":
-        print(sample())
+        print(sample(args.extend))
     elif args.what == "run":
         on_start()
         print(run(args.edits))

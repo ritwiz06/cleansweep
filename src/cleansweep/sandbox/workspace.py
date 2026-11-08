@@ -22,6 +22,16 @@ GIT_ID = [
     "core.hooksPath=/dev/null",
     "-c",
     "gc.auto=0",  # no background repacking in throwaway workspaces
+    # a project's Git LFS filter never runs in a scratch workspace: files are stored as they are,
+    # so a filter configured without git-lfs installed cannot stop a run (AUTONOMY, openpilot)
+    "-c",
+    "filter.lfs.required=false",
+    "-c",
+    "filter.lfs.clean=",
+    "-c",
+    "filter.lfs.smudge=",
+    "-c",
+    "filter.lfs.process=",
 ]
 OWNER_FILE = "cleansweep_owner"  # in a workspace's .git: the pid of the process that opened it
 # Runs a unittest suite with the project's interpreter and writes a JUnit file like pytest's:
@@ -326,7 +336,7 @@ class Workspace:
     def fork(self) -> Workspace:
         """Copy this workspace into an independent one at the same state."""
         new_path = Path(tempfile.mkdtemp(prefix="cs_fork_", dir=Path(self.path).parent))
-        shutil.copytree(self.path, new_path, dirs_exist_ok=True)
+        shutil.copytree(self.path, new_path, symlinks=True, dirs_exist_ok=True)
         clone = type(self).__new__(type(self))
         clone.__dict__.update(self.__dict__)
         clone.path = str(new_path)

@@ -96,26 +96,29 @@ def hbars(ax, labels: list[str], values: list[float], colors: list[str], title: 
 
 
 def safety_yield() -> Path | None:
-    data = [r for r in rows("curve.csv") if r["method"] in COLORS]
+    # a method with no finished run on the curve's projects has no point to place
+    data = [r for r in rows("curve.csv") if r["method"] in COLORS and r.get("finished", "1") != "0"]
     if not data:
         return None
     fig, (ax,) = axes(height=3.4)
     ax.grid(axis="y", color=GRID, linewidth=0.6)
-    for r in data:
+    for r in data:  # methods cluster at similar yields, so a legend names them, not labels
         x, color = num(r["lines_removed"]), COLORS[r["method"]]
         wrong = num(r["wrong_all_tiers (incl. LLM-judged readings)"])
         confirmed = num(r["wrong_confirmed"])
-        ax.scatter([x], [wrong], s=48, color=color, edgecolor=SURFACE, linewidth=1.5, zorder=3)
-        ax.scatter([x], [confirmed], s=48, facecolor=SURFACE, edgecolor=color, linewidth=1.5)
-        ax.annotate(
-            NAMES[r["method"]],
-            (x, wrong),
-            xytext=(5, 3),
-            textcoords="offset points",
-            fontsize=8,
-            color=INK,
+        ax.scatter(
+            [x],
+            [wrong],
+            s=48,
+            color=color,
+            edgecolor=SURFACE,
+            linewidth=1.5,
+            zorder=3,
+            label=NAMES[r["method"]],
         )
-    ax.set_xlabel("lines removed (REAL, finished runs)", color=INK_2)
+        ax.scatter([x], [confirmed], s=48, facecolor=SURFACE, edgecolor=color, linewidth=1.5)
+    ax.legend(frameon=False, fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1))
+    ax.set_xlabel("lines removed (the first five REAL projects, finished runs)", color=INK_2)
     ax.set_ylabel("wrong kept code edits", color=INK_2)
     ax.set_title(
         "Safety against yield: filled = all tiers (incl. LLM-judged), open = confirmed",
@@ -149,9 +152,7 @@ def injection_recall() -> Path | None:
 
 
 def audit_tiers() -> Path | None:
-    data = [
-        r for r in rows("audit.csv") if r["method"] in COLORS and int(r["kept_code_edits"] or 0)
-    ]
+    data = [r for r in rows("audit.csv") if r["method"] in COLORS and int(r["runs"] or 0)]
     if not data:
         return None
     sets = [s for s in ("injected v3", "real v3") if any(r["set"] == s for r in data)]
@@ -161,8 +162,8 @@ def audit_tiers() -> Path | None:
     y = list(range(len(order)))
     for n, (ax, s) in enumerate(zip(axs, sets, strict=True)):
         mine = {r["method"]: r for r in data if r["set"] == s}
-        confirmed = [num(mine[m]["share_confirmed"]) if m in mine else 0.0 for m in order]
-        total = [num(mine[m]["share_all_tiers"]) if m in mine else 0.0 for m in order]
+        confirmed = [num(mine[m]["share_confirmed"] or 0) if m in mine else 0.0 for m in order]
+        total = [num(mine[m]["share_all_tiers"] or 0) if m in mine else 0.0 for m in order]
         colors = [COLORS[m] for m in order]
         ax.barh(y, confirmed, height=0.6, color=colors, edgecolor=SURFACE, linewidth=2)
         reading = [t - c for t, c in zip(total, confirmed, strict=True)]
@@ -182,7 +183,7 @@ def audit_tiers() -> Path | None:
         for yy, m in zip(y, order, strict=True):
             if m in mine:
                 ax.text(
-                    num(mine[m]["share_all_tiers"]) + 0.002,
+                    num(mine[m]["share_all_tiers"] or 0) + 0.002,  # n=0: a run kept nothing
                     yy,
                     f"n={mine[m]['kept_code_edits']}",
                     va="center",
@@ -214,13 +215,15 @@ def heldout() -> Path | None:
     for y, r in enumerate(data):
         broken = r["visible_broken_projects (finished)"]
         ax.text(
-            num(r["heldout_changed_projects (finished)"]) + 0.1,
+            num(r["heldout_changed_projects (finished)"]) + 0.05,
             y,
             f"{r['heldout_changed_projects (finished)']} (visible broken: {broken})",
             va="center",
             fontsize=8,
             color=INK,
         )
+    ax.set_xlim(0, max([*values, 1]) + 1)  # counts: never a negative axis, room for the labels
+    ax.xaxis.get_major_locator().set_params(integer=True)
     return save(fig, "heldout.png")
 
 
@@ -234,6 +237,8 @@ def autonomy() -> Path | None:
     ax = axs[0]
     passes = sorted({r["pass"] for r in data})
     colors = ["#0072B2", "#E69F00"]
+    shift = 0.38 * (len(passes) - 1) / 2  # centers each cause's group of bars on its label
+    top = 1
     for k, (p, color) in enumerate(zip(passes, colors, strict=False)):
         counts = [
             sum(
@@ -243,18 +248,25 @@ def autonomy() -> Path | None:
             )
             for c in classes
         ]
-        ax.barh(
-            [i + 0.38 * k for i in range(len(classes))],
-            counts,
-            height=0.36,
-            color=color,
-            label=f"pass {p}",
+        top = max(top, *counts)
+        ys = [i + 0.38 * k - shift for i in range(len(classes))]
+        ax.barh(ys, counts, height=0.36, color=color, label=f"pass {p}")
+        for y, n in zip(ys, counts, strict=True):  # a pass with none still shows its 0
+            ax.text(n + 0.05, y, str(n), va="center", fontsize=8, color=INK)
+    ax.set_yticks(range(len(classes)), classes, color=INK)
+    ax.set_ylim(len(classes) - 0.5, -0.5)
+    ax.set_xlim(0, top + 0.5)
+    ax.xaxis.get_major_locator().set_params(integer=True)
+    if len(passes) > 1:  # one pass needs no legend: the title names it
+        ax.legend(
+            frameon=False, fontsize=8, ncol=len(passes), loc="lower right", bbox_to_anchor=(1, 1)
         )
-    ax.set_yticks([i + 0.19 for i in range(len(classes))], classes, color=INK)
-    ax.invert_yaxis()
-    ax.legend(frameon=False, fontsize=8)
+    which = f" (pass {passes[0]})" if len(passes) == 1 else ""
     ax.set_title(
-        "AUTONOMY: runs that did not complete, by cause", loc="left", color=INK, fontsize=9.5
+        f"AUTONOMY: runs that did not complete, by cause{which}",
+        loc="left",
+        color=INK,
+        fontsize=9.5,
     )
     return save(fig, "autonomy.png")
 
@@ -264,14 +276,16 @@ def cost() -> Path | None:
     if not data:
         return None
     sets = sorted({r["set"] for r in data})
-    fig, axs = axes(len(sets), height=0.45 * max(len(data) // len(sets), 1) + 1)
-    for ax, s in zip(axs, sets, strict=True):
-        mine = [r for r in data if r["set"] == s]
+    order = [m for m in COLORS if any(r["method"] == m for r in data)]  # one order, both panels
+    fig, axs = axes(len(sets), height=0.45 * len(order) + 1)
+    fig.subplots_adjust(wspace=0.12)
+    for n, (ax, s) in enumerate(zip(axs, sets, strict=True)):
+        mine = {r["method"]: num(r["llm_requests_mean"]) for r in data if r["set"] == s}
         hbars(
             ax,
-            [NAMES[r["method"]] for r in mine],
-            [num(r["llm_requests_mean"]) for r in mine],
-            [COLORS[r["method"]] for r in mine],
+            [NAMES[m] if n == 0 else "" for m in order],
+            [mine.get(m, 0.0) for m in order],
+            [COLORS[m] for m in order],
             f"{s}: LLM requests per finished run",
         )
     return save(fig, "cost.png")

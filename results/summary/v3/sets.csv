@@ -1,0 +1,26 @@
+set,repo,replaces,reason
+INJECT,gijzelaerr/python-snap7,nextlevelbuilder/ui-ux-pro-max-skill,fewer than 3 importable modules to plant in
+INJECT,motioneye-project/motioneye,,
+INJECT,microsoft/fabric-cicd,,
+INJECT,kazukinagata/shinkoku,domainaware/parsedmarc,the hidden test fails before any cleanup in 3 draws
+INJECT,vroonhof/opensteuerauszug,,
+INJECT,keon/algorithms,,
+INJECT,xtekky/gpt4free,,
+INJECT,phalt/clientele,,
+INJECT,pydantic/pydantic-settings,,
+INJECT,PyPSA/linopy,eakmanrq/sqlframe,the hidden test fails before any cleanup in 3 draws
+REAL,xgboosted/pandas-ta-classic,,
+REAL,vlm-run/vlmrun-hub,,
+REAL,alexis-mignon/python-flickr-api,,
+REAL,pipecat-ai/pipecat,,
+REAL,matin/garth,,
+REAL,groq/openbench,jrkropp/open-webui-developer-toolkit,fewer than two test modules: nothing to hold out
+REAL,HKUDS/ClawTeam,,
+REAL,PrimeIntellect-ai/verifiers,,
+REAL,TorchTrade/torchtrade,,
+REAL,cbcoutinho/nextcloud-mcp-server,,
+REAL,vndee/llm-sandbox,,
+REAL,goodroot/hyprwhspr,,
+REAL,charlesdove977/goviralbro,Tobi-De/cookiecutter-fastapi,fewer than two test modules: nothing to hold out
+REAL,Eden-Kramer-Lab/spectral_connectivity,,
+REAL,CelestoAI/SmolVM,acolomba/blackvuesync,fewer than two test modules: nothing to hold out

@@ -128,4 +128,55 @@ is dropped.
 
 ## Deviations
 
-None yet.
+Times are America/Phoenix. The cleanup code (`src/`) is v2.1.1's in every main run; only the
+experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes made after pass 1).
+
+1. **Runner patches (2026-11-06 12:47 to 2026-11-07 00:12).** The runs use these commits:
+   - #170 (12:47): the analysis tools, and the second-model method labels `agentic-m2` and
+     `agentic-single_agent-m2` (the agents' model set to `deepseek-v4-1-flash`, as registered).
+   - #171 (13:14): the AUTONOMY runner keeps Git LFS pointer files in its scratch copies, and a
+     harness error ends that repository's run as failed instead of ending the sweep. Pass 1 ran
+     at this commit (6db8b37).
+   - #173 (16:12): INJECT replaces a repository it cannot use (its hidden test fails before any
+     cleanup, or it cannot be prepared) with the next one from the reserve's far end, as
+     "Hold-out" says; the plant scan skips `.git`, after a background `git gc` crashed one
+     prepare. The second-model and curve runs use this commit (e05242b).
+   - #175 (2026-11-07 00:12): Aider's input files are copied into AIDev workspaces that run as
+     copies. Before it, Aider never started on them. An Aider run that exits non-zero without one
+     LLM request is a harness error and is rerun, never scored. The one Aider record made before
+     the fix (INJECT python-snap7) is not reported. The INJECT and REAL main runs use this commit
+     (13bd11f).
+2. **Runs on battery (2026-11-06 15:02).** The runs were started on battery at the project
+   manager's request. Low Power Mode slows the CPU, so a run that timed out on battery is rerun on
+   AC, and the battery run is not reported. This rule was written before the run it affected timed
+   out, and it decides H4: AUTONOMY's vllm run timed out on battery at 16:46 and completed on AC,
+   which makes pass 1 27 of 30 = 0.900, exactly the threshold. With the battery run it would be 26 of 30 = 0.867.
+   The results report both numbers and judge H4 on the rule.
+3. **Restarts (2026-11-06 13:58, 20:05 and 22:05).** The laptop restarted three times, and Docker
+   quit before the 20:05 restart. Every run or check that could have run without Docker is
+   treated as spoiled ("Limits") and rerun: 87 REAL runs that only logged errors, one held-out
+   check, and two interrupted AUTONOMY reruns. Records finished before Docker quit are kept.
+4. **Reruns replay the LLM cache (2026-11-07).** A run rerun because only its check was spoiled
+   replays its first attempt's cached LLM replies, so its cleanup is the same (its `final.diff` is
+   checked to be identical). Its time and LLM requests are the first attempt's.
+5. **v1's time cap was caught as an LLM failure (2026-11-07 07:06).** The runner cuts v1 at the
+   cap by raising an exception inside the run; v1's LLM client caught it as an ordinary request
+   failure and v1 skipped that step, so INJECT shinkoku's v1 run went on to 173 minutes (a second
+   signal sent at 07:59 was caught the same way). It counts as timed out by its time, as
+   pre-registered: its record says "time cap" and the tables count nothing removed. From #189 the
+   cap is not an ordinary error, so nothing in a run can catch it; the running chains keep their
+   runner, and another v1 run past the cap would also end late and count as timed out.
+6. **REAL pipecat's team run was stopped by an operator script (2026-11-07 10:38).** A script
+   meant to move the REAL chain onto a shared project queue after pipecat's v1 run matched an
+   old log line and stopped the team's pipecat run after about 113 of its 120 minutes. The run
+   is spoiled and rerun from scratch: the REAL clone's LLM cache was put back to its state when
+   the run began (the stopped attempt's replies removed), so the rerun replays nothing of it and
+   has the same budget as every other run. REAL run 1's remaining projects are taken from that
+   queue by two clones at the same commit; which clone runs a project does not change a result.
+7. **INJECT linopy's Aider run cannot start (2026-11-07 22:12).** Aider 0.86.2 exits on its
+   initial repository scan with a `tree_sitter.QueryError` in its repository map, before any LLM
+   request. The rule in 1 (#175) reruns such a harness error; the rerun at 22:14 failed the same
+   way. The run is recorded as not run (no record, no recall, no audit), as for a run not made by
+   the freeze; Aider's INJECT row covers the other nine repositories. From 22:12 a third clone at
+   the same commit (the INJECT clone, after INJECT ended) also takes REAL projects from the queue
+   in 6.
