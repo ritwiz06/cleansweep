@@ -173,3 +173,10 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
    the run began (the stopped attempt's replies removed), so the rerun replays nothing of it and
    has the same budget as every other run. REAL run 1's remaining projects are taken from that
    queue by two clones at the same commit; which clone runs a project does not change a result.
+7. **INJECT linopy's Aider run cannot start (2026-11-07 22:12).** Aider 0.86.2 exits on its
+   initial repository scan with a `tree_sitter.QueryError` in its repository map, before any LLM
+   request. The rule in 1 (#175) reruns such a harness error; the rerun at 22:14 failed the same
+   way. The run is recorded as not run (no record, no recall, no audit), as for a run not made by
+   the freeze; Aider's INJECT row covers the other nine repositories. From 22:12 a third clone at
+   the same commit (the INJECT clone, after INJECT ended) also takes REAL projects from the queue
+   in 6.
