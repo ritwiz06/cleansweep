@@ -33,11 +33,57 @@ test("home: clean a folder with readable errors, and the recent runs", async ({ 
   await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
 });
 
+test("home: Try the demo opens the demo app's recording in Replay", async ({ page }) => {
+  await open(page, "");
+  await page.getByRole("link", { name: "Try the demo" }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("the tour walks through the replay screen and Escape ends it", async ({ page }) => {
+  await open(page, "");
+  await page.getByRole("link", { name: "Take the tour" }).click();
+  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  const tour = page.getByRole("dialog");
+  await expect(tour).toContainText("Step 1 of 6");
+  await expect(tour.getByRole("heading", { name: "Play the recording" })).toBeVisible();
+  // the tour shows the run part-way, and the card takes the focus
+  await expect(page.getByLabel("Replay controls")).not.toContainText("event 0 of");
+  await expect(tour.getByRole("button", { name: "Next" })).toBeFocused();
+  await tour.getByRole("button", { name: "Next" }).click();
+  await expect(tour).toContainText("Step 2 of 6");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(tour.getByRole("heading", { name: "The agent team" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Agents" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("ArrowLeft");
+  await expect(tour).toContainText("Step 4 of 6");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).not.toHaveURL(/tour=1/);
+});
+
+test("each screen's help popover opens with one line and closes with Escape", async ({ page }) => {
+  for (const route of ["home", "runs", `replay?root=replay&path=${DEMO}`, `after?root=replay&path=${DEMO}`, "compare", "cases", "watch", "results", "evaluation", "reports"]) {
+    await open(page, route);
+    const help = page.getByRole("button", { name: "What am I looking at?" });
+    await help.click();
+    await expect(help).toHaveAttribute("aria-expanded", "true");
+    const note = page.getByRole("note");
+    await expect(note, route).toBeVisible();
+    expect((await note.innerText()).split("\n").length, route).toBe(1);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("note")).toHaveCount(0);
+    await expect(help).toBeFocused();
+  }
+});
+
 test("runs list offers the shipped recordings and opens a replay", async ({ page }) => {
   await open(page, "runs");
   const row = page.locator(`tr[data-run="${V2}"]`);
   await expect(row).toContainText("everything runs");
-  await expect(page.locator(`tr[data-run="${V1}"]`)).toContainText("v1 sweep");
+  await expect(page.locator(`tr[data-run="${V1}"]`)).toContainText("Phase 1 sweep");
   await row.getByRole("link", { name: "Replay" }).click();
   await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
 });
@@ -90,7 +136,7 @@ test("project view: the tree follows the events, and a node shows its evidence, 
   const unit = tree.locator('[data-key="unit:bookshelf/inventory.py::_print_low_stock"]');
   await expect(unit).toHaveClass(/st-investigating/);
   await expect(unit.locator('svg[data-role="investigator"]')).toHaveCount(1);
-  await expect(unit.getByRole("treeitem")).toHaveAttribute("aria-label", /investigating, last Investigator #3/);
+  await expect(unit.getByRole("treeitem")).toHaveAccessibleName(/investigating, last Investigator #3/);
   await page.getByRole("button", { name: "Jump to the end" }).click();
   await expect(tree.locator('[data-key="file:bookshelf/inventory_old.py"]')).toHaveClass(/st-kept/);
   await expect(unit).toHaveClass(/st-kept/);
@@ -155,6 +201,14 @@ test("presentation mode: large captions, a fixed pace, and the space bar jumps t
   for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
   await expect(caption).toContainText("Investigator #1 checks who uses bookshelf/inventory_old.py");
   await expect(page.getByRole("tree", { name: "Project tree" }).locator(".tree-row.focus").first()).toBeVisible();
+  // G switches to the agent graph and back; the agent at work is marked
+  await page.keyboard.press("g");
+  await expect(page).toHaveURL(/view=agents/);
+  await expect(page.getByLabel("Agent graph")).toContainText("at work");
+  await expect(page.getByRole("button", { name: "Agents" })).toHaveAttribute("aria-pressed", "true");
+  await expect(controls).toContainText("step 25 of 158");
+  await page.keyboard.press("g");
+  await expect(page.getByRole("tree", { name: "Project tree" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
 });
@@ -220,7 +274,7 @@ test("compare two runs side by side", async ({ page }) => {
 
 test("case study with the LLM-reviewer label", async ({ page }) => {
   await open(page, "cases");
-  await page.getByRole("button", { name: /proj_a/ }).click();
+  await page.getByRole("button", { name: /^proj_a/ }).click();
   await expect(page.getByText("tests passing before")).toBeVisible();
   await page.getByRole("tab", { name: /Review sheet/ }).click();
   await expect(page.getByLabel("Review sheet")).toContainText(REVIEW_LABEL);
@@ -237,15 +291,15 @@ test("watch folder: commits, slop over time, decisions", async ({ page }) => {
   await expect(page.getByLabel("Simulated watch")).toBeVisible();
 });
 
-test("results: v1 and v2 tables and figures", async ({ page }) => {
+test("results: Phase 1 and Phase 2 tables and figures", async ({ page }) => {
   await open(page, "results");
   await expect(page.getByLabel("main_table.csv")).toContainText("cleansweep-gatekeeper");
   await expect(page.locator(".gallery img").first()).toBeVisible();
-  await page.getByRole("tab", { name: "v2" }).click();
+  await page.getByRole("tab", { name: "Phase 2" }).click();
   await expect(page.getByText(/Tables/)).toBeVisible();
 });
 
-test("dashboard parity: v1 live sweep replay", async ({ page }) => {
+test("dashboard parity: Phase 1 live sweep replay", async ({ page }) => {
   await open(page, "sweeps");
   await page.locator(`tr[data-run="${V1}"]`).getByRole("link", { name: "Replay" }).click();
   await page.getByRole("button", { name: "Jump to the end" }).click();
@@ -304,7 +358,7 @@ test("bad launch requests show the server's reason", async ({ page }) => {
 test("evaluation: every tab loads, with the tiers and the LLM-judged labels", async ({ page }) => {
   await open(page, "evaluation");
   await expect(page.getByRole("heading", { name: "Evaluation" })).toBeVisible();
-  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch", "v3: hypotheses", "v3: injection", "v3: real projects", "v3: audit", "v3: autonomy and cost"]) {
+  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch", "Phase 3: hypotheses", "Phase 3: injection", "Phase 3: real projects", "Phase 3: audit", "Phase 3: autonomy and cost"]) {
     await page.getByRole("tab", { name: tab }).click();
     await expect(page.locator(".state.loading")).toHaveCount(0);
     await expect(page.locator(".state.error")).toHaveCount(0);
@@ -318,7 +372,7 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   await expect(page.locator("main")).toContainText("reading tier: LLM-judged");
   await expect(page).toHaveURL(/tab=audit/);
   // the judge panel replaces the human ratings; its table may not be built yet
-  await page.getByRole("tab", { name: "v3: audit" }).click();
+  await page.getByRole("tab", { name: "Phase 3: audit" }).click();
   const panel = page.locator("section.card", { has: page.getByRole("heading", { name: "LLM judge panel" }) });
   await expect(panel).toContainText("no human checked these labels");
   await expect(page.locator("main")).not.toContainText(/human ratings|raters|human-validated/i);
@@ -342,7 +396,7 @@ test("every shipped recording through every screen, in both themes at 1280x720",
   expect(shipped.filter((r) => r.kind === "v2").length).toBeGreaterThanOrEqual(4);
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");
-    if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== theme) await page.getByRole("button", { name: "Switch theme" }).click();
+    if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== theme) await page.getByRole("button", { name: /^(Dark|Light) theme$/ }).click();
     for (const run of shipped) {
       const q = `root=replay&path=${run.path}`;
       await open(page, `replay?${q}`);
@@ -397,7 +451,7 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
   ];
   for (const theme of ["light", "dark"]) {
     await open(page, "runs");
-    const toggle = page.getByRole("button", { name: "Switch theme" });
+    const toggle = page.getByRole("button", { name: /^(Dark|Light) theme$/ });
     if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== theme) await toggle.click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     for (const route of routes) {

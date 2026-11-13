@@ -189,14 +189,17 @@ It reads three folders: its runs folder (`results/raw/studio/`, or `--runs`), `r
 sends goes through the same redactor the agents use. Everything except Launch works offline;
 `demo/replay/` ships four agent-team recordings beside v1's (the toy repo, the demo app with the
 feature patch, a Manager step-back scenario and the Skill_Seekers case study; see the README).
-The theme button switches between light and dark. [studio_design.md](studio_design.md) has the
-rules every screen follows (type, spacing, the colors and glyphs of each item state, motion).
+The theme button switches between light and dark, and the "?" beside each screen's title says
+in one line what the screen shows. [studio_design.md](studio_design.md) has the rules every
+screen follows (type, spacing, the colors and glyphs of each item state, motion).
 
 **Home** is where Studio opens. Paste a project's absolute path into "Clean a folder", choose
 safe or thorough mode and the sandbox (auto, docker or none; docker needs a CleanSweep that has
 the Docker sandbox), and Start: Studio runs `cleansweep clean` on a copy and opens the live run.
 A path that can't be cleaned gets a one-line reason (no such folder, a file, no Python files).
-"Try it on" fills in the toy repo or the demo app. Below are the most recent cleanups.
+"Try it on" fills in the toy repo or the demo app. Below are the most recent cleanups. New to
+Studio? "Take the tour" walks through the replay of the demo app's cleanup in six short steps
+(the arrow keys move, Escape ends it), and "Try the demo" opens that recording in Replay.
 
 ![Home: clean a folder, and the recent runs](images/studio/home.png)
 
@@ -263,9 +266,10 @@ no sidebar, large type, and one plain caption per step ("Investigator #3 checks 
 _print_low_stock()"). The tree follows the agent at work and a panel shows that agent and the
 counts so far. Play advances at a fixed pace (1.5 s per step); the space bar (or a clicker's
 Page Down) jumps to the next decision, Shift+space back, the arrow keys one step, P plays or
-pauses, Escape leaves. On before / after it shows the summary, then one change per slide (5 s
-each when playing): the category, the Investigator's reason, the decisions as a chain of agents,
-the side-by-side diff and the checks.
+pauses, G switches between the project tree and the agent graph, Escape leaves. On before /
+after it shows the summary, then one change per slide (5 s each when playing): the category,
+the Investigator's reason, the decisions as a chain of agents, the side-by-side diff and the
+checks.
 
 ![Presentation mode: a caption per step, the tree following the agent at work](images/studio/present.png)
 
@@ -306,11 +310,12 @@ benchmark (each seed and all seeds pooled, with 95% CIs, and the paired tests), 
 (with their LLM requests and minutes) and the real-project ablation, the diff audit (wrong edits
 per method in two tiers, confirmed and reading, and by kind), probe strength, the Manager
 scenarios, the LLM reviewer's acceptance and watch. Anything an LLM judged carries an
-"LLM-judged" label. A table that is not built yet says so.
+"LLM-judged" label. A table that is not built yet says so. "Present" shows the charts without the
+sidebar, in large type, for a projector.
 
 ![Evaluation: the diff audit tab, wrong edits per method by tier and by kind](images/studio/evaluation.png)
 
-**Dashboard (v1)** has the old Streamlit dashboard's pages, with the same data. **Saved
+**Phase 1 dashboard** has the old Streamlit dashboard's pages, with the same data. **Saved
 reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: its
 numbers, slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined
 file. **Live sweep and replay** lists the v1 runs (stages, the Reviewer's plan, Guard checks,
@@ -320,8 +325,11 @@ diffs, hidden checks, the answer-key score). **Scheduler**, **Baselines**, **Dat
 ![Saved reports: the v1 demo app sweep](images/studio/saved_report.png)
 
 Studio's own checks run from `app/studio/frontend`: `npm run build`, `npx vitest run` and
-`npx playwright test` (Chromium). The screenshots in this guide come from
-`e2e/guide.spec.ts`, run against this repository's results (see the comment at its top).
+`npx playwright test` (Chromium), which includes `e2e/a11y.spec.ts`: axe-core on every screen
+in both themes, failing on any serious or critical violation. The screenshots in this guide
+come from `e2e/guide.spec.ts`, run against this repository's results (see the comment at its
+top); `REVIEW_SHOTS=<folder> npx playwright test review` saves every screen in both themes at
+1280×720 and 1920×1080 for a design review.
 Studio replaced the Streamlit dashboard in v2.0; git history keeps the dashboard.
 
 ## The v1 sweep

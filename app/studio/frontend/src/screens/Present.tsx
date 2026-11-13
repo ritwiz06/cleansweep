@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, runHash, useApi, type RunDetail } from "../api";
+import { AgentGraph } from "../components/AgentGraph";
 import { AgentIcon } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
@@ -72,7 +73,35 @@ function Spotlight({ step, state }: { step: CaptionStep | null; state: RunState 
   );
 }
 
-function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[]; live: boolean }) {
+type View = "project" | "agents";
+
+function viewHash(detail: RunDetail, live: boolean, view: View): string {
+  return `#/present?${new URLSearchParams({ root: detail.root, path: detail.path, ...(live ? { live: "1" } : {}), ...(view === "agents" ? { view } : {}) })}`;
+}
+
+// Project or Agents: what the big panel shows (G switches).
+function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
+  return (
+    <div className="view-switch" role="group" aria-label="View" title="G switches">
+      {(["project", "agents"] as View[]).map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={view === v}
+          onClick={(e) => {
+            onChange(v);
+            // a focused button would take the next space bar press as a click
+            e.currentTarget.blur();
+          }}
+        >
+          {v === "project" ? "Project" : "Agents"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Run({ detail, events, live, view }: { detail: RunDetail; events: StudioEvent[]; live: boolean; view: View }) {
   const steps = useMemo(() => captionSteps(events), [events]);
   const [at, setAt] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -83,7 +112,7 @@ function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[
   const files = useProjectFiles(detail.root, detail.path);
   const list = useMemo(() => treeFiles(files.data, events), [files.data, events.length]);
   const tree = useMemo(() => buildTree(list, state, (state.repo || detail.target || "project").replace(/^local:/, "")), [list, state]);
-  const view = useTreeView(tree, true, count);
+  const treeView = useTreeView(tree, view === "project", count);
   useEffect(() => {
     if (!playing || live) return;
     const timer = setInterval(() => {
@@ -104,8 +133,19 @@ function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[
   };
   const recent = steps.slice(Math.max(0, here - 2), here).reverse();
   const exit = runHash(detail, live ? "live" : "replay");
+  const setView = (v: View) => (window.location.hash = viewHash(detail, live, v));
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "g" && e.key !== "G") return;
+      if ((e.target as HTMLElement)?.closest?.("input, select, textarea")) return;
+      setView(view === "project" ? "agents" : "project");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   return (
     <PresentShell
+      extra={<ViewSwitch view={view} onChange={setView} />}
       title={`${live ? "Live" : "Replay"}: ${repoName(state.repo || detail.target || detail.name)}`}
       position={live ? `${steps.length} steps so far` : `step ${here + 1} of ${steps.length}`}
       progress={steps.length ? (here + 1) / steps.length : 0}
@@ -133,9 +173,15 @@ function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[
       </div>
       <p className="caption-detail">{step?.detail || " "}</p>
       <div className="present-run">
-        <div className="present-tree">
-          <TreeList view={view} chosen={null} onSelect={() => undefined} />
-        </div>
+        {view === "agents" ? (
+          <div className="present-graph">
+            <AgentGraph state={state} />
+          </div>
+        ) : (
+          <div className="present-tree">
+            <TreeList view={treeView} chosen={null} onSelect={() => undefined} />
+          </div>
+        )}
         <Spotlight step={step} state={state} />
       </div>
       <div className="present-foot">
@@ -152,22 +198,22 @@ function Run({ detail, events, live }: { detail: RunDetail; events: StudioEvent[
   );
 }
 
-export function Present({ root, path, live }: { root: string; path: string; live: boolean }) {
+export function Present({ root, path, live, view = "project" }: { root: string; path: string; live: boolean; view?: View }) {
   const res = useApi<RunDetail>(`${root}/${path}`, () => api("/api/run", { root, path }));
   const feed = useEvents<StudioEvent>(root, path, live);
-  if (!root || !path) return <Empty>Pick a run on the Runs screen.</Empty>;
+  if (!root || !path) return <Empty action={{ label: "Open Runs", href: "#/runs" }}>Pick a run to present.</Empty>;
   return (
     <div className="screen present-screen">
       <Async res={res} what="Loading the run">
         {(d) =>
           d.kind !== "v2" ? (
-            <Empty>Presentation mode is for agent-team cleanups.</Empty>
+            <Empty action={{ label: "Open the replay", href: runHash({ root, path }) }}>Presentation mode is for agent-team cleanups.</Empty>
           ) : feed.error ? (
             <ErrorBox error={feed.error} />
           ) : !live && !feed.done ? (
             <Loading what="Loading the recording" />
           ) : (
-            <Run detail={d} events={feed.events} live={live} />
+            <Run detail={d} events={feed.events} live={live} view={view} />
           )
         }
       </Async>

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { afterHash, api, post, runHash, useApi, type RunRow } from "../api";
-import { Async, Badge, Status } from "../components/common";
+import { afterHash, api, post, runHash, useApi, type Loaded, type RunRow } from "../api";
+import { Async, Badge, PageHeader, Status } from "../components/common";
 import { useRuns } from "./Runs";
 
 interface Options {
@@ -58,18 +58,26 @@ function when(mtime: number): string {
   return mtime ? new Date(mtime * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
 }
 
-function RecentRuns() {
-  const runs = useRuns();
+// The shipped recording of the demo app's cleanup, or any shipped agent-team recording.
+export const DEMO_RUN = "20261102_demo_feature_agentic";
+
+export function demoRun(rows: RunRow[] | null): RunRow | null {
+  const shipped = (rows || []).filter((r) => r.root === "replay" && r.kind === "v2" && r.finished);
+  return shipped.find((r) => r.path === DEMO_RUN) || shipped[0] || null;
+}
+
+function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | null }) {
   return (
     <section aria-label="Recent runs">
-      <header className="screen-head">
+      <header className="section-head">
         <h3>Recent runs</h3>
         <a href="#/runs">All runs</a>
       </header>
       <Async
         res={runs}
         what="Finding runs"
-        empty={(rows) => (rows.some((r) => r.kind === "v2") ? null : "No cleanups yet. Start one above; it appears here.")}
+        empty={(rows) => (rows.some((r) => r.kind === "v2") ? null : "No cleanups yet. Start one above and it shows up here.")}
+        emptyAction={demo ? { label: "Try the demo", href: runHash(demo) } : undefined}
       >
         {(rows) => (
           <div className="recent">
@@ -102,6 +110,8 @@ function RecentRuns() {
 
 export function Home() {
   const options = useApi<Options>("targets", () => api("/api/targets"));
+  const runs = useRuns();
+  const demo = demoRun(runs.data);
   const [path, setPath] = useState("");
   const [mode, setMode] = useState("safe");
   const [sandbox, setSandbox] = useState("auto");
@@ -140,6 +150,23 @@ export function Home() {
 
   return (
     <div className="screen home">
+      <PageHeader
+        title="Clean a folder"
+        description="Paste a Python project's path. CleanSweep cleans a copy, one checked change at a time."
+        help="Start here: clean a project of your own (CleanSweep works on a copy, so your folder is never changed), or watch a recorded cleanup of a small demo app first."
+        actions={
+          demo && (
+            <>
+              <a className="button" href={`${runHash(demo)}&tour=1`}>
+                Take the tour
+              </a>
+              <a className="button" href={runHash(demo)}>
+                Try the demo
+              </a>
+            </>
+          )
+        }
+      />
       <form
         className="clean-box"
         aria-label="Clean a folder"
@@ -148,11 +175,6 @@ export function Home() {
           start();
         }}
       >
-        <h2>Clean a folder</h2>
-        <p className="lead">
-          Paste the path of a Python project. CleanSweep copies it and cleans the copy, one checked change at a time; your
-          folder is never changed.
-        </p>
         <div className="path-row">
           <input
             value={path}
@@ -213,7 +235,7 @@ export function Home() {
           </div>
         )}
       </form>
-      <RecentRuns />
+      <RecentRuns runs={runs} demo={demo} />
     </div>
   );
 }
