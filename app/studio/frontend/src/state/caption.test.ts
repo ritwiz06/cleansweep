@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { captionFor, captionSteps, captionText, itemLabel } from "./caption";
+import { captionFor, captionSteps, captionText, itemLabel, short } from "./caption";
 import { fold, type StudioEvent } from "./fold";
 import { afterSlides, nextDecisionStep } from "./present";
 import { parseDiff } from "./diff";
@@ -31,6 +31,17 @@ describe("captions", () => {
     expect(steps.length).toBe(158);
     expect(steps.filter((s) => s.decision).map((s) => s.text).slice(-5)).toEqual(["keeps P3", "rolls back P4", "decides to continue", "keeps P5", "keeps P6"]);
     expect(captionFor(ev("llm_start", "explorer", { n: 1 }), fold([]))).toBeNull();
+  });
+
+  it("says 'including' when the categories it names are not all the candidates", () => {
+    const steps = captionSteps(recording("20261102_demo_feature_agentic").events);
+    expect(steps.map((s) => s.text)).toContain("finds 16 candidates, including dead code 9, leftover file 2, duplicate 2");
+  });
+
+  it("cuts a reason only at the end of a sentence", () => {
+    const reason = "The rules propose INVESTIGATE for the 16 candidates. The budget is sufficient to proceed. " + "More words. ".repeat(30);
+    expect(short(reason)).toBe("The rules propose INVESTIGATE for the 16 candidates. The budget is sufficient to proceed. More words. More words. More words. More words. More words. More words. More words. More words. More words.");
+    expect(short("One very long sentence without an end ".repeat(10)).endsWith("end")).toBe(true);
   });
 
   it("names a step back and a revert", () => {

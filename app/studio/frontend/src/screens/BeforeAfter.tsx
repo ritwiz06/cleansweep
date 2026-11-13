@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
-import { FileDiff, MetricsCard, SMALL, TreeCard } from "../components/AfterParts";
+import { AfterTop, FileDiff, SMALL, TreeCard } from "../components/AfterParts";
 import { AgentIcon, agentName } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading, PageHeader } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
@@ -52,11 +52,11 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
           mentions are not shown.
         </p>
       )}
-      <div className="ba-top">
-        <TreeCard title="Before" tree={trees.before} selected={file?.path || ""} onSelect={pick} all={showAll} />
-        <TreeCard title="After" tree={trees.after} selected={file?.path || ""} onSelect={pick} all={showAll} />
-        <MetricsCard m={m} />
-      </div>
+      <AfterTop
+        m={m}
+        before={<TreeCard title="Before" tree={trees.before} selected={file?.path || ""} onSelect={pick} all={showAll} />}
+        after={<TreeCard title="After" tree={trees.after} selected={file?.path || ""} onSelect={pick} all={showAll} />}
+      />
       <div className="ba-tools">
         <label className="check">
           <input type="checkbox" checked={showAll} onChange={(e) => setAll(e.target.checked)} /> Show unchanged files
@@ -164,11 +164,11 @@ function PresentAfter({ detail, events, diff }: { detail: RunDetail; events: Stu
             </p>
           </div>
           <p className="caption-detail">Behavior that nothing tests isn't covered: the tests and the probes check only the code they run.</p>
-          <div className="ba-top">
-            <TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={false} />
-            <TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={false} />
-            <MetricsCard m={m} />
-          </div>
+          <AfterTop
+            m={m}
+            before={<TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={false} />}
+            after={<TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={false} />}
+          />
         </div>
       ) : (
         <ChangeSlide key={at} slide={slide} state={state} />

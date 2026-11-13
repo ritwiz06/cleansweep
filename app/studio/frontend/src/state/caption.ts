@@ -44,9 +44,17 @@ function lower(text: string): string {
   return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
 }
 
-function short(text: string, n = 110): string {
+// A reason, cut only at the end of a sentence: as many whole sentences as fit in about two lines
+// of a caption, and always at least the first one.
+export function short(text: string, n = 200): string {
   const one = text.replace(/\s+/g, " ").trim();
-  return one.length > n ? `${one.slice(0, n - 1)}…` : one;
+  const sentences = one.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g) || [one];
+  let out = sentences[0].trim();
+  for (const s of sentences.slice(1)) {
+    if ((out + s).length > n) break;
+    out += s;
+  }
+  return out.trim();
 }
 
 // How a candidate reads in a sentence: a file's path, a function with (), "line 37 of x.py".
@@ -142,7 +150,10 @@ function message(e: StudioEvent, s: RunState): Caption | null {
       const counts: Record<string, number> = {};
       for (const c of b.items || []) counts[c.category] = (counts[c.category] || 0) + 1;
       const top = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 3);
-      return { agent: from, text: `finds ${plural((b.items || []).length, "candidate")}: ${top.map(([c, n]) => `${categoryLabel(c)} ${n}`).join(", ")}` };
+      const all = (b.items || []).length;
+      // the three largest categories; when they are not all of them, say so
+      const lead = top.reduce((sum, [, n]) => sum + n, 0) < all ? ", including" : ":";
+      return { agent: from, text: `finds ${plural(all, "candidate")}${lead} ${top.map(([c, n]) => `${categoryLabel(c)} ${n}`).join(", ")}` };
     }
     case "verdict": {
       const item = s.items[b.item_id];

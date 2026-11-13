@@ -23,6 +23,14 @@ export function placeCard(target: Box, card: { width: number; height: number }, 
   return { top, left: clampLeft(target.left + target.width - card.width - MARGIN), side: "inside" as const };
 }
 
+// How far to scroll so the target and the card under it fit on screen together, centred; a
+// target too tall for that goes to the top of the screen.
+export function scrollDelta(target: Box, cardHeight: number, viewHeight: number): number {
+  const block = target.height + GAP + cardHeight;
+  if (block <= viewHeight - 2 * MARGIN) return target.top - (viewHeight - block) / 2;
+  return target.top - MARGIN;
+}
+
 // The spotlight: the target with a little air around it, clipped to the viewport.
 export function spotlight(target: Box, view: { width: number; height: number }, pad = 6): Box {
   const top = Math.max(target.top - pad, 4);

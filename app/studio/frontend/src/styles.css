@@ -294,8 +294,42 @@ p {
   font-weight: 600;
 }
 
-.theme-toggle {
+/* the Phase 1 screens: one entry at the foot of the sidebar */
+.sidebar a.nav-archive {
   margin-top: auto;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding-top: var(--space-2);
+}
+
+.theme-toggle {
+  margin-top: var(--space-2);
+}
+
+.archive {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.archive-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.archive-card b {
+  color: var(--accent);
+}
+
+.archive-card:hover {
+  background: var(--surface-2);
 }
 
 .content {
@@ -742,10 +776,17 @@ h4 {
   margin-bottom: var(--space-2);
 }
 
+/* a table wider than its card scrolls inside it; a soft shade at an edge says there is more */
 .table-wrap {
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left center / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right center / 40px 100% no-repeat local,
+    linear-gradient(to right, var(--grid), transparent) left center / 16px 100% no-repeat scroll,
+    linear-gradient(to left, var(--grid), transparent) right center / 16px 100% no-repeat scroll,
+    var(--surface);
 }
 
 table.data {
@@ -777,6 +818,17 @@ table.data td.wrap {
   max-width: 420px;
 }
 
+/* numbers line up on the right, in tabular figures; names and paths never break */
+table.data th.num,
+table.data td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+table.data td.ident {
+  white-space: nowrap;
+}
+
 table.runs td.actions a {
   margin-right: var(--space-2);
 }
@@ -786,22 +838,75 @@ table.compare th {
   white-space: nowrap;
 }
 
+/* one row of numbers, the same on every screen: equal columns, the value, a bar, the label */
 .stats-row {
+  display: grid;
+  gap: var(--space-2) var(--space-4);
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-3);
+}
+
+.stat {
+  min-width: 0;
+}
+
+.stat.lead {
+  grid-column: span 2;
+}
+
+.stat-top {
   display: flex;
-  gap: var(--space-5);
-  flex-wrap: wrap;
-  margin: var(--space-2) 0 var(--space-3);
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: nowrap;
 }
 
 .stat-value {
   font-size: var(--text-xl);
   font-weight: 700;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
+}
+
+.stat.lead .stat-value {
+  font-size: var(--text-2xl);
+}
+
+.stat-of {
+  color: var(--muted);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.stat-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
 }
 
 .stat-label {
   color: var(--muted);
   font-size: var(--text-xs);
+  margin-top: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat .bar {
+  margin-top: var(--space-1);
+}
+
+.stats-note {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  color: var(--text-2);
+  font-size: var(--text-sm);
 }
 
 .transport {
@@ -934,6 +1039,7 @@ table.compare th {
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  flex: none;
   font-size: var(--text-xs);
   line-height: 1.2;
 }
@@ -993,9 +1099,12 @@ table.compare th {
   --ph: var(--series-7);
 }
 
-.phase-report,
-.phase-done {
+.phase-report {
   --ph: var(--series-8);
+}
+
+.phase-done {
+  --ph: var(--good);
 }
 
 .dot[class*="phase-"] {
@@ -1812,6 +1921,88 @@ details summary {
   font-weight: 700;
 }
 
+/* a count inside a stacked segment, in the surface color (the state colors keep 4.5:1 on it) */
+.recharts-label-list .bar-label.in-segment {
+  fill: var(--surface);
+  font-weight: 700;
+}
+
+.app.present .bar-label {
+  font-size: var(--text-sm);
+}
+
+/* the names left of horizontal bars, the focus method in bold */
+.bar-name {
+  fill: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.bar-name.focus {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.chart-title .better {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.eval-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin: 0 0 var(--space-3);
+}
+
+.eval-nav .tabs {
+  border-bottom: none;
+  margin: 0;
+}
+
+.present-nav {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-md);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.present-nav b {
+  color: var(--text);
+}
+
+/* a run's outcome in words, a badge only when it is unusual */
+.run-outcome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-tag {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5em;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.run-tag.run-a {
+  background: var(--series-1);
+  color: var(--on-series-1);
+}
+
+.run-tag.run-b {
+  background: var(--series-2);
+  color: #0b0b0b;
+}
+
 .chart-pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -1866,6 +2057,13 @@ details summary {
   padding: var(--space-1);
 }
 
+/* the figures are drawn on white: in the dark theme they sit in a light frame, slightly dimmed */
+:root[data-theme="dark"] .figure img {
+  background: #e9e8e4;
+  border: 6px solid #e9e8e4;
+  filter: brightness(0.88);
+}
+
 .figure figcaption {
   font-size: var(--text-xs);
   color: var(--muted);
@@ -1887,7 +2085,6 @@ details summary {
 /* Home: the "Clean a folder" box and the recent runs, centred like a landing page */
 .home {
   max-width: 1040px;
-  margin: 0 auto;
 }
 
 .report-meter {
@@ -2220,11 +2417,74 @@ details summary {
 }
 
 /* Before / after: both trees, the numbers, and each change with the decisions behind it */
+/* before / after: the headline band across the width, then the trees and the details in
+   columns of one height */
+.ba-band {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.ba-numbers {
+  font-size: var(--text-2xl);
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ba-numbers b {
+  font-weight: 700;
+}
+
+.ba-numbers .arrow {
+  color: var(--muted);
+  font-size: var(--text-xl);
+}
+
+.ba-numbers .delta {
+  margin-left: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.ba-numbers.muted {
+  font-size: var(--text-lg);
+}
+
+.ba-label {
+  margin-top: var(--space-1);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.ba-label .muted {
+  font-size: var(--text-xs);
+}
+
 .ba-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(380px, 1.45fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(360px, 1.3fr);
   gap: var(--space-3);
-  align-items: start;
+  align-items: stretch;
+}
+
+.ba-top > .card {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.ba-top > .card > .card-body {
+  flex: 1;
+}
+
+.ba-summary {
+  margin-bottom: var(--space-3);
 }
 
 .ba-tree .card-body {
@@ -2736,14 +2996,33 @@ button.primary kbd {
   font-size: 0.85em;
 }
 
+/* the reason under the caption: whole sentences (cut where a sentence ends), two lines at most */
 .caption-detail {
   margin: 0;
   color: var(--text-2);
-  font-size: var(--text-md);
-  min-height: 1.45em;
+  font-size: var(--text-lg);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.caption-before {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-lg);
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* the agent's role, in the caption only when the side panel is not there */
+.caption-role {
+  margin: 0;
+  color: var(--text-2);
+  font-size: var(--text-md);
 }
 
 .present-run {
@@ -2752,6 +3031,42 @@ button.primary kbd {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 400px;
   gap: var(--space-3);
+}
+
+@media (max-width: 1439px) {
+  .present-run.view-agents {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .present-run.view-agents .spotlight {
+    display: none;
+  }
+}
+
+@media (min-width: 1440px) {
+  .caption-role {
+    display: none;
+  }
+}
+
+/* the graph on a projector: larger type in the graph's units, so it zooms up to readable */
+.present-graph .agent-flow {
+  --text-sm: 16px;
+  --text-xs: 12.5px;
+}
+
+.present-graph .agent {
+  width: 190px;
+}
+
+.spotlight .pointer-body {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.spot-item h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-md);
 }
 
 .present-tree {
@@ -2771,9 +3086,20 @@ button.primary kbd {
   min-height: 34px;
 }
 
-.present-tree .tree-row.focus:not(.kind-folder) .tree-label {
+/* on a projector only the item at work stands out: its tint, its bar and its state in words;
+   the others keep their glyph and colored name */
+.present-tree .tree-row.focus:not(.at-work) .tree-label {
+  box-shadow: none;
+  background: none;
+}
+
+.present-tree .tree-row.at-work .tree-label {
   box-shadow: inset 4px 0 0 var(--st);
   background: color-mix(in srgb, var(--st) 16%, transparent);
+}
+
+.present-tree .tree-label .agent-icon {
+  display: none;
 }
 
 .tree-state {
@@ -2948,11 +3274,11 @@ button.primary kbd {
 }
 
 .present .ba-tree .card-body {
-  max-height: calc(100vh - 230px);
+  max-height: calc(100vh - 400px);
 }
 
 .present .metrics-card .card-body {
-  max-height: calc(100vh - 230px);
+  max-height: calc(100vh - 400px);
   overflow: auto;
 }
 
@@ -2981,16 +3307,26 @@ button.primary kbd {
   gap: var(--space-1);
 }
 
-.chain-strip li + li::before {
+/* the arrow ends a line rather than starting the next one */
+.chain-strip li:not(:last-child)::after {
   content: "→";
   color: var(--muted);
-  margin-right: var(--space-1);
+  margin-left: var(--space-1);
 }
 
+/* the diff takes the room it needs, and the checks sit right under it */
 .slide-diff {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+.slide-diff table.sbs {
+  font-size: clamp(15px, 1.1vw, 22px);
+}
+
+.change-slide .caption .state-chip {
+  font-size: var(--text-lg);
 }
 
 .check-chips {

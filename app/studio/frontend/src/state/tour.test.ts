@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MARGIN, placeCard, spotlight } from "./tour";
+import { MARGIN, placeCard, scrollDelta, spotlight } from "./tour";
 
 const VIEW = { width: 1280, height: 720 };
 const CARD = { width: 380, height: 180 };
@@ -25,6 +25,20 @@ describe("placeCard", () => {
     const at = placeCard({ top: 20, left: 1100, width: 900, height: 700 }, CARD, VIEW);
     expect(at.left).toBe(VIEW.width - MARGIN - CARD.width);
     expect(at.top + CARD.height).toBeLessThanOrEqual(VIEW.height - MARGIN);
+  });
+});
+
+describe("scrollDelta", () => {
+  it("brings a target and the card under it on screen together", () => {
+    const target = { top: 380, left: 220, width: 1000, height: 470 };
+    const delta = scrollDelta(target, 190, 720);
+    const top = target.top - delta;
+    expect(top).toBeGreaterThanOrEqual(MARGIN);
+    expect(placeCard({ ...target, top }, CARD, VIEW).side).toBe("below");
+  });
+
+  it("puts a target too tall for that at the top of the screen", () => {
+    expect(scrollDelta({ top: 300, left: 0, width: 100, height: 900 }, 190, 720)).toBe(300 - MARGIN);
   });
 });
 

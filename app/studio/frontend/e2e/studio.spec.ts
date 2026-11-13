@@ -268,14 +268,14 @@ test("compare two runs side by side", async ({ page }) => {
   await open(page, "compare");
   await page.getByLabel("Run A").selectOption(`replay:${V2}`);
   await page.getByLabel("Run B").selectOption("results:raw/watch_a/clean-001");
-  await expect(page.getByLabel("Comparison")).toContainText("lines removed");
+  await expect(page.getByLabel("Comparison")).toContainText("Lines removed");
   await expect(page.getByLabel("Comparison")).toContainText("44");
 });
 
 test("case study with the LLM-reviewer label", async ({ page }) => {
   await open(page, "cases");
   await page.getByRole("button", { name: /^proj_a/ }).click();
-  await expect(page.getByText("tests passing before")).toBeVisible();
+  await expect(page.getByText("Tests passing, before → after")).toBeVisible();
   await page.getByRole("tab", { name: /Review sheet/ }).click();
   await expect(page.getByLabel("Review sheet")).toContainText(REVIEW_LABEL);
   await expect(page.getByLabel("Review sheet")).toContainText("a string may call it");
@@ -358,21 +358,42 @@ test("bad launch requests show the server's reason", async ({ page }) => {
 test("evaluation: every tab loads, with the tiers and the LLM-judged labels", async ({ page }) => {
   await open(page, "evaluation");
   await expect(page.getByRole("heading", { name: "Evaluation" })).toBeVisible();
-  for (const tab of ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch", "Phase 3: hypotheses", "Phase 3: injection", "Phase 3: real projects", "Phase 3: audit", "Phase 3: autonomy and cost"]) {
-    await page.getByRole("tab", { name: tab }).click();
-    await expect(page.locator(".state.loading")).toHaveCount(0);
-    await expect(page.locator(".state.error")).toHaveCount(0);
+  const tabs: [string, string[]][] = [
+    ["Phase 2", ["Injection benchmark", "Ablations", "Diff audit", "Probe strength", "Manager scenarios", "LLM reviewer", "Watch"]],
+    ["Phase 3", ["Hypotheses", "Injection", "Real projects", "Audit", "Autonomy and cost"]],
+  ];
+  for (const [phase, names] of tabs) {
+    await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: phase }).click();
+    for (const tab of names) {
+      await page.getByRole("tab", { name: tab, exact: true }).click();
+      await expect(page.locator(".state.loading")).toHaveCount(0);
+      await expect(page.locator(".state.error")).toHaveCount(0);
+    }
   }
+  await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: "Phase 2" }).click();
   await page.getByRole("tab", { name: "Probe strength" }).click();
   await expect(page.getByLabel("probe_strength.csv")).toContainText("swebench_t1");
   await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toContainText("(higher is better)");
   await page.getByRole("tab", { name: "LLM reviewer" }).click();
   await expect(page.locator("main")).toContainText("LLM-judged");
   await page.getByRole("tab", { name: "Diff audit" }).click();
   await expect(page.locator("main")).toContainText("reading tier: LLM-judged");
   await expect(page).toHaveURL(/tab=audit/);
+  // the chart and the table name the methods alike
+  await page.getByRole("tab", { name: "Injection benchmark" }).click();
+  await expect(page.getByLabel("injection_seeds.csv")).toContainText("team");
+  await expect(page.getByLabel("injection_seeds.csv")).not.toContainText("agentic");
+  // presentation mode: one line instead of the tabs, the arrow keys move
+  await page.getByRole("link", { name: "Present" }).click();
+  await expect(page.locator(".present-nav")).toContainText("Injection benchmark · 1 of 12");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".present-nav")).toContainText("Ablations · 2 of 12");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("nav.sidebar")).toBeVisible();
   // the judge panel replaces the human ratings; its table may not be built yet
-  await page.getByRole("tab", { name: "Phase 3: audit" }).click();
+  await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: "Phase 3" }).click();
+  await page.getByRole("tab", { name: "Audit", exact: true }).click();
   const panel = page.locator("section.card", { has: page.getByRole("heading", { name: "LLM judge panel" }) });
   await expect(panel).toContainText("no human checked these labels");
   await expect(page.locator("main")).not.toContainText(/human ratings|raters|human-validated/i);

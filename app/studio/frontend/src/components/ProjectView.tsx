@@ -4,6 +4,7 @@ import type { Item, RunState, StudioEvent } from "../state/fold";
 import { buildTree, defaultExpanded, filesFromEvents, findNode, focusPath, pathTo, visibleRows, type FileEntry, type TreeNode } from "../state/tree";
 import { AgentIcon, AgentTag, agentName } from "./AgentIcon";
 import { RunContext } from "./Artifact";
+import { Pointer } from "./AfterParts";
 import { DiffView, filterDiff } from "./Code";
 import { Card, Empty, Loading } from "./common";
 import { ItemDetail } from "./ItemBoard";
@@ -28,6 +29,11 @@ export function treeFiles(saved: ProjectFiles | null, events: StudioEvent[]): Fi
   return filesFromEvents(events).map((path) => ({ path, lines: null }));
 }
 
+// The tree's key of a candidate: a class, function or line range sits under its file.
+export function itemKey(unit: string): string {
+  return unit.includes("::") ? `unit:${unit}` : `file:${unit}`;
+}
+
 function Counts({ counts }: { counts: Record<string, number> }) {
   const shown = COUNT_ORDER.filter((s) => counts[s]);
   if (!shown.length) return null;
@@ -35,8 +41,10 @@ function Counts({ counts }: { counts: Record<string, number> }) {
     <span className="tree-counts">
       {shown.map((s) => (
         <span key={s} className={`tree-count st-${s}`}>
+          {/* a thin space keeps "○ 14" from reading as "014" */}
           <span aria-hidden>
             {STATE_GLYPH[s]}
+            {" "}
             {counts[s]}
           </span>
           <span className="sr-only">
@@ -55,6 +63,7 @@ export function TreeRow({
   selected,
   onToggle,
   onSelect,
+  atWork = false,
 }: {
   node: TreeNode;
   depth: number;
@@ -62,13 +71,14 @@ export function TreeRow({
   selected: boolean;
   onToggle: () => void;
   onSelect: () => void;
+  atWork?: boolean;
 }) {
   const parent = node.children.length > 0;
   // the row's name is its text: the name, then (for screen readers) its state and last agent
   const said = `: ${stateLabel(node.state)}${node.actor ? `, last ${agentName(node.actor)}` : ""}`;
   return (
     <div
-      className={`tree-row kind-${node.kind} st-${node.state} ${selected ? "selected" : ""} ${node.focus ? "focus" : ""}`}
+      className={`tree-row kind-${node.kind} st-${node.state} ${selected ? "selected" : ""} ${node.focus ? "focus" : ""} ${atWork ? "at-work" : ""}`}
       style={{ paddingLeft: `calc(${depth} * var(--tree-indent))` }}
       data-key={node.key}
     >
@@ -89,7 +99,7 @@ export function TreeRow({
         </span>
         <span className="tree-name">{node.name}</span>
         <span className="sr-only">{said}</span>
-        {node.focus && node.kind !== "folder" && (
+        {atWork && (
           <span className="tree-state" aria-hidden>
             {stateLabel(node.state)}
           </span>
@@ -169,7 +179,7 @@ function NodeDetail({ node, state, detail, onPick }: { node: TreeNode; state: Ru
           <h4>Candidates in here ({below.length})</h4>
           <ul className="node-items">
             {below.map((item) => {
-              const key = item.unit.includes("::") ? `unit:${item.unit}` : `file:${item.unit}`;
+              const key = itemKey(item.unit);
               return (
                 <li key={item.id}>
                   <button className="link" onClick={() => onPick(key)}>
@@ -231,7 +241,7 @@ export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
   return { expanded, setOpen, rows, toggle, onKey, treeRef };
 }
 
-export function TreeList({ view, chosen, onSelect }: { view: TreeView; chosen: string | null; onSelect: (key: string) => void }) {
+export function TreeList({ view, chosen, onSelect, atWork }: { view: TreeView; chosen: string | null; onSelect: (key: string) => void; atWork?: string | null }) {
   return (
     <div className="tree" role="tree" aria-label="Project tree" ref={view.treeRef} onKeyDown={view.onKey}>
       {view.rows.map(({ node: n, depth }) => (
@@ -243,6 +253,7 @@ export function TreeList({ view, chosen, onSelect }: { view: TreeView; chosen: s
           selected={n.key === chosen}
           onToggle={() => view.toggle(n.key)}
           onSelect={() => (chosen === n.key && n.children.length ? view.toggle(n.key) : onSelect(n.key))}
+          atWork={n.key === atWork}
         />
       ))}
     </div>
@@ -307,19 +318,23 @@ export function ProjectView({
             <NodeDetail node={node} state={state} detail={detail} onPick={pick} />
           ) : (
             <div className="node-empty">
-              <p>Click a file, class or function to see its evidence chain, its diff and the checks it passed.</p>
-              {focusItem && (
-                <p>
-                  Now: <AgentTag agent={focusItem.actor || state.active || "manager"} /> on{" "}
-                  <button className="link" onClick={() => pick(focusItem.unit.includes("::") ? `unit:${focusItem.unit}` : `file:${focusItem.unit}`)}>
-                    <code>{focusItem.unit}</code>
-                  </button>{" "}
-                  <StateChip state={focusItem.stage} />
-                </p>
+              {focusItem ? (
+                <>
+                  <p className="now">
+                    Now: <AgentTag agent={focusItem.actor || state.active || "manager"} /> on{" "}
+                    <button className="link" onClick={() => pick(itemKey(focusItem.unit))}>
+                      <code>{focusItem.unit}</code>
+                    </button>
+                  </p>
+                  {/* following the action: the decisions, evidence and checks of the item at work */}
+                  {follow && <Pointer note={{ items: [focusItem.id], match: "exact" }} state={state} />}
+                </>
+              ) : (
+                <p>Click a file, class or function to see its evidence chain, its diff and the checks it passed.</p>
               )}
               <p className="muted small">
                 {state.itemOrder.length} candidates · {tree.counts.kept || 0} kept · {tree.counts.rolled_back || 0} rolled back ·{" "}
-                {tree.counts.suggest || 0} suggestions
+                {tree.counts.suggest || 0} suggestions. Click any item for its diff.
               </p>
             </div>
           )}

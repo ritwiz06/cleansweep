@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { placeCard, spotlight, type Box } from "../state/tour";
+import { placeCard, scrollDelta, spotlight, type Box } from "../state/tour";
 
 export interface TourStep {
   target: string; // a CSS selector for the part of the screen the step explains
@@ -45,7 +45,12 @@ export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
     step.enter?.();
     // the screen redraws after enter(); measure once it has
     const frame = requestAnimationFrame(() => {
-      document.querySelector(step.target)?.scrollIntoView({ block: "center", inline: "nearest" });
+      const el = document.querySelector(step.target);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const card = cardRef.current?.offsetHeight ?? CARD.height;
+        window.scrollBy(0, scrollDelta({ top: r.top, left: r.left, width: r.width, height: r.height }, card, window.innerHeight));
+      }
       measure();
       nextRef.current?.focus();
     });

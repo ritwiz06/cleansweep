@@ -15,29 +15,30 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useContext, useEffect, useMemo, useRef, type RefObject } from "react";
 import { agentName, roleOf, type AgentStats, type Message, type RunState } from "../state/fold";
 import { AgentIcon, AgentTag } from "./AgentIcon";
-import { ANIMATE, seconds } from "./common";
+import { ANIMATE, Presenting, seconds } from "./common";
 
+// A compact layout (about 790 by 330 units), so the graph can be zoomed up to fill a wide box.
 const POS: Record<string, { x: number; y: number }> = {
-  manager: { x: 290, y: 150 },
-  explorer: { x: 20, y: 44 },
-  auditor: { x: 20, y: 124 },
-  investigator: { x: 20, y: 204 },
-  planner: { x: 20, y: 284 },
-  engineer: { x: 568, y: 38 },
-  tester: { x: 568, y: 104 },
-  validator: { x: 568, y: 170 },
-  fixer: { x: 568, y: 236 },
-  reporter: { x: 568, y: 302 },
-  solo: { x: 290, y: 270 },
+  manager: { x: 300, y: 140 },
+  explorer: { x: 20, y: 34 },
+  auditor: { x: 20, y: 102 },
+  investigator: { x: 20, y: 170 },
+  planner: { x: 20, y: 238 },
+  engineer: { x: 578, y: 30 },
+  tester: { x: 578, y: 90 },
+  validator: { x: 578, y: 150 },
+  fixer: { x: 578, y: 210 },
+  reporter: { x: 578, y: 270 },
+  solo: { x: 300, y: 236 },
 };
 const GROUPS = [
-  { id: "research", label: "Research squad", x: 4, y: 0, w: 204, h: 362 },
-  { id: "development", label: "Development squad", x: 552, y: 0, w: 204, h: 380 },
+  { id: "research", label: "Research squad", x: 4, y: 0, w: 226, h: 304 },
+  { id: "development", label: "Development squad", x: 562, y: 0, w: 226, h: 332 },
 ];
-const FIT = { padding: 0.06 };
+const FIT = { padding: 0.05 };
 
 type AgentData = { stats: AgentStats; active: boolean };
 type GroupData = { label: string };
@@ -156,6 +157,8 @@ function useFitOnResize(box: RefObject<HTMLDivElement | null>) {
 }
 
 function Graph({ state, recent }: { state: RunState; recent: number }) {
+  // the library is MIT licensed; its credit stays on screen except on a projector
+  const presenting = useContext(Presenting);
   const box = useRef<HTMLDivElement>(null);
   useFitOnResize(box);
   const lastIds = state.messages.slice(-recent).map((m) => m.eventId).join(",");
@@ -206,6 +209,7 @@ function Graph({ state, recent }: { state: RunState; recent: number }) {
           zoomOnPinch={false}
           zoomOnDoubleClick={false}
           preventScrolling={false}
+          proOptions={{ hideAttribution: presenting }}
         />
       </div>
       <div className="graph-caption" aria-live="polite">

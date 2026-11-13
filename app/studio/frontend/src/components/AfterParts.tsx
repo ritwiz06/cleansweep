@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { annotateFile, categoryLabel, decisionSteps, packageChecks, type HunkNote } from "../state/annotate";
 import type { FileTree, Metrics, Pair } from "../state/beforeAfter";
 import type { DiffFile } from "../state/diff";
@@ -15,52 +15,60 @@ function num(v: number | null): string {
   return v === null ? "?" : v.toLocaleString();
 }
 
-function Change({ pair, unit = "" }: { pair: Pair; unit?: string }) {
-  if (pair.before === null && pair.after === null) return <span className="muted">not recorded</span>;
+// One headline number before and after, with its change: green when it moved the right way.
+function Figure({ label, pair, fewer, note }: { label: string; pair: Pair; fewer: boolean; note?: string }) {
   const delta = pair.before !== null && pair.after !== null ? pair.after - pair.before : null;
+  const good = delta !== null && delta !== 0 && (fewer ? delta < 0 : delta > 0);
+  const bad = delta !== null && delta !== 0 && !good;
   return (
-    <span className="change">
-      <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
-      {unit}
-      {delta !== null && delta !== 0 && <span className="delta">{delta > 0 ? `+${delta}` : `−${-delta}`}</span>}
-    </span>
+    <div className="ba-figure">
+      {pair.before === null && pair.after === null ? (
+        <div className="ba-numbers muted">not recorded</div>
+      ) : (
+        <div className="ba-numbers">
+          <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
+          {delta !== null && (
+            <span className={`delta ${good ? "good-text" : bad ? "bad-text" : "muted"}`}>{delta === 0 ? "no change" : delta > 0 ? `+${delta}` : `−${-delta}`}</span>
+          )}
+        </div>
+      )}
+      <div className="ba-label">
+        {label}
+        {note && <span className="muted"> · {note}</span>}
+      </div>
+    </div>
   );
 }
 
-export function MetricsCard({ m }: { m: Metrics }) {
+// The four numbers that say how the project changed, across the whole width.
+export function HeadlineBand({ m }: { m: Metrics }) {
+  const loc = `non-test Python${m.loc.source === "hidden checks" ? ", hidden checks" : ""}; diff −${m.linesRemoved} +${m.linesAdded}`;
+  return (
+    <div className="ba-band">
+      <Figure label="Lines of code" pair={m.loc} fewer note={m.loc.source ? loc : undefined} />
+      <Figure label="Files" pair={m.files} fewer />
+      <Figure label="Python files" pair={m.pyFiles} fewer />
+      <Figure label="Tests passing" pair={m.tests ? m.tests.passed : { before: null, after: null }} fewer={false} />
+    </div>
+  );
+}
+
+// Everything else about the result: the verdict, the tests, the probes, the public names, the
+// slop by category, and what no check can see.
+export function DetailsCard({ m }: { m: Metrics }) {
   const shortName = (unit: string) => unit.split("::").pop();
   return (
-    <Card title="Before → after" className="metrics-card">
-      <dl className="ba-metrics" aria-label="Before and after">
+    <Card title="The result" className="metrics-card">
+      <dl className="ba-metrics">
         <dt>Result</dt>
         <dd>{m.finished ? <Status value={m.verdict} /> : <Status value="in progress" />}</dd>
-        <dt>Files</dt>
-        <dd>
-          <Change pair={m.files} />
-        </dd>
-        <dt>Python files</dt>
-        <dd>
-          <Change pair={m.pyFiles} />
-        </dd>
-        <dt title="lines in Python files outside the tests">Lines of code</dt>
-        <dd>
-          <Change pair={m.loc} />
-          {m.loc.source && <span className="muted small"> (non-test Python{m.loc.source === "hidden checks" ? ", hidden checks" : ""})</span>}
-          <span className="muted small">
-            {" "}
-            diff: −{m.linesRemoved} +{m.linesAdded}
-          </span>
-        </dd>
-        <dt>Tests passing</dt>
+        <dt>Tests</dt>
         <dd>
           {m.tests ? (
             <>
-              <Change pair={m.tests.passed} />
-              <span className="small">
-                {" "}
-                · failing before {m.tests.failing} · new failures <b className={m.tests.newFailures.length ? "bad-text" : ""}>{m.tests.newFailures.length}</b> · flaky {m.tests.flaky}
-                <span className="muted"> (baseline, 3 runs)</span>
-              </span>
+              failing before {m.tests.failing} · new failures <b className={m.tests.newFailures.length ? "bad-text" : ""}>{m.tests.newFailures.length}</b> · flaky{" "}
+              {m.tests.flaky}
+              <span className="muted small"> (baseline, 3 runs)</span>
               {m.tests.removed.length > 0 && <div className="small warn-text">tests in removed files: {m.tests.removed.join(", ")}</div>}
             </>
           ) : (
@@ -97,17 +105,17 @@ export function MetricsCard({ m }: { m: Metrics }) {
       <table className="data slop-table" aria-label="Slop by category">
         <thead>
           <tr>
-            <th>slop by category</th>
-            <th>found</th>
-            <th>left</th>
+            <th>Slop by category</th>
+            <th className="num">Found</th>
+            <th className="num">Left</th>
           </tr>
         </thead>
         <tbody>
           {m.slop.map((s) => (
             <tr key={s.category}>
               <td>{categoryLabel(s.category)}</td>
-              <td>{s.before}</td>
-              <td>
+              <td className="num">{s.before}</td>
+              <td className="num">
                 {s.after}
                 {s.after < s.before && <span className="muted"> (−{s.before - s.after})</span>}
               </td>
@@ -117,6 +125,21 @@ export function MetricsCard({ m }: { m: Metrics }) {
       </table>
       <p className="honest">Behavior that nothing tests isn't covered: the tests and the probes check only the code they run.</p>
     </Card>
+  );
+}
+
+// The top of before / after: the headline band, then both trees and the details in columns of
+// one height.
+export function AfterTop({ m, before, after }: { m: Metrics; before: ReactNode; after: ReactNode }) {
+  return (
+    <section className="ba-summary" aria-label="Before and after">
+      <HeadlineBand m={m} />
+      <div className="ba-top">
+        {before}
+        {after}
+        <DetailsCard m={m} />
+      </div>
+    </section>
   );
 }
 
