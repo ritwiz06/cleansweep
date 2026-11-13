@@ -686,6 +686,38 @@ minutes to rerun 10 of them: 7 that passed after their edit at first and fail af
 (the container likely still saw the files before the edit), 2 toy-repository edits first opened
 on another seed's copy, and 1 test fixed.
 
+### v3: LLM judge panel
+
+No human raters were available before the freeze, so a panel of LLM judges rates the blinded
+100-item packet in their place (pre-registration Deviation 9). The packet comes from
+`scripts/experiments/v3/exp_human_packet.py`: 70 diff-audit edits and 30 review-sheet rows,
+stratified and blinded, with the 40 items of the two old calibration sheets always in. It is kept
+local, because its key holds each item's source and recorded label.
+`scripts/experiments/v3/exp_judge_panel.py run` asks three judges from model families other than
+the agents' (`qwen36-35b-a3b`), the auditor's (`glm-5-3`) and the second model's
+(`deepseek-v4-1-flash`): `gpt-oss-120b`, `llama4-maverick-17b` and `gemma4-31b-it`. Each judge
+sees each item exactly as the packet shows it, with the packet's rubric (no method, no recorded
+verdict, the packet's shuffled order), 3 times (seeds 0, 1, 2, temperature 0.3). A judge's label
+is the label of at least 2 of its 3 votes, and the panel's is the label of at least 2 of the 3
+judges; with no majority, the label is "debatable". `run` writes every vote, with each item's
+recorded label and tier, to `results/summary/v3/judge_panel_votes.csv`, and the judges' reasons
+to `results/raw/judge_panel_v3/`. `table` reads only the votes file (`reproduce_tables.sh` runs
+it) and writes `judge_panel.csv` and `judge_panel.md`:
+- the judges' agreement (Fleiss' kappa and pairwise Cohen's kappa);
+- each judge's and the panel's agreement with the recorded labels (Cohen's kappa and raw
+  agreement);
+- on the 18 items whose verdict is confirmed (a targeted test, the injection key, or the rule for
+  the agent's own patch), accuracy, sensitivity and specificity for wrong vs not wrong, with
+  Wilson 95% intervals;
+- the reading-tier verdicts the panel agrees with, and the ones it overturns, listed.
+
+Every comparison is reported for all items and per subset: diff audit, its LLM-judged and
+confirmed tiers, review sheet, and the calibration sheets' items. Kappa intervals are 95%
+bootstrap intervals over items (2000 resamples, seed 572). The figures are unweighted over items,
+and the packet over-represents wrong labels. The judges are LLMs too, so the panel measures how
+consistent the labels are and how well LLM judges match the test-confirmed verdicts. No human
+checked any label.
+
 ## Getting the data
 
 Everything under `data/` except `data/splits/` is gitignored. In order:

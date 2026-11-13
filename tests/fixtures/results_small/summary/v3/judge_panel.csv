@@ -1,0 +1,202 @@
+measure,who,subset,scale,n,value,ci_low,ci_high
+Fleiss' kappa,the three judges,all,3 labels,6,0.109,-0.35,0.325
+raw agreement,judge_a vs judge_b,all,3 labels,6,0.667,,
+Cohen's kappa,judge_a vs judge_b,all,3 labels,6,0.455,-0.333,1.0
+raw agreement,judge_a vs judge_c,all,3 labels,6,0.5,,
+Cohen's kappa,judge_a vs judge_c,all,3 labels,6,0.25,-0.071,0.714
+raw agreement,judge_b vs judge_c,all,3 labels,6,0.167,,
+Cohen's kappa,judge_b vs judge_c,all,3 labels,6,-0.25,-0.667,0.143
+raw agreement,judge_a vs recorded,all,3 labels,6,1.0,,
+Cohen's kappa,judge_a vs recorded,all,3 labels,6,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,all,3 labels,6,0.667,,
+Cohen's kappa,judge_b vs recorded,all,3 labels,6,0.455,-0.333,1.0
+raw agreement,judge_c vs recorded,all,3 labels,6,0.5,,
+Cohen's kappa,judge_c vs recorded,all,3 labels,6,0.25,-0.071,0.714
+raw agreement,panel vs recorded,all,3 labels,6,1.0,,
+Cohen's kappa,panel vs recorded,all,3 labels,6,1.0,1.0,1.0
+Fleiss' kappa,the three judges,all,wrong vs not wrong,6,0.1,-0.403,0.556
+raw agreement,judge_a vs judge_b,all,wrong vs not wrong,6,0.667,,
+Cohen's kappa,judge_a vs judge_b,all,wrong vs not wrong,6,0.25,-0.5,1.0
+raw agreement,judge_a vs judge_c,all,wrong vs not wrong,6,0.667,,
+Cohen's kappa,judge_a vs judge_c,all,wrong vs not wrong,6,0.4,0.0,1.0
+raw agreement,judge_b vs judge_c,all,wrong vs not wrong,6,0.333,,
+Cohen's kappa,judge_b vs judge_c,all,wrong vs not wrong,6,-0.2,-0.8,0.4
+raw agreement,judge_a vs recorded,all,wrong vs not wrong,6,1.0,,
+Cohen's kappa,judge_a vs recorded,all,wrong vs not wrong,6,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,all,wrong vs not wrong,6,0.667,,
+Cohen's kappa,judge_b vs recorded,all,wrong vs not wrong,6,0.25,-0.5,1.0
+raw agreement,judge_c vs recorded,all,wrong vs not wrong,6,0.667,,
+Cohen's kappa,judge_c vs recorded,all,wrong vs not wrong,6,0.4,0.0,1.0
+raw agreement,panel vs recorded,all,wrong vs not wrong,6,1.0,,
+Cohen's kappa,panel vs recorded,all,wrong vs not wrong,6,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit,3 labels,5,0.155,-0.25,0.375
+raw agreement,judge_a vs judge_b,diff audit,3 labels,5,0.6,,
+Cohen's kappa,judge_a vs judge_b,diff audit,3 labels,5,0.375,-0.471,1.0
+raw agreement,judge_a vs judge_c,diff audit,3 labels,5,0.6,,
+Cohen's kappa,judge_a vs judge_c,diff audit,3 labels,5,0.375,-0.111,1.0
+raw agreement,judge_b vs judge_c,diff audit,3 labels,5,0.2,,
+Cohen's kappa,judge_b vs judge_c,diff audit,3 labels,5,-0.25,-0.667,0.167
+raw agreement,judge_a vs recorded,diff audit,3 labels,5,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit,3 labels,5,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit,3 labels,5,0.6,,
+Cohen's kappa,judge_b vs recorded,diff audit,3 labels,5,0.375,-0.471,1.0
+raw agreement,judge_c vs recorded,diff audit,3 labels,5,0.6,,
+Cohen's kappa,judge_c vs recorded,diff audit,3 labels,5,0.375,-0.111,1.0
+raw agreement,panel vs recorded,diff audit,3 labels,5,1.0,,
+Cohen's kappa,panel vs recorded,diff audit,3 labels,5,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit,wrong vs not wrong,5,0.196,-0.389,0.732
+raw agreement,judge_a vs judge_b,diff audit,wrong vs not wrong,5,0.6,,
+Cohen's kappa,judge_a vs judge_b,diff audit,wrong vs not wrong,5,0.167,-0.667,1.0
+raw agreement,judge_a vs judge_c,diff audit,wrong vs not wrong,5,0.8,,
+Cohen's kappa,judge_a vs judge_c,diff audit,wrong vs not wrong,5,0.615,0.0,1.0
+raw agreement,judge_b vs judge_c,diff audit,wrong vs not wrong,5,0.4,,
+Cohen's kappa,judge_b vs judge_c,diff audit,wrong vs not wrong,5,-0.154,-0.923,0.615
+raw agreement,judge_a vs recorded,diff audit,wrong vs not wrong,5,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit,wrong vs not wrong,5,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit,wrong vs not wrong,5,0.6,,
+Cohen's kappa,judge_b vs recorded,diff audit,wrong vs not wrong,5,0.167,-0.667,1.0
+raw agreement,judge_c vs recorded,diff audit,wrong vs not wrong,5,0.8,,
+Cohen's kappa,judge_c vs recorded,diff audit,wrong vs not wrong,5,0.615,0.0,1.0
+raw agreement,panel vs recorded,diff audit,wrong vs not wrong,5,1.0,,
+Cohen's kappa,panel vs recorded,diff audit,wrong vs not wrong,5,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit (LLM-judged),3 labels,3,0.0,-0.5,0.0
+raw agreement,judge_a vs judge_b,diff audit (LLM-judged),3 labels,3,0.667,,
+Cohen's kappa,judge_a vs judge_b,diff audit (LLM-judged),3 labels,3,0.5,0.0,1.0
+raw agreement,judge_a vs judge_c,diff audit (LLM-judged),3 labels,3,0.333,,
+Cohen's kappa,judge_a vs judge_c,diff audit (LLM-judged),3 labels,3,0.0,-0.286,1.0
+raw agreement,judge_b vs judge_c,diff audit (LLM-judged),3 labels,3,0.0,,
+Cohen's kappa,judge_b vs judge_c,diff audit (LLM-judged),3 labels,3,-0.125,-0.286,0.0
+raw agreement,judge_a vs recorded,diff audit (LLM-judged),3 labels,3,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit (LLM-judged),3 labels,3,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit (LLM-judged),3 labels,3,0.667,,
+Cohen's kappa,judge_b vs recorded,diff audit (LLM-judged),3 labels,3,0.5,0.0,1.0
+raw agreement,judge_c vs recorded,diff audit (LLM-judged),3 labels,3,0.333,,
+Cohen's kappa,judge_c vs recorded,diff audit (LLM-judged),3 labels,3,0.0,-0.286,1.0
+raw agreement,panel vs recorded,diff audit (LLM-judged),3 labels,3,1.0,,
+Cohen's kappa,panel vs recorded,diff audit (LLM-judged),3 labels,3,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit (LLM-judged),wrong vs not wrong,3,-0.0,-0.5,1.0
+raw agreement,judge_a vs judge_b,diff audit (LLM-judged),wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_a vs judge_b,diff audit (LLM-judged),wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_a vs judge_c,diff audit (LLM-judged),wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_a vs judge_c,diff audit (LLM-judged),wrong vs not wrong,3,0.4,0.0,1.0
+raw agreement,judge_b vs judge_c,diff audit (LLM-judged),wrong vs not wrong,3,0.333,,
+Cohen's kappa,judge_b vs judge_c,diff audit (LLM-judged),wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_a vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_b vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_c vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_c vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,0.4,0.0,1.0
+raw agreement,panel vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,1.0,,
+Cohen's kappa,panel vs recorded,diff audit (LLM-judged),wrong vs not wrong,3,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit (confirmed),3 labels,2,0.25,-0.5,1.0
+raw agreement,judge_a vs judge_b,diff audit (confirmed),3 labels,2,0.5,,
+Cohen's kappa,judge_a vs judge_b,diff audit (confirmed),3 labels,2,0.0,0.0,1.0
+raw agreement,judge_a vs judge_c,diff audit (confirmed),3 labels,2,1.0,,
+Cohen's kappa,judge_a vs judge_c,diff audit (confirmed),3 labels,2,1.0,1.0,1.0
+raw agreement,judge_b vs judge_c,diff audit (confirmed),3 labels,2,0.5,,
+Cohen's kappa,judge_b vs judge_c,diff audit (confirmed),3 labels,2,0.0,0.0,1.0
+raw agreement,judge_a vs recorded,diff audit (confirmed),3 labels,2,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit (confirmed),3 labels,2,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit (confirmed),3 labels,2,0.5,,
+Cohen's kappa,judge_b vs recorded,diff audit (confirmed),3 labels,2,0.0,0.0,1.0
+raw agreement,judge_c vs recorded,diff audit (confirmed),3 labels,2,1.0,,
+Cohen's kappa,judge_c vs recorded,diff audit (confirmed),3 labels,2,1.0,1.0,1.0
+raw agreement,panel vs recorded,diff audit (confirmed),3 labels,2,1.0,,
+Cohen's kappa,panel vs recorded,diff audit (confirmed),3 labels,2,1.0,1.0,1.0
+Fleiss' kappa,the three judges,diff audit (confirmed),wrong vs not wrong,2,0.25,-0.5,1.0
+raw agreement,judge_a vs judge_b,diff audit (confirmed),wrong vs not wrong,2,0.5,,
+Cohen's kappa,judge_a vs judge_b,diff audit (confirmed),wrong vs not wrong,2,0.0,0.0,1.0
+raw agreement,judge_a vs judge_c,diff audit (confirmed),wrong vs not wrong,2,1.0,,
+Cohen's kappa,judge_a vs judge_c,diff audit (confirmed),wrong vs not wrong,2,1.0,1.0,1.0
+raw agreement,judge_b vs judge_c,diff audit (confirmed),wrong vs not wrong,2,0.5,,
+Cohen's kappa,judge_b vs judge_c,diff audit (confirmed),wrong vs not wrong,2,0.0,0.0,1.0
+raw agreement,judge_a vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,,
+Cohen's kappa,judge_a vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,diff audit (confirmed),wrong vs not wrong,2,0.5,,
+Cohen's kappa,judge_b vs recorded,diff audit (confirmed),wrong vs not wrong,2,0.0,0.0,1.0
+raw agreement,judge_c vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,,
+Cohen's kappa,judge_c vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,1.0,1.0
+raw agreement,panel vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,,
+Cohen's kappa,panel vs recorded,diff audit (confirmed),wrong vs not wrong,2,1.0,1.0,1.0
+Fleiss' kappa,the three judges,review sheet,3 labels,1,-0.5,-0.5,-0.5
+raw agreement,judge_a vs judge_b,review sheet,3 labels,1,1.0,,
+Cohen's kappa,judge_a vs judge_b,review sheet,3 labels,1,1.0,1.0,1.0
+raw agreement,judge_a vs judge_c,review sheet,3 labels,1,0.0,,
+Cohen's kappa,judge_a vs judge_c,review sheet,3 labels,1,0.0,0.0,0.0
+raw agreement,judge_b vs judge_c,review sheet,3 labels,1,0.0,,
+Cohen's kappa,judge_b vs judge_c,review sheet,3 labels,1,0.0,0.0,0.0
+raw agreement,judge_a vs recorded,review sheet,3 labels,1,1.0,,
+Cohen's kappa,judge_a vs recorded,review sheet,3 labels,1,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,review sheet,3 labels,1,1.0,,
+Cohen's kappa,judge_b vs recorded,review sheet,3 labels,1,1.0,1.0,1.0
+raw agreement,judge_c vs recorded,review sheet,3 labels,1,0.0,,
+Cohen's kappa,judge_c vs recorded,review sheet,3 labels,1,0.0,0.0,0.0
+raw agreement,panel vs recorded,review sheet,3 labels,1,1.0,,
+Cohen's kappa,panel vs recorded,review sheet,3 labels,1,1.0,1.0,1.0
+Fleiss' kappa,the three judges,review sheet,wrong vs not wrong,1,-0.5,-0.5,-0.5
+raw agreement,judge_a vs judge_b,review sheet,wrong vs not wrong,1,1.0,,
+Cohen's kappa,judge_a vs judge_b,review sheet,wrong vs not wrong,1,1.0,1.0,1.0
+raw agreement,judge_a vs judge_c,review sheet,wrong vs not wrong,1,0.0,,
+Cohen's kappa,judge_a vs judge_c,review sheet,wrong vs not wrong,1,0.0,0.0,0.0
+raw agreement,judge_b vs judge_c,review sheet,wrong vs not wrong,1,0.0,,
+Cohen's kappa,judge_b vs judge_c,review sheet,wrong vs not wrong,1,0.0,0.0,0.0
+raw agreement,judge_a vs recorded,review sheet,wrong vs not wrong,1,1.0,,
+Cohen's kappa,judge_a vs recorded,review sheet,wrong vs not wrong,1,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,review sheet,wrong vs not wrong,1,1.0,,
+Cohen's kappa,judge_b vs recorded,review sheet,wrong vs not wrong,1,1.0,1.0,1.0
+raw agreement,judge_c vs recorded,review sheet,wrong vs not wrong,1,0.0,,
+Cohen's kappa,judge_c vs recorded,review sheet,wrong vs not wrong,1,0.0,0.0,0.0
+raw agreement,panel vs recorded,review sheet,wrong vs not wrong,1,1.0,,
+Cohen's kappa,panel vs recorded,review sheet,wrong vs not wrong,1,1.0,1.0,1.0
+Fleiss' kappa,the three judges,calibration sheets,3 labels,3,-0.038,-0.5,-0.038
+raw agreement,judge_a vs judge_b,calibration sheets,3 labels,3,0.667,,
+Cohen's kappa,judge_a vs judge_b,calibration sheets,3 labels,3,0.5,0.0,1.0
+raw agreement,judge_a vs judge_c,calibration sheets,3 labels,3,0.333,,
+Cohen's kappa,judge_a vs judge_c,calibration sheets,3 labels,3,0.143,0.0,1.0
+raw agreement,judge_b vs judge_c,calibration sheets,3 labels,3,0.0,,
+Cohen's kappa,judge_b vs judge_c,calibration sheets,3 labels,3,-0.5,-0.8,0.0
+raw agreement,judge_a vs recorded,calibration sheets,3 labels,3,1.0,,
+Cohen's kappa,judge_a vs recorded,calibration sheets,3 labels,3,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,calibration sheets,3 labels,3,0.667,,
+Cohen's kappa,judge_b vs recorded,calibration sheets,3 labels,3,0.5,0.0,1.0
+raw agreement,judge_c vs recorded,calibration sheets,3 labels,3,0.333,,
+Cohen's kappa,judge_c vs recorded,calibration sheets,3 labels,3,0.143,0.0,1.0
+raw agreement,panel vs recorded,calibration sheets,3 labels,3,1.0,,
+Cohen's kappa,panel vs recorded,calibration sheets,3 labels,3,1.0,1.0,1.0
+Fleiss' kappa,the three judges,calibration sheets,wrong vs not wrong,3,-0.5,-0.5,-0.5
+raw agreement,judge_a vs judge_b,calibration sheets,wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_a vs judge_b,calibration sheets,wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_a vs judge_c,calibration sheets,wrong vs not wrong,3,0.333,,
+Cohen's kappa,judge_a vs judge_c,calibration sheets,wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_b vs judge_c,calibration sheets,wrong vs not wrong,3,0.0,,
+Cohen's kappa,judge_b vs judge_c,calibration sheets,wrong vs not wrong,3,-0.8,-0.8,0.0
+raw agreement,judge_a vs recorded,calibration sheets,wrong vs not wrong,3,1.0,,
+Cohen's kappa,judge_a vs recorded,calibration sheets,wrong vs not wrong,3,1.0,1.0,1.0
+raw agreement,judge_b vs recorded,calibration sheets,wrong vs not wrong,3,0.667,,
+Cohen's kappa,judge_b vs recorded,calibration sheets,wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,judge_c vs recorded,calibration sheets,wrong vs not wrong,3,0.333,,
+Cohen's kappa,judge_c vs recorded,calibration sheets,wrong vs not wrong,3,0.0,0.0,1.0
+raw agreement,panel vs recorded,calibration sheets,wrong vs not wrong,3,1.0,,
+Cohen's kappa,panel vs recorded,calibration sheets,wrong vs not wrong,3,1.0,1.0,1.0
+accuracy,judge_a,confirmed verdicts,wrong vs not wrong,2,1.0,0.342,1.0
+sensitivity,judge_a,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+specificity,judge_a,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+accuracy,judge_b,confirmed verdicts,wrong vs not wrong,2,0.5,0.095,0.905
+sensitivity,judge_b,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+specificity,judge_b,confirmed verdicts,wrong vs not wrong,1,0.0,0.0,0.793
+accuracy,judge_c,confirmed verdicts,wrong vs not wrong,2,1.0,0.342,1.0
+sensitivity,judge_c,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+specificity,judge_c,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+accuracy,panel,confirmed verdicts,wrong vs not wrong,2,1.0,0.342,1.0
+sensitivity,panel,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+specificity,panel,confirmed verdicts,wrong vs not wrong,1,1.0,0.207,1.0
+agrees with the reading,panel,diff audit (reading tier),3 labels,2,2,0.342,1.0
+agrees with the reading,panel,diff audit (reading tier),wrong vs not wrong,2,2,0.342,1.0
+no majority of 3 votes,judge_a,all,3 labels,6,0,,
+unusable votes,judge_a,all,3 labels,18,0,,
+no majority of 3 votes,judge_b,all,3 labels,6,1,,
+unusable votes,judge_b,all,3 labels,18,0,,
+no majority of 3 votes,judge_c,all,3 labels,6,0,,
+unusable votes,judge_c,all,3 labels,18,0,,
+no majority of 3 judges,panel,all,3 labels,6,0,,
