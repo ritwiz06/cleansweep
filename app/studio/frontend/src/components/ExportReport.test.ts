@@ -16,7 +16,7 @@ describe("the exported report", () => {
   it("is one self-contained HTML page: inline styles, no scripts, nothing fetched", () => {
     const html = exported("20261102_demo_feature_agentic");
     expect(html.startsWith("<!doctype html>")).toBe(true);
-    expect(html).toMatch(/<style>[^<]*--st-kept: #00744f/);
+    expect(html).toMatch(/<style>[^<]*--st-kept: #006b49/);
     for (const outside of ["<script", "<link", 'src="', "http://", "https://", "/api/", "url("]) expect(html, outside).not.toContain(outside);
   });
 

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { createContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
 import { StateChip, stateOf } from "./states";
 
@@ -7,10 +7,13 @@ import { StateChip, stateOf } from "./states";
 export const ANIMATE =
   typeof window === "undefined" || !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+// True in presentation mode: no sidebar, large type, taller charts.
+export const Presenting = createContext(false);
+
 export function Loading({ what = "Loading" }: { what?: string }) {
   return (
     <div className="state loading" role="status">
-      <span className="spinner" aria-hidden /> {what}...
+      <span className="spinner" aria-hidden /> <span className="state-text">{what}...</span>
     </div>
   );
 }
@@ -18,9 +21,11 @@ export function Loading({ what = "Loading" }: { what?: string }) {
 export function ErrorBox({ error, retry }: { error: string; retry?: () => void }) {
   return (
     <div className="state error" role="alert">
-      <strong>Could not load:</strong> {error}
+      <span className="state-text">
+        <strong>Could not load:</strong> {error}
+      </span>
       {retry && (
-        <button className="link" onClick={retry}>
+        <button type="button" onClick={retry}>
           Try again
         </button>
       )}
@@ -28,8 +33,35 @@ export function ErrorBox({ error, retry }: { error: string; retry?: () => void }
   );
 }
 
-export function Empty({ children }: { children: ReactNode }) {
-  return <div className="state empty">{children}</div>;
+// What an empty state offers to do next: a link (href) or a button (onClick).
+export interface Action {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+}
+
+export function ActionButton({ action, primary = false }: { action: Action; primary?: boolean }) {
+  if (action.href) {
+    return (
+      <a className={primary ? "button primary" : "button"} href={action.href}>
+        {action.label}
+      </a>
+    );
+  }
+  return (
+    <button type="button" className={primary ? "primary" : undefined} onClick={action.onClick}>
+      {action.label}
+    </button>
+  );
+}
+
+export function Empty({ children, action }: { children: ReactNode; action?: Action }) {
+  return (
+    <div className="state empty">
+      <span className="state-text">{children}</span>
+      {action && <ActionButton action={action} />}
+    </div>
+  );
 }
 
 // Loading, error and empty states around a loaded resource.
@@ -37,23 +69,109 @@ export function Async<T>({
   res,
   what,
   empty,
+  emptyAction,
   children,
 }: {
   res: Loaded<T>;
   what?: string;
   empty?: (data: T) => ReactNode | null;
+  emptyAction?: Action;
   children: (data: T) => ReactNode;
 }) {
   if (res.loading && res.data === null) return <Loading what={what} />;
   if (res.error) return <ErrorBox error={res.error} retry={res.reload} />;
   if (res.data === null) return null;
   const blank = empty?.(res.data);
-  return <>{blank ? <Empty>{blank}</Empty> : children(res.data)}</>;
+  return <>{blank ? <Empty action={emptyAction}>{blank}</Empty> : children(res.data)}</>;
 }
 
-export function Card({ title, actions, children, className = "" }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+// "What am I looking at?": one line about the screen, opened by the button beside the title.
+// Escape or a click elsewhere closes it.
+export function Help({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  const id = useId();
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      box.current?.querySelector("button")?.focus();
+    };
+    const onDown = (e: MouseEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
   return (
-    <section className={`card ${className}`}>
+    <span className="help" ref={box}>
+      <button
+        type="button"
+        className="help-button"
+        aria-label="What am I looking at?"
+        title="What am I looking at?"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen(!open)}
+      >
+        ?
+      </button>
+      {open && (
+        <span id={id} className="help-pop" role="note">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// A screen's header: the title, one line on what the screen shows, and its actions.
+export function PageHeader({
+  title,
+  description,
+  help,
+  actions,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  help?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <header className="page-head">
+      <div className="page-head-text">
+        <div className="page-title">
+          <h2>{title}</h2>
+          {help && <Help text={help} />}
+        </div>
+        {description && <p className="page-desc">{description}</p>}
+      </div>
+      {actions && <div className="page-actions">{actions}</div>}
+    </header>
+  );
+}
+
+// `scroll`: the card scrolls inside a fixed height, so it takes the focus for keyboard scrolling.
+export function Card({
+  title,
+  actions,
+  children,
+  className = "",
+  scroll = false,
+}: {
+  title?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  scroll?: boolean;
+}) {
+  return (
+    <section className={`card ${className}`} tabIndex={scroll ? 0 : undefined}>
       {(title || actions) && (
         <header className="card-head">
           {title && <h3>{title}</h3>}
@@ -177,7 +295,7 @@ export function DataTable({
   if (!table) return <Empty>No table yet.</Empty>;
   if (!table.rows.length) return <Empty>The table is empty.</Empty>;
   return (
-    <div className="table-wrap" style={{ maxHeight }}>
+    <div className="table-wrap" style={{ maxHeight }} tabIndex={0}>
       <table className="data" aria-label={label}>
         <thead>
           <tr>
@@ -223,12 +341,23 @@ export function percent(value: number | null | undefined): string {
 }
 
 export function Drawer({ title, onClose, children }: { title: ReactNode; onClose: () => void; children: ReactNode }) {
+  const close = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    close.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      opener?.focus?.();
+    };
+  }, []);
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <aside className="drawer" role="dialog" aria-label={typeof title === "string" ? title : "details"} onClick={(e) => e.stopPropagation()}>
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : "details"} onClick={(e) => e.stopPropagation()}>
         <header className="drawer-head">
           <h3>{title}</h3>
-          <button className="icon" onClick={onClose} aria-label="Close">
+          <button ref={close} className="icon" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
