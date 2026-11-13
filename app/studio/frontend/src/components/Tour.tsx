@@ -55,16 +55,21 @@ export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
   useLayoutEffect(measure, [measure]);
 
   useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    const update = () => measure();
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
-      if (opener && document.contains(opener)) opener.focus();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
     };
   }, [measure]);
+
+  // the focus goes back where it was when the tour ends
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => {
+      if (opener && document.contains(opener)) opener.focus();
+    };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
