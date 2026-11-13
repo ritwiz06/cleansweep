@@ -54,7 +54,8 @@ cleansweep/
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
 │   │                                     make_recording.py (Studio recordings), coverage.sh,
-│   │                                     housekeeping.py (see below)
+│   │                                     housekeeping.py (see below), install_hooks.sh (the
+│   │                                     pre-push checks)
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)
@@ -72,7 +73,8 @@ cleansweep/
 ├── docs/                                 index, user guide, architecture, agentic design,
 │                                         requirements, experiments, results, Studio design,
 │                                         this file; images/studio/ (the user guide's
-│                                         screenshots)
+│                                         screenshots); team/ (setup, tour, status, tasks
+│                                         and the talk, for the four of us)
 └── tests/                                mirrors the code: one folder per package (core/, llm/,
     │                                     sandbox/, analysis/, reviewer/, guard/, ranking/,
     │                                     scheduler/, workflow/, agents/, eval/, data/, mining/)

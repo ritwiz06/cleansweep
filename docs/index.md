@@ -46,3 +46,7 @@ Studio, the demo, the scripts by purpose, the committed results, the data splits
 tests.
 
 **[Changelog](../CHANGELOG.md).** Every release and what changed in it.
+
+**[Team pack](team/README.md).** For the four of us: setup on macOS, Windows and Linux, a guided
+tour, the project status, each member's tasks, how to contribute, the talk plan and the
+contribution log.
