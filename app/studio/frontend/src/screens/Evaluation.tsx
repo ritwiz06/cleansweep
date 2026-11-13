@@ -387,9 +387,12 @@ function V3Audit() {
         <V3Table name="audit_miss.csv" />
         <p className="muted">Targeted tests on a stratified sample of edits the auditor voted "no"; every number here is an estimate.</p>
       </Card>
-      <Card title="Human ratings">
-        <V3Table name="human_kappa.csv" />
-        <p className="muted">Cohen's kappa between the two raters and against the LLM labels, or "not human-validated".</p>
+      <Card title="LLM judge panel">
+        <V3Table name="judge_panel.csv" />
+        <p className="muted">
+          Three LLM judges from other model families (gpt-oss-120b, llama4-maverick-17b, gemma4-31b-it) rate the blinded 100-item packet: their
+          agreement, and their accuracy on test-confirmed verdicts. LLM-judged: no human checked these labels.
+        </p>
       </Card>
     </>
   );

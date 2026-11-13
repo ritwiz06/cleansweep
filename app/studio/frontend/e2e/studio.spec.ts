@@ -317,6 +317,11 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   await page.getByRole("tab", { name: "Diff audit" }).click();
   await expect(page.locator("main")).toContainText("reading tier: LLM-judged");
   await expect(page).toHaveURL(/tab=audit/);
+  // the judge panel replaces the human ratings; its table may not be built yet
+  await page.getByRole("tab", { name: "v3: audit" }).click();
+  const panel = page.locator("section.card", { has: page.getByRole("heading", { name: "LLM judge panel" }) });
+  await expect(panel).toContainText("no human checked these labels");
+  await expect(page.locator("main")).not.toContainText(/human ratings|raters|human-validated/i);
 });
 
 // One screen as the user guide's review needs it: loaded, no error, nothing wider than 1280 px.
