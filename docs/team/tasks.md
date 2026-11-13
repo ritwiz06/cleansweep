@@ -239,8 +239,8 @@ says its tier (confirmed, or reading, LLM-judged), that small samples say "sugge
 ### E3. Present the Results part
 
 Due **Nov 20**. Your slot is slides 6 and 7, 3:45 to 5:00. Learn the script in
-[presentation.md](presentation.md#simran-results-slides-6-and-7) and fill in the
-**[after the freeze]** sentence from `hypotheses.csv` once E1 is done. Take the Q&A questions on
+[presentation.md](presentation.md#simran-results-slides-6-and-7) and check its Phase 3
+sentences against `hypotheses.csv` once E1 is done. Take the Q&A questions on
 results (questions 4, 5, 9, 10, 15 and 19).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.

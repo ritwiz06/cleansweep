@@ -47,9 +47,9 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
    Guard roll back `_round_money`, a near-duplicate that every test passes but that rounds
    0.125 differently. Then open **Before / after** for the same run. Replay calls no LLM and
    runs no tests, so it works offline.
-4. **Read the results summary (5 minutes).** The README's "v2 results" section (Phase 2) and
-   [status.md](status.md) for Phase 3. The Phase 3 numbers come after the freeze on Nov 13 at
-   12:00.
+4. **Read the results summary (5 minutes).** The README's "v3 results" section (Phase 3, frozen
+   on Nov 13 at 12:00) and "v2 results" section (Phase 2); [status.md](status.md) says what is
+   left.
 
 ## Then read
 
