@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, useApi } from "../api";
-import { AXIS, SeriesKey, TOOLTIP, stackTotal } from "../components/Charts";
+import { AXIS, SeriesKey, TOOLTIP, SegmentCount, nameOf, stackTotal } from "../components/Charts";
 import { CodeBlock, DiffView, Md } from "../components/Code";
 import { ANIMATE, Async, Badge, Card, Empty, PageHeader, StatsRow, Status, Tabs, seconds } from "../components/common";
 import { RunOutcome } from "../components/RunOutcome";
@@ -108,8 +108,8 @@ function CaseView({ name }: { name: string }) {
                           <Tooltip contentStyle={TOOLTIP} />
                           {shown.map((o) => (
                             <Bar key={o} dataKey={o} name={outcomeName(o)} stackId="a" fill={OUTCOME_COLOR[o]} stroke="var(--surface)" strokeWidth={1} isAnimationActive={ANIMATE}>
-                              <LabelList dataKey={o} position="center" formatter={(v: unknown) => (Number(v) ? String(v) : "")} className="bar-label in-segment" />
-                              <LabelList dataKey={o} content={stackTotal(byCat, shown, o, String, true)} />
+                              <LabelList dataKey={o} content={SegmentCount} />
+                              <LabelList valueAccessor={nameOf("category")} content={stackTotal(byCat, "category", shown, o, String, true)} />
                             </Bar>
                           ))}
                         </BarChart>

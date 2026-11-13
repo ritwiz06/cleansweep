@@ -5,7 +5,7 @@ import { api, useApi, type ReportView, type SavedReport, type Table } from "../a
 import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
 import { CodeBlock, DiffView } from "../components/Code";
 import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, StatsRow, Status, Tabs } from "../components/common";
-import { isIsoDate, shortDate } from "../state/labels";
+import { isIsoDate, shortDate, valueLabel } from "../state/labels";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -386,7 +386,7 @@ function Report({ root, path }: { root: string; path: string }) {
                   return (
                     <details key={x.item_id}>
                       <summary>
-                        <Status value={x.status} /> {item.category} · {item.unit}
+                        <Status value={x.status} /> {valueLabel(item.category)} · {item.unit}
                       </summary>
                       <p>{item.reason}</p>
                       {x.tests && (

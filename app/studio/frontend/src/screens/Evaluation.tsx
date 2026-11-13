@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState, type ReactNode } from "react";
 import { Bar, BarChart, Cell, ErrorBar, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, ApiError, useApi, type Table } from "../api";
-import { SeriesKey, TOOLTIP, stackTotal } from "../components/Charts";
+import { SeriesKey, TOOLTIP, nameOf, rowNamed, stackTotal, type LabelBox } from "../components/Charts";
 import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, Presenting, Tabs } from "../components/common";
 import { formatNumber } from "../state/labels";
 import {
@@ -88,18 +88,11 @@ function Loaded({ name, version, children }: { name: string; version?: string; c
 // The method every chart is about: drawn in the accent, the others in a quiet grey.
 const FOCUS = "team";
 
-interface Box {
-  x?: number | string;
-  y?: number | string;
-  width?: number | string;
-  height?: number | string;
-  index?: number;
-}
-
-// A bar's value just past its end, or past the end of its interval when it has one.
-function valueAtEnd(rows: Row[], key: string, format: (v: number) => string, error?: string) {
-  return function ValueLabel({ x, y, width, height, index }: Box) {
-    const row = rows[index ?? -1];
+// A bar's value just past its end, or past the end of its interval when it has one (the label's
+// value is the row's name: valueAccessor={nameOf(name)}).
+function valueAtEnd(rows: Row[], name: string, key: string, format: (v: number) => string, error?: string) {
+  return function ValueLabel({ x, y, width, height, value: label }: LabelBox) {
+    const row = rowNamed(rows, name, label);
     if (!row) return null;
     const value = Number(row[key]) || 0;
     const [bx, by, bw, bh] = [x, y, width, height].map(Number);
@@ -118,7 +111,7 @@ function nameTick(width: number) {
   return function NameTick({ x, y, payload }: { x?: number | string; y?: number | string; payload?: { value: string } }) {
     const name = payload?.value ?? "";
     return (
-      <text x={Number(x) - width + 4} y={Number(y)} dy={4} textAnchor="start" className={name === FOCUS ? "bar-name focus" : "bar-name"}>
+      <text x={Number(x) - width + 14} y={Number(y)} dy={4} textAnchor="start" className={name === FOCUS ? "bar-name focus" : "bar-name"}>
         {name}
       </text>
     );
@@ -183,8 +176,8 @@ function Bars({
             >
               {series.length === 1 && rows.map((d) => <Cell key={String(d[x])} fill={d[x] === FOCUS ? "var(--accent)" : colors[0]} />)}
               {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={6} stroke="var(--text)" />}
-              {!stacked && <LabelList dataKey={s.key} content={valueAtEnd(rows, s.key, format, i === 0 ? error : undefined)} />}
-              {stacked && <LabelList dataKey={s.key} content={stackTotal(rows, keys, s.key, format, true)} />}
+              {!stacked && <LabelList valueAccessor={nameOf(x)} content={valueAtEnd(rows, x, s.key, format, i === 0 ? error : undefined)} />}
+              {stacked && <LabelList valueAccessor={nameOf(x)} content={stackTotal(rows, x, keys, s.key, format, true)} />}
             </Bar>
           ))}
         </BarChart>

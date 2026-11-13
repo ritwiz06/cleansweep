@@ -130,7 +130,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                             <tr>
                               <th />
                               {both.map((d, i) => (
-                                <th key={i}>
+                                <th key={i} className="num">
                                   <RunTag which={i ? "B" : "A"} /> {d?.name} {d && <a href={runHash(d)}>replay</a>}
                                 </th>
                               ))}
@@ -142,7 +142,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                               <tr key={k}>
                                 <th>{k.charAt(0).toUpperCase() + k.slice(1)}</th>
                                 {rows.map((r, i) => (
-                                  <td key={i} className={typeof r[k] === "number" ? "num" : undefined}>
+                                  <td key={i} className="num">
                                     {k === "result" ? <RunOutcome verdict={r[k] as string} /> : show(k, r[k])}
                                   </td>
                                 ))}

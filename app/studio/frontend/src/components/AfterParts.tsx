@@ -26,7 +26,9 @@ function Figure({ label, pair, fewer, note }: { label: string; pair: Pair; fewer
         <div className="ba-numbers muted">not recorded</div>
       ) : (
         <div className="ba-numbers">
-          <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
+          <span className="ba-pair">
+            <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
+          </span>
           {delta !== null && (
             <span className={`delta ${good ? "good-text" : bad ? "bad-text" : "muted"}`}>{delta === 0 ? "no change" : delta > 0 ? `+${delta}` : `−${-delta}`}</span>
           )}

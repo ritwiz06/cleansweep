@@ -299,6 +299,18 @@ test("results: Phase 1 and Phase 2 tables and figures", async ({ page }) => {
   await expect(page.getByText(/Tables/)).toBeVisible();
 });
 
+test("the Phase 1 screens sit behind one archive entry in the sidebar", async ({ page }) => {
+  await open(page, "home");
+  const sidebar = page.locator("nav.sidebar");
+  await expect(sidebar.getByRole("link")).toHaveCount(10); // the brand, eight screens, the archive
+  await sidebar.getByRole("link", { name: "Phase 1 archive" }).click();
+  for (const name of ["Saved reports", "Live sweep and replay", "Scheduler", "Baselines", "Data", "Guard"]) {
+    await expect(page.locator("main").getByRole("link", { name: new RegExp(`^${name}`) })).toBeVisible();
+  }
+  await page.locator("main").getByRole("link", { name: /^Scheduler/ }).click();
+  await expect(sidebar.getByRole("link", { name: "Phase 1 archive" })).toHaveAttribute("aria-current", "page");
+});
+
 test("dashboard parity: Phase 1 live sweep replay", async ({ page }) => {
   await open(page, "sweeps");
   await page.locator(`tr[data-run="${V1}"]`).getByRole("link", { name: "Replay" }).click();
@@ -306,7 +318,7 @@ test("dashboard parity: Phase 1 live sweep replay", async ({ page }) => {
   await expect(page.getByText("Behavior changed: no")).toBeVisible();
   await expect(page.getByText("7/7")).toBeVisible();
   await expect(page.getByText("The probes caught a behavior change:")).toHaveCount(2);
-  await expect(page.getByLabel("Reviewer plan")).toContainText("leftover_file");
+  await expect(page.getByLabel("Reviewer plan")).toContainText("leftover file");
 });
 
 test("dashboard parity: a saved sweep report", async ({ page }) => {
@@ -314,18 +326,18 @@ test("dashboard parity: a saved sweep report", async ({ page }) => {
   await page.getByLabel("Sweep report").selectOption(`replay:${V1}/report.json`);
   await expect(page.getByText("Lines removed")).toBeVisible();
   await expect(page.locator(".stats-row")).toContainText("47");
-  await expect(page.getByLabel("Cleanup plan")).toContainText("leftover_file");
-  await page.locator("details summary").filter({ hasText: "leftover_file" }).first().click();
+  await expect(page.getByLabel("Cleanup plan")).toContainText("leftover file");
+  await page.locator("details summary").filter({ hasText: "leftover file" }).first().click();
   await expect(page.getByText(/^cp '\.cleansweep\/quarantine\//).first()).toBeVisible();
 });
 
 test("dashboard parity: scheduler, baselines, data, guard", async ({ page }) => {
   await open(page, "scheduler");
-  await expect(page.getByLabel("Policy means")).toContainText("every_pr");
+  await expect(page.getByLabel("Policy means")).toContainText("every PR");
   await page.getByLabel("Policy", { exact: true }).selectOption("daily");
   await expect(page.locator(".recharts-surface").first()).toBeVisible();
   await open(page, "baselines");
-  await expect(page.getByLabel("Main table")).toContainText("tools_only");
+  await expect(page.getByLabel("Main table")).toContainText("tools only");
   await expect(page.getByLabel("Paired tests")).toBeVisible();
   await open(page, "data");
   await expect(page.getByLabel("Association rules")).toBeVisible();
@@ -372,7 +384,7 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   }
   await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: "Phase 2" }).click();
   await page.getByRole("tab", { name: "Probe strength" }).click();
-  await expect(page.getByLabel("probe_strength.csv")).toContainText("swebench_t1");
+  await expect(page.getByLabel("probe_strength.csv")).toContainText("swebench t1");
   await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toContainText("(higher is better)");
   await page.getByRole("tab", { name: "LLM reviewer" }).click();

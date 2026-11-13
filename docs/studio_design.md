@@ -103,16 +103,39 @@ captioned step of a run and 5 s per before / after slide, whatever the step took
 ## Screens
 
 Every screen opens with the same header: the title (balanced, no orphan word), a one-line
-description, the "What am I looking at?" button (a one-line popover; Escape closes it) and the
-screen's actions on the right. Charts name their series above the plot, beside the title, and
-write each bar's value (a stack's total) on the bar, so nobody reads values off an axis or
-hunts in a legend. Home offers "Take the tour" (a six-step overlay over the demo app's
-recording: the controls, the numbers, the phases, the project, the agents, what next; the arrow
-keys move, Escape ends it) and "Try the demo" (the same recording in Replay).
+description (folder paths go in the help, not here), the "What am I looking at?" button (a
+one-line popover; Escape closes it) and the screen's actions on the right. Home offers "Take
+the tour" (a six-step overlay over the demo app's recording: the controls, the numbers, the
+phases, the project, the agents, what next; the card sits beside what it explains, the arrow
+keys move, Escape ends it) and "Try the demo" (the same recording in Replay). The sidebar lists
+the Studio screens; the Phase 1 screens sit behind one "Phase 1 archive" entry at its foot.
 
-Presentation mode works at 1280×720 and 1920×1080. A replay's presentation shows the project
-tree or the agent graph (the Project / Agents switch, or G): the tree's rows grow and the item
-at work carries its state in words; the graph zooms to fill its box, the agent at work is
-filled with the accent and marked "at work", and the newest message is an accent arrow with its
-type on it and a dot travelling along it. Evaluation has a Present button too: no sidebar,
-larger type, taller charts.
+Numbers: one stats row everywhere, in equal columns: the value (20px, tabular) with a bar when
+it is a share of a budget, and a short sentence-case label under it. A screen's lead number
+(the slop cleaned on a run, the tests on a case study) is 28px and two columns wide. Before /
+after opens with a band of four numbers (lines of code, files, Python files, tests passing) at
+28px with their change, green when it moved the right way. A run's outcome reads as what
+differs ("5 kept · 1 rolled back · −47 lines"); a badge appears only for an unusual result.
+
+Tables: one label map turns column names and snake_case values into words; numbers are
+right-aligned in tabular figures with thousands separators; dates read "Nov 1, 10:05" with the
+full time in the tooltip; outcome columns are chips; names and paths never break, and a wide
+table scrolls inside its card with a shade at the edge that has more.
+
+Charts: horizontal bars, sorted best first, the names on the left (13px) and each value at its
+bar's end (12px semibold, tabular; 0 is written too). The method a chart is about, the team, is
+in the accent and the others grey; several series are named above the plot instead of in a
+legend, a stack carries its total, and a segment its count when it has room. Every title says
+which way is better ("higher is better", "fewer is better").
+
+Presentation mode works at 1280×720 and 1920×1080, and at 17px for names and values on charts.
+A replay's presentation shows the project tree or the agent graph (the Project / Agents switch,
+or G). In the tree only the item at work stands out (its tint, its bar and its state in words);
+the others keep their glyph and colored name. The caption's reason wraps to two lines and is
+cut only where a sentence ends, and the step before it follows. The agent graph zooms to fill
+its box (names at about 19px at 1280×720); below 1440px wide the side card leaves and the
+agent's role joins the caption; the agent at work is filled with the accent and marked "at
+work", and the newest message is an accent arrow with its type on it and a dot travelling along
+it. A before / after slide sizes its code to the screen (15 to 22px) with the checks right under
+it. Evaluation has a Present button too: one line ("Injection benchmark · 1 of 12") instead of
+the tabs, moved with the arrow keys.

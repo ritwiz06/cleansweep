@@ -16,7 +16,7 @@ const HEADERS: Record<string, string> = {
   item_id: "Item",
 };
 
-const WORDS: Record<string, string> = { llm: "LLM", ci: "CI", ui: "UI", api: "API", id: "ID", ok: "OK" };
+const WORDS: Record<string, string> = { llm: "LLM", ci: "CI", ui: "UI", api: "API", id: "ID", ok: "OK", pr: "PR" };
 
 const SNAKE = /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/;

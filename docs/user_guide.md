@@ -305,17 +305,20 @@ notes) and every figure.
 
 ![Results: the v1 main table](images/studio/results.png)
 
-**Evaluation** charts the v2 results from the same committed tables, one tab each: the injection
-benchmark (each seed and all seeds pooled, with 95% CIs, and the paired tests), the ablations
-(with their LLM requests and minutes) and the real-project ablation, the diff audit (wrong edits
-per method in two tiers, confirmed and reading, and by kind), probe strength, the Manager
-scenarios, the LLM reviewer's acceptance and watch. Anything an LLM judged carries an
-"LLM-judged" label. A table that is not built yet says so. "Present" shows the charts without the
-sidebar, in large type, for a projector.
+**Evaluation** charts the results from the same committed tables, with a Phase 2 | Phase 3
+switch and one tab per experiment. Phase 2: the injection benchmark (each seed and all seeds
+pooled, with 95% CIs, and the paired tests), the ablations (with their LLM requests and
+minutes) and the real-project ablation, the diff audit (wrong edits per method in two tiers,
+confirmed and reading, and by kind), probe strength, the Manager scenarios, the LLM reviewer's
+acceptance and watch. Phase 3: the pre-registered hypotheses, injection, the real projects, the
+audit (with the LLM judge panel) and autonomy and cost. Bars are sorted best first with their
+values at their ends, and each title says which way is better. Anything an LLM judged carries
+an "LLM-judged" label. A table that is not built yet says so. "Present" shows the charts without
+the sidebar, in large type, for a projector; the arrow keys move between the tabs.
 
 ![Evaluation: the diff audit tab, wrong edits per method by tier and by kind](images/studio/evaluation.png)
 
-**Phase 1 dashboard** has the old Streamlit dashboard's pages, with the same data. **Saved
+**Phase 1 archive** (the last entry in the sidebar) has the old Streamlit dashboard's pages, with the same data. **Saved
 reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: its
 numbers, slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined
 file. **Live sweep and replay** lists the v1 runs (stages, the Reviewer's plan, Guard checks,

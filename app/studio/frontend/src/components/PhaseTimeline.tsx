@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { PHASES, type Decision, type RunState } from "../state/fold";
 import { MIN_PHASE, labelWidth, phaseWidths, positionOf } from "../state/timeline";
 import { seconds } from "./common";
 
 const phaseName = (phase: string) => phase.replace("_", " ");
 
-// The bar's width in pixels, kept up to date as the screen changes size.
+// The bar's width in pixels, measured before the first paint and kept up to date as the screen
+// changes size.
 function useWidth() {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1000);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => setWidth(el.clientWidth));

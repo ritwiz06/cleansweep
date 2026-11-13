@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, runHash, useApi, type RunDetail } from "../api";
 import { Pointer } from "../components/AfterParts";
+import { Decisions } from "../components/Metrics";
 import { AgentGraph } from "../components/AgentGraph";
 import { AgentIcon } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading } from "../components/common";
@@ -70,13 +71,20 @@ function Spotlight({ step, state }: { step: CaptionStep | null; state: RunState 
         <Counter label="rolled back" value={count("rolled_back")} state="rolled_back" />
         <Counter label="packages done" value={`${done}/${state.packageOrder.length}`} />
       </div>
-      {state.focus.length === 1 && state.items[state.focus[0]] && (
+      {state.focus.length === 1 && state.items[state.focus[0]] ? (
         <section className="spot-item" aria-label="The item at work">
           <h3>
             At work on <code>{state.items[state.focus[0]].unit.split("::").pop()}</code>
           </h3>
           <Pointer note={{ items: [state.focus[0]], match: "exact" }} state={state} />
         </section>
+      ) : (
+        state.decisions.length > 0 && (
+          <section className="spot-item" aria-label="The Manager's latest decisions">
+            <h3>The Manager's latest decisions</h3>
+            <Decisions state={{ ...state, decisions: state.decisions.slice(-3) }} />
+          </section>
+        )
       )}
     </aside>
   );
@@ -188,7 +196,8 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
           {agentName(step.agent)} {ROLE[roleOf(step.agent)] || ""}
         </p>
       )}
-      {step?.detail && <p className="caption-detail">{step.detail}</p>}
+      {/* always two lines high, so the panel below keeps its size from step to step */}
+      <p className="caption-detail">{step?.detail || ""}</p>
       {recent[0] && (
         <p className="caption-before" aria-label="The step before">
           Before that: {agentName(recent[0].agent)} {recent[0].text}
