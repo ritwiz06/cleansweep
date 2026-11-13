@@ -1,8 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
 // Design review screenshots: every screen in both themes at 1280x720 and 1920x1080, named
-// <screen>-<theme>-<width>.png. They run on purpose only, into a folder of your choice:
-//   REVIEW_SHOTS=/path/to/folder npx playwright test review
+// <screen>-<theme>-<width>.png. They show the real data: the shipped recordings, and a results
+// folder that holds the case studies and the watch demo under raw/ (this repository's results/
+// after the experiments ran), served on purpose:
+//   python e2e/serve.py 8812 --results <results folder> &
+//   STUDIO_E2E_PORT=8812 REVIEW_SHOTS=/path/to/folder npx playwright test review
 // Add `-g <screen>` to refresh one screen.
 const OUT = process.env.REVIEW_SHOTS || "";
 const DEMO = "20261102_demo_feature_agentic";
@@ -32,8 +35,8 @@ const SCREENS: [string, string, Prepare?][] = [
     await page.getByRole("group", { name: "Before tree" }).getByRole("button", { name: /^reports\.py/ }).click();
   }],
   ["compare", `compare?a=replay:20261101_toy_clean_offline&b=replay:${DEMO}`],
-  ["case-studies", "cases?name=proj_a"],
-  ["watch", "watch?root=results&path=raw/watch_a"],
+  ["case-studies", "cases?name=skill-seekers-safe"],
+  ["watch", "watch?root=results&path=raw/watch_demo/watch"],
   ["results", "results"],
   ["evaluation", "evaluation"],
   ["saved-reports", "reports?root=replay&path=20261030_demo_feature_advisory_v1/report.json"],
