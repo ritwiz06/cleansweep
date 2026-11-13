@@ -5,7 +5,8 @@ import { ANIMATE, Async, Card, Empty, PageHeader, seconds } from "../components/
 import { RunOutcome } from "../components/RunOutcome";
 import { formatNumber } from "../state/labels";
 import { PHASES } from "../state/fold";
-import { KIND_LABEL, useRuns } from "./Runs";
+import { runTitle } from "../state/names";
+import { useRuns } from "./Runs";
 
 const SERIES = ["var(--series-1)", "var(--series-2)"];
 
@@ -55,12 +56,25 @@ function show(key: string, value: string | number | null | undefined) {
 }
 
 // B minus A for a number both runs have, signed; nothing for text.
+// Which way is better for each number; the others (candidates, lessons) are neither.
+const MORE_IS_BETTER = new Set(["edits kept", "lines removed", "files removed", "packages kept"]);
+const LESS_IS_BETTER = new Set(["rolled back", "test runs", "LLM calls", "tokens", "time", "packages rolled back", "step backs"]);
+
+// B minus A for a number both runs have, signed, with whether B is better or worse.
 function difference(key: string, a: unknown, b: unknown) {
   if (typeof a !== "number" || typeof b !== "number") return "";
   const d = b - a;
   if (d === 0) return <span className="muted">0</span>;
   const size = key === "time" ? seconds(Math.abs(d)) : formatNumber(Math.abs(d));
-  return `${d > 0 ? "+" : "−"}${size}`;
+  const text = `${d > 0 ? "+" : "−"}${size}`;
+  const better = MORE_IS_BETTER.has(key) ? d > 0 : LESS_IS_BETTER.has(key) ? d < 0 : null;
+  if (better === null) return text;
+  return (
+    <span className={better ? "good-text" : "bad-text"}>
+      {text} <span aria-hidden>{better ? "▲" : "▼"}</span>
+      <span className="sr-only">{better ? " better" : " worse"}</span>
+    </span>
+  );
 }
 
 function Picker({ label, value, runs, onChange }: { label: string; value: string; runs: RunRow[]; onChange: (v: string) => void }) {
@@ -70,8 +84,9 @@ function Picker({ label, value, runs, onChange }: { label: string; value: string
       <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
         <option value="">pick a run</option>
         {runs.map((r) => (
-          <option key={key(r)} value={key(r)}>
-            {r.name} ({KIND_LABEL[r.kind] || r.kind}, {r.root})
+          <option key={key(r)} value={key(r)} title={r.name}>
+            {runTitle(r)}
+            {r.root === "replay" ? " · shipped recording" : ""}
           </option>
         ))}
       </select>
@@ -89,7 +104,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
   const right = useDetail(split(b));
   const both = [left.data, right.data];
   const phaseData = PHASES.filter((p) => p !== "DONE").map((p) => ({
-    phase: p.replace("_", " "),
+    phase: p.charAt(0) + p.slice(1).toLowerCase().replace("_", " "),
     A: left.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
     B: right.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
   }));
@@ -131,7 +146,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                               <th />
                               {both.map((d, i) => (
                                 <th key={i} className="num">
-                                  <RunTag which={i ? "B" : "A"} /> {d?.name} {d && <a href={runHash(d)}>replay</a>}
+                                  <RunTag which={i ? "B" : "A"} /> <span title={d?.name}>{d && runTitle(d)}</span> {d && <a href={runHash(d)}>replay</a>}
                                 </th>
                               ))}
                               <th className="num">B − A</th>
@@ -162,7 +177,8 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
             {both.some((d) => d?.report?.stats?.agentic) ? (
               <div className="chart" role="img" aria-label="Time per phase of both runs">
                 <div className="chart-title">
-                  Time per phase: <RunTag which="A" /> {left.data?.name} vs <RunTag which="B" /> {right.data?.name}
+                  Time per phase: <RunTag which="A" /> {left.data && runTitle(left.data)} vs <RunTag which="B" /> {right.data && runTitle(right.data)}{" "}
+                  <span className="better">(less is faster)</span>
                 </div>
                 <ResponsiveContainer width="100%" height={phaseData.length * 44 + 16}>
                   <BarChart data={phaseData} layout="vertical" margin={{ top: 4, right: 64, bottom: 4, left: 0 }} barCategoryGap="20%">
@@ -170,8 +186,8 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                     <YAxis type="category" dataKey="phase" width={110} tick={{ fill: "var(--text-2)", fontSize: 13 }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={TOOLTIP} formatter={(v) => seconds(Number(v))} />
                     {(["A", "B"] as const).map((k, i) => (
-                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[0, 3, 3, 0]} isAnimationActive={ANIMATE}>
-                        <LabelList dataKey={k} position="right" formatter={(v: unknown) => (Number(v) ? seconds(Number(v)) : "")} className="bar-label" />
+                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[0, 3, 3, 0]} minPointSize={1} isAnimationActive={ANIMATE}>
+                        <LabelList dataKey={k} position="right" formatter={(v: unknown) => (Number(v) ? seconds(Number(v)) : "0")} className="bar-label" />
                       </Bar>
                     ))}
                   </BarChart>

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { afterHash, api, runHash, useApi, type RunRow } from "../api";
 import { Async, Badge, PageHeader, Status } from "../components/common";
-
-export const KIND_LABEL: Record<string, string> = { v2: "agent team", v1: "Phase 1 sweep", watch: "watch" };
+import { KIND_LABEL, runTitle } from "../state/names";
 
 export function useRuns() {
   return useApi<RunRow[]>("runs", () => api("/api/runs"));
@@ -71,7 +70,7 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
                   .map((r) => (
                     <tr key={`${r.root}/${r.path}`} data-run={r.name}>
                       <td>
-                        <code>{r.name}</code>
+                        <span title={r.name}>{runTitle(r)}</span>
                         {r.live && <Badge tone="warn">live</Badge>}
                       </td>
                       <td>{KIND_LABEL[r.kind]}</td>

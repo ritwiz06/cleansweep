@@ -21,6 +21,8 @@ def test_runs_list_the_shipped_recordings_by_kind(client):
     assert v2["kind"] == "v2" and v2["verdict"] == "everything runs" and v2["finished"]
     demo = rows[("replay", "20261102_demo_feature_agentic")]
     assert demo["outcome"] == {"kept": 5, "rolled_back": 1, "lines_removed": 47}
+    assert demo["started"] == "2026-11-02T06:00:32+00:00"
+    assert rows[("replay", "20261030_demo_feature_advisory_v1")]["started"] is None
     assert rows[("replay", "20261030_demo_feature_advisory_v1")]["kind"] == "v1"
     assert rows[("results", "watch_a")]["kind"] == "watch"
     assert rows[("results", "clean-001")]["path"] == "raw/watch_a/clean-001"
@@ -134,6 +136,7 @@ def test_text_tables_and_images(client):
     assert figure.status_code == 404
     index = client.get("/api/results").json()
     assert "main_table.csv" in index["v1"]["tables"] and "eval_table.csv" in index["v2"]["tables"]
+    assert "v3" in index
 
 
 def test_saved_sweep_reports_are_listed_and_shown(client, results):

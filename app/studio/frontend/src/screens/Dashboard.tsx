@@ -4,8 +4,9 @@ import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
 import { api, useApi, type ReportView, type SavedReport, type Table } from "../api";
 import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
 import { CodeBlock, DiffView } from "../components/Code";
-import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, StatsRow, Status, Tabs } from "../components/common";
+import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, StatsRow, Status, Tabs } from "../components/common";
 import { isIsoDate, shortDate, valueLabel } from "../state/labels";
+import { shortDay, targetName } from "../state/names";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -375,7 +376,7 @@ function Report({ root, path }: { root: string; path: string }) {
                 { label: "Test runs", value: r.stats.test_runs || 0 },
               ]}
             />
-            <Card title="Cleanup plan">
+            <Card title="Cleanup plan" actions={<Badge tone="info">reasons: LLM-judged</Badge>}>
               <DataTable table={plan} label="Cleanup plan" />
             </Card>
             <Card title="Guard verdicts">
@@ -442,8 +443,8 @@ export function ReportsScreen({ root, path, onPick }: { root: string; path: stri
                     aria-label="Sweep report"
                   >
                     {rows.map((r) => (
-                      <option key={`${r.root}:${r.path}`} value={`${r.root}:${r.path}`}>
-                        {r.root}/{r.path} ({r.method})
+                      <option key={`${r.root}:${r.path}`} value={`${r.root}:${r.path}`} title={`${r.root}/${r.path}`}>
+                        {[targetName(r.repo_id) || r.path.split("/")[0], r.method, shortDay(r.started_at)].filter(Boolean).join(" · ")}
                       </option>
                     ))}
                   </select>

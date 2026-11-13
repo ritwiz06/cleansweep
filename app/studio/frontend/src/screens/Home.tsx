@@ -2,6 +2,7 @@ import { useState } from "react";
 import { afterHash, api, post, runHash, useApi, type Loaded, type RunRow } from "../api";
 import { Async, Badge, PageHeader } from "../components/common";
 import { RunOutcome } from "../components/RunOutcome";
+import { runTitle } from "../state/names";
 import { useRuns } from "./Runs";
 
 interface Options {
@@ -55,9 +56,6 @@ function Segmented({
   );
 }
 
-function when(mtime: number): string {
-  return mtime ? new Date(mtime * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
-}
 
 // The shipped recording of the demo app's cleanup, or any shipped agent-team recording.
 export const DEMO_RUN = "20261102_demo_feature_agentic";
@@ -87,8 +85,8 @@ function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | nul
               .slice(0, RECENT)
               .map((r) => (
                 <div key={`${r.root}/${r.path}`} className="recent-row" data-run={r.name}>
-                  <span className="run-name" title={`${r.root}/${r.path}`}>
-                    {r.name} {r.live && <Badge tone="warn">running</Badge>}
+                  <span className="run-name" title={r.name}>
+                    {runTitle(r)} {r.live && <Badge tone="warn">running</Badge>}
                   </span>
                   <span className="run-actions">
                     <RunOutcome verdict={r.verdict} kept={r.outcome?.kept} rolledBack={r.outcome?.rolled_back} lines={r.outcome?.lines_removed} finished={r.finished} />
@@ -98,7 +96,7 @@ function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | nul
                   </span>
                   <span className="run-meta">
                     {r.target || "?"} · {r.mode || "?"} mode · model {r.model || "none"}
-                    {r.root === "replay" ? " · shipped recording" : ` · ${when(r.mtime)}`}
+                    {r.root === "replay" ? " · shipped recording" : ""}
                   </span>
                 </div>
               ))}

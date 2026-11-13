@@ -99,11 +99,17 @@ def summary(root: str, rel: str, folder: Path) -> dict:
         "mode": None,
         "model": None,
         "verdict": None,
+        "started": None,
         "finished": False,
     }
     if kind == "v2":
         start = first.get("payload", {})
-        row.update(target=start.get("repo_id"), mode=start.get("mode"), model=start.get("model"))
+        row.update(
+            target=start.get("repo_id"),
+            mode=start.get("mode"),
+            model=start.get("model"),
+            started=first.get("ts"),
+        )
         if last.get("kind") == "run_end":
             done = last["payload"].get("summary", {})
             packages = done.get("packages", {})

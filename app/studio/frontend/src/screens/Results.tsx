@@ -2,13 +2,17 @@ import { useState } from "react";
 import { api, imageUrl, useApi, type Table } from "../api";
 import { Md } from "../components/Code";
 import { Async, Card, DataTable, Empty, PageHeader, Tabs } from "../components/common";
+import { fileTitle } from "../state/names";
 
 interface Index {
   v1: { tables: string[]; notes: string[]; figures: string[] };
   v2: { tables: string[]; notes: string[]; figures: string[] };
+  v3?: { tables: string[]; notes: string[]; figures: string[] };
 }
 
-const HEADLINE: Record<string, string> = { v1: "main_table.csv", v2: "llm_review_acceptance.csv" };
+type Version = "v1" | "v2" | "v3";
+const HEADLINE: Record<string, string> = { v1: "main_table.csv", v2: "llm_review_acceptance.csv", v3: "hypotheses.csv" };
+const NO_FILES = { tables: [], notes: [], figures: [] };
 
 export function Figure({ path, caption }: { path: string | null | undefined; caption?: string }) {
   if (!path) return null;
@@ -32,7 +36,8 @@ function NoteView({ version, name }: { version: string; name: string }) {
 
 export function Results() {
   const res = useApi<Index>("results", () => api("/api/results"));
-  const [version, setVersion] = useState<"v1" | "v2">("v1");
+  // the latest phase first
+  const [version, setVersion] = useState<Version>("v3");
   const [table, setTable] = useState<string>("");
   return (
     <div className="screen">
@@ -45,6 +50,7 @@ export function Results() {
         tabs={[
           { key: "v1", label: "Phase 1" },
           { key: "v2", label: "Phase 2" },
+          { key: "v3", label: "Phase 3" },
         ]}
         value={version}
         onChange={(v) => {
@@ -54,7 +60,7 @@ export function Results() {
       />
       <Async res={res} what="Loading the results index">
         {(index) => {
-          const files = index[version];
+          const files = index[version] ?? NO_FILES;
           const chosen = table || (files.tables.includes(HEADLINE[version]) ? HEADLINE[version] : files.tables[0]);
           const note = chosen?.replace(/\.csv$/, ".md");
           return (
@@ -65,7 +71,9 @@ export function Results() {
                   files.tables.length > 0 && (
                     <select value={chosen} onChange={(e) => setTable(e.target.value)} aria-label="Table">
                       {files.tables.map((t) => (
-                        <option key={t}>{t}</option>
+                        <option key={t} value={t}>
+                          {fileTitle(t)}
+                        </option>
                       ))}
                     </select>
                   )
@@ -74,7 +82,7 @@ export function Results() {
                 {chosen ? <TableView version={version} name={chosen} /> : <Empty action={{ label: "Check again", onClick: res.reload }}>No tables for this phase yet.</Empty>}
                 {note && files.notes.includes(note) && (
                   <details>
-                    <summary>{note}</summary>
+                    <summary>Notes on {fileTitle(chosen)}</summary>
                     <NoteView version={version} name={note} />
                   </details>
                 )}
@@ -83,7 +91,7 @@ export function Results() {
                 {files.figures.length ? (
                   <div className="gallery">
                     {files.figures.map((f) => (
-                      <Figure key={f} path={`figures/${version}/${f}`} caption={f} />
+                      <Figure key={f} path={`figures/${version}/${f}`} caption={fileTitle(f)} />
                     ))}
                   </div>
                 ) : (
