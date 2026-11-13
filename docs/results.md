@@ -2,8 +2,9 @@
 
 Every result in detail: what was run, the numbers, and where the files are.
 [experiments.md](experiments.md) has the commands, code versions and runtimes;
-`results/summary/v1/` and `results/summary/v2/` have the CSVs. v1 comes first; [v2: the agent
-team](#v2-the-agent-team) is at the end.
+`results/summary/v1/`, `results/summary/v2/` and `results/summary/v3/` have the CSVs. v1 (Phase 1)
+comes first, then [v2: the agent team](#v2-the-agent-team) (Phase 2) and, at the end,
+[v3: the evaluation](#v3-the-evaluation-phase-3-frozen-2026-11-13-1200) (Phase 3).
 
 ## Answer keys: toy repo and demo app
 
@@ -846,3 +847,162 @@ the checks on the two merges thorough mode tried and rolled back there.
   over the measured commits, against 693.1 for a daily sweep and 9,863.2 for never sweeping, at
   68.7 estimated test runs against 27.7. Held to the adaptive policy's test runs it leaves
   8,841.1, worse than every policy but never sweeping.
+
+## v3: the evaluation (Phase 3), frozen 2026-11-13 12:00
+
+Phase 3 tests the agent team in settings it was not tuned on, against an outside agent, under one
+time cap and one LLM budget for every method. Every hypothesis, metric and threshold was fixed in
+`docs/preregistration_v3.md` before the first main run; its Deviations section lists every change
+since (nine, each dated). The tables are in `results/summary/v3/` and the figures in
+`results/figures/v3/`.
+
+**Methods.** The team (`agentic`), the team with the resolver off (`agentic-no_resolver`, INJECT
+only), the team with batching (`agentic-batch`), no research squad (`agentic-no_research`),
+single agent (`agentic-single_agent`), Aider (the external agent, a fixed instruction written before
+any result) and v1 (`cleansweep`, the Phase 1 pipeline with its gatekeeper). The agents' model is
+`qwen36-35b-a3b`; the diff audit's is `glm-5-3`.
+
+**Limits.** 120 minutes and 400 LLM requests per run for every method. A run that hits either is
+timed out: it stays in every denominator with nothing removed, and safety is computed on the
+finished runs. Three v1 runs went past the cap because v1's LLM client caught the cap as one failed
+request (INJECT shinkoku 173 min; REAL run 2's pipecat 191.6 min and hyprwhspr 215.19 min); all
+three are recorded as timed out, as pre-registered (Deviation 5).
+
+**Sets.**
+- **INJECT:** 10 repositories never used in Phases 1–2, seed 4, with v2's planted slop and two
+  traps each (out of sample). 69 of 70 runs; Aider could not start on linopy (its repository map
+  crashes before any request; not run, Deviation 7).
+- **REAL:** 15 AIDev projects. Half of each project's test modules are held out (seed 4) and run
+  only after the cleanup; a held-out test that passed in three baseline runs and fails afterwards
+  is a behavior change. Run 1 (90 of 90) feeds the tables and H1; run 2 (90 of 90, Deviation 8)
+  enters only the audit.
+- **AUTONOMY:** 30 repositories, `cleansweep clean` end to end in the Docker sandbox.
+
+### Hypotheses (as pre-registered, tested at the freeze)
+
+| | Hypothesis | Result | Evidence (`hypotheses.csv`) |
+|---|---|---|---|
+| H1 | On REAL, the team makes fewer wrong edits than Aider in both tiers, and fewer held-out failures | **not supported** | wrong share, confirmed: team 4/191 vs Aider 4/13 (Fisher p=0.0006); all tiers 13/191 vs 5/13 (p=0.0025); projects with a held-out change: team 4 vs Aider 0 of 10 (McNemar p=0.125) |
+| H2 | The resolver lowers the team's wrong edits on INJECT | **not supported** | wrong (all tiers) 3 with vs 3 without over 9 repositories (Wilcoxon p=1.0); confirmed 2 vs 2 |
+| H3 | Batching keeps the team's safety at no more than 60% of its requests | **supported** (by a tie) | request ratio 0.406 [0.349, 0.470] over 20 projects; wrong 16 vs 16 (Wilcoxon p=1.0); behavior changes 3 vs 4 (McNemar p=1.0) |
+| H4 | AUTONOMY completion is at least 90% (raw) | **supported** | pass 1: 27 of 30 (0.900, Wilson [0.744, 0.965]) |
+
+- **H1** fails on its third part only. The team's wrong-edit shares are far lower than Aider's in
+  both tiers, but Aider keeps almost nothing (13 kept code edits on 14 finished runs, 22 lines), so
+  it changes no held-out test, while the team changes held-out behavior on 4 of 10 paired projects.
+- **H3** is supported at exactly the pre-registered rule, but the wrong-edit totals tie (16 vs 16),
+  so a single project could flip it; we report it as supported by a tie.
+- **H4** is at the threshold. vllm's first pass-1 run timed out on battery and was rerun on AC under
+  a rule written before the timeout (Deviation 2); with the battery run the rate is 26/30 = 0.867.
+  Pass 2 after the fixes (v2.1.2) completed all 3 of pass 1's failures (in-sample).
+
+### INJECT (seed 4, out of sample)
+
+| Method | Finished / timed out | Recall [95% CI] | Traps removed | Hidden test changed | Requests (mean) |
+|---|---|---|---|---|---|
+| Team | 9 / 1 | 0.721 [0.544, 0.833] | 0 | 0 | 152.1 |
+| Team, resolver off | 9 / 1 | 0.721 [0.544, 0.833] | 0 | 0 | 150.8 |
+| Team, batching | 9 / 1 | 0.721 [0.544, 0.833] | 0 | 0 | 66.0 |
+| No research squad | 10 / 0 | 0.794 [0.754, 0.836] | 0 | 0 | 10.7 |
+| Single agent | 10 / 0 | 0.529 [0.414, 0.636] | 3 | 3 | 83.0 |
+| Aider | 9 / 0 (1 not run) | 0.230 [0.067, 0.403] | 4 | 3 | 3.9 |
+| v1 | 9 / 1 | 0.471 [0.348, 0.551] | 0 | 0 | 25.8 |
+
+Recall is planted slop removed over planted slop, with timed-out runs at 0. Every team variant and
+v1 removed no trap and changed no hidden test. The single agent removed 3 traps and Aider 4, and
+each changed the hidden test in 3 repositories.
+
+### REAL (run 1)
+
+| Method | Finished / timed out | Projects with a held-out change | Visible breaks | Lines removed | Requests (mean) |
+|---|---|---|---|---|---|
+| Team | 11 / 4 | 4 | 0 | 2,213 | 202.9 |
+| Team, batching | 13 / 2 | 4 | 0 | 2,306 | 105.3 |
+| No research squad | 14 / 1 | 5 | 0 | 3,452 | 10.4 |
+| Single agent | 15 / 0 | 8 | 1 | 3,515 | 128.0 |
+| Aider | 14 / 1 | 0 | 1 | 22 | 4.5 |
+| v1 | 12 / 3 | 4 | 0 | 1,135 | 31.5 |
+
+### The diff audit (two tiers)
+
+Every kept code edit of a finished run is audited blind (the method hidden): `glm-5-3` votes 3
+times, and every edit it flags gets a targeted test (the **confirmed** tier) or a reading under the
+rubric (the **reading** tier, LLM-judged); on INJECT the injection key settles traps and plants.
+By the freeze: 792 checks over 1,931 audited edits (452 wrong, 199 debatable, 141 fine).
+
+| Set | Method | Kept code edits | Wrong, all tiers (share) | Wrong, confirmed (share) |
+|---|---|---|---|---|
+| INJECT | Team | 227 | 3 (0.013) | 2 (0.009) |
+| INJECT | Team, resolver off | 227 | 3 (0.013) | 2 (0.009) |
+| INJECT | Team, batching | 229 | 4 (0.017) | 3 (0.013) |
+| INJECT | No research squad | 398 | 12 (0.030) | 11 (0.028) |
+| INJECT | Single agent | 165 | 37 (0.224) | 36 (0.218) |
+| INJECT | Aider | 14 | 10 (0.714) | 9 (0.643) |
+| INJECT | v1 | 146 | 32 (0.219) | 19 (0.130) |
+| REAL | Team | 191 | 13 (0.068) | 4 (0.021) |
+| REAL | Team, batching | 262 | 48 (0.183) | 19 (0.073) |
+| REAL | No research squad | 446 | 58 (0.130) | 24 (0.054) |
+| REAL | Single agent | 423 | 87 (0.206) | 51 (0.121) |
+| REAL | Aider | 13 | 5 (0.385) | 4 (0.308) |
+| REAL | v1 | 147 | 47 (0.320) | 20 (0.136) |
+
+"All tiers" includes LLM-judged readings. The intervals and Fisher tests against the team are in
+`audit.csv`.
+
+**What the audit missed** (`audit_miss_v3.csv`, estimates): 50 "no"-voted kept edits each from the
+team and v1 got a targeted test or a no-test note and a reading. The team: 0 wrong of 50 (miss rate
+0, 95% interval [0, 7.1%]). v1: 5 wrong of 50 by test (10.0% [4.4%, 21.4%]), 6 with readings.
+
+### Cost, the second model and the curve
+
+- **Cost** (`cost.csv`): on REAL the team averages 202.9 requests and 25.1 minutes per finished run,
+  batching 105.3 and 20.8, no research squad 10.4 and 21.1, v1 31.5 and 56.4, Aider 4.5 and 17.8.
+- **Second model** (`second_model.csv`, `deepseek-v4-1-flash` as the agents' model, 5 INJECT + 5
+  REAL): the team finished 9 of 10 with no wrong edit in either tier; the single agent mostly stopped
+  at once (the endpoint offers it a `generate_image` tool), removing almost nothing.
+- **Curve** (`curve.csv`, the first 5 REAL): thorough and adaptive removed 181 lines each with 3
+  wrong edits (all tiers, none confirmed), against the team's 167 lines and 1.
+
+### Autonomy
+
+Pass 1: 27 of 30 completed (0.900, Wilson [0.744, 0.965]); verdicts: everything runs 7, not
+verified by tests 9, nothing applied 11; 3 other stops; no run was environment-impossible. Pass 2
+on v2.1.2: 3 of 3 (in-sample).
+
+### LLM judge panel (Deviation 9)
+
+No human checked any label. In place of the two human raters, three LLM judges from other model
+families (`gpt-oss-120b`, `llama4-maverick-17b`, `gemma4-31b-it`) rated the blinded 100-item
+packet: 70 diff-audit edits and 30 review-sheet rows, with the 40 items of the two old calibration
+sheets among them. They used the same rubric and view, and each voted 3 times
+(`judge_panel.csv`, `judge_panel.md`, run on Nov 13 10:37–10:46).
+
+- **Agreement between the judges:** moderate. Fleiss' κ is 0.382 [0.271, 0.494] on the 3 labels
+  and 0.477 [0.346, 0.599] on wrong vs not wrong. The three judges had no majority on 13 of 100
+  items (scored debatable).
+- **Agreement with the recorded labels:** the panel's κ is 0.373 [0.224, 0.516] on 3 labels and
+  0.455 [0.269, 0.620] on wrong vs not wrong. On the diff audit's LLM-judged items it is 0.641
+  [0.411, 0.843] (wrong vs not wrong, n=52).
+- **Against the 18 confirmed verdicts:** the panel is right on 11 (0.611 [0.386, 0.797]), and each
+  judge alone also on 11. It calls 9 of 12 confirmed-wrong edits wrong (sensitivity 0.750
+  [0.468, 0.911]), but calls none of the 6 confirmed-fine edits fine: 4 wrong and 2 debatable (specificity,
+  not wrong, 0.333 [0.097, 0.700]). Four
+  of those six delete a file that the SWE-bench agent's own patch created, which the blinded
+  view does not show. The judges lean toward "wrong".
+- **The reading tier:** the panel agrees with 28 of 40 reading-tier verdicts on 3 labels and 31
+  of 40 on wrong vs not wrong. It overturns 12, listed in `judge_panel.md`.
+  - It calls wrong 7 edits recorded as fine or debatable; four of those it calls wrong
+    unanimously.
+  - It calls 2 recorded-wrong edits fine or debatable, 2 recorded-debatable edits fine, and 1
+    recorded-fine edit debatable.
+  - These are disagreements between LLMs, not corrections: the recorded verdicts stand as
+    frozen.
+
+### Limitations
+
+- No human checked the labels. The reading tier is LLM-judged. A panel of three LLM judges agrees
+  with the recorded labels at κ = 0.455 (wrong vs not wrong; 0.373 on 3 labels), and is right on
+  11 of 18 confirmed verdicts (a targeted test or a rule).
+- The audit checks only flagged edits; the miss-rate estimate above bounds what it misses.
+- REAL's held-out tests catch only behavior the project's own tests reach.
+- One model family runs the agents in the main runs; the second model covers 10 repositories.

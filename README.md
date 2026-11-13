@@ -32,6 +32,21 @@ its wrong counts are lower bounds not biased by who made the edit. Re-scored wit
 rule, which was extended after these failures, the team's 18 become 9; that estimate is in-sample
 and so optimistic. Details below and in [docs/results.md](docs/results.md).
 
+v3 (Phase 3) tested the team as pre-registered. Every method had one 120-minute cap and one
+400-request budget, and the team was compared with the outside agent Aider. The tests ran on 10
+new projects with planted slop and on 15 real projects whose held-out tests no method sees.
+- **H1, not supported.** On the real projects, the team's kept edits were wrong far less often
+  than Aider's: 4 of 191 confirmed by tests, against 4 of 13; 13 of 191 against 5 of 13
+  counting LLM-judged readings. But Aider kept almost nothing and changed no held-out test,
+  while the team changed held-out behavior on 4 of 10 paired projects.
+- **H2, not supported.** The resolver did not lower wrong edits.
+- **H3, supported by a tie.** Batching used 41% of the team's requests with the same number of
+  wrong edits.
+- **H4, supported, at the threshold.** 27 of 30 repositories ran end to end.
+- **No human checked the labels.** Three LLM judges agree with the recorded labels at
+  κ = 0.455 (wrong vs not wrong), and are right on 11 of 18 confirmed verdicts (each confirmed
+  by a targeted test or a rule).
+
 ## Quick start
 
 ```bash
@@ -93,7 +108,7 @@ Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_sh
 cleansweep clean path/to/project --dry-run   # plan only: writes blueprint.md, changes nothing
 cleansweep clean path/to/project             # safe mode: deterministic edits, each one verified
 cleansweep clean path/to/project --mode thorough --budget llm=150,minutes=60,tests=80
-cleansweep clean tests/fixtures/toy_repo --no-llm   # try it offline on the toy repo
+cleansweep clean tests/fixtures/toy_repo --no-llm --sandbox none   # offline, on our own toy repo
 cleansweep clean path/to/their/project --untrusted   # their code runs only in a Docker container
 ```
 
@@ -258,6 +273,28 @@ afterwards.
 ran at, its inputs and outputs, runtime and models, how to download the data (SWE-bench
 Verified, PatchDiff, AIDev), and the Docker and disk needs (about 65 GB for all images and
 data).
+
+## v3 results: the evaluation (frozen 2026-11-13 12:00)
+
+Every method on every set had one cap (120 minutes) and one budget (400 LLM requests); a run that
+hits either counts as timed out, with nothing removed. Hypotheses, metrics and thresholds are in
+[docs/preregistration_v3.md](docs/preregistration_v3.md), with its nine dated deviations; the
+tables are in `results/summary/v3/` and every number in
+[docs/results.md](docs/results.md#v3-the-evaluation-phase-3-frozen-2026-11-13-1200).
+
+| | Hypothesis | Result |
+|---|---|---|
+| H1 | On real projects, the team makes fewer wrong edits than Aider in both tiers, and fewer held-out failures | not supported: fewer wrong edits (4/191 vs 4/13 confirmed, p=0.0006; 13/191 vs 5/13 all tiers, p=0.0025), but held-out changes on 4 vs 0 of 10 projects |
+| H2 | The resolver lowers the team's wrong edits on the planted-slop set | not supported: 3 vs 3 over 9 repositories |
+| H3 | Batching keeps the team's safety at no more than 60% of its requests | supported, by a tie: 41% of the requests, 16 vs 16 wrong edits |
+| H4 | At least 90% of 30 repositories run end to end | supported: 27 of 30 (0.900) |
+
+On the planted-slop set (out of sample) the team removed 72% of the planted items and no trap.
+The single agent removed 3 traps and Aider 4, and each changed the hidden test in 3
+repositories. Wrong counts in "all tiers" include LLM-judged readings, and no human checked
+them. A panel of three LLM judges agrees with the recorded labels at κ = 0.455 (wrong vs not
+wrong), and is right on 11 of 18 confirmed verdicts, each confirmed by a targeted test or a rule
+(`judge_panel.md`).
 
 ## v2 results: the agent team
 
@@ -541,6 +578,10 @@ code-level edits comes from the rest:
 
 ## Known limitations
 
+- **No human checked the labels.** The diff audit's reading tier and the review sheets are
+  LLM-judged. Three LLM judges from other model families agree with the recorded labels only
+  moderately (κ = 0.455, wrong vs not wrong), and of 6 edits confirmed fine they call 4 wrong
+  and 2 debatable (v3, Deviation 9).
 - **Unused is not unneeded.** The Guard can't check the deletion of a function nothing in the
   project calls: there is nothing to run. `keep_public_api: auto` keeps public names in package
   modules in the suggest lane, and the framework rule keeps framework callbacks there; anything

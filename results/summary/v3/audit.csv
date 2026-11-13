@@ -1,0 +1,14 @@
+set,method,runs,kept_code_edits,wrong_all_tiers (incl. LLM-judged readings),wrong_confirmed,debatable (LLM-judged),share_all_tiers,share_ci_low,share_ci_high,share_confirmed,confirmed_ci_low,confirmed_ci_high,fisher_p_vs_team_all,fisher_p_vs_team_confirmed
+injected v3,agentic,9,227,3,2,2,0.013,0.0,0.05,0.009,0.0,0.033,,
+injected v3,agentic-no_resolver,9,227,3,2,2,0.013,0.0,0.05,0.009,0.0,0.033,1.0,1.0
+injected v3,agentic-batch,9,229,4,3,2,0.017,0.0,0.066,0.013,0.0,0.049,1.0,1.0
+injected v3,agentic-no_research,10,398,12,11,7,0.03,0.0,0.063,0.028,0.0,0.053,0.277,0.149
+injected v3,agentic-single_agent,10,165,37,36,23,0.224,0.094,0.31,0.218,0.091,0.304,0.0,0.0
+injected v3,aider,9,14,10,9,0,0.714,0.4,0.95,0.643,0.3,0.917,0.0,0.0
+injected v3,cleansweep,9,146,32,19,14,0.219,0.0,0.275,0.13,0.0,0.163,0.0,0.0
+real v3,agentic,11,191,13,4,3,0.068,0.014,0.169,0.021,0.0,0.055,,
+real v3,agentic-batch,13,262,48,19,2,0.183,0.035,0.406,0.073,0.0,0.186,0.0,0.016
+real v3,agentic-no_research,14,446,58,24,3,0.13,0.025,0.367,0.054,0.007,0.16,0.027,0.089
+real v3,agentic-single_agent,15,423,87,51,100,0.206,0.066,0.438,0.121,0.031,0.301,0.0,0.0
+real v3,aider,14,13,5,4,3,0.385,0.1,0.667,0.308,0.0,0.571,0.003,0.001
+real v3,cleansweep,12,147,47,20,7,0.32,0.043,0.745,0.136,0.014,0.327,0.0,0.0

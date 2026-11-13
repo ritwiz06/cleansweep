@@ -1,6 +1,6 @@
 # Project status
 
-Where the project stands on Nov 13, before the results freeze at 12:00 (Arizona time). This is
+Where the project stands on Nov 13, after the results freeze at 12:00 (Arizona time). This is
 the public summary of Ritik's local plan, handoff notes and decision log. The acceptance
 checklist with its evidence is [requirements.md](../requirements.md).
 
@@ -14,7 +14,7 @@ checklist with its evidence is [requirements.md](../requirements.md).
 | Nov 6 | Phase 3 pre-registration and run rules, committed before any main run | done: v2.1.1 (the code every main run used) |
 | Nov 6 – Nov 9 | **Phase 3** runs | done: the last run ended on Nov 9 at 06:11 |
 | Nov 7 | fixes after AUTONOMY pass 1 | done: v2.1.2 |
-| **Nov 13, 12:00** | **results freeze**: final audit pass, tables, figures, H1–H4, the LLM judge panel | next |
+| **Nov 13, 12:00** | **results freeze**: final audit pass, tables, figures, H1–H4, the LLM judge panel | done: [results at the freeze](#results-at-the-freeze) |
 | Nov 14 | final report and slides | open |
 | Nov 15 | v3.0 release: every requirement checked, a fresh-clone rehearsal, the archive | open |
 | Nov 16 – Nov 20 | two timed rehearsals of the talk | open |
@@ -37,8 +37,8 @@ Nothing. Every Phase 3 run finished by Nov 9 at 06:11, two days before the last 
 | AUTONOMY pass 1 | 30 repositories | all 30 ran; the completion rate is H4, reported at the freeze |
 | AUTONOMY pass 2 | pass 1's failures, after the v2.1.2 fixes | done (in-sample; never replaces pass 1) |
 | Audit-miss estimate | 100 more "no"-voted edits from Phase 2, and 100 from Phase 3's run 1 | done; every number from it is an estimate |
-| Blinded diff audit | every kept code edit of every Phase 3 run | caught up on Nov 9; one final pass at the freeze |
-| LLM judge panel | the 100 blinded items, 3 judges (Deviation 9) | at the freeze; no numbers yet |
+| Blinded diff audit | every kept code edit of every Phase 3 run | final: 792 checks, none pending (final pass on Nov 13) |
+| LLM judge panel | the 100 blinded items, 3 judges (Deviation 9) | done on Nov 13: 900 votes |
 
 A run that hit the 120-minute cap or the 400-request budget is "timed out": it stays in every
 denominator with nothing removed. A run spoiled by sleep, a lost network, a restart or stale
@@ -48,7 +48,7 @@ files was rerun, and the spoiled run is not reported.
 
 | Item | Who | When |
 |---|---|---|
-| Final audit pass, tables, figures, H1–H4, the judge panel's numbers, the results pull request | Ritik | Nov 13 after 12:00 |
+| Final audit pass, tables, figures, H1–H4, the judge panel's numbers, the results pull request | Ritik | done on Nov 13 |
 | Reproduce the frozen tables on a second machine | Simran | by Nov 14 |
 | Rerun the data table builders on a second machine | Badri | by Nov 14 |
 | Fresh-clone install and offline test run on a second machine | Maninderjit | by Nov 14 |
@@ -62,8 +62,8 @@ Each task has an issue; see [tasks.md](tasks.md).
 ## The hypotheses
 
 Stated as pre-registered on Nov 6 ([preregistration_v3.md](../preregistration_v3.md)). All four
-are **tested at the freeze, Nov 13 12:00**. Each will be reported as supported, not supported,
-or not run by the freeze. No results are given here.
+were **tested at the freeze, Nov 13 12:00**; the results are in
+[Results at the freeze](#results-at-the-freeze) below.
 
 Statistics for all four: bootstrap 95% intervals over projects (10,000 resamples, seed 572);
 Wilcoxon signed-rank or exact McNemar where the comparison is paired by project, Fisher's exact
@@ -88,6 +88,23 @@ test where it is not; two-sided, alpha 0.05, no correction across the four.
   but not completed. Supported when the rate is at least 0.90 (27 of 30), with a Wilson 95%
   interval. Pass 2 and the rate without environment-impossible runs are reported beside it,
   never in its place.
+
+## Results at the freeze
+
+From `results/summary/v3/` (`hypotheses.csv`, `judge_panel.md`); every number and its source is
+in the README's "v3 results" section and [results.md](../results.md).
+
+| | Result | Evidence |
+|---|---|---|
+| H1 | not supported | The team's kept edits are wrong far less often than Aider's (4 of 191 against 4 of 13 confirmed, Fisher p = 0.0006; 13 against 5 in all tiers, p = 0.0025), but the team changed held-out tests on 4 of 10 projects and Aider, which keeps almost nothing, on none (McNemar p = 0.125). |
+| H2 | not supported | 3 wrong edits with the resolver and 3 without, over 9 repositories (Wilcoxon p = 1.0). |
+| H3 | supported, by a tie | Batching used 41% of the team's requests (95% interval 35–47%) with the same 16 wrong edits; behavior changes 3 with batching, 4 without. |
+| H4 | supported | 27 of 30 completed (0.900, Wilson 0.744–0.965), exactly the threshold. |
+
+**The labels.** No human checked them. Three LLM judges from other model families agree with
+each other moderately (Fleiss' κ = 0.382) and with the recorded labels at κ = 0.455 (wrong vs not
+wrong). They are right on 11 of 18 verdicts confirmed by a test or a rule: 9 of 12 wrong ones, but
+none of the 6 fine ones gets "fine". Every reading-tier number stays labeled LLM-judged.
 
 ## Phase 3 requirements (R17–R30)
 
