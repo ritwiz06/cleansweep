@@ -11,22 +11,22 @@ happened, with your operating system.
 
 | ID | Task | Owner | Due | Issue |
 |---|---|---|---|---|
-| D1 | [Rerun the data table builders and compare](#d1-rerun-the-data-table-builders-and-compare) | Badri | by Nov 14 | #ISSUE_D1 |
-| D2 | [Review the Data section and the SlopBench card](#d2-review-the-data-section-and-the-slopbench-card) | Badri | Nov 14 | #ISSUE_D2 |
-| D3 | [Present the Data part](#d3-present-the-data-part) | Badri | Nov 20 | #ISSUE_D3 |
-| S1 | [Fresh-clone install and offline test run](#s1-fresh-clone-install-and-offline-test-run) | Maninderjit | by Nov 14 | #ISSUE_S1 |
-| S2 | [Review the agents and Guard docs](#s2-review-the-agents-and-guard-docs) | Maninderjit | Nov 15 | #ISSUE_S2 |
-| S3 | [Test Studio and file UI bugs](#s3-test-studio-and-file-ui-bugs) | Maninderjit | Nov 15 | #ISSUE_S3 |
-| S4 | [Present the Methods part](#s4-present-the-methods-part) | Maninderjit | Nov 20 | #ISSUE_S4 |
-| E1 | [Reproduce the frozen tables and check H1–H4](#e1-reproduce-the-frozen-tables-and-check-h1h4) | Simran | Nov 14 | #ISSUE_E1 |
-| E2 | [Review the Results section](#e2-review-the-results-section) | Simran | Nov 14 | #ISSUE_E2 |
-| E3 | [Present the Results part](#e3-present-the-results-part) | Simran | Nov 20 | #ISSUE_E3 |
-| P1 | [Integration and the v3.0 release](#p1-integration-and-the-v30-release) | Ritik | Nov 15 | #ISSUE_P1 |
-| P2 | [Assemble the final report](#p2-assemble-the-final-report) | Ritik | Nov 14 | #ISSUE_P2 |
-| P3 | [Introduction, demo and slides](#p3-introduction-demo-and-slides) | Ritik | Nov 20 | #ISSUE_P3 |
-| A1 | [Everyone: proofread the final report](#a1-everyone-proofread-the-final-report) | all four | Nov 14 | #ISSUE_A1 |
-| A2 | [Everyone: prepare the Q&A](#a2-everyone-prepare-the-qa) | all four | Nov 20 | #ISSUE_A2 |
-| A3 | [Everyone: two timed rehearsals](#a3-everyone-two-timed-rehearsals) | all four | Nov 20 | #ISSUE_A3 |
+| D1 | [Rerun the data table builders and compare](#d1-rerun-the-data-table-builders-and-compare) | Badri | by Nov 14 | [#201](https://github.com/ritwiz06/cleansweep/issues/201) |
+| D2 | [Review the Data section and the SlopBench card](#d2-review-the-data-section-and-the-slopbench-card) | Badri | Nov 14 | [#202](https://github.com/ritwiz06/cleansweep/issues/202) |
+| D3 | [Present the Data part](#d3-present-the-data-part) | Badri | Nov 20 | [#203](https://github.com/ritwiz06/cleansweep/issues/203) |
+| S1 | [Fresh-clone install and offline test run](#s1-fresh-clone-install-and-offline-test-run) | Maninderjit | by Nov 14 | [#204](https://github.com/ritwiz06/cleansweep/issues/204) |
+| S2 | [Review the agents and Guard docs](#s2-review-the-agents-and-guard-docs) | Maninderjit | Nov 15 | [#205](https://github.com/ritwiz06/cleansweep/issues/205) |
+| S3 | [Test Studio and file UI bugs](#s3-test-studio-and-file-ui-bugs) | Maninderjit | Nov 15 | [#206](https://github.com/ritwiz06/cleansweep/issues/206) |
+| S4 | [Present the Methods part](#s4-present-the-methods-part) | Maninderjit | Nov 20 | [#207](https://github.com/ritwiz06/cleansweep/issues/207) |
+| E1 | [Reproduce the frozen tables and check H1–H4](#e1-reproduce-the-frozen-tables-and-check-h1h4) | Simran | Nov 14 | [#208](https://github.com/ritwiz06/cleansweep/issues/208) |
+| E2 | [Review the Results section](#e2-review-the-results-section) | Simran | Nov 14 | [#209](https://github.com/ritwiz06/cleansweep/issues/209) |
+| E3 | [Present the Results part](#e3-present-the-results-part) | Simran | Nov 20 | [#210](https://github.com/ritwiz06/cleansweep/issues/210) |
+| P1 | [Integration and the v3.0 release](#p1-integration-and-the-v30-release) | Ritik | Nov 15 | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
+| P2 | [Assemble the final report](#p2-assemble-the-final-report) | Ritik | Nov 14 | [#212](https://github.com/ritwiz06/cleansweep/issues/212) |
+| P3 | [Introduction, demo and slides](#p3-introduction-demo-and-slides) | Ritik | Nov 20 | [#213](https://github.com/ritwiz06/cleansweep/issues/213) |
+| A1 | [Everyone: proofread the final report](#a1-everyone-proofread-the-final-report) | all four | Nov 14 | [#214](https://github.com/ritwiz06/cleansweep/issues/214) |
+| A2 | [Everyone: prepare the Q&A](#a2-everyone-prepare-the-qa) | all four | Nov 20 | [#215](https://github.com/ritwiz06/cleansweep/issues/215) |
+| A3 | [Everyone: two timed rehearsals](#a3-everyone-two-timed-rehearsals) | all four | Nov 20 | [#216](https://github.com/ritwiz06/cleansweep/issues/216) |
 
 ## Badri (data architect), `@<badri-github>`
 
@@ -276,8 +276,8 @@ you are done.
 ### A2. Everyone: prepare the Q&A
 
 Due **Nov 20**. Read the [Q&A sheet](presentation.md#qa-sheet). Each of us takes the questions
-on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 18 and 20), and practices a one-sentence answer for each.
-Add questions you expect to the sheet by pull request.
+on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 18 and 20) and practices a
+one-sentence answer for each. Add questions you expect to the sheet by pull request.
 
 ### A3. Everyone: two timed rehearsals
 

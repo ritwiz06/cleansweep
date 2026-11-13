@@ -1,12 +1,13 @@
 # Setup
 
 This page gets CleanSweep running on your machine. The offline path (install, tests, the toy
-cleanup, Studio Replay) needs only Python 3.11 and git. Docker and a Voyager key are needed only
-for the LLM features, the Docker tests and the experiment runners.
+cleanup) needs only Python 3.11 and git; Studio also needs Node 20 once, to build its page.
+Docker and a Voyager key are needed only for the LLM features, the Docker tests and the
+experiment runners.
 
 The repository commands on this page (install, checks, offline runs, Studio, the hook) were run
 on a fresh clone of `main` on macOS on Nov 13, with no key and Docker not running. The system
-install commands for Windows and Linux, and the Docker steps, were not run for this page; if one
+install commands (Homebrew, apt, WSL) and the Docker steps were not run for this page; if one
 fails for you, file an issue with the error.
 
 ## What you need
