@@ -192,7 +192,9 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
    judges takes their place, together with a check of the judges against the test-confirmed
    verdicts. The judges come from model families other than the agents' (`qwen36-35b-a3b`), the
    auditor's (`glm-5-3`) and the second model's (`deepseek-v4-1-flash`): `gpt-oss-120b`,
-   `mistral-large-4` and `gemma4-31b-it`. Each judge sees the packet's items with the raters'
+   `llama4-maverick-17b` and `gemma4-31b-it`. (`mistral-large-4` was named first, but its
+   requests timed out at 150 s on the packet's items, so it was replaced at 10:37, before any
+   panel result.) Each judge sees the packet's items with the raters'
    rubric, in the same blinded view (no method, no recorded verdict, the packet's shuffled
    order). It votes 3 times at temperature 0.3, and the majority is its label; with no majority,
    the label is "debatable". The panel's label is the majority of the three judges, also
