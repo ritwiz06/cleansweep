@@ -339,6 +339,11 @@ p {
   min-width: 0;
 }
 
+/* one width for every screen, so a wide window keeps lines and tables readable */
+.content > .screen {
+  max-width: 1440px;
+}
+
 /* Every screen opens with the same header: the title, one line on what it shows, the actions */
 .page-head {
   display: flex;
@@ -791,9 +796,11 @@ h4 {
     var(--surface);
 }
 
+/* a table is as wide as its content (so B - A sits next to B), at least half a card */
 table.data {
   border-collapse: collapse;
-  width: 100%;
+  width: auto;
+  min-width: min(100%, 32rem);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
@@ -2257,11 +2264,6 @@ details summary {
 
 .commit .reason {
   color: var(--text-2);
-}
-
-/* Home: the "Clean a folder" box and the recent runs, centred like a landing page */
-.home {
-  max-width: 1040px;
 }
 
 .report-meter {

@@ -42,7 +42,10 @@ async function ready(page: Page, route: string, label: string) {
   await page.goto(`/#/${route}`);
   await expect(page.locator("main h2").first()).toBeVisible();
   await expect(page.locator(".state.loading")).toHaveCount(0);
-  if (label.startsWith("replay")) await page.getByLabel("Scrubber").fill("200");
+  if (label.startsWith("replay")) {
+    await page.getByRole("slider", { name: "Scrubber" }).focus();
+    for (let i = 0; i < 20; i++) await page.keyboard.press("PageDown");
+  }
   if (label === "replay: agents") await page.getByRole("tab", { name: "Agents" }).click();
   if (label.startsWith("present")) await page.keyboard.press("Space");
 }

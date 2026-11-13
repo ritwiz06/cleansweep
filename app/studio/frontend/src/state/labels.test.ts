@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatNumber, headerLabel, isIsoDate, numericColumn, plural, ruleLabel, shortDate, valueLabel } from "./labels";
+import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, plural, ruleLabel, shortDate, valueLabel } from "./labels";
 
 describe("labels", () => {
   it("writes column names in plain words", () => {
@@ -22,6 +22,13 @@ describe("labels", () => {
     expect(shortDate("2026-11-01T10:05:00")).toBe("Nov 1, 10:05");
     expect(formatNumber(50427)).toBe("50,427");
     expect(formatNumber(0.81357)).toBe("0.814");
+  });
+
+  it("gives a column of numbers one number of decimals", () => {
+    expect(columnDecimals([0.107, 14.56, 1.673, 0])).toBe(3);
+    expect(columnDecimals([300, 63, "-"])).toBe(0);
+    expect(columnDecimals([0.12345])).toBe(3);
+    expect(formatNumber(14.56, 3)).toBe("14.560");
   });
 
   it("finds numeric columns, intervals and ratios included", () => {

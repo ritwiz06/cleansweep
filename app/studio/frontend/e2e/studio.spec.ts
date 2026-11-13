@@ -4,9 +4,23 @@ const V2 = "20261101_toy_clean_offline";
 const V1 = "20261030_demo_feature_advisory_v1";
 const DEMO = "20261102_demo_feature_agentic";
 const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
+// runs are titled by project and kind (and day), with the folder name in the tooltip
+const TOY_REPLAY = /^Replay: Toy repo · agent team/;
+const DEMO_REPLAY = /^Replay: Demo app · agent team/;
+const DEMO_AFTER = /^Before \/ after: Demo app · agent team/;
 
 async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
+}
+
+// Moves a replay to event n on the timeline, with the keys.
+async function scrubTo(page: Page, n: number) {
+  const slider = page.getByRole("slider", { name: "Scrubber" });
+  await slider.focus();
+  await page.keyboard.press("Home");
+  for (let i = 0; i < Math.floor(n / 10); i++) await page.keyboard.press("PageDown");
+  for (let i = 0; i < n % 10; i++) await page.keyboard.press("ArrowRight");
+  await expect(page.getByLabel("Replay controls")).toContainText(`event ${n} of`);
 }
 
 test("home: clean a folder with readable errors, and the recent runs", async ({ page }) => {
@@ -30,20 +44,20 @@ test("home: clean a folder with readable errors, and the recent runs", async ({ 
   await expect(page.getByRole("alert")).toHaveCount(0);
   const recent = page.getByLabel("Recent runs");
   await recent.locator(`[data-run="${V2}"]`).getByRole("link", { name: "Open" }).click();
-  await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: TOY_REPLAY })).toBeVisible();
 });
 
 test("home: Try the demo opens the demo app's recording in Replay", async ({ page }) => {
   await open(page, "");
   await page.getByRole("link", { name: "Try the demo" }).click();
-  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_REPLAY })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("the tour walks through the replay screen and Escape ends it", async ({ page }) => {
   await open(page, "");
   await page.getByRole("link", { name: "Take the tour" }).click();
-  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_REPLAY })).toBeVisible();
   const tour = page.getByRole("dialog");
   await expect(tour).toContainText("Step 1 of 6");
   await expect(tour.getByRole("heading", { name: "Play the recording" })).toBeVisible();
@@ -85,7 +99,7 @@ test("runs list offers the shipped recordings and opens a replay", async ({ page
   await expect(row).toContainText("everything runs");
   await expect(page.locator(`tr[data-run="${V1}"]`)).toContainText("Phase 1 sweep");
   await row.getByRole("link", { name: "Replay" }).click();
-  await expect(page.getByRole("heading", { name: `Replay: ${V2}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: TOY_REPLAY })).toBeVisible();
 });
 
 test("replay of a v2 run: transport, timeline, agents, boards, packages and report", async ({ page }) => {
@@ -102,7 +116,7 @@ test("replay of a v2 run: transport, timeline, agents, boards, packages and repo
   await page.getByRole("button", { name: "Pause" }).click();
   await page.getByRole("button", { name: "Jump to the end" }).click();
   await expect(transport).toContainText("event 234 of 234");
-  await expect(page.getByLabel("Run metrics")).toContainText("everything runs");
+  await expect(page.locator(".page-title")).toContainText("everything runs");
   await expect(page.getByLabel("Phase timeline")).toContainText("EXECUTE");
   await expect(page.locator('[data-agent="investigator"]')).toContainText("×");
   await expect(page.getByLabel("Agent graph")).toContainText("reporter");
@@ -132,7 +146,7 @@ test("project view: the tree follows the events, and a node shows its evidence, 
   const tree = page.getByRole("tree", { name: "Project tree" });
   await expect(page.getByText("This run saved no file list")).toBeVisible();
   // mid-investigation: an Investigator is on _print_low_stock
-  await page.getByLabel("Scrubber").fill("69");
+  await scrubTo(page, 69);
   const unit = tree.locator('[data-key="unit:bookshelf/inventory.py::_print_low_stock"]');
   await expect(unit).toHaveClass(/st-investigating/);
   await expect(unit.locator('svg[data-role="investigator"]')).toHaveCount(1);
@@ -153,7 +167,7 @@ test("project view: the tree follows the events, and a node shows its evidence, 
 test("before / after: both trees, the numbers, and each change with the decisions behind it", async ({ page }) => {
   await open(page, "runs");
   await page.locator(`tr[data-run="${DEMO}"]`).getByRole("link", { name: "Before / after" }).click();
-  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_AFTER })).toBeVisible();
   const before = page.getByRole("group", { name: "Before tree" });
   const after = page.getByRole("group", { name: "After tree" });
   await expect(before.locator("del", { hasText: "inventory_old.py" })).toBeVisible();
@@ -174,7 +188,7 @@ test("before / after: both trees, the numbers, and each change with the decision
   await expect(change).toContainText("public names unchanged");
   await expect(change.getByRole("table")).toContainText("normalize_isbn");
   await page.getByRole("link", { name: "Replay", exact: true }).click();
-  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_REPLAY })).toBeVisible();
 });
 
 test("presentation mode: large captions, a fixed pace, and the space bar jumps to the next decision", async ({ page }) => {
@@ -210,7 +224,7 @@ test("presentation mode: large captions, a fixed pace, and the space bar jumps t
   await page.keyboard.press("g");
   await expect(page.getByRole("tree", { name: "Project tree" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading", { name: `Replay: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_REPLAY })).toBeVisible();
 });
 
 test("presentation mode on before / after: the summary, then one change per slide", async ({ page }) => {
@@ -230,7 +244,7 @@ test("presentation mode on before / after: the summary, then one change per slid
   await page.keyboard.press("Shift+Space");
   await expect(controls).toContainText("change 2 of 5");
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading", { name: `Before / after: ${DEMO}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DEMO_AFTER })).toBeVisible();
 });
 
 test("export: one self-contained HTML report that opens from file:// with no server", async ({ page, context }, info) => {
@@ -293,6 +307,9 @@ test("watch folder: commits, slop over time, decisions", async ({ page }) => {
 
 test("results: Phase 1 and Phase 2 tables and figures", async ({ page }) => {
   await open(page, "results");
+  // Results opens on the latest phase
+  await expect(page.getByRole("tab", { name: "Phase 3" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Phase 1" }).click();
   await expect(page.getByLabel("main_table.csv")).toContainText("cleansweep-gatekeeper");
   await expect(page.locator(".gallery img").first()).toBeVisible();
   await page.getByRole("tab", { name: "Phase 2" }).click();
@@ -352,9 +369,10 @@ test("launch an offline clean run and follow it live", async ({ page }) => {
   await open(page, "launch");
   await expect(page.getByLabel("Target")).toHaveValue("toy");
   await page.getByRole("button", { name: "Start" }).click();
-  await expect(page.getByRole("heading", { name: /Live run/ })).toBeVisible();
-  await expect(page.getByText("Run finished.")).toBeVisible({ timeout: 100_000 });
-  await expect(page.getByLabel("Run metrics")).toContainText("everything runs");
+  await expect(page.getByRole("heading", { name: /^(Live run|Run): Toy repo/ })).toBeVisible();
+  // a live run that has ended is titled "Run", with its status beside the title
+  await expect(page.getByRole("heading", { name: /^Run: Toy repo/ })).toBeVisible({ timeout: 100_000 });
+  await expect(page.locator(".page-title")).toContainText("everything runs");
   await open(page, "launch");
   await expect(page.locator(".jobs")).toContainText("done");
 });

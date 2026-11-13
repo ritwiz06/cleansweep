@@ -1,6 +1,6 @@
 import { createContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
-import { formatNumber, headerLabel, isIsoDate, numericColumn, shortDate, valueLabel } from "../state/labels";
+import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, shortDate, valueLabel } from "../state/labels";
 import { StateChip, stateOf } from "./states";
 
 // charts skip their entry animation when the reader asks for reduced motion (and the
@@ -302,10 +302,10 @@ const CELL_CHARS = 160;
 // columns whose values are outcomes, shown as chips
 const STATUS_COLUMNS = new Set(["status", "result", "outcome", "verdict", "decision", "llm_decision"]);
 
-function cell(value: unknown, column: string, rename?: (v: string) => string): ReactNode {
+function cell(value: unknown, column: string, decimals: number, rename?: (v: string) => string): ReactNode {
   if (value === null || value === undefined || value === "") return <span className="muted">-</span>;
   if (typeof value === "boolean") return value ? "yes" : "no";
-  if (typeof value === "number") return formatNumber(value);
+  if (typeof value === "number") return formatNumber(value, Number.isInteger(value) && decimals === 0 ? undefined : decimals);
   const text = typeof value === "object" ? JSON.stringify(value) : String(value);
   if (rename) return rename(text);
   if (STATUS_COLUMNS.has(column)) return <Status value={text} />;
@@ -323,8 +323,9 @@ function cellClass(value: unknown, numeric: boolean): string | undefined {
   return /\s/.test(value) ? undefined : "ident";
 }
 
-// A results table (columns + rows): plain-word headers, numbers right-aligned with separators,
-// outcomes as chips; click a header to sort. `names` renames the values of a column (methods).
+// A results table (columns + rows): plain-word headers, numbers right-aligned with separators and
+// one number of decimals per column, outcomes as chips; click a header to sort. `names` renames
+// the values of a column (methods).
 export function DataTable({
   table,
   filter,
@@ -353,6 +354,7 @@ export function DataTable({
     return kept;
   }, [table, filter, sort]);
   const numeric = useMemo(() => (table ? table.columns.map((_, i) => numericColumn(table.rows.map((r) => r[i]))) : []), [table]);
+  const decimals = useMemo(() => (table ? table.columns.map((_, i) => columnDecimals(table.rows.map((r) => r[i]))) : []), [table]);
   if (!table) return <Empty>No table yet.</Empty>;
   if (!table.rows.length) return <Empty>The table is empty.</Empty>;
   return (
@@ -378,7 +380,7 @@ export function DataTable({
             <tr key={r}>
               {row.map((v, c) => (
                 <td key={c} className={cellClass(v, numeric[c])}>
-                  {cell(v, table.columns[c], names?.[table.columns[c]])}
+                  {cell(v, table.columns[c], decimals[c], names?.[table.columns[c]])}
                 </td>
               ))}
             </tr>

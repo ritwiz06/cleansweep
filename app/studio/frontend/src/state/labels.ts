@@ -53,9 +53,22 @@ export function shortDate(value: string): string {
 }
 
 // 50427 -> "50,427"; decimals keep up to three digits.
-export function formatNumber(value: number): string {
+export function formatNumber(value: number, decimals?: number): string {
+  if (decimals !== undefined) return value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   if (Number.isInteger(value)) return value.toLocaleString("en-US");
   return (Math.round(value * 1000) / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 });
+}
+
+// The decimals a column of numbers is shown with: as many as its most precise value, at most
+// three, so the column lines up.
+export function columnDecimals(values: unknown[]): number {
+  let most = 0;
+  for (const v of values) {
+    if (typeof v !== "number" || Number.isInteger(v)) continue;
+    const digits = String(Math.round(v * 1000) / 1000).split(".")[1]?.length ?? 0;
+    most = Math.max(most, digits);
+  }
+  return Math.min(most, 3);
 }
 
 // A cell reads as a number when it is one, or a number with an interval, ratio or unit.

@@ -15,20 +15,26 @@ test.skip(!OUT, "set REVIEW_SHOTS=<folder> to take the design review screenshots
 
 type Prepare = (page: Page) => Promise<void>;
 
+// moves a replay to event n with the timeline's keys, then lets go of the focus
 const scrub = (count: number): Prepare => async (page) => {
-  await page.getByLabel("Scrubber").fill(String(count));
+  const slider = page.getByRole("slider", { name: "Scrubber" });
+  await slider.focus();
+  await page.keyboard.press("Home");
+  for (let i = 0; i < Math.floor(count / 10); i++) await page.keyboard.press("PageDown");
+  for (let i = 0; i < count % 10; i++) await page.keyboard.press("ArrowRight");
+  await slider.blur();
 };
 
 const SCREENS: [string, string, Prepare?][] = [
   ["home", "home"],
   ["live-run", `run?${DEMO_Q}`, async (page) => {
-    await expect(page.getByText("Run finished.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Run: / })).toBeVisible();
   }],
   ["project-view", `replay?${DEMO_Q}`, scrub(260)],
   ["replay", `replay?${DEMO_Q}`, async (page) => {
     await scrub(69)(page);
     await page.getByRole("tab", { name: "Agents" }).click();
-    await page.getByRole("heading", { name: "Agent team" }).scrollIntoViewIfNeeded();
+    await page.getByRole("heading", { name: "Agent team", exact: true }).scrollIntoViewIfNeeded();
   }],
   ["before-after", `after?${DEMO_Q}`],
   ["before-after-diff", `after?${DEMO_Q}`, async (page) => {
