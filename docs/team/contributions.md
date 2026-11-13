@@ -63,7 +63,7 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 6 – Nov 7 | The stale-file fix, the pre-registration and run rules, v2.1.1 and v2.1.2 | [#167](https://github.com/ritwiz06/cleansweep/pull/167)–[#169](https://github.com/ritwiz06/cleansweep/pull/169), [#176](https://github.com/ritwiz06/cleansweep/pull/176)–[#178](https://github.com/ritwiz06/cleansweep/pull/178) |
 | Ritik | Nov 6 – Nov 13 | Analysis tools, runner fixes, table and figure fixes, Deviations 1–9 | [#170](https://github.com/ritwiz06/cleansweep/pull/170)–[#175](https://github.com/ritwiz06/cleansweep/pull/175), [#179](https://github.com/ritwiz06/cleansweep/pull/179)–[#198](https://github.com/ritwiz06/cleansweep/pull/198) |
 | Ritik | Nov 6 – Nov 9 | Every Phase 3 run, and the blinded audit's checks | offline: run logs and audit records; the tables arrive with the results pull request |
-| Ritik | Nov 9 | Course progress report (Word and LaTeX), submitted | offline: Overleaf and the ASU Drive |
+| Ritik | Nov 9 | Course progress report (Word and LaTeX), ready to submit | offline: report sources on Overleaf |
 | Ritik | Nov 13 | This team pack and the team's task issues | [#200](https://github.com/ritwiz06/cleansweep/pull/200); issues [#201](https://github.com/ritwiz06/cleansweep/issues/201) to [#216](https://github.com/ritwiz06/cleansweep/issues/216) |
 
 ## Add your rows here
