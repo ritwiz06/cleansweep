@@ -19,6 +19,8 @@ def test_runs_list_the_shipped_recordings_by_kind(client):
     rows = {(r["root"], r["name"]): r for r in client.get("/api/runs").json()}
     v2 = rows[("replay", REPLAY_RUN)]
     assert v2["kind"] == "v2" and v2["verdict"] == "everything runs" and v2["finished"]
+    demo = rows[("replay", "20261102_demo_feature_agentic")]
+    assert demo["outcome"] == {"kept": 5, "rolled_back": 1, "lines_removed": 47}
     assert rows[("replay", "20261030_demo_feature_advisory_v1")]["kind"] == "v1"
     assert rows[("results", "watch_a")]["kind"] == "watch"
     assert rows[("results", "clean-001")]["path"] == "raw/watch_a/clean-001"

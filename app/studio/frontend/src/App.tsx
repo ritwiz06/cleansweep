@@ -5,7 +5,7 @@ import { ThemeToggle } from "./components/PresentShell";
 import { BeforeAfter } from "./screens/BeforeAfter";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
-import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
+import { ARCHIVE, ArchiveScreen, BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
 import { Evaluation } from "./screens/Evaluation";
 import { Home } from "./screens/Home";
 import { Launcher } from "./screens/Launcher";
@@ -17,31 +17,15 @@ import { Watch } from "./screens/Watch";
 
 type Theme = "light" | "dark";
 
-const NAV: { section: string; links: [string, string][] }[] = [
-  {
-    section: "Studio",
-    links: [
-      ["home", "Home"],
-      ["runs", "Runs"],
-      ["launch", "Launch"],
-      ["compare", "Compare"],
-      ["cases", "Case studies"],
-      ["watch", "Watch"],
-      ["results", "Results"],
-      ["evaluation", "Evaluation"],
-    ],
-  },
-  {
-    section: "Phase 1 dashboard",
-    links: [
-      ["reports", "Saved reports"],
-      ["sweeps", "Live sweep and replay"],
-      ["scheduler", "Scheduler"],
-      ["baselines", "Baselines"],
-      ["data", "Data"],
-      ["guard", "Guard"],
-    ],
-  },
+const NAV: [string, string][] = [
+  ["home", "Home"],
+  ["runs", "Runs"],
+  ["launch", "Launch"],
+  ["compare", "Compare"],
+  ["cases", "Case studies"],
+  ["watch", "Watch"],
+  ["results", "Results"],
+  ["evaluation", "Evaluation"],
 ];
 
 function parseHash(): { route: string; q: URLSearchParams } {
@@ -81,7 +65,7 @@ export function App() {
       // not saved; the theme still applies
     }
   }, [theme]);
-  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : route;
+  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : ARCHIVE.some(([key]) => key === route) ? "archive" : route;
   const presenting = route === "present" || q.get("present") === "1";
   let screen;
   switch (route) {
@@ -149,6 +133,9 @@ export function App() {
     case "data":
       screen = <DataScreen />;
       break;
+    case "archive":
+      screen = <ArchiveScreen />;
+      break;
     case "guard":
       screen = <GuardScreen />;
       break;
@@ -165,16 +152,16 @@ export function App() {
                 <a className="brand" href="#/home">
                   CleanSweep <span>Studio</span>
                 </a>
-                {NAV.map((group) => (
-                  <div key={group.section} className="nav-group">
-                    <div className="nav-section">{group.section}</div>
-                    {group.links.map(([key, label]) => (
-                      <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
-                        {label}
-                      </a>
-                    ))}
-                  </div>
-                ))}
+                <div className="nav-group">
+                  {NAV.map(([key, label]) => (
+                    <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
+                      {label}
+                    </a>
+                  ))}
+                </div>
+                <a href="#/archive" className={`nav-archive ${active === "archive" ? "active" : ""}`} aria-current={active === "archive" ? "page" : undefined}>
+                  Phase 1 archive
+                </a>
                 <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Switch theme">
                   <span aria-hidden>{theme === "dark" ? "☀" : "☾"}</span> {theme === "dark" ? "Light theme" : "Dark theme"}
                 </button>

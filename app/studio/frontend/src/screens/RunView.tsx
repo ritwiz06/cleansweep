@@ -6,13 +6,13 @@ import { DiffView } from "../components/Code";
 import { Async, Card, Empty, ErrorBox, Loading, PageHeader, Tabs } from "../components/common";
 import { ItemBoard } from "../components/ItemBoard";
 import { MessageBoard } from "../components/MessageBoard";
-import { Decisions, MetricsBar } from "../components/Metrics";
+import { Decisions, MetricsBar, RunNumbers } from "../components/Metrics";
 import { DocFile, Packages } from "../components/Packages";
 import { PhaseTimeline } from "../components/PhaseTimeline";
 import { ProjectView, useProjectFiles } from "../components/ProjectView";
 import { Tour, type TourStep } from "../components/Tour";
 import { Transport } from "../components/Transport";
-import type { Decision, StudioEvent } from "../state/fold";
+import type { Decision, RunState, StudioEvent } from "../state/fold";
 import { useEvents, useFolded, usePlayer } from "../state/hooks";
 import { KIND_LABEL } from "./Runs";
 import { V1Run } from "./V1Run";
@@ -20,30 +20,33 @@ import { V1Run } from "./V1Run";
 type Tab = "project" | "overview" | "messages" | "items" | "packages" | "report";
 const TOUR_AT = 0.6;
 
-function ReportTab({ detail }: { detail: RunDetail }) {
+function ReportTab({ detail, state }: { detail: RunDetail; state: RunState }) {
   const docs = detail.docs.filter((d) => d.endsWith(".md"));
   const [doc, setDoc] = useState(docs.includes("CLEANUP_REPORT.md") ? "CLEANUP_REPORT.md" : docs[0]);
   const diff = useApi<{ text: string }>(`diff:${detail.root}/${detail.path}`, () =>
     api("/api/run/diff", { root: detail.root, path: detail.path }),
   );
   return (
-    <div className="grid two">
-      <Card title="Documents">
-        {docs.length ? (
-          <>
-            <Tabs tabs={docs.map((d) => ({ key: d, label: d }))} value={doc} onChange={setDoc} />
-            <DocFile root={detail.root} path={detail.path} name={doc} />
-          </>
-        ) : (
-          <Empty>The Reporter writes CLEANUP_REPORT.md at the end of the run.</Empty>
-        )}
-      </Card>
-      <Card title="Whole diff">
-        <Async res={diff} what="Loading the diff" empty={(d) => (d.text ? null : "No diff (yet).")}>
-          {(d) => <DiffView text={d.text} maxHeight={640} />}
-        </Async>
-      </Card>
-    </div>
+    <>
+      <RunNumbers state={state} detail={state.finished ? detail : null} />
+      <div className="grid two">
+        <Card title="Documents">
+          {docs.length ? (
+            <>
+              <Tabs tabs={docs.map((d) => ({ key: d, label: d }))} value={doc} onChange={setDoc} />
+              <DocFile root={detail.root} path={detail.path} name={doc} />
+            </>
+          ) : (
+            <Empty>The Reporter writes CLEANUP_REPORT.md at the end of the run.</Empty>
+          )}
+        </Card>
+        <Card title="Whole diff">
+          <Async res={diff} what="Loading the diff" empty={(d) => (d.text ? null : "No diff (yet).")}>
+            {(d) => <DiffView text={d.text} maxHeight={640} />}
+          </Async>
+        </Card>
+      </div>
+    </>
   );
 }
 
@@ -68,9 +71,9 @@ function tourSteps(setTab: (t: Tab) => void, show: () => void): TourStep[] {
       enter: () => setTab("project"),
     },
     {
-      target: ".agent-graph",
+      target: ".graph-card",
       title: "The agent team",
-      text: "The Manager between the research and development squads. Messages travel from sender to recipient; the highlighted agent is at work.",
+      text: "The Manager sits between the research and development squads. Messages travel from sender to recipient; the highlighted agent is at work.",
       enter: () => setTab("overview"),
     },
     { target: ".page-actions", title: "What next", text: "Before / after shows the finished cleanup, change by change. Present shows the run on a projector." },
@@ -162,7 +165,7 @@ function V2Run({ detail, live, reload, tour }: { detail: RunDetail; live: boolea
       {tab === "messages" && <MessageBoard state={state} />}
       {tab === "items" && <ItemBoard state={state} />}
       {tab === "packages" && <Packages state={state} detail={detail} />}
-      {tab === "report" && <ReportTab detail={detail} />}
+      {tab === "report" && <ReportTab detail={detail} state={state} />}
     </RunContext.Provider>
   );
 }

@@ -4,7 +4,8 @@ import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
 import { api, useApi, type ReportView, type SavedReport, type Table } from "../api";
 import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
 import { CodeBlock, DiffView } from "../components/Code";
-import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, Stat, Status, Tabs } from "../components/common";
+import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, StatsRow, Status, Tabs } from "../components/common";
+import { isIsoDate, shortDate } from "../state/labels";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -356,24 +357,24 @@ function Report({ root, path }: { root: string; path: string }) {
         return (
           <>
             <p className="muted small">
-              {r.repo_id} · method {r.method} · started {r.started_at}
+              {r.repo_id} · method {r.method} · started <span title={r.started_at}>{isIsoDate(r.started_at) ? shortDate(r.started_at) : r.started_at}</span>
             </p>
-            <div className="stats-row">
-              <Stat label="Items found" value={r.stats.items_total ?? r.items.length} />
-              <Stat label="Kept" value={(r.stats.items_kept || 0) + (r.stats.items_repaired || 0)} />
-              <Stat label="Rolled back" value={r.stats.items_rolled_back || 0} />
-              <Stat label="Lines removed" value={r.stats.lines_removed || 0} />
-              <Stat label="Test runs" value={r.stats.test_runs || 0} />
-            </div>
-            <div className="slop-meter report-meter" title="Slop meter (items)">
-              <div className="gauge-label">Slop meter (items)</div>
-              <div className="bar big">
-                <div className="fill tone-good" style={{ width: `${(cleaned / Math.max(r.items.length, 1)) * 100}%` }} />
-              </div>
-              <div className="small">
-                {cleaned} cleaned, {Math.max(r.items.length - cleaned, 0)} still open
-              </div>
-            </div>
+            <StatsRow
+              label="Report numbers"
+              items={[
+                {
+                  label: `Slop cleaned (items), ${Math.max(r.items.length - cleaned, 0)} still open`,
+                  value: `${cleaned} / ${r.items.length}`,
+                  lead: true,
+                  share: cleaned / Math.max(r.items.length, 1),
+                },
+                { label: "Items found", value: r.stats.items_total ?? r.items.length },
+                { label: "Kept", value: (r.stats.items_kept || 0) + (r.stats.items_repaired || 0) },
+                { label: "Rolled back", value: r.stats.items_rolled_back || 0 },
+                { label: "Lines removed", value: r.stats.lines_removed || 0 },
+                { label: "Test runs", value: r.stats.test_runs || 0 },
+              ]}
+            />
             <Card title="Cleanup plan">
               <DataTable table={plan} label="Cleanup plan" />
             </Card>
@@ -416,8 +417,8 @@ export function ReportsScreen({ root, path, onPick }: { root: string; path: stri
     <div className="screen">
       <PageHeader
         title="Saved reports"
-        description="Every Phase 1 sweep report saved under results/, the runs folder and demo/replay/, newest first."
-        help="A sweep's numbers, its plan, and each Guard verdict with its diff; a quarantined file comes with the command that restores it."
+        description="Every Phase 1 sweep report, newest first."
+        help="Reports saved under results/, the runs folder and demo/replay/: a sweep's numbers, its plan, and each Guard verdict with its diff; a quarantined file comes with the command that restores it."
       />
       <Async
         res={res}
@@ -453,6 +454,36 @@ export function ReportsScreen({ root, path, onPick }: { root: string; path: stri
           );
         }}
       </Async>
+    </div>
+  );
+}
+
+// The Phase 1 dashboard's pages, one entry in the sidebar.
+export const ARCHIVE: [string, string, string][] = [
+  ["reports", "Saved reports", "Every sweep report: its numbers, plan and Guard verdicts with diffs."],
+  ["sweeps", "Live sweep and replay", "The Phase 1 sweeps: stages, the Reviewer's plan, Guard checks and the answer-key score."],
+  ["scheduler", "Scheduler", "When to sweep a repository, replayed over its real commit history."],
+  ["baselines", "Baselines", "The sweep against the baselines, and what each of its parts adds."],
+  ["data", "Data", "The datasets behind the experiments: SWE-bench Verified, PatchDiff and AIDev."],
+  ["guard", "Guard", "How many deliberate behavior changes the Guard catches, and its false alarms."],
+];
+
+export function ArchiveScreen() {
+  return (
+    <div className="screen">
+      <PageHeader
+        title="Phase 1 archive"
+        description="The Phase 1 sweep's screens, kept as they were for its results."
+        help="Phase 1 was a fixed pipeline (detect, judge, batch, guard); the agent team of Phase 2 replaced it. These pages show its runs and tables."
+      />
+      <div className="archive">
+        {ARCHIVE.map(([key, label, text]) => (
+          <a key={key} className="archive-card" href={`#/${key}`}>
+            <b>{label}</b>
+            <span>{text}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

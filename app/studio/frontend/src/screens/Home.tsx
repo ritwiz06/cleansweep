@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { afterHash, api, post, runHash, useApi, type Loaded, type RunRow } from "../api";
-import { Async, Badge, PageHeader, Status } from "../components/common";
+import { Async, Badge, PageHeader } from "../components/common";
+import { RunOutcome } from "../components/RunOutcome";
 import { useRuns } from "./Runs";
 
 interface Options {
@@ -90,7 +91,7 @@ function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | nul
                     {r.name} {r.live && <Badge tone="warn">running</Badge>}
                   </span>
                   <span className="run-actions">
-                    {r.verdict ? <Status value={r.verdict} /> : <span className="muted">{r.finished ? "finished" : "unfinished"}</span>}
+                    <RunOutcome verdict={r.verdict} kept={r.outcome?.kept} rolledBack={r.outcome?.rolled_back} lines={r.outcome?.lines_removed} finished={r.finished} />
                     {r.live && <a href={runHash(r, "live")}>Follow live</a>}
                     <a href={runHash(r)}>Open</a>
                     {r.finished && <a href={afterHash(r)}>Before / after</a>}

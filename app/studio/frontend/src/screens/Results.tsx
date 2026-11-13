@@ -38,8 +38,8 @@ export function Results() {
     <div className="screen">
       <PageHeader
         title="Results"
-        description="Every committed table and figure, by phase (results/summary/ and results/figures/)."
-        help="Pick a table to read it (click a column to sort); its notes are below it. The figures are the ones the report uses."
+        description="Every committed table and figure, by phase."
+        help="From results/summary/ and results/figures/. Pick a table to read it (click a column to sort); its notes are below it. The figures are the ones the report uses."
       />
       <Tabs
         tabs={[

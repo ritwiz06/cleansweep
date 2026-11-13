@@ -16,8 +16,8 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
     <div className="screen">
       <PageHeader
         title={title}
-        description="Every recorded run: the shipped recordings, results/ and the runs started from Studio. Replay works offline."
-        help="Each row is one run. Replay plays it back, Before / after shows what it changed, Compare puts two runs side by side."
+        description="Every recorded run: the shipped recordings, the experiment results and the runs started from Studio."
+        help="Runs come from demo/replay/, results/ and Studio's runs folder, and replay offline. Replay plays a run back, Before / after shows what it changed, Compare puts two side by side."
         actions={<button onClick={runs.reload}>Refresh</button>}
       />
       <div className="filters">

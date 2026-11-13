@@ -1,7 +1,9 @@
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type RunDetail, type RunRow } from "../api";
-import { SeriesKey, TOOLTIP } from "../components/Charts";
-import { ANIMATE, Async, Card, Empty, PageHeader, Status, seconds } from "../components/common";
+import { TOOLTIP } from "../components/Charts";
+import { ANIMATE, Async, Card, Empty, PageHeader, seconds } from "../components/common";
+import { RunOutcome } from "../components/RunOutcome";
+import { formatNumber } from "../state/labels";
 import { PHASES } from "../state/fold";
 import { KIND_LABEL, useRuns } from "./Runs";
 
@@ -32,13 +34,33 @@ function numbers(d: RunDetail): Record<string, string | number | null> {
     "test runs": s.test_runs ?? null,
     "LLM calls": s.llm_calls ?? null,
     tokens: s.prompt_tokens !== undefined ? s.prompt_tokens + s.completion_tokens : null,
-    time: s.wall_seconds !== undefined ? seconds(s.wall_seconds) : null,
+    time: s.wall_seconds ?? null,
     "packages kept": pk.length ? pk.filter((p) => p.status === "kept").length : null,
     "packages rolled back": pk.length ? pk.filter((p) => p.status === "rolled_back").length : null,
     "step backs": a.back_steps ? Object.values(a.back_steps as Record<string, number>).reduce((x, y) => x + y, 0) : null,
     "verdicts safe / suggest / drop": a.decisions ? `${a.decisions.safe} / ${a.decisions.suggest} / ${a.decisions.drop}` : null,
     lessons: a.lessons ? a.lessons.length : null,
   };
+}
+
+// A run's letter in its series color, as on the chart.
+function RunTag({ which }: { which: "A" | "B" }) {
+  return <span className={`run-tag run-${which.toLowerCase()}`}>{which}</span>;
+}
+
+function show(key: string, value: string | number | null | undefined) {
+  if (value === null || value === undefined) return "-";
+  if (key === "time" && typeof value === "number") return seconds(value);
+  return typeof value === "number" ? formatNumber(value) : value;
+}
+
+// B minus A for a number both runs have, signed; nothing for text.
+function difference(key: string, a: unknown, b: unknown) {
+  if (typeof a !== "number" || typeof b !== "number") return "";
+  const d = b - a;
+  if (d === 0) return <span className="muted">0</span>;
+  const size = key === "time" ? seconds(Math.abs(d)) : formatNumber(Math.abs(d));
+  return `${d > 0 ? "+" : "−"}${size}`;
 }
 
 function Picker({ label, value, runs, onChange }: { label: string; value: string; runs: RunRow[]; onChange: (v: string) => void }) {
@@ -102,47 +124,54 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                   {() => {
                     const rows = both.map((d) => (d ? numbers(d) : {}));
                     return (
-                      <table className="data compare" aria-label="Comparison">
-                        <thead>
-                          <tr>
-                            <th />
-                            {both.map((d, i) => (
-                              <th key={i}>
-                                {i ? "B" : "A"}: {d?.name} {d && <a href={runHash(d)}>replay</a>}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.keys(rows[0]).map((k) => (
-                            <tr key={k}>
-                              <th>{k}</th>
-                              {rows.map((r, i) => (
-                                <td key={i}>{k === "result" ? <Status value={r[k] as string} /> : (r[k] ?? "-")}</td>
+                      <div className="table-wrap" tabIndex={0}>
+                        <table className="data compare" aria-label="Comparison">
+                          <thead>
+                            <tr>
+                              <th />
+                              {both.map((d, i) => (
+                                <th key={i}>
+                                  <RunTag which={i ? "B" : "A"} /> {d?.name} {d && <a href={runHash(d)}>replay</a>}
+                                </th>
                               ))}
+                              <th className="num">B − A</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {Object.keys(rows[0]).map((k) => (
+                              <tr key={k}>
+                                <th>{k.charAt(0).toUpperCase() + k.slice(1)}</th>
+                                {rows.map((r, i) => (
+                                  <td key={i} className={typeof r[k] === "number" ? "num" : undefined}>
+                                    {k === "result" ? <RunOutcome verdict={r[k] as string} /> : show(k, r[k])}
+                                  </td>
+                                ))}
+                                <td className="num">{difference(k, rows[0][k], rows[1][k])}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     );
                   }}
                 </Async>
               )}
             </Async>
           </Card>
-          <Card title="Time per phase (seconds)">
+          <Card title="Time per phase">
             {both.some((d) => d?.report?.stats?.agentic) ? (
-              <div className="chart">
-                <SeriesKey series={[{ name: `A: ${left.data?.name || ""}`, color: SERIES[0] }, { name: `B: ${right.data?.name || ""}`, color: SERIES[1] }]} />
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={phaseData} margin={{ top: 20, right: 16, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
-                    <XAxis dataKey="phase" tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                    <Tooltip contentStyle={TOOLTIP} />
+              <div className="chart" role="img" aria-label="Time per phase of both runs">
+                <div className="chart-title">
+                  Time per phase: <RunTag which="A" /> {left.data?.name} vs <RunTag which="B" /> {right.data?.name}
+                </div>
+                <ResponsiveContainer width="100%" height={phaseData.length * 44 + 16}>
+                  <BarChart data={phaseData} layout="vertical" margin={{ top: 4, right: 64, bottom: 4, left: 0 }} barCategoryGap="20%">
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="phase" width={110} tick={{ fill: "var(--text-2)", fontSize: 13 }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={TOOLTIP} formatter={(v) => seconds(Number(v))} />
                     {(["A", "B"] as const).map((k, i) => (
-                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE}>
-                        <LabelList dataKey={k} position="top" formatter={(v: unknown) => (Number(v) ? k : "")} className="bar-label" />
+                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[0, 3, 3, 0]} isAnimationActive={ANIMATE}>
+                        <LabelList dataKey={k} position="right" formatter={(v: unknown) => (Number(v) ? seconds(Number(v)) : "")} className="bar-label" />
                       </Bar>
                     ))}
                   </BarChart>

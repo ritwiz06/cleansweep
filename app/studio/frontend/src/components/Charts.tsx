@@ -19,7 +19,8 @@ export function stackTotal(rows: Record<string, unknown>[], keys: string[], key:
     const row = rows[index ?? -1];
     if (!row) return null;
     const values = keys.map((k) => Number(row[k]) || 0);
-    const last = keys.filter((_, i) => values[i] > 0).pop();
+    // a stack of nothing still says 0, at the first series
+    const last = keys.filter((_, i) => values[i] > 0).pop() ?? keys[0];
     if (last !== key) return null;
     const total = values.reduce((a, b) => a + b, 0);
     const [bx, by, bw, bh] = [x, y, width, height].map(Number);

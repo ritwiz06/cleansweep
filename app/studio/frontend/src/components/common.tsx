@@ -1,5 +1,6 @@
 import { createContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
+import { formatNumber, headerLabel, isIsoDate, numericColumn, shortDate, valueLabel } from "../state/labels";
 import { StateChip, stateOf } from "./states";
 
 // charts skip their entry animation when the reader asks for reduced motion (and the
@@ -220,11 +221,36 @@ export function Status({ value }: { value: string | null | undefined }) {
   return <Badge tone={STATUS_TONE[value] || "neutral"}>{value.replace(/_/g, " ")}</Badge>;
 }
 
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export interface StatItem {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+  lead?: boolean; // the screen's lead number: larger, two columns wide
+  share?: number; // 0..1: a bar under the value
+  tone?: string;
+  aside?: ReactNode; // beside the value (a verdict chip)
+}
+
+// One row of numbers, the same on every screen: equal columns, the value on top (tabular), a
+// bar for a share of a budget, and a short sentence-case label below.
+export function StatsRow({ items, label }: { items: StatItem[]; label?: string }) {
+  const columns = items.reduce((n, s) => n + (s.lead ? 2 : 1), 0);
   return (
-    <div className="stat" title={hint}>
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
+    <div className="stats-row" role="group" aria-label={label} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+      {items.map((s) => (
+        <div key={s.label} className={s.lead ? "stat lead" : "stat"} title={s.hint}>
+          <div className="stat-top">
+            <span className="stat-value">{s.value}</span>
+            {s.aside}
+          </div>
+          {s.share !== undefined && (
+            <div className={s.lead ? "bar big" : "bar"} role="meter" aria-label={s.label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(s.share * 100)}>
+              <div className={`fill tone-${s.tone || "good"}`} style={{ width: `${Math.min(s.share, 1) * 100}%` }} />
+            </div>
+          )}
+          <div className="stat-label">{s.label}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -256,27 +282,44 @@ export function Tabs<K extends string>({
 }
 
 const CELL_CHARS = 160;
+// columns whose values are outcomes, shown as chips
+const STATUS_COLUMNS = new Set(["status", "result", "outcome", "verdict", "decision", "llm_decision"]);
 
-function cell(value: unknown): ReactNode {
+function cell(value: unknown, column: string, rename?: (v: string) => string): ReactNode {
   if (value === null || value === undefined || value === "") return <span className="muted">-</span>;
   if (typeof value === "boolean") return value ? "yes" : "no";
-  if (typeof value === "number") return Number.isInteger(value) ? value : Math.round(value * 1000) / 1000;
+  if (typeof value === "number") return formatNumber(value);
   const text = typeof value === "object" ? JSON.stringify(value) : String(value);
+  if (rename) return rename(text);
+  if (STATUS_COLUMNS.has(column)) return <Status value={text} />;
+  if (isIsoDate(text)) return <span title={text}>{shortDate(text)}</span>;
   // long cells are cut; the whole text is in the tooltip
-  return text.length > CELL_CHARS ? <span title={text}>{text.slice(0, CELL_CHARS - 3)}...</span> : text;
+  if (text.length > CELL_CHARS) return <span title={text}>{text.slice(0, CELL_CHARS - 3)}...</span>;
+  return valueLabel(text);
 }
 
-// A results table (columns + rows); click a header to sort.
+function cellClass(value: unknown, numeric: boolean): string | undefined {
+  if (numeric) return "num";
+  if (typeof value !== "string") return undefined;
+  // a long text gets a readable width; a name or path never breaks
+  if (value.length > 60) return "wrap";
+  return /\s/.test(value) ? undefined : "ident";
+}
+
+// A results table (columns + rows): plain-word headers, numbers right-aligned with separators,
+// outcomes as chips; click a header to sort. `names` renames the values of a column (methods).
 export function DataTable({
   table,
   filter,
   maxHeight = 420,
   label,
+  names,
 }: {
   table: Table | null | undefined;
   filter?: (row: unknown[]) => boolean;
   maxHeight?: number;
   label?: string;
+  names?: Record<string, (value: string) => string>;
 }) {
   const [sort, setSort] = useState<{ col: number; desc: boolean } | null>(null);
   const rows = useMemo(() => {
@@ -292,6 +335,7 @@ export function DataTable({
     }
     return kept;
   }, [table, filter, sort]);
+  const numeric = useMemo(() => (table ? table.columns.map((_, i) => numericColumn(table.rows.map((r) => r[i]))) : []), [table]);
   if (!table) return <Empty>No table yet.</Empty>;
   if (!table.rows.length) return <Empty>The table is empty.</Empty>;
   return (
@@ -302,10 +346,11 @@ export function DataTable({
             {table.columns.map((c, i) => (
               <th
                 key={c}
+                className={numeric[i] ? "num" : undefined}
                 onClick={() => setSort((s) => ({ col: i, desc: s?.col === i ? !s.desc : false }))}
                 aria-sort={sort?.col === i ? (sort.desc ? "descending" : "ascending") : "none"}
               >
-                {c}
+                {headerLabel(c)}
                 {sort?.col === i ? (sort.desc ? " ▾" : " ▴") : ""}
               </th>
             ))}
@@ -315,9 +360,8 @@ export function DataTable({
           {rows.map((row, r) => (
             <tr key={r}>
               {row.map((v, c) => (
-                // a long text gets a readable width instead of a column squeezed to a few words
-                <td key={c} className={typeof v === "string" && v.length > 60 ? "wrap" : undefined}>
-                  {cell(v)}
+                <td key={c} className={cellClass(v, numeric[c])}>
+                  {cell(v, table.columns[c], names?.[table.columns[c]])}
                 </td>
               ))}
             </tr>

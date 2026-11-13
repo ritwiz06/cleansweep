@@ -3,14 +3,16 @@ import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, 
 import { api, useApi } from "../api";
 import { AXIS, SeriesKey, TOOLTIP, stackTotal } from "../components/Charts";
 import { CodeBlock, DiffView, Md } from "../components/Code";
-import { ANIMATE, Async, Badge, Card, Empty, PageHeader, Stat, Status, Tabs, seconds } from "../components/common";
+import { ANIMATE, Async, Badge, Card, Empty, PageHeader, StatsRow, Status, Tabs, seconds } from "../components/common";
+import { RunOutcome } from "../components/RunOutcome";
+import { categoryLabel } from "../state/annotate";
 
 export const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 const OUTCOMES = ["kept", "repaired", "rolled_back", "skipped"];
-// the item states' colors (docs/studio_design.md); repaired is kept, told apart here
+// the item states' colors (docs/studio_design.md): repaired is kept, so it takes the kept color
 const OUTCOME_COLOR: Record<string, string> = {
   kept: "var(--st-kept)",
-  repaired: "var(--info)",
+  repaired: "var(--st-kept)",
   rolled_back: "var(--st-rolled-back)",
   skipped: "var(--st-untouched)",
 };
@@ -53,16 +55,19 @@ function CaseView({ name }: { name: string }) {
       {(c) => {
         const s = c.summary;
         const byCat = Object.entries((s.by_category || {}) as Record<string, Record<string, number>>).map(([category, counts]) => ({
-          category,
+          category: categoryLabel(category),
           ...Object.fromEntries(OUTCOMES.map((o) => [o, counts[o] || 0])),
         }));
+        // only the outcomes that happened; the axis ends at the largest category
+        const shown = OUTCOMES.filter((o) => byCat.some((r) => Number(r[o as keyof typeof r]) > 0));
+        const most = Math.max(1, ...byCat.map((r) => OUTCOMES.reduce((sum, o) => sum + Number(r[o as keyof typeof r] || 0), 0)));
         const reviewed = c.review.rows.filter((r) => r.llm_decision);
         const accepted = reviewed.filter((r) => r.llm_decision === "accept").length;
         const decided = reviewed.filter((r) => r.llm_decision !== "unsure").length;
         return (
           <div>
             <h3>
-              {c.name} <Status value={s.verdict} />
+              {c.name} <RunOutcome verdict={s.verdict} kept={s.packages?.kept} rolledBack={s.packages?.rolled_back} lines={s.lines_removed} />
             </h3>
             <p className="muted">{s.project}</p>
             <Tabs
@@ -77,30 +82,34 @@ function CaseView({ name }: { name: string }) {
             />
             {tab === "health" && (
               <>
-                <div className="stats-row">
-                  <Stat label="tests passing before" value={s.tests_before?.passed ?? "-"} />
-                  <Stat label="tests passing after" value={s.tests_after?.passed ?? "-"} />
-                  <Stat label="Python files" value={c.brief.python_files ?? "-"} />
-                  <Stat label="lines removed" value={s.lines_removed ?? "-"} />
-                  <Stat label="files removed" value={s.files_removed ?? "-"} />
-                  <Stat label="candidates" value={s.candidates ?? "-"} />
-                  <Stat label="test runs" value={s.test_runs ?? "-"} />
-                  <Stat label="LLM requests" value={s.llm_requests ?? "-"} />
-                  <Stat label="time" value={seconds(s.seconds)} />
-                </div>
+                <StatsRow
+                  label="Case study numbers"
+                  items={[
+                    { label: "Tests passing, before → after", value: `${s.tests_before?.passed ?? "-"} → ${s.tests_after?.passed ?? "-"}`, lead: true },
+                    { label: "Lines removed", value: s.lines_removed ?? "-" },
+                    { label: "Files removed", value: s.files_removed ?? "-" },
+                    { label: "Candidates", value: s.candidates ?? "-" },
+                    { label: "Test runs", value: s.test_runs ?? "-" },
+                    { label: "Time", value: seconds(s.seconds) },
+                  ]}
+                />
+                <p className="stats-note">
+                  {c.brief.python_files ?? "-"} Python files · {s.llm_requests ?? "-"} LLM requests
+                </p>
                 <Card title="Slop by category: what happened to each candidate">
                   {byCat.length ? (
                     <div className="chart">
-                      <SeriesKey series={OUTCOMES.map((o) => ({ name: outcomeName(o), color: OUTCOME_COLOR[o] }))} />
-                      <ResponsiveContainer width="100%" height={Math.max(160, byCat.length * 34 + 40)}>
-                        <BarChart data={byCat} layout="vertical" margin={{ top: 8, right: 40, bottom: 8, left: 24 }}>
+                      <SeriesKey series={shown.map((o) => ({ name: outcomeName(o), color: OUTCOME_COLOR[o] }))} />
+                      <ResponsiveContainer width="100%" height={Math.max(120, byCat.length * 36 + 32)}>
+                        <BarChart data={byCat} layout="vertical" margin={{ top: 8, right: 40, bottom: 8, left: 8 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" horizontal={false} />
-                          <XAxis type="number" allowDecimals={false} tick={AXIS} />
-                          <YAxis type="category" dataKey="category" width={130} tick={AXIS} />
+                          <XAxis type="number" allowDecimals={false} domain={[0, most]} tick={AXIS} />
+                          <YAxis type="category" dataKey="category" width={140} tick={AXIS} />
                           <Tooltip contentStyle={TOOLTIP} />
-                          {OUTCOMES.map((o) => (
+                          {shown.map((o) => (
                             <Bar key={o} dataKey={o} name={outcomeName(o)} stackId="a" fill={OUTCOME_COLOR[o]} stroke="var(--surface)" strokeWidth={1} isAnimationActive={ANIMATE}>
-                              <LabelList dataKey={o} content={stackTotal(byCat, OUTCOMES, o, String, true)} />
+                              <LabelList dataKey={o} position="center" formatter={(v: unknown) => (Number(v) ? String(v) : "")} className="bar-label in-segment" />
+                              <LabelList dataKey={o} content={stackTotal(byCat, shown, o, String, true)} />
                             </Bar>
                           ))}
                         </BarChart>
@@ -216,11 +225,12 @@ export function Cases({ name, onPick }: { name: string; onPick: (name: string) =
                   onClick={() => onPick(r.name)}
                 >
                   <span className="case-card-head">
-                    <b>{r.name}</b> <Status value={r.verdict} />
+                    <b>{r.name}</b>
+                    <RunOutcome verdict={r.verdict} kept={r.packages?.kept} rolledBack={r.packages?.rolled_back} lines={r.lines_removed} />
                   </span>
                   <span className="small muted">{r.project}</span>
                   <span className="small case-card-numbers">
-                    tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"} · {r.lines_removed ?? 0} lines removed
+                    tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"}
                     {r.reviewed > 0 && ` · LLM reviewer: ${r.accepted} accept, ${r.rejected} reject`}
                   </span>
                 </button>

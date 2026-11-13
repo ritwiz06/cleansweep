@@ -1,6 +1,6 @@
 import { api, useApi, type RunDetail, type Table } from "../api";
 import { DiffView } from "../components/Code";
-import { Async, Badge, Card, DataTable, Empty, ErrorBox, Loading, Stat, Status, seconds } from "../components/common";
+import { Async, Badge, Card, DataTable, Empty, ErrorBox, Loading, StatsRow, Status, seconds } from "../components/common";
 import { Transport } from "../components/Transport";
 import { V1_STAGES, V1_STAGE_LABELS, foldV1, type V1Event, type V1State } from "../state/foldV1";
 import { useEvents, usePlayer } from "../state/hooks";
@@ -152,23 +152,25 @@ export function V1Run({ detail, live }: { detail: RunDetail; live: boolean }) {
           {s.items.length ? <DataTable table={planTable(s)} label="Reviewer plan" /> : <Empty>Waiting for the Reviewer...</Empty>}
         </Card>
         <Card title="Guard">
-          <div className="stats-row">
-            <Stat label="Kept" value={s.kept} />
-            <Stat label="Rolled back" value={s.rolledBack} />
-            <Stat label="Test runs" value={s.testRuns} />
-            <Stat label="Lines removed" value={s.linesRemoved} />
-          </div>
-          {safeTotal > 0 && (
-            <div className="slop-meter" title="Slop meter (items)">
-              <div className="gauge-label">Slop meter (items)</div>
-              <div className="bar big">
-                <div className="fill tone-good" style={{ width: `${(s.kept / Math.max(s.items.length, 1)) * 100}%` }} />
-              </div>
-              <div className="small">
-                {s.kept} cleaned, {Math.max(s.items.length - s.kept, 0)} still open
-              </div>
-            </div>
-          )}
+          <StatsRow
+            label="Guard numbers"
+            items={[
+              ...(safeTotal > 0
+                ? [
+                    {
+                      label: `Slop cleaned (items), ${Math.max(s.items.length - s.kept, 0)} still open`,
+                      value: `${s.kept} / ${s.items.length}`,
+                      lead: true,
+                      share: s.kept / Math.max(s.items.length, 1),
+                    },
+                  ]
+                : []),
+              { label: "Kept", value: s.kept },
+              { label: "Rolled back", value: s.rolledBack },
+              { label: "Test runs", value: s.testRuns },
+              { label: "Lines removed", value: s.linesRemoved },
+            ]}
+          />
           <div className="checks">
             {[...s.batches].reverse().map((card) => (
               <CheckCard key={`${card.n}-${card.start}`} card={card} units={units} />
@@ -201,7 +203,7 @@ export function V1Run({ detail, live }: { detail: RunDetail; live: boolean }) {
               d.score && s.report ? (
                 <>
                   <h4>Outcome vs. answer key</h4>
-                  <Stat label="Outcome accuracy" value={`${d.score.hits}/${d.score.total}`} />
+                  <StatsRow items={[{ label: "Outcome accuracy", value: `${d.score.hits}/${d.score.total}` }]} />
                   <DataTable table={d.score.table} label="Outcome vs. answer key" />
                 </>
               ) : null

@@ -105,7 +105,17 @@ def summary(root: str, rel: str, folder: Path) -> dict:
         start = first.get("payload", {})
         row.update(target=start.get("repo_id"), mode=start.get("mode"), model=start.get("model"))
         if last.get("kind") == "run_end":
-            row.update(finished=True, verdict=last["payload"].get("summary", {}).get("verdict"))
+            done = last["payload"].get("summary", {})
+            packages = done.get("packages", {})
+            row.update(
+                finished=True,
+                verdict=done.get("verdict"),
+                outcome={
+                    "kept": packages.get("kept", 0),
+                    "rolled_back": packages.get("rolled_back", 0),
+                    "lines_removed": done.get("lines_removed"),
+                },
+            )
     elif kind == "v1":
         row.update(
             target=first.get("target"),
