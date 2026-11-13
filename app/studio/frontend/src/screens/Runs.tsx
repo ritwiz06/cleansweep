@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { afterHash, api, runHash, useApi, type RunRow } from "../api";
-import { Async, Badge, Status } from "../components/common";
+import { Async, Badge, PageHeader, Status } from "../components/common";
 
-const KIND_LABEL: Record<string, string> = { v2: "agent team", v1: "v1 sweep", watch: "watch" };
+export const KIND_LABEL: Record<string, string> = { v2: "agent team", v1: "Phase 1 sweep", watch: "watch" };
 
 export function useRuns() {
   return useApi<RunRow[]>("runs", () => api("/api/runs"));
@@ -14,13 +14,12 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
   const [kind, setKind] = useState("");
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>{title}</h2>
-        <span className="muted">
-          Recordings in demo/replay/, results/ and Studio's runs folder. Replay works offline.
-        </span>
-        <button onClick={runs.reload}>Refresh</button>
-      </header>
+      <PageHeader
+        title={title}
+        description="Every recorded run: the shipped recordings, results/ and the runs started from Studio. Replay works offline."
+        help="Each row is one run. Replay plays it back, Before / after shows what it changed, Compare puts two runs side by side."
+        actions={<button onClick={runs.reload}>Refresh</button>}
+      />
       <div className="filters">
         <label>
           Where{" "}
@@ -48,10 +47,11 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
       <Async
         res={runs}
         what="Finding runs"
-        empty={(rows) => (rows.some((r) => kinds.includes(r.kind)) ? null : "No runs yet. Start one on the Launch screen.")}
+        empty={(rows) => (rows.some((r) => kinds.includes(r.kind)) ? null : "No runs yet. Start one and it shows up here.")}
+        emptyAction={{ label: "Clean a folder", href: "#/home" }}
       >
         {(rows) => (
-          <div className="table-wrap" style={{ maxHeight: "none" }}>
+          <div className="table-wrap" style={{ maxHeight: "none" }} tabIndex={0}>
             <table className="data runs" aria-label="Runs">
               <thead>
                 <tr>

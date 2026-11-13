@@ -212,7 +212,7 @@ export function V1Run({ detail, live }: { detail: RunDetail; live: boolean }) {
       {s.logs.length > 0 && (
         <details>
           <summary>Run log ({s.logs.length} lines)</summary>
-          <pre className="log">{s.logs.map((e) => `${e.level} ${e.logger}: ${e.message}`).join("\n")}</pre>
+          <pre className="log" tabIndex={0}>{s.logs.map((e) => `${e.level} ${e.logger}: ${e.message}`).join("\n")}</pre>
         </details>
       )}
       <Card title="Toy repo runs so far">

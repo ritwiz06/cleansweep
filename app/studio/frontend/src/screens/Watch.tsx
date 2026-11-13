@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, ComposedChart, LabelList, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type Table } from "../api";
-import { ANIMATE, Async, Card, DataTable, Empty, Stat, Status } from "../components/common";
+import { SeriesKey } from "../components/Charts";
+import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, Stat, Status } from "../components/common";
 import { useRuns } from "./Runs";
 
 interface Entry {
@@ -34,7 +35,7 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
     return () => clearInterval(timer);
   }, [live, res.reload]);
   return (
-    <Async res={res} what="Loading the watch log" empty={(w) => (w.entries.length ? null : "No polls logged yet.")}>
+    <Async res={res} what="Loading the watch log" empty={(w) => (w.entries.length ? null : "No polls logged yet.")} emptyAction={{ label: "Check again", onClick: res.reload }}>
       {(w) => {
         const last = w.entries[w.entries.length - 1];
         const data = w.entries.map((e, i) => ({
@@ -55,8 +56,14 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
             </div>
             <Card title="Slop over time">
               <div className="chart">
+                <SeriesKey
+                  series={[
+                    { name: "open slop items", color: "var(--series-1)" },
+                    { name: "a clean", color: "var(--series-3)", dashed: true },
+                  ]}
+                />
                 <ResponsiveContainer width="100%" height={240}>
-                  <ComposedChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 0 }}>
+                  <ComposedChart data={data} margin={{ top: 20, right: 32, bottom: 8, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
                     <XAxis dataKey="poll" tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "poll", position: "insideBottomRight", offset: -4, fill: "var(--muted)" }} />
                     <YAxis allowDecimals={false} tick={{ fill: "var(--muted)", fontSize: 12 }} />
@@ -67,8 +74,9 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
                         return row ? `${row.label} (slop ${row.share}% of the Python lines)` : "";
                       }}
                     />
-                    <Legend />
-                    <Line type="monotone" dataKey="items" name="open slop items" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive={ANIMATE} />
+                    <Line type="monotone" dataKey="items" name="open slop items" stroke="var(--series-1)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive={ANIMATE}>
+                      <LabelList dataKey="items" position="top" className="bar-label" />
+                    </Line>
                     {data
                       .filter((d) => d.clean !== null)
                       .map((d) => (
@@ -77,7 +85,7 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
                           x={d.poll}
                           stroke="var(--series-3)"
                           strokeDasharray="4 3"
-                          label={{ value: "clean", position: "insideTopLeft", fill: "var(--text-2)", fontSize: 12 }}
+                          label={{ value: "clean", position: "insideBottomLeft", fill: "var(--text-2)", fontSize: 12 }}
                         />
                       ))}
                   </ComposedChart>
@@ -118,12 +126,16 @@ export function Watch({ root, path, onPick }: { root: string; path: string; onPi
   const replay = useApi<{ table: Table | null }>("watch-replay", () => api("/api/watch-replay"));
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Watch</h2>
-        <span className="muted">
-          `cleansweep watch` follows a repository's commits and decides when to clean. <a href="#/launch">Start a watch</a>
-        </span>
-      </header>
+      <PageHeader
+        title="Watch"
+        description="cleansweep watch follows a repository's commits and decides when a clean is worth its test runs."
+        help="Each poll measures the open slop and decides: clean now, or wait (with the reason). Below, the simulated watch over recorded histories."
+        actions={
+          <a className="button" href="#/launch">
+            Start a watch
+          </a>
+        }
+      />
       <Async res={runs} what="Finding watch folders">
         {(rows) => {
           const folders = rows.filter((r) => r.kind === "watch");
@@ -149,7 +161,7 @@ export function Watch({ root, path, onPick }: { root: string; path: string; onPi
               </label>
             </div>
           ) : (
-            <Empty>No watch folders yet.</Empty>
+            <Empty action={{ label: "Start a watch", href: "#/launch" }}>No watch folders yet.</Empty>
           );
         }}
       </Async>

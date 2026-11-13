@@ -1,8 +1,9 @@
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type RunDetail, type RunRow } from "../api";
-import { ANIMATE, Async, Card, Empty, Status, seconds } from "../components/common";
+import { SeriesKey, TOOLTIP } from "../components/Charts";
+import { ANIMATE, Async, Card, Empty, PageHeader, Status, seconds } from "../components/common";
 import { PHASES } from "../state/fold";
-import { useRuns } from "./Runs";
+import { KIND_LABEL, useRuns } from "./Runs";
 
 const SERIES = ["var(--series-1)", "var(--series-2)"];
 
@@ -48,7 +49,7 @@ function Picker({ label, value, runs, onChange }: { label: string; value: string
         <option value="">pick a run</option>
         {runs.map((r) => (
           <option key={key(r)} value={key(r)}>
-            {r.name} ({r.kind}, {r.root})
+            {r.name} ({KIND_LABEL[r.kind] || r.kind}, {r.root})
           </option>
         ))}
       </select>
@@ -70,11 +71,15 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
     A: left.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
     B: right.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
   }));
+  const shipped = (runs.data || []).filter((r) => r.root === "replay" && r.kind === "v2");
+  const example = shipped.length > 1 ? { label: "Compare two recordings", onClick: () => onChange(key(shipped[0]), key(shipped[1])) } : undefined;
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Compare two runs</h2>
-      </header>
+      <PageHeader
+        title="Compare two runs"
+        description="Two runs side by side: what each removed, what it cost, and its time per phase."
+        help="Pick a run for A and one for B. Each row is the same number for both runs; the chart shows where each spent its time."
+      />
       <Async res={runs} what="Finding runs">
         {(rows) => {
           const choices = rows.filter((r) => r.kind !== "watch");
@@ -87,7 +92,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
         }}
       </Async>
       {!a || !b ? (
-        <Empty>Pick two runs to see them side by side.</Empty>
+        <Empty action={example}>Pick two runs to see them side by side.</Empty>
       ) : (
         <>
           <Card title="Side by side">
@@ -128,20 +133,23 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
           <Card title="Time per phase (seconds)">
             {both.some((d) => d?.report?.stats?.agentic) ? (
               <div className="chart">
+                <SeriesKey series={[{ name: `A: ${left.data?.name || ""}`, color: SERIES[0] }, { name: `B: ${right.data?.name || ""}`, color: SERIES[1] }]} />
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={phaseData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                  <BarChart data={phaseData} margin={{ top: 20, right: 16, bottom: 8, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
                     <XAxis dataKey="phase" tick={{ fill: "var(--muted)", fontSize: 12 }} />
                     <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-                    <Legend />
-                    <Bar dataKey="A" name={`A: ${left.data?.name || ""}`} fill={SERIES[0]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
-                    <Bar dataKey="B" name={`B: ${right.data?.name || ""}`} fill={SERIES[1]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
+                    <Tooltip contentStyle={TOOLTIP} />
+                    {(["A", "B"] as const).map((k, i) => (
+                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE}>
+                        <LabelList dataKey={k} position="top" formatter={(v: unknown) => (Number(v) ? k : "")} className="bar-label" />
+                      </Bar>
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <Empty>Phases exist for agent-team (v2) runs only.</Empty>
+              <Empty>Phases exist for agent-team runs only.</Empty>
             )}
           </Card>
         </>

@@ -5,12 +5,14 @@ import { Status, seconds } from "./common";
 // A budget gauge turns amber then red as it fills; a progress gauge stays green.
 function Gauge({
   label,
+  hint = label,
   used,
   limit,
   unit = "",
   progress = false,
 }: {
   label: string;
+  hint?: string;
   used: number | null;
   limit?: number;
   unit?: string;
@@ -19,7 +21,7 @@ function Gauge({
   const share = limit && used !== null ? Math.min(used / limit, 1) : 0;
   const tone = progress ? "good" : share > 0.9 ? "bad" : share > 0.7 ? "warn" : "good";
   return (
-    <div className="gauge" title={limit ? `${label}: ${used ?? "-"} of ${limit}${unit}` : label}>
+    <div className="gauge" title={limit ? `${hint}: ${used ?? "-"} of ${limit}${unit}` : hint}>
       <div className="gauge-top">
         <span className="gauge-value">
           {used ?? "-"}
@@ -59,23 +61,23 @@ export function MetricsBar({ state, detail }: { state: RunState; detail: RunDeta
           {state.applied} cleaned of {state.candidates} found
         </div>
       </div>
-      <Gauge label="packages done" used={done.length} limit={state.packageOrder.length || undefined} progress />
-      <div className="gauge">
+      <Gauge label="packages" hint="packages done" used={done.length} limit={state.packageOrder.length || undefined} progress />
+      <div className="gauge" title="package outcomes: kept, and not kept (rolled back, reverted or not applied)">
         <div className="gauge-top">
           <span className="gauge-value">{kept}</span>
-          <span className="muted small"> kept, {done.length - kept} not</span>
+          <span className="muted small"> kept</span>
         </div>
-        <div className="gauge-label">package outcomes</div>
+        <div className="gauge-label">{done.length - kept} not kept</div>
       </div>
       <Gauge label="test runs" used={testRuns} limit={state.budget.test_runs} />
       <Gauge label="probe cases" used={state.probes} />
-      <Gauge label="probe coverage" used={state.coverage === null ? null : Math.round(state.coverage * 100)} unit="%" />
+      <Gauge label="coverage" hint="probe coverage of the changed lines" used={state.coverage === null ? null : Math.round(state.coverage * 100)} unit="%" />
       <Gauge label="LLM calls" used={state.llmCalls} limit={state.budget.llm_calls} />
-      <div className="gauge">
+      <div className="gauge" title="LLM tokens, counted when the run ends">
         <div className="gauge-top">
           <span className="gauge-value">{tokens === null ? "-" : tokens.toLocaleString()}</span>
         </div>
-        <div className="gauge-label">tokens{tokens === null && !state.finished ? " (at the end)" : ""}</div>
+        <div className="gauge-label">tokens{tokens === null && !state.finished ? " (at end)" : ""}</div>
       </div>
       <Gauge label="elapsed (min)" used={Math.round((state.t / 60) * 10) / 10} limit={minutes} />
       <div className="gauge verdict">

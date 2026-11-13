@@ -1,19 +1,22 @@
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, useApi } from "../api";
+import { AXIS, SeriesKey, TOOLTIP, stackTotal } from "../components/Charts";
 import { CodeBlock, DiffView, Md } from "../components/Code";
-import { ANIMATE, Async, Badge, Card, Empty, Stat, Status, Tabs, seconds } from "../components/common";
+import { ANIMATE, Async, Badge, Card, Empty, PageHeader, Stat, Status, Tabs, seconds } from "../components/common";
 
 export const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 const OUTCOMES = ["kept", "repaired", "rolled_back", "skipped"];
+// the item states' colors (docs/studio_design.md); repaired is kept, told apart here
 const OUTCOME_COLOR: Record<string, string> = {
-  kept: "var(--good)",
+  kept: "var(--st-kept)",
   repaired: "var(--info)",
-  rolled_back: "var(--bad)",
-  skipped: "var(--neutral-mark)",
+  rolled_back: "var(--st-rolled-back)",
+  skipped: "var(--st-untouched)",
 };
 // "skipped" results are the candidates left as suggestions or dropped
 const OUTCOME_LABEL: Record<string, string> = { skipped: "not applied" };
+const outcomeName = (o: string) => OUTCOME_LABEL[o] || o.replace("_", " ");
 
 interface CaseRow {
   name: string;
@@ -88,15 +91,17 @@ function CaseView({ name }: { name: string }) {
                 <Card title="Slop by category: what happened to each candidate">
                   {byCat.length ? (
                     <div className="chart">
-                      <ResponsiveContainer width="100%" height={Math.max(160, byCat.length * 34 + 60)}>
-                        <BarChart data={byCat} layout="vertical" margin={{ top: 8, right: 16, bottom: 8, left: 24 }}>
+                      <SeriesKey series={OUTCOMES.map((o) => ({ name: outcomeName(o), color: OUTCOME_COLOR[o] }))} />
+                      <ResponsiveContainer width="100%" height={Math.max(160, byCat.length * 34 + 40)}>
+                        <BarChart data={byCat} layout="vertical" margin={{ top: 8, right: 40, bottom: 8, left: 24 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" horizontal={false} />
-                          <XAxis type="number" allowDecimals={false} tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                          <YAxis type="category" dataKey="category" width={130} tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                          <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-                          <Legend />
+                          <XAxis type="number" allowDecimals={false} tick={AXIS} />
+                          <YAxis type="category" dataKey="category" width={130} tick={AXIS} />
+                          <Tooltip contentStyle={TOOLTIP} />
                           {OUTCOMES.map((o) => (
-                            <Bar key={o} dataKey={o} name={OUTCOME_LABEL[o] || o.replace("_", " ")} stackId="a" fill={OUTCOME_COLOR[o]} isAnimationActive={ANIMATE} />
+                            <Bar key={o} dataKey={o} name={outcomeName(o)} stackId="a" fill={OUTCOME_COLOR[o]} stroke="var(--surface)" strokeWidth={1} isAnimationActive={ANIMATE}>
+                              <LabelList dataKey={o} content={stackTotal(byCat, OUTCOMES, o, String, true)} />
+                            </Bar>
                           ))}
                         </BarChart>
                       </ResponsiveContainer>
@@ -129,7 +134,7 @@ function CaseView({ name }: { name: string }) {
                 {!c.review.rows.length ? (
                   <Empty>No review sheet for this case study.</Empty>
                 ) : (
-                  <div className="table-wrap" style={{ maxHeight: 520 }}>
+                  <div className="table-wrap" style={{ maxHeight: 520 }} tabIndex={0}>
                     <table className="data" aria-label="Review sheet">
                       <thead>
                         <tr>
@@ -189,26 +194,41 @@ export function Cases({ name, onPick }: { name: string; onPick: (name: string) =
   const res = useApi<CaseRow[]>("cases", () => api("/api/cases"));
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Case studies</h2>
-        <span className="muted">Real projects cleaned by the agent team (results/raw/case_studies/).</span>
-      </header>
-      <Async res={res} what="Loading the case studies" empty={(rows) => (rows.length ? null : "No case studies in results/raw/case_studies/ yet.")}>
+      <PageHeader
+        title="Case studies"
+        description="Real projects cleaned by the agent team: their tests before and after, what happened to each candidate, and the diff."
+        help="Pick a project on the left. The review sheet's verdicts come from an LLM reviewer, blinded to the method; they are LLM-judged."
+      />
+      <Async
+        res={res}
+        what="Loading the case studies"
+        empty={(rows) => (rows.length ? null : "No case studies yet; they are read from results/raw/case_studies/.")}
+        emptyAction={{ label: "Check again", onClick: res.reload }}
+      >
         {(rows) => (
           <div className="cases">
-            <div className="case-list">
+            <div className="case-list" aria-label="Case studies">
               {rows.map((r) => (
-                <button key={r.name} className={`case-card ${r.name === name ? "active" : ""}`} onClick={() => onPick(r.name)}>
-                  <b>{r.name}</b> <Status value={r.verdict} />
+                <button
+                  key={r.name}
+                  aria-current={r.name === name ? "true" : undefined}
+                  className={`case-card ${r.name === name ? "active" : ""}`}
+                  onClick={() => onPick(r.name)}
+                >
+                  <span className="case-card-head">
+                    <b>{r.name}</b> <Status value={r.verdict} />
+                  </span>
                   <span className="small muted">{r.project}</span>
-                  <span className="small">
+                  <span className="small case-card-numbers">
                     tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"} · {r.lines_removed ?? 0} lines removed
                     {r.reviewed > 0 && ` · LLM reviewer: ${r.accepted} accept, ${r.rejected} reject`}
                   </span>
                 </button>
               ))}
             </div>
-            <div className="case-main">{name ? <CaseView name={name} /> : <Empty>Pick a case study.</Empty>}</div>
+            <div className="case-main">
+              {name ? <CaseView name={name} /> : <Empty action={{ label: `Open ${rows[0].name}`, onClick: () => onPick(rows[0].name) }}>Pick a case study.</Empty>}
+            </div>
           </div>
         )}
       </Async>

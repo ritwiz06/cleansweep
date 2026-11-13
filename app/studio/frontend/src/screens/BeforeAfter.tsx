@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
 import { FileDiff, MetricsCard, SMALL, TreeCard } from "../components/AfterParts";
 import { AgentIcon, agentName } from "../components/AgentIcon";
-import { Async, Empty, ErrorBox, Loading } from "../components/common";
+import { Async, Empty, ErrorBox, Loading, PageHeader } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
 import { useProjectFiles } from "../components/ProjectView";
 import { SideBySide } from "../components/SideBySide";
@@ -181,20 +181,32 @@ export function BeforeAfter({ root, path, present = false }: { root: string; pat
   const res = useApi<RunDetail>(`${root}/${path}`, () => api("/api/run", { root, path }));
   const diff = useApi<{ text: string }>(`diff:${root}/${path}`, () => api("/api/run/diff", { root, path }));
   const feed = useEvents<StudioEvent>(root, path, false);
-  if (!root || !path) return <Empty>Pick a run on the Runs screen.</Empty>;
+  if (!root || !path) return <Empty action={{ label: "Open Runs", href: "#/runs" }}>Pick a finished cleanup to see what it changed.</Empty>;
   return (
     <div className={`screen before-after ${present ? "present-screen" : ""}`}>
       {!present && (
-        <header className="screen-head">
-          <h2>Before / after: {path.split("/").pop()}</h2>
-          <a href={runHash({ root, path })}>Replay</a>
-          <a href={`${afterHash({ root, path })}&present=1`}>Present</a>
-        </header>
+        <PageHeader
+          title={`Before / after: ${path.split("/").pop()}`}
+          description="What the cleanup changed: both file trees, the numbers before and after, and every change with the decisions behind it."
+          help="Click a changed file for its diff. The note above each change names its category, the agents' decisions, the evidence and the checks it passed."
+          actions={
+            <>
+              <a className="button" href={runHash({ root, path })}>
+                Replay
+              </a>
+              <a className="button" href={`${afterHash({ root, path })}&present=1`}>
+                Present
+              </a>
+            </>
+          }
+        />
       )}
       <Async res={res} what="Loading the run">
         {(d) =>
           d.kind !== "v2" ? (
-            <Empty>Before / after is for agent-team cleanups; this is a {d.kind === "v1" ? "v1 sweep" : "watch folder"}.</Empty>
+            <Empty action={{ label: "Open the replay", href: runHash({ root, path }) }}>
+              Before / after is for agent-team cleanups; this is a {d.kind === "v1" ? "Phase 1 sweep" : "watch folder"}.
+            </Empty>
           ) : feed.error ? (
             <ErrorBox error={feed.error} />
           ) : !feed.done || diff.loading ? (

@@ -24,7 +24,7 @@ function ProbeTable({ probes }: { probes: any }) {
         {probes.same ? <Badge tone="good">same behavior before and after</Badge> : <Badge tone="bad">{rows.length} differ</Badge>}
       </p>
       {rows.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0}>
           <table className="data" aria-label="Probe results before and after">
             <thead>
               <tr>

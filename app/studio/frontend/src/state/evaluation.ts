@@ -1,4 +1,4 @@
-// Chart data for the Evaluation screen, from the committed v2 tables (results/summary/v2/).
+// Chart data for the Evaluation screen, from the committed tables (results/summary/v2/ and v3/).
 import type { Table } from "../api";
 
 export type Row = Record<string, unknown>;
@@ -18,15 +18,15 @@ export const METHOD_NAMES: Record<string, string> = {
   "agentic-inline_artifacts": "inline artifacts",
   "agentic-no_lessons": "no lessons",
   "agentic-no_coverage": "no coverage",
-  cleansweep: "v1",
-  "cleansweep-gatekeeper": "v1",
+  cleansweep: "Phase 1",
+  "cleansweep-gatekeeper": "Phase 1",
   "agentic-no_resolver": "team, resolver off",
   "agentic-batch": "team, batching",
   "agentic-thorough": "team, thorough",
   "agentic-m2": "team, second model",
   "agentic-single_agent-m2": "single agent, second model",
   aider: "Aider",
-  "cleansweep-advisory": "v1 (advisory)",
+  "cleansweep-advisory": "Phase 1 (advisory)",
   one_shot_llm: "one-shot",
 };
 

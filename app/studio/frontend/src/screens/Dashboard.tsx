@@ -1,9 +1,10 @@
-// The v1 dashboard's pages (saved reports, Scheduler, Baselines, Data, Guard) with the same data.
+// The Phase 1 dashboard's pages (saved reports, Scheduler, Baselines, Data, Guard) with the same data.
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, useApi, type ReportView, type SavedReport, type Table } from "../api";
+import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
 import { CodeBlock, DiffView } from "../components/Code";
-import { ANIMATE, Async, Card, DataTable, Empty, Stat, Status, Tabs } from "../components/common";
+import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, Stat, Status, Tabs } from "../components/common";
 import { Figure } from "./Results";
 
 interface Scheduler {
@@ -34,10 +35,17 @@ export function SchedulerScreen() {
   const res = useApi<Scheduler>(`scheduler:${repo || ""}`, () => api("/api/parity/scheduler", { repo }));
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Scheduler replay</h2>
-      </header>
-      <Async res={res} what="Loading the replay" empty={(d) => (d.replay ? null : "No replay yet. Run python scripts/experiments/v1/exp_replay.py after selecting AIDev repositories.")}>
+      <PageHeader
+        title="Scheduler replay"
+        description="Phase 1: when to sweep a repository, replayed over its real commit history."
+        help="Each policy sweeps at different moments; slop debt is the open slop summed over commits. Lower debt for fewer test runs is better."
+      />
+      <Async
+        res={res}
+        what="Loading the replay"
+        empty={(d) => (d.replay ? null : "No replay yet; scripts/experiments/v1/exp_replay.py writes it.")}
+        emptyAction={{ label: "Check again", onClick: res.reload }}
+      >
         {(d) => {
           const chosen = policy && d.policies?.includes(policy) ? policy : d.policies?.[0];
           const curves = records(d.curves);
@@ -88,13 +96,18 @@ export function SchedulerScreen() {
                 <DataTable table={d.replay} label="Repository replay" />
                 {series.length ? (
                   <div className="chart">
+                    <SeriesKey
+                      series={[
+                        { name: "never sweep", color: "var(--series-2)" },
+                        { name: `${chosen} (dots: a sweep)`, color: "var(--series-1)" },
+                      ]}
+                    />
                     <ResponsiveContainer width="100%" height={300}>
                       <ComposedChart data={series} margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
-                        <XAxis dataKey="index" tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "commit (oldest to newest)", position: "insideBottom", offset: -8, fill: "var(--muted)" }} />
-                        <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} label={{ value: "open slop items", angle: -90, position: "insideLeft", fill: "var(--muted)" }} />
-                        <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-                        <Legend verticalAlign="top" />
+                        <XAxis dataKey="index" tick={AXIS} label={{ value: "commit (oldest to newest)", position: "insideBottom", offset: -8, fill: "var(--muted)" }} />
+                        <YAxis tick={AXIS} label={{ value: "open slop items", angle: -90, position: "insideLeft", fill: "var(--muted)" }} />
+                        <Tooltip contentStyle={TOOLTIP} />
                         <Line type="monotone" dataKey="never" name="never sweep" stroke="var(--series-2)" strokeWidth={2} dot={false} isAnimationActive={ANIMATE} />
                         <Line type="monotone" dataKey="policy" name={chosen} stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={ANIMATE} />
                         <Line dataKey="sweep" name="sweep" stroke="var(--series-1)" strokeWidth={0} dot={{ r: 4, fill: "var(--series-1)", strokeWidth: 0 }} legendType="circle" isAnimationActive={false} />
@@ -120,10 +133,17 @@ export function BaselinesScreen() {
   const [sets, setSets] = useState<string[] | null>(null);
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Baselines and ablations</h2>
-      </header>
-      <Async res={res} what="Loading the tables" empty={(d) => (d.main ? null : "No results yet. Run exp_collect.py and exp_tables.py.")}>
+      <PageHeader
+        title="Baselines and ablations"
+        description="Phase 1: the sweep against the baselines, and what each of its parts adds."
+        help="Means per target with 95% bootstrap intervals; pick the target sets to include. The paired tests compare each method with the sweep."
+      />
+      <Async
+        res={res}
+        what="Loading the tables"
+        empty={(d) => (d.main ? null : "No results yet; exp_collect.py and exp_tables.py write them.")}
+        emptyAction={{ label: "Check again", onClick: res.reload }}
+      >
         {(d) => {
           const col = d.main!.columns.indexOf("target set");
           const all = [...new Set(d.main!.rows.map((r) => String(r[col])))];
@@ -187,9 +207,11 @@ export function DataScreen() {
   const [level, setLevel] = useState<"category" | "cluster">("category");
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Data</h2>
-      </header>
+      <PageHeader
+        title="Data"
+        description="Phase 1: the datasets behind the experiments (SWE-bench Verified, PatchDiff and AIDev)."
+        help="How many items each dataset has, how the AIDev repositories were selected, and which removal requests the detectors catch."
+      />
       <Async res={res} what="Loading the data summaries">
         {(d) => {
           const funnel = records(d.funnel);
@@ -279,10 +301,17 @@ export function GuardScreen() {
   const res = useApi<{ strength: Table | null; false_alarms: Table | null; figure: string | null }>("guard", () => api("/api/parity/guard"));
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Guard strength</h2>
-      </header>
-      <Async res={res} what="Loading the measurement" empty={(d) => (d.strength ? null : "No measurement yet. Run python scripts/experiments/v1/exp_guard_strength.py.")}>
+      <PageHeader
+        title="Guard strength"
+        description="Phase 1: how many deliberate behavior changes the Guard's tests and probes catch, and how often it raises a false alarm."
+        help="Higher catch rates are better; false alarms should be zero. Caught only by the probes means the tests alone would have missed it."
+      />
+      <Async
+        res={res}
+        what="Loading the measurement"
+        empty={(d) => (d.strength ? null : "No measurement yet; scripts/experiments/v1/exp_guard_strength.py writes it.")}
+        emptyAction={{ label: "Check again", onClick: res.reload }}
+      >
         {(d) => (
           <>
             <p className="muted small">
@@ -336,7 +365,7 @@ function Report({ root, path }: { root: string; path: string }) {
               <Stat label="Lines removed" value={r.stats.lines_removed || 0} />
               <Stat label="Test runs" value={r.stats.test_runs || 0} />
             </div>
-            <div className="slop-meter" title="Slop meter (items)">
+            <div className="slop-meter report-meter" title="Slop meter (items)">
               <div className="gauge-label">Slop meter (items)</div>
               <div className="bar big">
                 <div className="fill tone-good" style={{ width: `${(cleaned / Math.max(r.items.length, 1)) * 100}%` }} />
@@ -364,7 +393,7 @@ function Report({ root, path }: { root: string; path: string }) {
                           tests: {x.tests.passed} passed, {x.tests.failed} failed
                         </p>
                       )}
-                      {x.notes && <pre className="log">{x.notes}</pre>}
+                      {x.notes && <pre className="log" tabIndex={0}>{x.notes}</pre>}
                       {x.diff && <DiffView text={x.diff} />}
                       {restore && <CodeBlock code={restore} language="bash" />}
                     </details>
@@ -385,11 +414,17 @@ export function ReportsScreen({ root, path, onPick }: { root: string; path: stri
   const res = useApi<SavedReport[]>("reports", () => api("/api/reports"));
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Saved reports</h2>
-        <span className="muted">Every sweep report saved under results/, the runs folder and demo/replay/, newest first.</span>
-      </header>
-      <Async res={res} what="Finding saved reports" empty={(rows) => (rows.length ? null : "No saved reports yet. Save one with cleansweep sweep --out.")}>
+      <PageHeader
+        title="Saved reports"
+        description="Every Phase 1 sweep report saved under results/, the runs folder and demo/replay/, newest first."
+        help="A sweep's numbers, its plan, and each Guard verdict with its diff; a quarantined file comes with the command that restores it."
+      />
+      <Async
+        res={res}
+        what="Finding saved reports"
+        empty={(rows) => (rows.length ? null : "No saved reports yet; cleansweep sweep --out saves one.")}
+        emptyAction={{ label: "Open Runs", href: "#/runs" }}
+      >
         {(rows) => {
           const chosen = rows.find((r) => r.root === root && r.path === path) || rows[0];
           return (

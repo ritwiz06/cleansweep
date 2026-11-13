@@ -32,11 +32,16 @@ function Counts({ counts }: { counts: Record<string, number> }) {
   const shown = COUNT_ORDER.filter((s) => counts[s]);
   if (!shown.length) return null;
   return (
-    <span className="tree-counts" aria-label={shown.map((s) => `${counts[s]} ${stateLabel(s)}`).join(", ")}>
+    <span className="tree-counts">
       {shown.map((s) => (
         <span key={s} className={`tree-count st-${s}`}>
-          {STATE_GLYPH[s]}
-          {counts[s]}
+          <span aria-hidden>
+            {STATE_GLYPH[s]}
+            {counts[s]}
+          </span>
+          <span className="sr-only">
+            , {counts[s]} {stateLabel(s)}
+          </span>
         </span>
       ))}
     </span>
@@ -59,32 +64,44 @@ export function TreeRow({
   onSelect: () => void;
 }) {
   const parent = node.children.length > 0;
-  const label = `${node.name}: ${stateLabel(node.state)}${node.actor ? `, last ${agentName(node.actor)}` : ""}`;
+  // the row's name is its text: the name, then (for screen readers) its state and last agent
+  const said = `: ${stateLabel(node.state)}${node.actor ? `, last ${agentName(node.actor)}` : ""}`;
   return (
     <div
       className={`tree-row kind-${node.kind} st-${node.state} ${selected ? "selected" : ""} ${node.focus ? "focus" : ""}`}
       style={{ paddingLeft: `calc(${depth} * var(--tree-indent))` }}
       data-key={node.key}
     >
-      <button className="tree-caret" onClick={onToggle} tabIndex={-1} aria-hidden={!parent} disabled={!parent}>
+      {/* the arrow keys open and close a row; the caret is for the mouse */}
+      <span className={`tree-caret ${parent ? "parent" : ""}`} onClick={parent ? onToggle : undefined} aria-hidden>
         {parent ? (open ? "▾" : "▸") : ""}
-      </button>
+      </span>
       <button
         className="tree-label"
         onClick={onSelect}
         role="treeitem"
         aria-selected={selected}
         aria-expanded={parent ? open : undefined}
-        aria-label={label}
         title={node.path || node.name}
       >
         <span className="state-glyph" aria-hidden>
           {STATE_GLYPH[node.state] || ""}
         </span>
         <span className="tree-name">{node.name}</span>
-        {node.kind === "file" && node.lines !== null && <span className="tree-lines">{node.lines} lines</span>}
+        <span className="sr-only">{said}</span>
+        {node.focus && node.kind !== "folder" && (
+          <span className="tree-state" aria-hidden>
+            {stateLabel(node.state)}
+          </span>
+        )}
+        {node.kind === "file" && node.lines !== null && (
+          <span className="tree-lines">
+            <span className="sr-only">, </span>
+            {node.lines} lines
+          </span>
+        )}
         {(node.kind === "folder" || node.kind === "file") && <Counts counts={node.counts} />}
-        {node.actor && <AgentIcon agent={node.actor} label />}
+        {node.actor && <AgentIcon agent={node.actor} />}
       </button>
     </div>
   );

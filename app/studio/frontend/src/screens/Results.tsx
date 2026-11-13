@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api, imageUrl, useApi, type Table } from "../api";
 import { Md } from "../components/Code";
-import { Async, Card, DataTable, Empty, Tabs } from "../components/common";
+import { Async, Card, DataTable, Empty, PageHeader, Tabs } from "../components/common";
 
 interface Index {
   v1: { tables: string[]; notes: string[]; figures: string[] };
@@ -36,14 +36,15 @@ export function Results() {
   const [table, setTable] = useState<string>("");
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Results</h2>
-        <span className="muted">The committed tables and figures (results/summary/, results/figures/).</span>
-      </header>
+      <PageHeader
+        title="Results"
+        description="Every committed table and figure, by phase (results/summary/ and results/figures/)."
+        help="Pick a table to read it (click a column to sort); its notes are below it. The figures are the ones the report uses."
+      />
       <Tabs
         tabs={[
-          { key: "v1", label: "v1" },
-          { key: "v2", label: "v2" },
+          { key: "v1", label: "Phase 1" },
+          { key: "v2", label: "Phase 2" },
         ]}
         value={version}
         onChange={(v) => {
@@ -70,7 +71,7 @@ export function Results() {
                   )
                 }
               >
-                {chosen ? <TableView version={version} name={chosen} /> : <Empty>No {version} tables yet.</Empty>}
+                {chosen ? <TableView version={version} name={chosen} /> : <Empty action={{ label: "Check again", onClick: res.reload }}>No tables for this phase yet.</Empty>}
                 {note && files.notes.includes(note) && (
                   <details>
                     <summary>{note}</summary>
@@ -86,7 +87,7 @@ export function Results() {
                     ))}
                   </div>
                 ) : (
-                  <Empty>No {version} figures yet.</Empty>
+                  <Empty action={{ label: "Check again", onClick: res.reload }}>No figures for this phase yet.</Empty>
                 )}
               </Card>
             </>

@@ -1,7 +1,8 @@
-import { useState, type ReactNode } from "react";
-import { Bar, BarChart, CartesianGrid, ErrorBar, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useContext, useEffect, useState, type ReactNode } from "react";
+import { Bar, BarChart, CartesianGrid, ErrorBar, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, ApiError, useApi, type Table } from "../api";
-import { ANIMATE, Async, Badge, Card, DataTable, Empty, Tabs } from "../components/common";
+import { AXIS, SeriesKey, TOOLTIP, stackTotal } from "../components/Charts";
+import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, Presenting, Tabs } from "../components/common";
 import {
   auditBars,
   costBars,
@@ -41,17 +42,15 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "manager", label: "Manager scenarios" },
   { key: "reviewer", label: "LLM reviewer" },
   { key: "watch", label: "Watch" },
-  { key: "v3-hypotheses", label: "v3: hypotheses" },
-  { key: "v3-injection", label: "v3: injection" },
-  { key: "v3-real", label: "v3: real projects" },
-  { key: "v3-audit", label: "v3: audit" },
-  { key: "v3-autonomy", label: "v3: autonomy and cost" },
+  { key: "v3-hypotheses", label: "Phase 3: hypotheses" },
+  { key: "v3-injection", label: "Phase 3: injection" },
+  { key: "v3-real", label: "Phase 3: real projects" },
+  { key: "v3-audit", label: "Phase 3: audit" },
+  { key: "v3-autonomy", label: "Phase 3: autonomy and cost" },
 ];
 
-const AXIS = { fill: "var(--muted)", fontSize: 12 };
 // the kinds in KINDS order; series-6 sits too close to series-3, so "other" takes series-7
 const KIND_COLORS = [1, 2, 3, 4, 5, 7].map((n) => `var(--series-${n})`);
-const TOOLTIP = { background: "var(--surface)", border: "1px solid var(--border)" };
 const judged = (text = "LLM-judged") => <Badge tone="info">{text}</Badge>;
 
 // A committed table (v2's or v3's); a missing one comes back empty, so the screen can say it is
@@ -68,7 +67,12 @@ function useTable(name: string, version = "v2") {
 function Loaded({ name, version, children }: { name: string; version?: string; children: (table: Table) => ReactNode }) {
   const res = useTable(name, version);
   return (
-    <Async res={res} what={`Loading ${name}`} empty={(t) => (t.columns.length ? null : `${name} is not built yet (scripts/reproduce_tables.sh).`)}>
+    <Async
+      res={res}
+      what={`Loading ${name}`}
+      empty={(t) => (t.columns.length ? null : `${name} is not built yet; scripts/reproduce_tables.sh builds it.`)}
+      emptyAction={{ label: "Check again", onClick: res.reload }}
+    >
       {children}
     </Async>
   );
@@ -91,27 +95,33 @@ function Bars({
   error?: string;
   title: string;
 }) {
+  const presenting = useContext(Presenting);
   if (!data.length) return <Empty>Nothing to chart.</Empty>;
   const format = (v: unknown) => (percent ? `${Math.round(Number(v) * 100)}%` : String(v));
   // long or many labels are tilted so they never overlap
   const tilt = data.length > 6 || data.some((d) => String(d[x]).length > 14);
+  const colors = series.map((s, i) => s.color ?? `var(--series-${i + 1})`);
+  // each bar carries its value (a stack its total), so nobody reads values off the axis; bars
+  // with an error bar leave the top to it and carry the value at their foot
+  const keys = series.map((s) => s.key);
+  const height = (tilt ? 290 : 260) + (presenting ? 120 : 0);
   return (
     <div className="chart" role="img" aria-label={title}>
       <div className="chart-title">{title}</div>
-      <ResponsiveContainer width="100%" height={tilt ? 280 : 260}>
-        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: tilt ? 48 : 0 }}>
+      {series.length > 1 && <SeriesKey series={series.map((s, i) => ({ name: s.name, color: colors[i] }))} />}
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={data} margin={{ top: 20, right: 16, bottom: 8, left: tilt ? 48 : 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
           <XAxis dataKey={x} tick={AXIS} interval={0} angle={tilt ? -20 : 0} textAnchor={tilt ? "end" : "middle"} height={tilt ? 84 : 30} />
           <YAxis tick={AXIS} tickFormatter={format} domain={percent ? [0, 1] : [0, "auto"]} width={44} />
           <Tooltip contentStyle={TOOLTIP} formatter={(v) => format(v)} cursor={{ fill: "var(--grid)", opacity: 0.4 }} />
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
           {series.map((s, i) => (
             <Bar
               key={s.key}
               dataKey={s.key}
               name={s.name}
               stackId={stacked ? "one" : undefined}
-              fill={s.color ?? `var(--series-${i + 1})`}
+              fill={colors[i]}
               stroke="var(--surface)"
               strokeWidth={stacked ? 2 : 0}
               maxBarSize={36}
@@ -119,6 +129,11 @@ function Bars({
               isAnimationActive={ANIMATE}
             >
               {error && i === 0 && <ErrorBar dataKey={error} width={6} stroke="var(--text)" />}
+              {error && i === 0 && series.length === 1 && !s.color && (
+                <LabelList dataKey={s.key} position="insideBottom" offset={8} formatter={(v: unknown) => format(v)} className="bar-label on-bar" />
+              )}
+              {!error && !stacked && <LabelList dataKey={s.key} position="top" formatter={(v: unknown) => format(v)} className="bar-label" />}
+              {stacked && <LabelList dataKey={s.key} content={stackTotal(data, keys, s.key, (v) => format(v))} />}
             </Bar>
           ))}
         </BarChart>
@@ -379,7 +394,7 @@ function V3Real() {
 function V3Audit() {
   return (
     <>
-      <Card title="The blinded diff audit on the v3 runs, two tiers">
+      <Card title="The blinded diff audit on the Phase 3 runs, two tiers">
         <V3Table name="audit.csv" />
         <p className="muted">{judged("reading tier: LLM-judged")} Counts on finished runs; Fisher's exact test against the team.</p>
       </Card>
@@ -428,14 +443,40 @@ export function Evaluation({ tab, onTab }: { tab: string; onTab: (tab: string) =
     "v3-audit": <V3Audit />,
     "v3-autonomy": <V3Autonomy />,
   };
+  const presenting = useContext(Presenting);
+  const here = `#/evaluation?${new URLSearchParams({ tab: active })}`;
   return (
-    <div className="screen">
-      <header className="screen-head">
-        <h2>Evaluation</h2>
-        <span className="muted">The v2 results (results/summary/v2/) and the v3 results (results/summary/v3/), read from the committed tables.</span>
-      </header>
+    <div className="screen evaluation">
+      <PageHeader
+        title="Evaluation"
+        description="The Phase 2 and Phase 3 results, charted from the committed tables in results/summary/."
+        help="One tab per experiment. Bars show each method's result with its value on top; anything an LLM judged says LLM-judged."
+        actions={
+          presenting ? (
+            <a className="button" href={here}>
+              Exit <kbd>Esc</kbd>
+            </a>
+          ) : (
+            <a className="button" href={`${here}&present=1`}>
+              Present
+            </a>
+          )
+        }
+      />
+      {presenting && <ExitOnEscape to={here} />}
       <Tabs tabs={TABS} value={active} onChange={onTab} />
       {screens[active]}
     </div>
   );
+}
+
+function ExitOnEscape({ to }: { to: string }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") window.location.hash = to;
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [to]);
+  return null;
 }

@@ -167,10 +167,23 @@ export function TreeCard({ title, tree, selected, onSelect, all }: { title: stri
   );
 }
 
-export function Pointer({ note, state }: { note: HunkNote; state: RunState }) {
-  if (!note.items.length) return <div className="pointer">Not tied to a candidate: no applied candidate is in this file.</div>;
+export function Pointer({ note, state, n = 0 }: { note: HunkNote; state: RunState; n?: number }) {
+  const marker = n > 0 && (
+    <span className="pointer-n" aria-hidden>
+      {n}
+    </span>
+  );
+  if (!note.items.length) {
+    return (
+      <div className="pointer">
+        {marker}
+        Not tied to a candidate: no applied candidate is in this file.
+      </div>
+    );
+  }
   return (
-    <div className="pointer">
+    <div className={`pointer st-${state.items[note.items[0]].stage}`}>
+      {marker}
       {note.match !== "exact" && (
         <p className="small muted">
           {note.match === "only" ? "The only candidate applied in this file:" : "The hunk names none of this file's applied candidates; they are:"}
@@ -253,7 +266,7 @@ export function FileDiff({ file, state }: { file: DiffFile; state: RunState }) {
       {file.status === "renamed" && <p>Renamed from <code>{file.oldPath}</code>.</p>}
       {file.hunks.map((hunk, i) => (
         <section key={i} className="hunk" aria-label={`change ${i + 1} of ${file.hunks.length}`}>
-          <Pointer note={notes[i]} state={state} />
+          <Pointer note={notes[i]} state={state} n={file.hunks.length > 1 ? i + 1 : 0} />
           {whole ? (
             <details>
               <summary>
