@@ -640,3 +640,6 @@ replay and ranker, and the reliability work on the LLM client. The owners of rec
 Maninderjit Singh Bhullar (Software architect: LLM client, sandboxes, Guard, workflow), Badri
 Sri Vaishnavi Yeluri (Data architect: loaders, AIDev, code graph, comment mining) and Simran
 Sharma (Experiment architect: ranker, Scheduler replay, baselines, evaluation).
+
+How the four of us set up, work together and present: the team pack in
+[docs/team/](docs/team/README.md).
