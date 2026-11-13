@@ -49,8 +49,8 @@ cleansweep/
 │   ├── experiments/v2/                   v2 runs: exp_agentic.py, exp_case_study.py
 │   ├── experiments/v3/                   v3 runs: methods_v3.py, exp_inject_v3.py, exp_real_v3.py,
 │   │                                     exp_autonomy.py, exp_external.py (Aider: prompts/ holds its
-│   │                                     fixed instruction, aider/ its image), exp_human_packet.py,
-│   │                                     exp_human_kappa.py
+│   │                                     fixed instruction, aider/ its image), exp_human_packet.py
+│   │                                     (the blinded packet), exp_judge_panel.py (the LLM judges)
 │   ├── report/                           make_assets.py (report tables and figures), pipeline.mmd
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
 │   │                                     make_recording.py (Studio recordings), coverage.sh,
