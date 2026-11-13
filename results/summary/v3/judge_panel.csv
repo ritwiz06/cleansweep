@@ -1,0 +1,202 @@
+measure,who,subset,scale,n,value,ci_low,ci_high
+Fleiss' kappa,the three judges,all,3 labels,100,0.382,0.271,0.494
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,all,3 labels,100,0.52,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,all,3 labels,100,0.273,0.153,0.405
+raw agreement,gpt-oss-120b vs gemma4-31b-it,all,3 labels,100,0.69,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,all,3 labels,100,0.479,0.335,0.618
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,all,3 labels,100,0.64,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,all,3 labels,100,0.44,0.309,0.572
+raw agreement,gpt-oss-120b vs recorded,all,3 labels,100,0.63,,
+Cohen's kappa,gpt-oss-120b vs recorded,all,3 labels,100,0.38,0.222,0.522
+raw agreement,llama4-maverick-17b vs recorded,all,3 labels,100,0.54,,
+Cohen's kappa,llama4-maverick-17b vs recorded,all,3 labels,100,0.287,0.146,0.424
+raw agreement,gemma4-31b-it vs recorded,all,3 labels,100,0.64,,
+Cohen's kappa,gemma4-31b-it vs recorded,all,3 labels,100,0.414,0.258,0.564
+raw agreement,panel vs recorded,all,3 labels,100,0.6,,
+Cohen's kappa,panel vs recorded,all,3 labels,100,0.373,0.224,0.516
+Fleiss' kappa,the three judges,all,wrong vs not wrong,100,0.477,0.346,0.599
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,all,wrong vs not wrong,100,0.66,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,all,wrong vs not wrong,100,0.372,0.234,0.52
+raw agreement,gpt-oss-120b vs gemma4-31b-it,all,wrong vs not wrong,100,0.76,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,all,wrong vs not wrong,100,0.526,0.357,0.679
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,all,wrong vs not wrong,100,0.8,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,all,wrong vs not wrong,100,0.591,0.444,0.735
+raw agreement,gpt-oss-120b vs recorded,all,wrong vs not wrong,100,0.7,,
+Cohen's kappa,gpt-oss-120b vs recorded,all,wrong vs not wrong,100,0.408,0.226,0.566
+raw agreement,llama4-maverick-17b vs recorded,all,wrong vs not wrong,100,0.68,,
+Cohen's kappa,llama4-maverick-17b vs recorded,all,wrong vs not wrong,100,0.345,0.163,0.508
+raw agreement,gemma4-31b-it vs recorded,all,wrong vs not wrong,100,0.74,,
+Cohen's kappa,gemma4-31b-it vs recorded,all,wrong vs not wrong,100,0.478,0.302,0.644
+raw agreement,panel vs recorded,all,wrong vs not wrong,100,0.73,,
+Cohen's kappa,panel vs recorded,all,wrong vs not wrong,100,0.455,0.269,0.62
+Fleiss' kappa,the three judges,diff audit,3 labels,70,0.417,0.276,0.547
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit,3 labels,70,0.571,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit,3 labels,70,0.313,0.158,0.466
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit,3 labels,70,0.729,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit,3 labels,70,0.513,0.336,0.683
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit,3 labels,70,0.657,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit,3 labels,70,0.462,0.308,0.616
+raw agreement,gpt-oss-120b vs recorded,diff audit,3 labels,70,0.6,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit,3 labels,70,0.353,0.185,0.513
+raw agreement,llama4-maverick-17b vs recorded,diff audit,3 labels,70,0.614,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit,3 labels,70,0.392,0.228,0.566
+raw agreement,gemma4-31b-it vs recorded,diff audit,3 labels,70,0.643,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit,3 labels,70,0.436,0.278,0.598
+raw agreement,panel vs recorded,diff audit,3 labels,70,0.643,,
+Cohen's kappa,panel vs recorded,diff audit,3 labels,70,0.447,0.288,0.603
+Fleiss' kappa,the three judges,diff audit,wrong vs not wrong,70,0.539,0.389,0.676
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit,wrong vs not wrong,70,0.7,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit,wrong vs not wrong,70,0.431,0.248,0.603
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit,wrong vs not wrong,70,0.814,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit,wrong vs not wrong,70,0.615,0.419,0.797
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit,wrong vs not wrong,70,0.8,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit,wrong vs not wrong,70,0.608,0.429,0.773
+raw agreement,gpt-oss-120b vs recorded,diff audit,wrong vs not wrong,70,0.657,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit,wrong vs not wrong,70,0.344,0.155,0.535
+raw agreement,llama4-maverick-17b vs recorded,diff audit,wrong vs not wrong,70,0.757,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit,wrong vs not wrong,70,0.502,0.286,0.699
+raw agreement,gemma4-31b-it vs recorded,diff audit,wrong vs not wrong,70,0.757,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit,wrong vs not wrong,70,0.522,0.335,0.693
+raw agreement,panel vs recorded,diff audit,wrong vs not wrong,70,0.771,,
+Cohen's kappa,panel vs recorded,diff audit,wrong vs not wrong,70,0.545,0.348,0.716
+Fleiss' kappa,the three judges,diff audit (LLM-judged),3 labels,52,0.424,0.245,0.572
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit (LLM-judged),3 labels,52,0.558,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit (LLM-judged),3 labels,52,0.305,0.113,0.486
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit (LLM-judged),3 labels,52,0.712,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit (LLM-judged),3 labels,52,0.531,0.328,0.707
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit (LLM-judged),3 labels,52,0.654,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit (LLM-judged),3 labels,52,0.468,0.289,0.639
+raw agreement,gpt-oss-120b vs recorded,diff audit (LLM-judged),3 labels,52,0.596,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit (LLM-judged),3 labels,52,0.387,0.199,0.579
+raw agreement,llama4-maverick-17b vs recorded,diff audit (LLM-judged),3 labels,52,0.654,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit (LLM-judged),3 labels,52,0.464,0.267,0.646
+raw agreement,gemma4-31b-it vs recorded,diff audit (LLM-judged),3 labels,52,0.673,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit (LLM-judged),3 labels,52,0.506,0.307,0.706
+raw agreement,panel vs recorded,diff audit (LLM-judged),3 labels,52,0.692,,
+Cohen's kappa,panel vs recorded,diff audit (LLM-judged),3 labels,52,0.538,0.34,0.732
+Fleiss' kappa,the three judges,diff audit (LLM-judged),wrong vs not wrong,52,0.589,0.402,0.743
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit (LLM-judged),wrong vs not wrong,52,0.712,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit (LLM-judged),wrong vs not wrong,52,0.448,0.224,0.657
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit (LLM-judged),wrong vs not wrong,52,0.827,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit (LLM-judged),wrong vs not wrong,52,0.659,0.462,0.845
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit (LLM-judged),wrong vs not wrong,52,0.846,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit (LLM-judged),wrong vs not wrong,52,0.687,0.468,0.877
+raw agreement,gpt-oss-120b vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.673,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.383,0.181,0.611
+raw agreement,llama4-maverick-17b vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.808,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.586,0.337,0.799
+raw agreement,gemma4-31b-it vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.808,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.606,0.378,0.807
+raw agreement,panel vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.827,,
+Cohen's kappa,panel vs recorded,diff audit (LLM-judged),wrong vs not wrong,52,0.641,0.411,0.843
+Fleiss' kappa,the three judges,diff audit (confirmed),3 labels,18,0.282,-0.014,0.577
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit (confirmed),3 labels,18,0.611,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit (confirmed),3 labels,18,0.28,0.0,0.613
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit (confirmed),3 labels,18,0.778,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit (confirmed),3 labels,18,0.234,-0.149,0.769
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit (confirmed),3 labels,18,0.667,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit (confirmed),3 labels,18,0.383,0.0,0.727
+raw agreement,gpt-oss-120b vs recorded,diff audit (confirmed),3 labels,18,0.611,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit (confirmed),3 labels,18,0.087,-0.143,0.471
+raw agreement,llama4-maverick-17b vs recorded,diff audit (confirmed),3 labels,18,0.5,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit (confirmed),3 labels,18,0.156,-0.161,0.46
+raw agreement,gemma4-31b-it vs recorded,diff audit (confirmed),3 labels,18,0.556,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit (confirmed),3 labels,18,-0.043,-0.253,0.182
+raw agreement,panel vs recorded,diff audit (confirmed),3 labels,18,0.5,,
+Cohen's kappa,panel vs recorded,diff audit (confirmed),3 labels,18,0.0,-0.227,0.217
+Fleiss' kappa,the three judges,diff audit (confirmed),wrong vs not wrong,18,0.262,-0.03,0.571
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,diff audit (confirmed),wrong vs not wrong,18,0.667,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,diff audit (confirmed),wrong vs not wrong,18,0.333,0.0,0.684
+raw agreement,gpt-oss-120b vs gemma4-31b-it,diff audit (confirmed),wrong vs not wrong,18,0.778,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,diff audit (confirmed),wrong vs not wrong,18,0.2,-0.2,0.769
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,diff audit (confirmed),wrong vs not wrong,18,0.667,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,diff audit (confirmed),wrong vs not wrong,18,0.333,0.0,0.684
+raw agreement,gpt-oss-120b vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.611,,
+Cohen's kappa,gpt-oss-120b vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.0,-0.364,0.446
+raw agreement,llama4-maverick-17b vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.611,,
+Cohen's kappa,llama4-maverick-17b vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.222,-0.222,0.649
+raw agreement,gemma4-31b-it vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.611,,
+Cohen's kappa,gemma4-31b-it vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.0,-0.328,0.437
+raw agreement,panel vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.611,,
+Cohen's kappa,panel vs recorded,diff audit (confirmed),wrong vs not wrong,18,0.087,-0.364,0.557
+Fleiss' kappa,the three judges,review sheet,3 labels,30,0.164,-0.033,0.354
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,review sheet,3 labels,30,0.4,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,review sheet,3 labels,30,0.123,-0.059,0.314
+raw agreement,gpt-oss-120b vs gemma4-31b-it,review sheet,3 labels,30,0.6,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,review sheet,3 labels,30,0.271,0.028,0.553
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,review sheet,3 labels,30,0.6,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,review sheet,3 labels,30,0.262,0.053,0.476
+raw agreement,gpt-oss-120b vs recorded,review sheet,3 labels,30,0.7,,
+Cohen's kappa,gpt-oss-120b vs recorded,review sheet,3 labels,30,0.458,0.192,0.701
+raw agreement,llama4-maverick-17b vs recorded,review sheet,3 labels,30,0.367,,
+Cohen's kappa,llama4-maverick-17b vs recorded,review sheet,3 labels,30,0.12,-0.034,0.293
+raw agreement,gemma4-31b-it vs recorded,review sheet,3 labels,30,0.633,,
+Cohen's kappa,gemma4-31b-it vs recorded,review sheet,3 labels,30,0.368,0.161,0.615
+raw agreement,panel vs recorded,review sheet,3 labels,30,0.5,,
+Cohen's kappa,panel vs recorded,review sheet,3 labels,30,0.223,0.031,0.449
+Fleiss' kappa,the three judges,review sheet,wrong vs not wrong,30,0.169,-0.093,0.418
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,review sheet,wrong vs not wrong,30,0.567,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,review sheet,wrong vs not wrong,30,0.133,0.0,0.335
+raw agreement,gpt-oss-120b vs gemma4-31b-it,review sheet,wrong vs not wrong,30,0.633,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,review sheet,wrong vs not wrong,30,0.267,-0.043,0.587
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,review sheet,wrong vs not wrong,30,0.8,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,review sheet,wrong vs not wrong,30,0.328,0.0,0.714
+raw agreement,gpt-oss-120b vs recorded,review sheet,wrong vs not wrong,30,0.8,,
+Cohen's kappa,gpt-oss-120b vs recorded,review sheet,wrong vs not wrong,30,0.6,0.298,0.861
+raw agreement,llama4-maverick-17b vs recorded,review sheet,wrong vs not wrong,30,0.5,,
+Cohen's kappa,llama4-maverick-17b vs recorded,review sheet,wrong vs not wrong,30,0.104,0.0,0.286
+raw agreement,gemma4-31b-it vs recorded,review sheet,wrong vs not wrong,30,0.7,,
+Cohen's kappa,gemma4-31b-it vs recorded,review sheet,wrong vs not wrong,30,0.435,0.199,0.706
+raw agreement,panel vs recorded,review sheet,wrong vs not wrong,30,0.633,,
+Cohen's kappa,panel vs recorded,review sheet,wrong vs not wrong,30,0.321,0.118,0.587
+Fleiss' kappa,the three judges,calibration sheets,3 labels,40,0.261,0.074,0.424
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,calibration sheets,3 labels,40,0.375,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,calibration sheets,3 labels,40,0.15,-0.002,0.314
+raw agreement,gpt-oss-120b vs gemma4-31b-it,calibration sheets,3 labels,40,0.6,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,calibration sheets,3 labels,40,0.407,0.222,0.6
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,calibration sheets,3 labels,40,0.6,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,calibration sheets,3 labels,40,0.352,0.091,0.584
+raw agreement,gpt-oss-120b vs recorded,calibration sheets,3 labels,40,0.5,,
+Cohen's kappa,gpt-oss-120b vs recorded,calibration sheets,3 labels,40,0.213,0.004,0.435
+raw agreement,llama4-maverick-17b vs recorded,calibration sheets,3 labels,40,0.375,,
+Cohen's kappa,llama4-maverick-17b vs recorded,calibration sheets,3 labels,40,0.084,-0.128,0.278
+raw agreement,gemma4-31b-it vs recorded,calibration sheets,3 labels,40,0.55,,
+Cohen's kappa,gemma4-31b-it vs recorded,calibration sheets,3 labels,40,0.328,0.097,0.548
+raw agreement,panel vs recorded,calibration sheets,3 labels,40,0.5,,
+Cohen's kappa,panel vs recorded,calibration sheets,3 labels,40,0.254,0.01,0.478
+Fleiss' kappa,the three judges,calibration sheets,wrong vs not wrong,40,0.324,0.074,0.54
+raw agreement,gpt-oss-120b vs llama4-maverick-17b,calibration sheets,wrong vs not wrong,40,0.525,,
+Cohen's kappa,gpt-oss-120b vs llama4-maverick-17b,calibration sheets,wrong vs not wrong,40,0.205,0.071,0.395
+raw agreement,gpt-oss-120b vs gemma4-31b-it,calibration sheets,wrong vs not wrong,40,0.65,,
+Cohen's kappa,gpt-oss-120b vs gemma4-31b-it,calibration sheets,wrong vs not wrong,40,0.375,0.191,0.6
+raw agreement,llama4-maverick-17b vs gemma4-31b-it,calibration sheets,wrong vs not wrong,40,0.875,,
+Cohen's kappa,llama4-maverick-17b vs gemma4-31b-it,calibration sheets,wrong vs not wrong,40,0.662,0.353,0.918
+raw agreement,gpt-oss-120b vs recorded,calibration sheets,wrong vs not wrong,40,0.6,,
+Cohen's kappa,gpt-oss-120b vs recorded,calibration sheets,wrong vs not wrong,40,0.245,-0.014,0.506
+raw agreement,llama4-maverick-17b vs recorded,calibration sheets,wrong vs not wrong,40,0.625,,
+Cohen's kappa,llama4-maverick-17b vs recorded,calibration sheets,wrong vs not wrong,40,0.138,-0.141,0.419
+raw agreement,gemma4-31b-it vs recorded,calibration sheets,wrong vs not wrong,40,0.65,,
+Cohen's kappa,gemma4-31b-it vs recorded,calibration sheets,wrong vs not wrong,40,0.239,-0.067,0.527
+raw agreement,panel vs recorded,calibration sheets,wrong vs not wrong,40,0.65,,
+Cohen's kappa,panel vs recorded,calibration sheets,wrong vs not wrong,40,0.239,-0.067,0.527
+accuracy,gpt-oss-120b,confirmed verdicts,wrong vs not wrong,18,0.611,0.386,0.797
+sensitivity,gpt-oss-120b,confirmed verdicts,wrong vs not wrong,12,0.833,0.552,0.953
+specificity,gpt-oss-120b,confirmed verdicts,wrong vs not wrong,6,0.167,0.03,0.564
+accuracy,llama4-maverick-17b,confirmed verdicts,wrong vs not wrong,18,0.611,0.386,0.797
+sensitivity,llama4-maverick-17b,confirmed verdicts,wrong vs not wrong,12,0.583,0.32,0.807
+specificity,llama4-maverick-17b,confirmed verdicts,wrong vs not wrong,6,0.667,0.3,0.903
+accuracy,gemma4-31b-it,confirmed verdicts,wrong vs not wrong,18,0.611,0.386,0.797
+sensitivity,gemma4-31b-it,confirmed verdicts,wrong vs not wrong,12,0.833,0.552,0.953
+specificity,gemma4-31b-it,confirmed verdicts,wrong vs not wrong,6,0.167,0.03,0.564
+accuracy,panel,confirmed verdicts,wrong vs not wrong,18,0.611,0.386,0.797
+sensitivity,panel,confirmed verdicts,wrong vs not wrong,12,0.75,0.468,0.911
+specificity,panel,confirmed verdicts,wrong vs not wrong,6,0.333,0.097,0.7
+agrees with the reading,panel,diff audit (reading tier),3 labels,40,28,0.546,0.819
+agrees with the reading,panel,diff audit (reading tier),wrong vs not wrong,40,31,0.625,0.877
+no majority of 3 votes,gpt-oss-120b,all,3 labels,100,2,,
+unusable votes,gpt-oss-120b,all,3 labels,300,0,,
+no majority of 3 votes,llama4-maverick-17b,all,3 labels,100,0,,
+unusable votes,llama4-maverick-17b,all,3 labels,300,0,,
+no majority of 3 votes,gemma4-31b-it,all,3 labels,100,0,,
+unusable votes,gemma4-31b-it,all,3 labels,300,0,,
+no majority of 3 judges,panel,all,3 labels,100,13,,

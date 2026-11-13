@@ -1,0 +1,901 @@
+item,source,tier,checked_by,calibration,ref,recorded,judge,seed,label
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gpt-oss-120b,0,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gpt-oss-120b,1,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gpt-oss-120b,2,wrong
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gpt-oss-120b,0,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gpt-oss-120b,1,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gpt-oss-120b,2,fine
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gpt-oss-120b,0,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gpt-oss-120b,1,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gpt-oss-120b,2,wrong
+4,diff audit,auditor,,,2771429d96ca,fine,gpt-oss-120b,0,fine
+4,diff audit,auditor,,,2771429d96ca,fine,gpt-oss-120b,1,debatable
+4,diff audit,auditor,,,2771429d96ca,fine,gpt-oss-120b,2,fine
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gpt-oss-120b,0,wrong
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gpt-oss-120b,1,wrong
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gpt-oss-120b,2,wrong
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gpt-oss-120b,0,fine
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gpt-oss-120b,1,fine
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gpt-oss-120b,2,fine
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gpt-oss-120b,0,wrong
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gpt-oss-120b,1,wrong
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gpt-oss-120b,2,wrong
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gpt-oss-120b,0,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gpt-oss-120b,1,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gpt-oss-120b,2,fine
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gpt-oss-120b,0,wrong
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gpt-oss-120b,1,wrong
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gpt-oss-120b,2,wrong
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gpt-oss-120b,0,fine
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gpt-oss-120b,1,fine
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gpt-oss-120b,2,fine
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gpt-oss-120b,0,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gpt-oss-120b,1,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gpt-oss-120b,2,wrong
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gpt-oss-120b,0,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gpt-oss-120b,1,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gpt-oss-120b,2,debatable
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gpt-oss-120b,0,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gpt-oss-120b,1,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gpt-oss-120b,2,wrong
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gpt-oss-120b,0,wrong
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gpt-oss-120b,1,wrong
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gpt-oss-120b,2,wrong
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gpt-oss-120b,0,debatable
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gpt-oss-120b,1,debatable
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gpt-oss-120b,2,debatable
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gpt-oss-120b,0,wrong
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gpt-oss-120b,1,debatable
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gpt-oss-120b,2,fine
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gpt-oss-120b,0,fine
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gpt-oss-120b,1,fine
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gpt-oss-120b,2,fine
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gpt-oss-120b,0,fine
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gpt-oss-120b,1,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gpt-oss-120b,2,wrong
+19,diff audit,auditor,,,42120208e994,fine,gpt-oss-120b,0,fine
+19,diff audit,auditor,,,42120208e994,fine,gpt-oss-120b,1,fine
+19,diff audit,auditor,,,42120208e994,fine,gpt-oss-120b,2,fine
+20,diff audit,auditor,,,51c62c527f8f,fine,gpt-oss-120b,0,wrong
+20,diff audit,auditor,,,51c62c527f8f,fine,gpt-oss-120b,1,debatable
+20,diff audit,auditor,,,51c62c527f8f,fine,gpt-oss-120b,2,debatable
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gpt-oss-120b,0,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gpt-oss-120b,1,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gpt-oss-120b,2,wrong
+22,diff audit,auditor,,,1fae8065c2db,fine,gpt-oss-120b,0,wrong
+22,diff audit,auditor,,,1fae8065c2db,fine,gpt-oss-120b,1,wrong
+22,diff audit,auditor,,,1fae8065c2db,fine,gpt-oss-120b,2,wrong
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gpt-oss-120b,0,fine
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gpt-oss-120b,1,fine
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gpt-oss-120b,2,wrong
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gpt-oss-120b,0,wrong
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gpt-oss-120b,1,wrong
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gpt-oss-120b,2,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gpt-oss-120b,0,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gpt-oss-120b,1,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gpt-oss-120b,2,wrong
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gpt-oss-120b,0,fine
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gpt-oss-120b,1,wrong
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gpt-oss-120b,2,fine
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gpt-oss-120b,0,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gpt-oss-120b,1,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gpt-oss-120b,2,wrong
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gpt-oss-120b,0,debatable
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gpt-oss-120b,1,debatable
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gpt-oss-120b,2,debatable
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gpt-oss-120b,0,wrong
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gpt-oss-120b,1,wrong
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gpt-oss-120b,2,wrong
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gpt-oss-120b,0,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gpt-oss-120b,1,debatable
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gpt-oss-120b,2,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gpt-oss-120b,0,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gpt-oss-120b,1,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gpt-oss-120b,2,fine
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gpt-oss-120b,0,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gpt-oss-120b,1,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gpt-oss-120b,2,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gpt-oss-120b,0,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gpt-oss-120b,1,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gpt-oss-120b,2,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gpt-oss-120b,0,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gpt-oss-120b,1,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gpt-oss-120b,2,wrong
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gpt-oss-120b,0,wrong
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gpt-oss-120b,1,wrong
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gpt-oss-120b,2,wrong
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gpt-oss-120b,0,fine
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gpt-oss-120b,1,wrong
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gpt-oss-120b,2,debatable
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gpt-oss-120b,0,wrong
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gpt-oss-120b,1,wrong
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gpt-oss-120b,2,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gpt-oss-120b,0,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gpt-oss-120b,1,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gpt-oss-120b,2,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gpt-oss-120b,0,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gpt-oss-120b,1,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gpt-oss-120b,2,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gpt-oss-120b,0,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gpt-oss-120b,1,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gpt-oss-120b,2,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gpt-oss-120b,0,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gpt-oss-120b,1,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gpt-oss-120b,2,wrong
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gpt-oss-120b,0,fine
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gpt-oss-120b,1,debatable
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gpt-oss-120b,2,fine
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gpt-oss-120b,0,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gpt-oss-120b,1,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gpt-oss-120b,2,debatable
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gpt-oss-120b,0,fine
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gpt-oss-120b,1,fine
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gpt-oss-120b,2,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gpt-oss-120b,0,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gpt-oss-120b,1,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gpt-oss-120b,2,fine
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gpt-oss-120b,0,wrong
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gpt-oss-120b,1,wrong
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gpt-oss-120b,2,wrong
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gpt-oss-120b,0,debatable
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gpt-oss-120b,1,wrong
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gpt-oss-120b,2,debatable
+48,diff audit,auditor,,,2d171ee06cbb,fine,gpt-oss-120b,0,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,gpt-oss-120b,1,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,gpt-oss-120b,2,fine
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gpt-oss-120b,0,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gpt-oss-120b,1,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gpt-oss-120b,2,wrong
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gpt-oss-120b,0,fine
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gpt-oss-120b,1,wrong
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gpt-oss-120b,2,wrong
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gpt-oss-120b,0,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gpt-oss-120b,1,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gpt-oss-120b,2,debatable
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gpt-oss-120b,0,wrong
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gpt-oss-120b,1,wrong
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gpt-oss-120b,2,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gpt-oss-120b,0,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gpt-oss-120b,1,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gpt-oss-120b,2,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gpt-oss-120b,0,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gpt-oss-120b,1,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gpt-oss-120b,2,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gpt-oss-120b,0,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gpt-oss-120b,1,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gpt-oss-120b,2,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gpt-oss-120b,0,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gpt-oss-120b,1,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gpt-oss-120b,2,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gpt-oss-120b,0,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gpt-oss-120b,1,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gpt-oss-120b,2,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gpt-oss-120b,0,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gpt-oss-120b,1,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gpt-oss-120b,2,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gpt-oss-120b,0,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gpt-oss-120b,1,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gpt-oss-120b,2,wrong
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gpt-oss-120b,0,wrong
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gpt-oss-120b,1,wrong
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gpt-oss-120b,2,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gpt-oss-120b,0,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gpt-oss-120b,1,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gpt-oss-120b,2,wrong
+62,diff audit,auditor,,,4e54d726e197,fine,gpt-oss-120b,0,wrong
+62,diff audit,auditor,,,4e54d726e197,fine,gpt-oss-120b,1,wrong
+62,diff audit,auditor,,,4e54d726e197,fine,gpt-oss-120b,2,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gpt-oss-120b,0,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gpt-oss-120b,1,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gpt-oss-120b,2,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gpt-oss-120b,0,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gpt-oss-120b,1,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gpt-oss-120b,2,wrong
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gpt-oss-120b,0,wrong
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gpt-oss-120b,1,wrong
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gpt-oss-120b,2,wrong
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gpt-oss-120b,0,debatable
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gpt-oss-120b,1,wrong
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gpt-oss-120b,2,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gpt-oss-120b,0,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gpt-oss-120b,1,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gpt-oss-120b,2,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gpt-oss-120b,0,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gpt-oss-120b,1,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gpt-oss-120b,2,wrong
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gpt-oss-120b,0,fine
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gpt-oss-120b,1,fine
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gpt-oss-120b,2,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gpt-oss-120b,0,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gpt-oss-120b,1,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gpt-oss-120b,2,wrong
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gpt-oss-120b,0,wrong
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gpt-oss-120b,1,wrong
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gpt-oss-120b,2,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gpt-oss-120b,0,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gpt-oss-120b,1,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gpt-oss-120b,2,wrong
+73,review sheet,reviewer,,,telegram:36,wrong,gpt-oss-120b,0,debatable
+73,review sheet,reviewer,,,telegram:36,wrong,gpt-oss-120b,1,debatable
+73,review sheet,reviewer,,,telegram:36,wrong,gpt-oss-120b,2,debatable
+74,diff audit,auditor,,,8ce41df2ae13,fine,gpt-oss-120b,0,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,gpt-oss-120b,1,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,gpt-oss-120b,2,fine
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gpt-oss-120b,0,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gpt-oss-120b,1,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gpt-oss-120b,2,wrong
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gpt-oss-120b,0,wrong
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gpt-oss-120b,1,wrong
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gpt-oss-120b,2,wrong
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gpt-oss-120b,0,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gpt-oss-120b,1,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gpt-oss-120b,2,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,gpt-oss-120b,0,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,gpt-oss-120b,1,wrong
+78,review sheet,reviewer,,,skill-seekers:57,fine,gpt-oss-120b,2,fine
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gpt-oss-120b,0,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gpt-oss-120b,1,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gpt-oss-120b,2,wrong
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gpt-oss-120b,0,wrong
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gpt-oss-120b,1,wrong
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gpt-oss-120b,2,wrong
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gpt-oss-120b,0,wrong
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gpt-oss-120b,1,wrong
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gpt-oss-120b,2,fine
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gpt-oss-120b,0,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gpt-oss-120b,1,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gpt-oss-120b,2,debatable
+83,diff audit,auditor,,,c1159480c61b,fine,gpt-oss-120b,0,fine
+83,diff audit,auditor,,,c1159480c61b,fine,gpt-oss-120b,1,fine
+83,diff audit,auditor,,,c1159480c61b,fine,gpt-oss-120b,2,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,gpt-oss-120b,0,wrong
+84,review sheet,reviewer,,C19,shotgun:384,fine,gpt-oss-120b,1,wrong
+84,review sheet,reviewer,,C19,shotgun:384,fine,gpt-oss-120b,2,debatable
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gpt-oss-120b,0,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gpt-oss-120b,1,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gpt-oss-120b,2,wrong
+86,diff audit,auditor,,,eed20aa6f916,fine,gpt-oss-120b,0,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,gpt-oss-120b,1,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,gpt-oss-120b,2,fine
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gpt-oss-120b,0,wrong
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gpt-oss-120b,1,wrong
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gpt-oss-120b,2,wrong
+88,review sheet,reviewer,,C9,telegram:32,wrong,gpt-oss-120b,0,wrong
+88,review sheet,reviewer,,C9,telegram:32,wrong,gpt-oss-120b,1,wrong
+88,review sheet,reviewer,,C9,telegram:32,wrong,gpt-oss-120b,2,wrong
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gpt-oss-120b,0,wrong
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gpt-oss-120b,1,wrong
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gpt-oss-120b,2,fine
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gpt-oss-120b,0,wrong
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gpt-oss-120b,1,wrong
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gpt-oss-120b,2,wrong
+91,diff audit,auditor,,,092799f075ba,fine,gpt-oss-120b,0,debatable
+91,diff audit,auditor,,,092799f075ba,fine,gpt-oss-120b,1,debatable
+91,diff audit,auditor,,,092799f075ba,fine,gpt-oss-120b,2,fine
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gpt-oss-120b,0,fine
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gpt-oss-120b,1,fine
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gpt-oss-120b,2,fine
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gpt-oss-120b,0,fine
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gpt-oss-120b,1,debatable
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gpt-oss-120b,2,fine
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gpt-oss-120b,0,debatable
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gpt-oss-120b,1,wrong
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gpt-oss-120b,2,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gpt-oss-120b,0,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gpt-oss-120b,1,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gpt-oss-120b,2,wrong
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gpt-oss-120b,0,debatable
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gpt-oss-120b,1,fine
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gpt-oss-120b,2,fine
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gpt-oss-120b,0,wrong
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gpt-oss-120b,1,wrong
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gpt-oss-120b,2,wrong
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gpt-oss-120b,0,wrong
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gpt-oss-120b,1,wrong
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gpt-oss-120b,2,wrong
+99,review sheet,reviewer,,C16,telegram:21,fine,gpt-oss-120b,0,debatable
+99,review sheet,reviewer,,C16,telegram:21,fine,gpt-oss-120b,1,debatable
+99,review sheet,reviewer,,C16,telegram:21,fine,gpt-oss-120b,2,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gpt-oss-120b,0,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gpt-oss-120b,1,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gpt-oss-120b,2,debatable
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,llama4-maverick-17b,0,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,llama4-maverick-17b,1,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,llama4-maverick-17b,2,wrong
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,llama4-maverick-17b,0,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,llama4-maverick-17b,1,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,llama4-maverick-17b,2,fine
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,llama4-maverick-17b,0,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,llama4-maverick-17b,1,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,llama4-maverick-17b,2,wrong
+4,diff audit,auditor,,,2771429d96ca,fine,llama4-maverick-17b,0,wrong
+4,diff audit,auditor,,,2771429d96ca,fine,llama4-maverick-17b,1,wrong
+4,diff audit,auditor,,,2771429d96ca,fine,llama4-maverick-17b,2,wrong
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,llama4-maverick-17b,0,fine
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,llama4-maverick-17b,1,fine
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,llama4-maverick-17b,2,fine
+6,diff audit,auditor,,,4028fcc5e4b9,fine,llama4-maverick-17b,0,debatable
+6,diff audit,auditor,,,4028fcc5e4b9,fine,llama4-maverick-17b,1,debatable
+6,diff audit,auditor,,,4028fcc5e4b9,fine,llama4-maverick-17b,2,debatable
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,llama4-maverick-17b,0,fine
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,llama4-maverick-17b,1,fine
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,llama4-maverick-17b,2,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,llama4-maverick-17b,0,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,llama4-maverick-17b,1,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,llama4-maverick-17b,2,fine
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,llama4-maverick-17b,0,debatable
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,llama4-maverick-17b,1,debatable
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,llama4-maverick-17b,2,debatable
+10,review sheet,reviewer,,C4,shotgun:395,wrong,llama4-maverick-17b,0,fine
+10,review sheet,reviewer,,C4,shotgun:395,wrong,llama4-maverick-17b,1,fine
+10,review sheet,reviewer,,C4,shotgun:395,wrong,llama4-maverick-17b,2,fine
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,llama4-maverick-17b,0,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,llama4-maverick-17b,1,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,llama4-maverick-17b,2,wrong
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,llama4-maverick-17b,0,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,llama4-maverick-17b,1,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,llama4-maverick-17b,2,fine
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,llama4-maverick-17b,0,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,llama4-maverick-17b,1,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,llama4-maverick-17b,2,wrong
+14,review sheet,reviewer,,C6,shotgun:391,wrong,llama4-maverick-17b,0,fine
+14,review sheet,reviewer,,C6,shotgun:391,wrong,llama4-maverick-17b,1,fine
+14,review sheet,reviewer,,C6,shotgun:391,wrong,llama4-maverick-17b,2,fine
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,llama4-maverick-17b,0,debatable
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,llama4-maverick-17b,1,debatable
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,llama4-maverick-17b,2,debatable
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,llama4-maverick-17b,0,debatable
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,llama4-maverick-17b,1,debatable
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,llama4-maverick-17b,2,debatable
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,llama4-maverick-17b,0,debatable
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,llama4-maverick-17b,1,debatable
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,llama4-maverick-17b,2,debatable
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,llama4-maverick-17b,0,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,llama4-maverick-17b,1,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,llama4-maverick-17b,2,wrong
+19,diff audit,auditor,,,42120208e994,fine,llama4-maverick-17b,0,fine
+19,diff audit,auditor,,,42120208e994,fine,llama4-maverick-17b,1,fine
+19,diff audit,auditor,,,42120208e994,fine,llama4-maverick-17b,2,fine
+20,diff audit,auditor,,,51c62c527f8f,fine,llama4-maverick-17b,0,fine
+20,diff audit,auditor,,,51c62c527f8f,fine,llama4-maverick-17b,1,fine
+20,diff audit,auditor,,,51c62c527f8f,fine,llama4-maverick-17b,2,fine
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,llama4-maverick-17b,0,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,llama4-maverick-17b,1,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,llama4-maverick-17b,2,wrong
+22,diff audit,auditor,,,1fae8065c2db,fine,llama4-maverick-17b,0,fine
+22,diff audit,auditor,,,1fae8065c2db,fine,llama4-maverick-17b,1,fine
+22,diff audit,auditor,,,1fae8065c2db,fine,llama4-maverick-17b,2,fine
+23,review sheet,reviewer,,C10,cleansweep:21,fine,llama4-maverick-17b,0,debatable
+23,review sheet,reviewer,,C10,cleansweep:21,fine,llama4-maverick-17b,1,debatable
+23,review sheet,reviewer,,C10,cleansweep:21,fine,llama4-maverick-17b,2,debatable
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,llama4-maverick-17b,0,fine
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,llama4-maverick-17b,1,fine
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,llama4-maverick-17b,2,fine
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,llama4-maverick-17b,0,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,llama4-maverick-17b,1,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,llama4-maverick-17b,2,wrong
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,llama4-maverick-17b,0,fine
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,llama4-maverick-17b,1,fine
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,llama4-maverick-17b,2,fine
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,llama4-maverick-17b,0,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,llama4-maverick-17b,1,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,llama4-maverick-17b,2,wrong
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,llama4-maverick-17b,0,fine
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,llama4-maverick-17b,1,fine
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,llama4-maverick-17b,2,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,llama4-maverick-17b,0,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,llama4-maverick-17b,1,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,llama4-maverick-17b,2,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,llama4-maverick-17b,0,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,llama4-maverick-17b,1,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,llama4-maverick-17b,2,fine
+31,review sheet,reviewer,,,shotgun:2,fine,llama4-maverick-17b,0,fine
+31,review sheet,reviewer,,,shotgun:2,fine,llama4-maverick-17b,1,fine
+31,review sheet,reviewer,,,shotgun:2,fine,llama4-maverick-17b,2,fine
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,llama4-maverick-17b,0,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,llama4-maverick-17b,1,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,llama4-maverick-17b,2,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,llama4-maverick-17b,0,fine
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,llama4-maverick-17b,1,fine
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,llama4-maverick-17b,2,fine
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,llama4-maverick-17b,0,debatable
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,llama4-maverick-17b,1,debatable
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,llama4-maverick-17b,2,debatable
+35,review sheet,reviewer,,C12,shotgun:388,wrong,llama4-maverick-17b,0,fine
+35,review sheet,reviewer,,C12,shotgun:388,wrong,llama4-maverick-17b,1,fine
+35,review sheet,reviewer,,C12,shotgun:388,wrong,llama4-maverick-17b,2,fine
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,llama4-maverick-17b,0,fine
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,llama4-maverick-17b,1,fine
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,llama4-maverick-17b,2,fine
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,llama4-maverick-17b,0,fine
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,llama4-maverick-17b,1,fine
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,llama4-maverick-17b,2,fine
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,llama4-maverick-17b,0,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,llama4-maverick-17b,1,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,llama4-maverick-17b,2,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,llama4-maverick-17b,0,debatable
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,llama4-maverick-17b,1,debatable
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,llama4-maverick-17b,2,debatable
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,llama4-maverick-17b,0,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,llama4-maverick-17b,1,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,llama4-maverick-17b,2,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,llama4-maverick-17b,0,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,llama4-maverick-17b,1,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,llama4-maverick-17b,2,wrong
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,llama4-maverick-17b,0,fine
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,llama4-maverick-17b,1,fine
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,llama4-maverick-17b,2,fine
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,llama4-maverick-17b,0,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,llama4-maverick-17b,1,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,llama4-maverick-17b,2,debatable
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,llama4-maverick-17b,0,debatable
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,llama4-maverick-17b,1,debatable
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,llama4-maverick-17b,2,debatable
+45,diff audit,auditor,,,2334143eeadc,fine,llama4-maverick-17b,0,fine
+45,diff audit,auditor,,,2334143eeadc,fine,llama4-maverick-17b,1,fine
+45,diff audit,auditor,,,2334143eeadc,fine,llama4-maverick-17b,2,fine
+46,review sheet,reviewer,,C1,shotgun:364,wrong,llama4-maverick-17b,0,debatable
+46,review sheet,reviewer,,C1,shotgun:364,wrong,llama4-maverick-17b,1,debatable
+46,review sheet,reviewer,,C1,shotgun:364,wrong,llama4-maverick-17b,2,debatable
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,llama4-maverick-17b,0,fine
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,llama4-maverick-17b,1,fine
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,llama4-maverick-17b,2,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,llama4-maverick-17b,0,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,llama4-maverick-17b,1,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,llama4-maverick-17b,2,fine
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,llama4-maverick-17b,0,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,llama4-maverick-17b,1,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,llama4-maverick-17b,2,wrong
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,llama4-maverick-17b,0,fine
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,llama4-maverick-17b,1,fine
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,llama4-maverick-17b,2,fine
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,llama4-maverick-17b,0,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,llama4-maverick-17b,1,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,llama4-maverick-17b,2,debatable
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,llama4-maverick-17b,0,fine
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,llama4-maverick-17b,1,fine
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,llama4-maverick-17b,2,fine
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,llama4-maverick-17b,0,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,llama4-maverick-17b,1,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,llama4-maverick-17b,2,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,llama4-maverick-17b,0,debatable
+54,review sheet,reviewer,,C11,shotgun:92,wrong,llama4-maverick-17b,1,debatable
+54,review sheet,reviewer,,C11,shotgun:92,wrong,llama4-maverick-17b,2,debatable
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,llama4-maverick-17b,0,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,llama4-maverick-17b,1,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,llama4-maverick-17b,2,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,llama4-maverick-17b,0,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,llama4-maverick-17b,1,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,llama4-maverick-17b,2,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,llama4-maverick-17b,0,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,llama4-maverick-17b,1,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,llama4-maverick-17b,2,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,llama4-maverick-17b,0,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,llama4-maverick-17b,1,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,llama4-maverick-17b,2,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,llama4-maverick-17b,0,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,llama4-maverick-17b,1,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,llama4-maverick-17b,2,wrong
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,llama4-maverick-17b,0,fine
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,llama4-maverick-17b,1,fine
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,llama4-maverick-17b,2,fine
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,llama4-maverick-17b,0,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,llama4-maverick-17b,1,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,llama4-maverick-17b,2,wrong
+62,diff audit,auditor,,,4e54d726e197,fine,llama4-maverick-17b,0,fine
+62,diff audit,auditor,,,4e54d726e197,fine,llama4-maverick-17b,1,fine
+62,diff audit,auditor,,,4e54d726e197,fine,llama4-maverick-17b,2,fine
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,llama4-maverick-17b,0,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,llama4-maverick-17b,1,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,llama4-maverick-17b,2,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,llama4-maverick-17b,0,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,llama4-maverick-17b,1,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,llama4-maverick-17b,2,wrong
+65,review sheet,reviewer,,C14,shotgun:383,wrong,llama4-maverick-17b,0,fine
+65,review sheet,reviewer,,C14,shotgun:383,wrong,llama4-maverick-17b,1,fine
+65,review sheet,reviewer,,C14,shotgun:383,wrong,llama4-maverick-17b,2,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,llama4-maverick-17b,0,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,llama4-maverick-17b,1,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,llama4-maverick-17b,2,fine
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,llama4-maverick-17b,0,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,llama4-maverick-17b,1,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,llama4-maverick-17b,2,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,llama4-maverick-17b,0,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,llama4-maverick-17b,1,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,llama4-maverick-17b,2,wrong
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,llama4-maverick-17b,0,debatable
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,llama4-maverick-17b,1,debatable
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,llama4-maverick-17b,2,debatable
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,llama4-maverick-17b,0,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,llama4-maverick-17b,1,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,llama4-maverick-17b,2,fine
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,llama4-maverick-17b,0,fine
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,llama4-maverick-17b,1,fine
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,llama4-maverick-17b,2,fine
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,llama4-maverick-17b,0,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,llama4-maverick-17b,1,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,llama4-maverick-17b,2,wrong
+73,review sheet,reviewer,,,telegram:36,wrong,llama4-maverick-17b,0,fine
+73,review sheet,reviewer,,,telegram:36,wrong,llama4-maverick-17b,1,fine
+73,review sheet,reviewer,,,telegram:36,wrong,llama4-maverick-17b,2,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,llama4-maverick-17b,0,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,llama4-maverick-17b,1,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,llama4-maverick-17b,2,fine
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,llama4-maverick-17b,0,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,llama4-maverick-17b,1,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,llama4-maverick-17b,2,wrong
+76,review sheet,reviewer,,C3,shotgun:390,wrong,llama4-maverick-17b,0,fine
+76,review sheet,reviewer,,C3,shotgun:390,wrong,llama4-maverick-17b,1,fine
+76,review sheet,reviewer,,C3,shotgun:390,wrong,llama4-maverick-17b,2,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,llama4-maverick-17b,0,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,llama4-maverick-17b,1,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,llama4-maverick-17b,2,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,llama4-maverick-17b,0,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,llama4-maverick-17b,1,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,llama4-maverick-17b,2,fine
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,llama4-maverick-17b,0,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,llama4-maverick-17b,1,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,llama4-maverick-17b,2,wrong
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,llama4-maverick-17b,0,debatable
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,llama4-maverick-17b,1,debatable
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,llama4-maverick-17b,2,debatable
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,llama4-maverick-17b,0,fine
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,llama4-maverick-17b,1,fine
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,llama4-maverick-17b,2,fine
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,llama4-maverick-17b,0,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,llama4-maverick-17b,1,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,llama4-maverick-17b,2,debatable
+83,diff audit,auditor,,,c1159480c61b,fine,llama4-maverick-17b,0,fine
+83,diff audit,auditor,,,c1159480c61b,fine,llama4-maverick-17b,1,fine
+83,diff audit,auditor,,,c1159480c61b,fine,llama4-maverick-17b,2,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,llama4-maverick-17b,0,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,llama4-maverick-17b,1,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,llama4-maverick-17b,2,fine
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,llama4-maverick-17b,0,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,llama4-maverick-17b,1,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,llama4-maverick-17b,2,wrong
+86,diff audit,auditor,,,eed20aa6f916,fine,llama4-maverick-17b,0,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,llama4-maverick-17b,1,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,llama4-maverick-17b,2,fine
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,llama4-maverick-17b,0,fine
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,llama4-maverick-17b,1,fine
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,llama4-maverick-17b,2,fine
+88,review sheet,reviewer,,C9,telegram:32,wrong,llama4-maverick-17b,0,fine
+88,review sheet,reviewer,,C9,telegram:32,wrong,llama4-maverick-17b,1,fine
+88,review sheet,reviewer,,C9,telegram:32,wrong,llama4-maverick-17b,2,fine
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,llama4-maverick-17b,0,debatable
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,llama4-maverick-17b,1,debatable
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,llama4-maverick-17b,2,debatable
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,llama4-maverick-17b,0,fine
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,llama4-maverick-17b,1,fine
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,llama4-maverick-17b,2,fine
+91,diff audit,auditor,,,092799f075ba,fine,llama4-maverick-17b,0,fine
+91,diff audit,auditor,,,092799f075ba,fine,llama4-maverick-17b,1,fine
+91,diff audit,auditor,,,092799f075ba,fine,llama4-maverick-17b,2,fine
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,llama4-maverick-17b,0,debatable
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,llama4-maverick-17b,1,debatable
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,llama4-maverick-17b,2,debatable
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,llama4-maverick-17b,0,wrong
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,llama4-maverick-17b,1,wrong
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,llama4-maverick-17b,2,wrong
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,llama4-maverick-17b,0,debatable
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,llama4-maverick-17b,1,debatable
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,llama4-maverick-17b,2,debatable
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,llama4-maverick-17b,0,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,llama4-maverick-17b,1,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,llama4-maverick-17b,2,wrong
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,llama4-maverick-17b,0,debatable
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,llama4-maverick-17b,1,debatable
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,llama4-maverick-17b,2,debatable
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,llama4-maverick-17b,0,fine
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,llama4-maverick-17b,1,fine
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,llama4-maverick-17b,2,fine
+98,review sheet,reviewer,,C13,shotgun:177,wrong,llama4-maverick-17b,0,debatable
+98,review sheet,reviewer,,C13,shotgun:177,wrong,llama4-maverick-17b,1,debatable
+98,review sheet,reviewer,,C13,shotgun:177,wrong,llama4-maverick-17b,2,debatable
+99,review sheet,reviewer,,C16,telegram:21,fine,llama4-maverick-17b,0,debatable
+99,review sheet,reviewer,,C16,telegram:21,fine,llama4-maverick-17b,1,debatable
+99,review sheet,reviewer,,C16,telegram:21,fine,llama4-maverick-17b,2,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,llama4-maverick-17b,0,fine
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,llama4-maverick-17b,1,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,llama4-maverick-17b,2,fine
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gemma4-31b-it,0,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gemma4-31b-it,1,wrong
+1,diff audit,reading,reading (LLM-judged),,1ebfd3b77da1,wrong,gemma4-31b-it,2,wrong
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gemma4-31b-it,0,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gemma4-31b-it,1,fine
+2,review sheet,reviewer,,,slop-guard-abl-single_agent:5,fine,gemma4-31b-it,2,fine
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gemma4-31b-it,0,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gemma4-31b-it,1,wrong
+3,diff audit,confirmed,targeted test,audit sheet 15,83adb13b000d,wrong,gemma4-31b-it,2,wrong
+4,diff audit,auditor,,,2771429d96ca,fine,gemma4-31b-it,0,fine
+4,diff audit,auditor,,,2771429d96ca,fine,gemma4-31b-it,1,fine
+4,diff audit,auditor,,,2771429d96ca,fine,gemma4-31b-it,2,fine
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gemma4-31b-it,0,debatable
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gemma4-31b-it,1,debatable
+5,diff audit,reading,reading (LLM-judged),audit sheet 13,5204d0f8cc4a,fine,gemma4-31b-it,2,debatable
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gemma4-31b-it,0,wrong
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gemma4-31b-it,1,wrong
+6,diff audit,auditor,,,4028fcc5e4b9,fine,gemma4-31b-it,2,wrong
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gemma4-31b-it,0,wrong
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gemma4-31b-it,1,wrong
+7,review sheet,reviewer,,,cleansweep-abl-no_research:1,wrong,gemma4-31b-it,2,wrong
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gemma4-31b-it,0,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gemma4-31b-it,1,fine
+8,review sheet,reviewer,,C17,skill-seekers:74,fine,gemma4-31b-it,2,fine
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gemma4-31b-it,0,debatable
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gemma4-31b-it,1,debatable
+9,diff audit,confirmed,rule: agent patch,,4da22c59c6ed,fine,gemma4-31b-it,2,debatable
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gemma4-31b-it,0,debatable
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gemma4-31b-it,1,fine
+10,review sheet,reviewer,,C4,shotgun:395,wrong,gemma4-31b-it,2,fine
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gemma4-31b-it,0,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gemma4-31b-it,1,wrong
+11,diff audit,confirmed,targeted test,,dd5a63ff6cb3,wrong,gemma4-31b-it,2,wrong
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gemma4-31b-it,0,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gemma4-31b-it,1,fine
+12,review sheet,reviewer,,C15,skill-seekers:150,debatable,gemma4-31b-it,2,fine
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gemma4-31b-it,0,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gemma4-31b-it,1,wrong
+13,diff audit,reading,reading (LLM-judged),audit sheet 5,f39f4e9b0abd,debatable,gemma4-31b-it,2,wrong
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gemma4-31b-it,0,fine
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gemma4-31b-it,1,fine
+14,review sheet,reviewer,,C6,shotgun:391,wrong,gemma4-31b-it,2,fine
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gemma4-31b-it,0,fine
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gemma4-31b-it,1,fine
+15,diff audit,reading,reading (LLM-judged),,66ccbd07a873,debatable,gemma4-31b-it,2,fine
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gemma4-31b-it,0,wrong
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gemma4-31b-it,1,wrong
+16,diff audit,confirmed,targeted test,,d4ecd8a22984,wrong,gemma4-31b-it,2,wrong
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gemma4-31b-it,0,wrong
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gemma4-31b-it,1,wrong
+17,review sheet,reviewer,,,skill-seekers-abl-no_research:2,wrong,gemma4-31b-it,2,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gemma4-31b-it,0,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gemma4-31b-it,1,wrong
+18,diff audit,confirmed,rule: agent patch,audit sheet 3,5b1e9f5c2e5b,fine,gemma4-31b-it,2,wrong
+19,diff audit,auditor,,,42120208e994,fine,gemma4-31b-it,0,fine
+19,diff audit,auditor,,,42120208e994,fine,gemma4-31b-it,1,fine
+19,diff audit,auditor,,,42120208e994,fine,gemma4-31b-it,2,fine
+20,diff audit,auditor,,,51c62c527f8f,fine,gemma4-31b-it,0,debatable
+20,diff audit,auditor,,,51c62c527f8f,fine,gemma4-31b-it,1,debatable
+20,diff audit,auditor,,,51c62c527f8f,fine,gemma4-31b-it,2,debatable
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gemma4-31b-it,0,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gemma4-31b-it,1,wrong
+21,diff audit,reading,reading (LLM-judged),,1e89c0c3fda5,wrong,gemma4-31b-it,2,wrong
+22,diff audit,auditor,,,1fae8065c2db,fine,gemma4-31b-it,0,debatable
+22,diff audit,auditor,,,1fae8065c2db,fine,gemma4-31b-it,1,debatable
+22,diff audit,auditor,,,1fae8065c2db,fine,gemma4-31b-it,2,debatable
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gemma4-31b-it,0,fine
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gemma4-31b-it,1,fine
+23,review sheet,reviewer,,C10,cleansweep:21,fine,gemma4-31b-it,2,fine
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gemma4-31b-it,0,wrong
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gemma4-31b-it,1,wrong
+24,diff audit,reading,reading (LLM-judged),,2da322d02869,fine,gemma4-31b-it,2,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gemma4-31b-it,0,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gemma4-31b-it,1,wrong
+25,diff audit,reading,reading (LLM-judged),,4e7f02206d11,debatable,gemma4-31b-it,2,wrong
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gemma4-31b-it,0,fine
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gemma4-31b-it,1,fine
+26,review sheet,reviewer,,,telegram-abl-no_research:31,fine,gemma4-31b-it,2,fine
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gemma4-31b-it,0,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gemma4-31b-it,1,wrong
+27,diff audit,reading,reading (LLM-judged),,07ed9c5ac355,fine,gemma4-31b-it,2,wrong
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gemma4-31b-it,0,fine
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gemma4-31b-it,1,fine
+28,diff audit,reading,reading (LLM-judged),,f8c78f2d0264,debatable,gemma4-31b-it,2,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gemma4-31b-it,0,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gemma4-31b-it,1,fine
+29,diff audit,confirmed,rule: injection key,,eca26242bad0,wrong,gemma4-31b-it,2,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gemma4-31b-it,0,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gemma4-31b-it,1,fine
+30,diff audit,reading,reading (LLM-judged),audit sheet 2,95aec87ffd7d,wrong,gemma4-31b-it,2,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gemma4-31b-it,0,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gemma4-31b-it,1,fine
+31,review sheet,reviewer,,,shotgun:2,fine,gemma4-31b-it,2,fine
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gemma4-31b-it,0,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gemma4-31b-it,1,wrong
+32,diff audit,reading,reading (LLM-judged),,0aa61bdd1f41,wrong,gemma4-31b-it,2,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gemma4-31b-it,0,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gemma4-31b-it,1,wrong
+33,diff audit,confirmed,rule: injection key,audit sheet 1,4b743ee9a784,fine,gemma4-31b-it,2,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gemma4-31b-it,0,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gemma4-31b-it,1,wrong
+34,diff audit,reading,reading (LLM-judged),,c9b49528eb2c,wrong,gemma4-31b-it,2,wrong
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gemma4-31b-it,0,fine
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gemma4-31b-it,1,fine
+35,review sheet,reviewer,,C12,shotgun:388,wrong,gemma4-31b-it,2,fine
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gemma4-31b-it,0,debatable
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gemma4-31b-it,1,debatable
+36,diff audit,reading,reading (LLM-judged),audit sheet 14,8ad1df8e6b5e,debatable,gemma4-31b-it,2,debatable
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gemma4-31b-it,0,wrong
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gemma4-31b-it,1,wrong
+37,diff audit,confirmed,rule: agent patch,,f463499ba0c2,fine,gemma4-31b-it,2,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gemma4-31b-it,0,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gemma4-31b-it,1,wrong
+38,diff audit,reading,reading (LLM-judged),,db42f2693957,wrong,gemma4-31b-it,2,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gemma4-31b-it,0,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gemma4-31b-it,1,wrong
+39,diff audit,confirmed,targeted test,,43d3c3bf5745,wrong,gemma4-31b-it,2,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gemma4-31b-it,0,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gemma4-31b-it,1,wrong
+40,review sheet,reviewer,,C2,skill-seekers:265,wrong,gemma4-31b-it,2,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gemma4-31b-it,0,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gemma4-31b-it,1,wrong
+41,diff audit,confirmed,rule: agent patch,audit sheet 18,f2351bdb23af,fine,gemma4-31b-it,2,wrong
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gemma4-31b-it,0,fine
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gemma4-31b-it,1,fine
+42,review sheet,reviewer,,,skill-seekers-abl-single_agent:3,fine,gemma4-31b-it,2,fine
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gemma4-31b-it,0,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gemma4-31b-it,1,debatable
+43,diff audit,reading,reading (LLM-judged),audit sheet 6,5bd9de6319f2,debatable,gemma4-31b-it,2,debatable
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gemma4-31b-it,0,fine
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gemma4-31b-it,1,fine
+44,review sheet,reviewer,,C7,slop-guard:24,debatable,gemma4-31b-it,2,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gemma4-31b-it,0,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gemma4-31b-it,1,fine
+45,diff audit,auditor,,,2334143eeadc,fine,gemma4-31b-it,2,fine
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gemma4-31b-it,0,wrong
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gemma4-31b-it,1,wrong
+46,review sheet,reviewer,,C1,shotgun:364,wrong,gemma4-31b-it,2,wrong
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gemma4-31b-it,0,fine
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gemma4-31b-it,1,fine
+47,diff audit,reading,reading (LLM-judged),audit sheet 10,2f74609ab5db,fine,gemma4-31b-it,2,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,gemma4-31b-it,0,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,gemma4-31b-it,1,fine
+48,diff audit,auditor,,,2d171ee06cbb,fine,gemma4-31b-it,2,fine
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gemma4-31b-it,0,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gemma4-31b-it,1,wrong
+49,diff audit,reading,reading (LLM-judged),,8c35ca3503a9,wrong,gemma4-31b-it,2,wrong
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gemma4-31b-it,0,fine
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gemma4-31b-it,1,wrong
+50,diff audit,reading,reading (LLM-judged),audit sheet 4,63364bb04155,debatable,gemma4-31b-it,2,fine
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gemma4-31b-it,0,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gemma4-31b-it,1,debatable
+51,diff audit,reading,reading (LLM-judged),audit sheet 9,1a56f540b79a,debatable,gemma4-31b-it,2,debatable
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gemma4-31b-it,0,fine
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gemma4-31b-it,1,fine
+52,review sheet,reviewer,,C5,slop-guard:34,wrong,gemma4-31b-it,2,fine
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gemma4-31b-it,0,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gemma4-31b-it,1,wrong
+53,diff audit,confirmed,targeted test,,57447a4a95b0,wrong,gemma4-31b-it,2,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gemma4-31b-it,0,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gemma4-31b-it,1,wrong
+54,review sheet,reviewer,,C11,shotgun:92,wrong,gemma4-31b-it,2,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gemma4-31b-it,0,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gemma4-31b-it,1,wrong
+55,diff audit,confirmed,targeted test,,4f7f257d6b40,wrong,gemma4-31b-it,2,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gemma4-31b-it,0,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gemma4-31b-it,1,wrong
+56,review sheet,reviewer,,,slop-guard:36,wrong,gemma4-31b-it,2,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gemma4-31b-it,0,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gemma4-31b-it,1,wrong
+57,diff audit,reading,reading (LLM-judged),audit sheet 17,5339c0c27c83,wrong,gemma4-31b-it,2,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gemma4-31b-it,0,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gemma4-31b-it,1,wrong
+58,diff audit,reading,reading (LLM-judged),,23a2af8448a7,wrong,gemma4-31b-it,2,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gemma4-31b-it,0,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gemma4-31b-it,1,wrong
+59,diff audit,reading,reading (LLM-judged),,0debddd2713a,fine,gemma4-31b-it,2,wrong
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gemma4-31b-it,0,debatable
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gemma4-31b-it,1,debatable
+60,diff audit,reading,reading (LLM-judged),audit sheet 11,57117c5fd996,debatable,gemma4-31b-it,2,debatable
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gemma4-31b-it,0,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gemma4-31b-it,1,wrong
+61,diff audit,confirmed,rule: injection key,,a705258fa611,wrong,gemma4-31b-it,2,wrong
+62,diff audit,auditor,,,4e54d726e197,fine,gemma4-31b-it,0,debatable
+62,diff audit,auditor,,,4e54d726e197,fine,gemma4-31b-it,1,debatable
+62,diff audit,auditor,,,4e54d726e197,fine,gemma4-31b-it,2,debatable
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gemma4-31b-it,0,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gemma4-31b-it,1,wrong
+63,diff audit,confirmed,targeted test,,6c34d2c7dd63,wrong,gemma4-31b-it,2,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gemma4-31b-it,0,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gemma4-31b-it,1,wrong
+64,diff audit,reading,reading (LLM-judged),,16eeceb0218e,wrong,gemma4-31b-it,2,wrong
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gemma4-31b-it,0,fine
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gemma4-31b-it,1,fine
+65,review sheet,reviewer,,C14,shotgun:383,wrong,gemma4-31b-it,2,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gemma4-31b-it,0,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gemma4-31b-it,1,fine
+66,diff audit,reading,reading (LLM-judged),audit sheet 8,be5c71e99c44,fine,gemma4-31b-it,2,fine
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gemma4-31b-it,0,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gemma4-31b-it,1,wrong
+67,diff audit,reading,reading (LLM-judged),audit sheet 16,a6c0f87c4543,wrong,gemma4-31b-it,2,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gemma4-31b-it,0,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gemma4-31b-it,1,wrong
+68,diff audit,reading,reading (LLM-judged),,0d8596affdfb,wrong,gemma4-31b-it,2,wrong
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gemma4-31b-it,0,fine
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gemma4-31b-it,1,fine
+69,review sheet,reviewer,,C20,slop-guard:33,wrong,gemma4-31b-it,2,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gemma4-31b-it,0,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gemma4-31b-it,1,fine
+70,diff audit,reading,reading (LLM-judged),,6085e79f58d2,fine,gemma4-31b-it,2,fine
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gemma4-31b-it,0,debatable
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gemma4-31b-it,1,debatable
+71,diff audit,reading,reading (LLM-judged),audit sheet 7,e1cf72020f95,debatable,gemma4-31b-it,2,debatable
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gemma4-31b-it,0,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gemma4-31b-it,1,wrong
+72,diff audit,confirmed,rule: injection key,,e95e9770f530,wrong,gemma4-31b-it,2,wrong
+73,review sheet,reviewer,,,telegram:36,wrong,gemma4-31b-it,0,wrong
+73,review sheet,reviewer,,,telegram:36,wrong,gemma4-31b-it,1,wrong
+73,review sheet,reviewer,,,telegram:36,wrong,gemma4-31b-it,2,wrong
+74,diff audit,auditor,,,8ce41df2ae13,fine,gemma4-31b-it,0,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,gemma4-31b-it,1,fine
+74,diff audit,auditor,,,8ce41df2ae13,fine,gemma4-31b-it,2,fine
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gemma4-31b-it,0,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gemma4-31b-it,1,wrong
+75,diff audit,reading,reading (LLM-judged),,208051db4f29,wrong,gemma4-31b-it,2,wrong
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gemma4-31b-it,0,fine
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gemma4-31b-it,1,fine
+76,review sheet,reviewer,,C3,shotgun:390,wrong,gemma4-31b-it,2,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gemma4-31b-it,0,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gemma4-31b-it,1,fine
+77,review sheet,reviewer,,C8,slop-guard:1,fine,gemma4-31b-it,2,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,gemma4-31b-it,0,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,gemma4-31b-it,1,fine
+78,review sheet,reviewer,,,skill-seekers:57,fine,gemma4-31b-it,2,fine
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gemma4-31b-it,0,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gemma4-31b-it,1,wrong
+79,diff audit,reading,reading (LLM-judged),,1e14fc0f4b45,wrong,gemma4-31b-it,2,wrong
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gemma4-31b-it,0,fine
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gemma4-31b-it,1,fine
+80,review sheet,reviewer,,,shotgun-abl-single_agent:38,wrong,gemma4-31b-it,2,fine
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gemma4-31b-it,0,wrong
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gemma4-31b-it,1,wrong
+81,diff audit,confirmed,targeted test,,262a66060df4,wrong,gemma4-31b-it,2,wrong
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gemma4-31b-it,0,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gemma4-31b-it,1,debatable
+82,diff audit,confirmed,targeted test,,1a456b42d5b7,wrong,gemma4-31b-it,2,debatable
+83,diff audit,auditor,,,c1159480c61b,fine,gemma4-31b-it,0,fine
+83,diff audit,auditor,,,c1159480c61b,fine,gemma4-31b-it,1,fine
+83,diff audit,auditor,,,c1159480c61b,fine,gemma4-31b-it,2,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,gemma4-31b-it,0,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,gemma4-31b-it,1,fine
+84,review sheet,reviewer,,C19,shotgun:384,fine,gemma4-31b-it,2,fine
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gemma4-31b-it,0,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gemma4-31b-it,1,wrong
+85,diff audit,reading,reading (LLM-judged),,300d612638a8,wrong,gemma4-31b-it,2,wrong
+86,diff audit,auditor,,,eed20aa6f916,fine,gemma4-31b-it,0,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,gemma4-31b-it,1,fine
+86,diff audit,auditor,,,eed20aa6f916,fine,gemma4-31b-it,2,fine
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gemma4-31b-it,0,wrong
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gemma4-31b-it,1,wrong
+87,diff audit,reading,reading (LLM-judged),,3525ce98fdfe,fine,gemma4-31b-it,2,wrong
+88,review sheet,reviewer,,C9,telegram:32,wrong,gemma4-31b-it,0,fine
+88,review sheet,reviewer,,C9,telegram:32,wrong,gemma4-31b-it,1,fine
+88,review sheet,reviewer,,C9,telegram:32,wrong,gemma4-31b-it,2,fine
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gemma4-31b-it,0,fine
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gemma4-31b-it,1,fine
+89,review sheet,reviewer,,C18,skill-seekers:364,fine,gemma4-31b-it,2,fine
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gemma4-31b-it,0,wrong
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gemma4-31b-it,1,wrong
+90,diff audit,reading,reading (LLM-judged),,2b3dceabd810,wrong,gemma4-31b-it,2,wrong
+91,diff audit,auditor,,,092799f075ba,fine,gemma4-31b-it,0,fine
+91,diff audit,auditor,,,092799f075ba,fine,gemma4-31b-it,1,fine
+91,diff audit,auditor,,,092799f075ba,fine,gemma4-31b-it,2,fine
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gemma4-31b-it,0,wrong
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gemma4-31b-it,1,wrong
+92,diff audit,confirmed,rule: injection key,,7230951cf7e4,fine,gemma4-31b-it,2,wrong
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gemma4-31b-it,0,debatable
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gemma4-31b-it,1,debatable
+93,diff audit,reading,reading (LLM-judged),,5eb641b25025,debatable,gemma4-31b-it,2,debatable
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gemma4-31b-it,0,wrong
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gemma4-31b-it,1,wrong
+94,diff audit,reading,reading (LLM-judged),audit sheet 20,c8db0315fcc0,debatable,gemma4-31b-it,2,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gemma4-31b-it,0,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gemma4-31b-it,1,wrong
+95,diff audit,reading,reading (LLM-judged),,1518219995b3,wrong,gemma4-31b-it,2,wrong
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gemma4-31b-it,0,debatable
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gemma4-31b-it,1,debatable
+96,diff audit,reading,reading (LLM-judged),,97f8e846fdd9,wrong,gemma4-31b-it,2,debatable
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gemma4-31b-it,0,debatable
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gemma4-31b-it,1,debatable
+97,diff audit,reading,reading (LLM-judged),audit sheet 12,38c27be976cd,debatable,gemma4-31b-it,2,debatable
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gemma4-31b-it,0,wrong
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gemma4-31b-it,1,wrong
+98,review sheet,reviewer,,C13,shotgun:177,wrong,gemma4-31b-it,2,wrong
+99,review sheet,reviewer,,C16,telegram:21,fine,gemma4-31b-it,0,fine
+99,review sheet,reviewer,,C16,telegram:21,fine,gemma4-31b-it,1,fine
+99,review sheet,reviewer,,C16,telegram:21,fine,gemma4-31b-it,2,fine
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gemma4-31b-it,0,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gemma4-31b-it,1,debatable
+100,diff audit,reading,reading (LLM-judged),audit sheet 19,e46220bc4ed0,debatable,gemma4-31b-it,2,debatable

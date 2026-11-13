@@ -1,0 +1,55 @@
+item,source,tier,checked_by,calibration,ref,recorded,judge,seed,label
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_a,0,wrong
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_a,1,wrong
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_a,2,wrong
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_a,0,fine
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_a,1,fine
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_a,2,fine
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_a,0,wrong
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_a,1,wrong
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_a,2,fine
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_a,0,debatable
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_a,1,debatable
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_a,2,debatable
+5,diff audit,auditor,,,e5,fine,judge_a,0,fine
+5,diff audit,auditor,,,e5,fine,judge_a,1,fine
+5,diff audit,auditor,,,e5,fine,judge_a,2,fine
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_a,0,fine
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_a,1,debatable
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_a,2,fine
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_b,0,wrong
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_b,1,wrong
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_b,2,wrong
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_b,0,wrong
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_b,1,wrong
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_b,2,wrong
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_b,0,fine
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_b,1,fine
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_b,2,fine
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_b,0,wrong
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_b,1,debatable
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_b,2,fine
+5,diff audit,auditor,,,e5,fine,judge_b,0,fine
+5,diff audit,auditor,,,e5,fine,judge_b,1,fine
+5,diff audit,auditor,,,e5,fine,judge_b,2,fine
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_b,0,fine
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_b,1,fine
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_b,2,fine
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_c,0,debatable
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_c,1,wrong
+1,diff audit,confirmed,targeted test,,e1,wrong,judge_c,2,wrong
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_c,0,fine
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_c,1,fine
+2,diff audit,confirmed,rule: injection key,audit sheet 1,e2,fine,judge_c,2,fine
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_c,0,wrong
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_c,1,wrong
+3,diff audit,reading,reading (LLM-judged),,e3,wrong,judge_c,2,wrong
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_c,0,wrong
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_c,1,wrong
+4,diff audit,reading,reading (LLM-judged),audit sheet 2,e4,debatable,judge_c,2,wrong
+5,diff audit,auditor,,,e5,fine,judge_c,0,debatable
+5,diff audit,auditor,,,e5,fine,judge_c,1,debatable
+5,diff audit,auditor,,,e5,fine,judge_c,2,debatable
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_c,0,wrong
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_c,1,wrong
+6,review sheet,reviewer,,C1,sheet_a:1,fine,judge_c,2,wrong
