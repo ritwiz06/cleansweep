@@ -957,6 +957,12 @@ team and v1 got a targeted test or a no-test note and a reading. The team: 0 wro
 
 - **Cost** (`cost.csv`): on REAL the team averages 202.9 requests and 25.1 minutes per finished run,
   batching 105.3 and 20.8, no research squad 10.4 and 21.1, v1 31.5 and 56.4, Aider 4.5 and 17.8.
+  Compare methods by requests, not tokens. Requests count every agent request, including replies
+  replayed from the run clone's shared LLM cache, and the 400-request budget uses the same count.
+  Tokens count only requests sent to the model. So the token means are not comparable between
+  methods that ran on the same clone: on INJECT the team without the resolver sent mostly the
+  team's prompts and reused their replies, with 150.8 requests but 37,920 tokens per run against
+  the team's 152.1 and 321,460.
 - **Second model** (`second_model.csv`, `deepseek-v4-1-flash` as the agents' model, 5 INJECT + 5
   REAL): the team finished 9 of 10 with no wrong edit in either tier; the single agent mostly stopped
   at once (the endpoint offers it a `generate_image` tool), removing almost nothing.
@@ -1006,3 +1012,9 @@ sheets among them. They used the same rubric and view, and each voted 3 times
 - The audit checks only flagged edits; the miss-rate estimate above bounds what it misses.
 - REAL's held-out tests catch only behavior the project's own tests reach.
 - One model family runs the agents in the main runs; the second model covers 10 repositories.
+- Methods on one clone share its LLM cache at the agents' fixed temperature. Where the resolver
+  changes nothing, the resolver-off arm repeats the team's replies, so H2 compares the two with
+  the model's answers held fixed rather than as independent samples.
+- Batching stays off by default in v3.0 (`core.agents.investigate_batch: on` in
+  `configs/base.yaml` turns it on). H3 holds only by a tie that changed with almost every
+  project.
