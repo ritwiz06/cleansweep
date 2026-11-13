@@ -186,3 +186,21 @@ experiment runners changed, and AUTONOMY pass 2 uses v2.1.2 as planned (fixes ma
    on the five marked projects, so `--every` was added on top of 13bd11f (1350cbc, #195); each
    clone checks out 1350cbc when its run-1 chain ends, so run 2 uses run 1's runner plus that
    flag, with its own LLM and probe caches.
+9. **An LLM judge panel replaces the two human raters (2026-11-13 10:27).** The plan (R27) had
+   two people rate the blinded 100-item packet, with Cohen's kappa between them and against the
+   recorded labels. No human raters were available before the freeze, so a blinded panel of LLM
+   judges takes their place, together with a check of the judges against the test-confirmed
+   verdicts. The judges come from model families other than the agents' (`qwen36-35b-a3b`), the
+   auditor's (`glm-5-3`) and the second model's (`deepseek-v4-1-flash`): `gpt-oss-120b`,
+   `mistral-large-4` and `gemma4-31b-it`. Each judge sees the packet's items with the raters'
+   rubric, in the same blinded view (no method, no recorded verdict, the packet's shuffled
+   order). It votes 3 times at temperature 0.3, and the majority is its label; with no majority,
+   the label is "debatable". The panel's label is the majority of the three judges, also
+   "debatable" when there is none. The results report: the judges' agreement (Fleiss' kappa and
+   pairwise Cohen's kappa); each judge's and the panel's agreement with the recorded labels; on
+   the items whose verdict is confirmed (a targeted test, the injection key or the UI check),
+   their accuracy, sensitivity and specificity for wrong vs not wrong, with Wilson 95%
+   intervals; and the reading-tier verdicts the panel overturns, listed. The packet's 40 items
+   from the two old calibration sheets are reported as their own subset. Consequence: the
+   audit's readings are LLM-judged and not human-validated. No hypothesis, metric or threshold
+   changes, because H1–H4 do not use the ratings.
