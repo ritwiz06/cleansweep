@@ -1,0 +1,9 @@
+set,method,model,planned,finished,timed_out,not run by the freeze,slop_removed (INJECT),traps_removed (INJECT),lines_removed,behavior_changes,kept_code_edits,wrong_all_tiers (incl. LLM-judged readings),wrong_confirmed,llm_requests_mean,minutes_mean
+injected v3,agentic,first,5,5,0,0,28,0,590,0,177,3,2,188.4,17.2
+injected v3,agentic-m2,deepseek-v4-1-flash,5,5,0,0,28,0,448,0,172,0,0,165.8,17.6
+injected v3,agentic-single_agent,first,5,5,0,0,18,2,1426,2,67,13,12,68.8,10.9
+injected v3,agentic-single_agent-m2,deepseek-v4-1-flash,5,5,0,0,3,0,17,0,6,0,0,12.4,2.4
+real v3,agentic,first,5,4,1,0,,,167,1,133,1,0,190.2,21.9
+real v3,agentic-m2,deepseek-v4-1-flash,5,4,1,0,,,121,1,159,0,0,76.8,5.6
+real v3,agentic-single_agent,first,5,5,0,0,,,1246,2,62,35,33,81.8,18.4
+real v3,agentic-single_agent-m2,deepseek-v4-1-flash,5,5,0,0,,,0,0,0,0,0,2.0,2.3

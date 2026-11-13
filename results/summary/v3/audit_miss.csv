@@ -1,11 +1,11 @@
 method,tier,no_kept_code_edits,no_unique_edits,sampled,tests_written,no_test,fails_after,wrong,debatable,wrong_share_of_sample,trap_census,sampled_trap_removals,other_no_kept_code_edits,miss_rate_estimate,miss_ci_low_estimate,miss_ci_high_estimate,v2_wrong_confirmed,v2_wrong_reading,missed_estimate,corrected_wrong_estimate,corrected_ci_low_estimate,corrected_ci_high_estimate
-agentic,confirmed,742,698,25,10,15,7,0,2,0.0,0,0,742,0.0,0.0,0.1355,13,6,0.0,19.0,19.0,119.5
+agentic,confirmed,742,698,75,19,56,15,0,2,0.0,0,0,742,0.0,0.0,0.0499,13,6,0.0,19.0,19.0,56.0
 agentic-no_research,confirmed,741,714,25,14,11,14,1,2,0.04,1,0,740,0.0378,0.0058,0.2084,25,6,28.0,60.0,36.3,186.2
 agentic-single_agent,confirmed,362,331,25,13,12,13,2,6,0.08,6,2,356,0.0,0.0,0.1669,66,18,0.0,90.0,90.0,149.4
-cleansweep-gatekeeper,confirmed,438,413,25,19,6,18,0,13,0.0,0,0,438,0.0,0.0,0.1367,18,38,0.0,56.0,56.0,115.9
-overall,confirmed,2283,2156,100,56,44,52,3,23,0.03,7,2,2276,0.0131,0.0024,0.0672,122,68,29.8,226.8,202.5,349.9
-agentic,reading (LLM-judged),742,698,25,10,15,,0,2,0.0,0,0,742,0.0,0.0,0.1355,13,6,0.0,19.0,19.0,119.5
+cleansweep-gatekeeper,confirmed,438,413,75,49,26,47,1,29,0.0133,0,0,438,0.0125,0.002,0.0738,18,38,5.5,61.5,56.9,88.3
+overall,confirmed,2283,2156,200,95,105,89,4,39,0.02,7,2,2276,0.0153,0.004,0.0574,122,68,34.9,231.9,206.0,327.6
+agentic,reading (LLM-judged),742,698,75,19,56,,0,2,0.0,0,0,742,0.0,0.0,0.0499,13,6,0.0,19.0,19.0,56.0
 agentic-no_research,reading (LLM-judged),741,714,25,14,11,,1,2,0.04,1,0,740,0.0378,0.0058,0.2084,25,6,28.0,60.0,36.3,186.2
 agentic-single_agent,reading (LLM-judged),362,331,25,13,12,,2,6,0.08,6,2,356,0.0,0.0,0.1669,66,18,0.0,90.0,90.0,149.4
-cleansweep-gatekeeper,reading (LLM-judged),438,413,25,19,6,,0,13,0.0,0,0,438,0.0,0.0,0.1367,18,38,0.0,56.0,56.0,115.9
-overall,reading (LLM-judged),2283,2156,100,56,44,,3,23,0.03,7,2,2276,0.0131,0.0024,0.0672,122,68,29.8,226.8,202.5,349.9
+cleansweep-gatekeeper,reading (LLM-judged),438,413,75,49,26,,1,29,0.0133,0,0,438,0.0125,0.002,0.0738,18,38,5.5,61.5,56.9,88.3
+overall,reading (LLM-judged),2283,2156,200,95,105,,4,39,0.02,7,2,2276,0.0153,0.004,0.0574,122,68,34.9,231.9,206.0,327.6
