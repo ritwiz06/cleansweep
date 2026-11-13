@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { api, useApi, type RunDetail } from "../api";
 import type { Item, RunState, StudioEvent } from "../state/fold";
 import { buildTree, defaultExpanded, filesFromEvents, findNode, focusPath, pathTo, visibleRows, type FileEntry, type TreeNode } from "../state/tree";
@@ -6,7 +6,7 @@ import { AgentIcon, AgentTag, agentName } from "./AgentIcon";
 import { RunContext } from "./Artifact";
 import { Pointer } from "./AfterParts";
 import { DiffView, filterDiff } from "./Code";
-import { Card, Empty, Loading } from "./common";
+import { Card, Empty, Help, Loading } from "./common";
 import { ItemDetail } from "./ItemBoard";
 import { PackageChecks } from "./Packages";
 import { STATE_GLYPH, StateChip, StateLegend, stateLabel } from "./states";
@@ -196,6 +196,25 @@ function NodeDetail({ node, state, detail, onPick }: { node: TreeNode; state: Ru
   );
 }
 
+// The height left under the cards' top edge (in a window scrolled to the top), so the tree and
+// its details fit on the screen and scroll only inside themselves.
+function useFitHeight(): [RefObject<HTMLDivElement | null>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(480);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setHeight(Math.max(240, window.innerHeight - top - 16));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  return [ref, height];
+}
+
 export type TreeView = ReturnType<typeof useTreeView>;
 
 // Which nodes are open; with `follow`, the latest action is opened and scrolled into view
@@ -213,10 +232,10 @@ export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
     const row = treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
     const box = treeRef.current?.parentElement;
     if (!follow || !row || !box) return;
+    // the row goes to the middle of the tree's own box; the page itself never scrolls
     const r = row.getBoundingClientRect();
     const b = box.getBoundingClientRect();
-    if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
-    else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+    box.scrollTop += r.top + r.height / 2 - (b.top + b.height / 2);
   }, [follow, count, open]);
   const rows = visibleRows(tree, expanded);
   const toggle = (key: string) => {
@@ -277,6 +296,7 @@ export function ProjectView({
   const [chosen, setChosen] = useState<string | null>(null);
   const [follow, setFollow] = useState(true);
   const view = useTreeView(tree, follow, state.count);
+  const [fit, height] = useFitHeight();
   const node = chosen ? findNode(tree, chosen) : null;
   const pick = (key: string) => {
     setChosen(key);
@@ -286,17 +306,21 @@ export function ProjectView({
   const focusItem = state.focus.length ? state.items[state.focus[0]] : null;
   return (
     <div className="project-view">
-      <div className="project-bar">
-        <StateLegend />
-        <label className="check follow">
-          <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
-        </label>
-      </div>
-      <div className="project">
+      <div className="project" ref={fit} style={{ ["--fit" as string]: `${height}px` }}>
         <Card
           title={
             <>
               Project files <span className="muted small">{list.length} files</span>
+            </>
+          }
+          actions={
+            <>
+              <Help label="The states' colors, glyphs and names" face="Key">
+                <StateLegend />
+              </Help>
+              <label className="check follow">
+                <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
+              </label>
             </>
           }
           className="tree-card"

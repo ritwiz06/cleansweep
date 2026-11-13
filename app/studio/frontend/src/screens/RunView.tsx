@@ -1,20 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
 import { AgentGraph } from "../components/AgentGraph";
 import { RunContext } from "../components/Artifact";
 import { DiffView } from "../components/Code";
-import { Async, Card, Empty, ErrorBox, Loading, PageHeader, Tabs } from "../components/common";
+import { Async, Badge, Card, Empty, ErrorBox, Loading, PageHeader, Status, Tabs } from "../components/common";
 import { ItemBoard } from "../components/ItemBoard";
 import { MessageBoard } from "../components/MessageBoard";
-import { Decisions, MetricsBar, RunNumbers } from "../components/Metrics";
+import { Decisions, RunNumbers } from "../components/Metrics";
 import { DocFile, Packages } from "../components/Packages";
-import { PhaseTimeline } from "../components/PhaseTimeline";
 import { ProjectView, useProjectFiles } from "../components/ProjectView";
+import { RunBand } from "../components/RunBand";
 import { Tour, type TourStep } from "../components/Tour";
-import { Transport } from "../components/Transport";
 import type { Decision, RunState, StudioEvent } from "../state/fold";
 import { useEvents, useFolded, usePlayer } from "../state/hooks";
-import { KIND_LABEL } from "./Runs";
+import { runTitle } from "../state/names";
 import { V1Run } from "./V1Run";
 
 type Tab = "project" | "overview" | "messages" | "items" | "packages" | "report";
@@ -54,16 +53,24 @@ function ReportTab({ detail, state }: { detail: RunDetail; state: RunState }) {
 function tourSteps(setTab: (t: Tab) => void, show: () => void): TourStep[] {
   return [
     {
-      target: ".transport",
+      target: ".band-controls",
       title: "Play the recording",
-      text: "Play, step, or jump to the Manager's next decision. The scrubber moves through the whole run.",
+      text: "Play, step, or jump to the Manager's next decision.",
       enter: () => {
         setTab("project");
         show();
       },
     },
-    { target: ".metrics", title: "The numbers so far", text: "How much slop is cleaned, and how much of each budget (test runs, LLM calls, time) the run has used." },
-    { target: ".timeline", title: "The phases", text: "The run's phases from left to right. Each mark below is a decision of the Manager; click one to jump there." },
+    {
+      target: ".band-lead",
+      title: "The slop cleaned",
+      text: "Edits applied of the candidates found. The line under the timeline has the packages and the budgets: test runs, LLM calls, minutes.",
+    },
+    {
+      target: ".timeline",
+      title: "The phases, and where you are",
+      text: "The run's phases from left to right. Click or drag on them to move through the run; each mark below is a decision of the Manager.",
+    },
     {
       target: ".project",
       title: "The project",
@@ -80,7 +87,19 @@ function tourSteps(setTab: (t: Tab) => void, show: () => void): TourStep[] {
   ];
 }
 
-function V2Run({ detail, live, reload, tour }: { detail: RunDetail; live: boolean; reload: () => void; tour: boolean }) {
+function V2Run({
+  detail,
+  live,
+  reload,
+  tour,
+  header,
+}: {
+  detail: RunDetail;
+  live: boolean;
+  reload: () => void;
+  tour: boolean;
+  header: (status: ReactNode, finished: boolean) => ReactNode;
+}) {
   const feed = useEvents<StudioEvent>(detail.root, detail.path, live);
   const player = usePlayer(feed.events);
   const count = live ? feed.events.length : player.count;
@@ -97,23 +116,25 @@ function V2Run({ detail, live, reload, tour }: { detail: RunDetail; live: boolea
     reload();
     files.reload();
   }, [live, started, feed.done]);
-  const end = feed.events.length ? feed.events[feed.events.length - 1].t : 0;
   const pick = (d: Decision) => {
     if (!live) player.setCount(feed.events.findIndex((e) => e.id === d.eventId) + 1);
   };
+  const status = state.finished ? (
+    <Status value={state.verdict} />
+  ) : live && !feed.done ? (
+    <span className="badge tone-warn">
+      <span className="spinner small" aria-hidden /> running
+    </span>
+  ) : (
+    <Status value="in progress" />
+  );
   if (feed.error) return <ErrorBox error={feed.error} />;
   if (!live && !feed.done) return <Loading what="Loading the recording" />;
   return (
     <RunContext.Provider value={{ root: detail.root, path: detail.path }}>
+      {header(status, live && feed.done && state.finished)}
       {tour && feed.events.length > 0 && <Tour steps={steps} onClose={() => window.location.replace(runHash(detail))} />}
-      {!live && <Transport player={player} total={feed.events.length} end={end} />}
-      {live && (
-        <div className="live-banner" role="status">
-          {feed.done ? "Run finished." : <><span className="spinner small" /> Live: {feed.events.length} events so far</>}
-        </div>
-      )}
-      <MetricsBar state={state} detail={feed.done && state.finished ? detail : null} />
-      <PhaseTimeline state={state} onDecision={pick} />
+      <RunBand state={state} events={feed.events} detail={feed.done && state.finished ? detail : null} player={live ? null : player} onDecision={pick} />
       <Tabs
         tabs={[
           { key: "project", label: "Project" },
@@ -136,7 +157,14 @@ function V2Run({ detail, live, reload, tour }: { detail: RunDetail; live: boolea
             <Card title="The Manager's decisions" scroll>
               <Decisions state={state} onPick={pick} />
             </Card>
-            <Card title="Latest thoughts" scroll>
+            <Card
+              title={
+                <>
+                  Latest thoughts <Badge tone="info">LLM-judged</Badge>
+                </>
+              }
+              scroll
+            >
               {state.thoughts.length ? (
                 <ul className="thoughts">
                   {state.thoughts.slice(-4).reverse().map((t, i) => (
@@ -171,47 +199,53 @@ function V2Run({ detail, live, reload, tour }: { detail: RunDetail; live: boolea
 }
 
 const HELP_LIVE = "A cleanup as it happens: the agents' phases, messages and edits, and every candidate's state in the project's files.";
-const HELP_REPLAY = "A recorded cleanup, played back: the agents' phases, messages and edits, and every candidate's state in the project's files.";
+const HELP_REPLAY =
+  "A recorded cleanup, played back: the agents' phases, messages and edits, and every candidate's state in the project's files. Click or drag on the timeline to move through it.";
 
 function meta(d: RunDetail): string {
   const model = d.model || (d.report?.stats?.llm_calls ? "not recorded" : d.finished ? "none" : "-");
-  return [KIND_LABEL[d.kind] || d.kind, d.target, d.mode && `${d.mode} mode`, `model ${model}`].filter(Boolean).join(" · ");
+  return [d.target, d.mode && `${d.mode} mode`, `model ${model}`].filter(Boolean).join(" · ");
 }
 
 export function RunView({ root, path, live, tour = false }: { root: string; path: string; live: boolean; tour?: boolean }) {
   const res = useApi<RunDetail>(`${root}/${path}`, () => api("/api/run", { root, path }));
-  const [title, setTitle] = useState(path);
-  useEffect(() => setTitle(path.split("/").pop() || path), [path]);
   if (!root || !path) return <Empty action={{ label: "Open Runs", href: "#/runs" }}>Pick a run to replay.</Empty>;
   const d = res.data;
+  const name = d ? runTitle(d) : path.split("/").pop() || path;
+  // a live run that has ended is just a run; its status chip says how it ended
+  const header = (status?: ReactNode, finished = false) => (
+    <PageHeader
+      title={`${live && !finished ? "Live run" : live ? "Run" : "Replay"}: ${name}`}
+      titleTip={path}
+      status={status}
+      description={d ? meta(d) : " "}
+      help={live ? HELP_LIVE : HELP_REPLAY}
+      actions={
+        d && (
+          <>
+            {d.live && !live && (
+              <a className="button" href={`#/run?${new URLSearchParams({ root, path })}`}>
+                Follow live
+              </a>
+            )}
+            {d.kind === "v2" && (
+              <>
+                <a className="button" href={afterHash({ root, path })}>
+                  Before / after
+                </a>
+                <a className="button" href={`#/present?${new URLSearchParams({ root, path, ...(live ? { live: "1" } : {}) })}`}>
+                  Present
+                </a>
+              </>
+            )}
+          </>
+        )
+      }
+    />
+  );
   return (
     <div className="screen run-view">
-      <PageHeader
-        title={`${live ? "Live run" : "Replay"}: ${title}`}
-        description={d ? meta(d) : " "}
-        help={live ? HELP_LIVE : HELP_REPLAY}
-        actions={
-          d && (
-            <>
-              {d.live && !live && (
-                <a className="button" href={`#/run?${new URLSearchParams({ root, path })}`}>
-                  Follow live
-                </a>
-              )}
-              {d.kind === "v2" && (
-                <>
-                  <a className="button" href={afterHash({ root, path })}>
-                    Before / after
-                  </a>
-                  <a className="button" href={`#/present?${new URLSearchParams({ root, path, ...(live ? { live: "1" } : {}) })}`}>
-                    Present
-                  </a>
-                </>
-              )}
-            </>
-          )
-        }
-      />
+      {d?.kind !== "v2" && header()}
       <Async res={res} what="Loading the run">
         {(d) =>
           d.kind === "v1" ? (
@@ -219,7 +253,7 @@ export function RunView({ root, path, live, tour = false }: { root: string; path
           ) : d.kind === "watch" ? (
             <Empty action={{ label: "Open in Watch", href: `#/watch?${new URLSearchParams({ root, path })}` }}>This is a watch folder.</Empty>
           ) : (
-            <V2Run detail={d} live={live} reload={res.reload} tour={tour && !live} />
+            <V2Run detail={d} live={live} reload={res.reload} tour={tour && !live} header={header} />
           )
         }
       </Async>

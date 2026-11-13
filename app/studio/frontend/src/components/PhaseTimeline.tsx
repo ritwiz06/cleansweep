@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { PHASES, type Decision, type RunState } from "../state/fold";
-import { MIN_PHASE, labelWidth, phaseWidths, positionOf } from "../state/timeline";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { type Decision, type RunState } from "../state/fold";
+import { MIN_PHASE, labelWidth, phaseWidths, positionOf, timeAt } from "../state/timeline";
 import { seconds } from "./common";
 
 const phaseName = (phase: string) => phase.replace("_", " ");
@@ -21,8 +21,28 @@ function useWidth() {
   return { ref, width };
 }
 
-export function PhaseTimeline({ state, onDecision }: { state: RunState; onDecision?: (d: Decision) => void }) {
+// Moving through a replay on the timeline itself: a click or a drag goes to that moment; the
+// arrow keys move one event, Page Up / Page Down ten, Home and End to either end.
+export interface Seek {
+  clock: number;
+  count: number;
+  total: number;
+  toTime: (t: number) => void;
+  toCount: (n: number) => void;
+}
+
+const KEYS: Record<string, (count: number, total: number) => number> = {
+  ArrowRight: (c) => c + 1,
+  ArrowLeft: (c) => c - 1,
+  PageDown: (c) => c + 10,
+  PageUp: (c) => c - 10,
+  Home: () => 0,
+  End: (_, total) => total,
+};
+
+export function PhaseTimeline({ state, onDecision, seek }: { state: RunState; onDecision?: (d: Decision) => void; seek?: Seek }) {
   const { ref, width } = useWidth();
+  const dragging = useRef(false);
   const spans = state.phases.map((p) => ({ ...p, dur: Math.max((p.end ?? state.t) - p.start, 0) }));
   const current = state.finished ? -1 : spans.length - 1;
   // every name in full when the bar has room for them all; the current one always
@@ -32,11 +52,38 @@ export function PhaseTimeline({ state, onDecision }: { state: RunState; onDecisi
     width,
     mins,
   );
-  const now = state.phase && !state.finished ? PHASES.indexOf(state.phase as (typeof PHASES)[number]) : -1;
-  const next = now >= 0 ? PHASES.slice(now + 1).find((p) => p !== "DONE") : undefined;
+  const seekAt = (e: PointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    seek?.toTime(timeAt(e.clientX - box.left, spans, widths));
+  };
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const move = KEYS[e.key];
+    if (!seek || !move) return;
+    seek.toCount(Math.max(0, Math.min(seek.total, move(seek.count, seek.total))));
+    e.preventDefault();
+  };
+  const slider = seek
+    ? {
+        role: "slider",
+        tabIndex: 0,
+        "aria-label": "Scrubber",
+        "aria-valuemin": 0,
+        "aria-valuemax": seek.total,
+        "aria-valuenow": seek.count,
+        "aria-valuetext": `event ${seek.count} of ${seek.total}, ${seconds(seek.clock)}`,
+        onKeyDown: onKey,
+        onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          seekAt(e);
+        },
+        onPointerMove: (e: PointerEvent<HTMLDivElement>) => dragging.current && seekAt(e),
+        onPointerUp: () => (dragging.current = false),
+      }
+    : {};
   return (
     <div className="timeline" aria-label="Phase timeline">
-      <div className="timeline-bar" ref={ref}>
+      <div className={seek ? "timeline-bar scrub" : "timeline-bar"} ref={ref} {...slider}>
         {spans.length === 0 && <div className="muted small">Waiting for the first phase...</div>}
         {spans.map((s, i) => (
           <div
@@ -52,6 +99,7 @@ export function PhaseTimeline({ state, onDecision }: { state: RunState; onDecisi
             <span className="span-time">{seconds(s.dur)}</span>
           </div>
         ))}
+        {seek && spans.length > 0 && <div className="playhead" style={{ left: positionOf(seek.clock, spans, widths) }} aria-hidden />}
       </div>
       <div className="timeline-marks">
         {state.decisions.map((d) => (
@@ -65,12 +113,6 @@ export function PhaseTimeline({ state, onDecision }: { state: RunState; onDecisi
           />
         ))}
       </div>
-      {(next || state.backSteps > 0) && (
-        <div className="phase-legend">
-          {next && <span className="legend-item pending">next: {phaseName(next)}</span>}
-          {state.backSteps > 0 && <span className="legend-item back">↩ {state.backSteps} step back{state.backSteps > 1 ? "s" : ""}</span>}
-        </div>
-      )}
     </div>
   );
 }

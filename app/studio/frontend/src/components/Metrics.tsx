@@ -1,65 +1,7 @@
 import type { RunDetail } from "../api";
 import { type Decision, type RunState } from "../state/fold";
 import { formatNumber, ruleLabel } from "../state/labels";
-import { Status, StatsRow, seconds, type StatItem } from "./common";
-
-// A budget turns amber then red as it fills; progress stays green.
-function budget(used: number, limit: number | undefined): Pick<StatItem, "share" | "tone"> {
-  if (!limit) return {};
-  const share = Math.min(used / limit, 1);
-  return { share, tone: share > 0.9 ? "bad" : share > 0.7 ? "warn" : "good" };
-}
-
-function outOf(used: number | string, limit?: number) {
-  return limit ? (
-    <>
-      {used}
-      <span className="stat-of"> / {limit}</span>
-    </>
-  ) : (
-    used
-  );
-}
-
-function testRunsOf(state: RunState, detail: RunDetail | null): number {
-  const stats = detail?.report?.stats || {};
-  // the events miss runs a step makes without a message; a finished run has the exact count
-  return typeof stats.test_runs === "number" ? stats.test_runs : state.testRuns;
-}
-
-// The run at a glance: the slop cleaned leads, then the packages and the budgets.
-export function MetricsBar({ state, detail }: { state: RunState; detail: RunDetail | null }) {
-  const done = Object.values(state.packages).filter((p) => ["kept", "rolled_back", "repaired", "reverted", "skipped"].includes(p.status));
-  const kept = done.filter((p) => p.status === "kept" || p.status === "repaired").length;
-  const testRuns = testRunsOf(state, detail);
-  const minutes = Math.round((state.t / 60) * 10) / 10;
-  const status = (
-    <span className="stat-status">
-      {state.finished ? <Status value={state.verdict} /> : <Status value="in progress" />}
-      <span className="muted small">{(state.phase || "starting").replace("_", " ")}</span>
-    </span>
-  );
-  return (
-    <StatsRow
-      label="Run metrics"
-      items={[
-        {
-          label: "Slop cleaned",
-          hint: "edits applied of the candidates found",
-          value: outOf(state.applied, state.candidates || undefined),
-          lead: true,
-          share: state.candidates ? state.applied / state.candidates : 0,
-          aside: status,
-        },
-        { label: "Packages done", value: outOf(done.length, state.packageOrder.length || undefined), share: state.packageOrder.length ? done.length / state.packageOrder.length : undefined },
-        { label: "Kept / not kept", value: `${kept} / ${done.length - kept}`, hint: "not kept: rolled back, reverted or not applied" },
-        { label: "Test runs", value: outOf(testRuns, state.budget.test_runs), ...budget(testRuns, state.budget.test_runs) },
-        { label: "LLM calls", value: outOf(state.llmCalls, state.budget.llm_calls), ...budget(state.llmCalls, state.budget.llm_calls) },
-        { label: "Elapsed (min)", value: outOf(minutes, state.budget.minutes), ...budget(minutes, state.budget.minutes) },
-      ]}
-    />
-  );
-}
+import { Status, StatsRow, seconds } from "./common";
 
 // The numbers that matter once a run is over, for the Report tab.
 export function RunNumbers({ state, detail }: { state: RunState; detail: RunDetail | null }) {

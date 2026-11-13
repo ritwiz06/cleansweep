@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GAP, MIN_PHASE, labelWidth, phaseWidths, positionOf } from "./timeline";
+import { GAP, MIN_PHASE, labelWidth, phaseWidths, positionOf, timeAt } from "./timeline";
 
 describe("phaseWidths", () => {
   it("gives every phase its minimum and shares the rest by duration", () => {
@@ -29,5 +29,13 @@ describe("positionOf", () => {
     ];
     expect(positionOf(5, spans, [100, 200])).toBe(50);
     expect(positionOf(15, spans, [100, 200])).toBe(100 + GAP + 100);
+  });
+
+  it("is undone by timeAt, so the bar can be scrubbed", () => {
+    const spans = [
+      { start: 0, dur: 10 },
+      { start: 10, dur: 30 },
+    ];
+    for (const t of [0, 4, 10, 25, 40]) expect(timeAt(positionOf(t, spans, [100, 200]), spans, [100, 200])).toBeCloseTo(t);
   });
 });

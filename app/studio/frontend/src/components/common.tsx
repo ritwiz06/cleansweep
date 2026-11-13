@@ -88,7 +88,17 @@ export function Async<T>({
 
 // "What am I looking at?": one line about the screen, opened by the button beside the title.
 // Escape or a click elsewhere closes it.
-export function Help({ text }: { text: string }) {
+export function Help({
+  text,
+  children,
+  label = "What am I looking at?",
+  face = "?",
+}: {
+  text?: string;
+  children?: ReactNode;
+  label?: string;
+  face?: string;
+}) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
   const id = useId();
@@ -113,18 +123,18 @@ export function Help({ text }: { text: string }) {
     <span className="help" ref={box}>
       <button
         type="button"
-        className="help-button"
-        aria-label="What am I looking at?"
-        title="What am I looking at?"
+        className={face === "?" ? "help-button" : "help-button wide"}
+        aria-label={face === "?" ? label : undefined}
+        title={label}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen(!open)}
       >
-        ?
+        {face}
       </button>
       {open && (
         <span id={id} className="help-pop" role="note">
-          {text}
+          {children ?? text}
         </span>
       )}
     </span>
@@ -134,11 +144,15 @@ export function Help({ text }: { text: string }) {
 // A screen's header: the title, one line on what the screen shows, and its actions.
 export function PageHeader({
   title,
+  titleTip,
+  status,
   description,
   help,
   actions,
 }: {
   title: ReactNode;
+  titleTip?: string;
+  status?: ReactNode;
   description?: ReactNode;
   help?: string;
   actions?: ReactNode;
@@ -147,7 +161,8 @@ export function PageHeader({
     <header className="page-head">
       <div className="page-head-text">
         <div className="page-title">
-          <h2>{title}</h2>
+          <h2 title={titleTip}>{title}</h2>
+          {status}
           {help && <Help text={help} />}
         </div>
         {description && <p className="page-desc">{description}</p>}
@@ -231,22 +246,24 @@ export interface StatItem {
   aside?: ReactNode; // beside the value (a verdict chip)
 }
 
-// One row of numbers, the same on every screen: equal columns, the value on top (tabular), a
-// bar for a share of a budget, and a short sentence-case label below.
+// One row of numbers, the same on every screen: columns of one width, the value on top
+// (tabular), a bar track under every value (filled for a share of a budget, so the values line
+// up), and a short sentence-case label below.
 export function StatsRow({ items, label }: { items: StatItem[]; label?: string }) {
-  const columns = items.reduce((n, s) => n + (s.lead ? 2 : 1), 0);
   return (
-    <div className="stats-row" role="group" aria-label={label} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+    <div className="stats-row" role="group" aria-label={label}>
       {items.map((s) => (
         <div key={s.label} className={s.lead ? "stat lead" : "stat"} title={s.hint}>
           <div className="stat-top">
             <span className="stat-value">{s.value}</span>
             {s.aside}
           </div>
-          {s.share !== undefined && (
-            <div className={s.lead ? "bar big" : "bar"} role="meter" aria-label={s.label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(s.share * 100)}>
+          {s.share !== undefined ? (
+            <div className="bar" role="meter" aria-label={s.label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(s.share * 100)}>
               <div className={`fill tone-${s.tone || "good"}`} style={{ width: `${Math.min(s.share, 1) * 100}%` }} />
             </div>
+          ) : (
+            <div className="bar track" aria-hidden />
           )}
           <div className="stat-label">{s.label}</div>
         </div>

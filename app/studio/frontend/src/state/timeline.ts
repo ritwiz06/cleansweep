@@ -20,6 +20,20 @@ export function phaseWidths(durations: number[], width: number, mins: number[]):
   return durations.map((d, i) => mins[i] + (free - floor) * (total > 0 ? d / total : 1 / n));
 }
 
+// The moment at a point of the bar (the inverse of positionOf), for scrubbing on the timeline.
+export function timeAt(x: number, spans: { start: number; dur: number }[], widths: number[]): number {
+  let left = 0;
+  for (let i = 0; i < spans.length; i++) {
+    const s = spans[i];
+    if (x <= left + widths[i] || i === spans.length - 1) {
+      const frac = widths[i] > 0 ? Math.min(Math.max((x - left) / widths[i], 0), 1) : 0;
+      return s.start + s.dur * frac;
+    }
+    left += widths[i] + GAP;
+  }
+  return 0;
+}
+
 // Where a moment falls on the bar, in pixels: inside its phase, by its share of that phase.
 export function positionOf(t: number, spans: { start: number; dur: number }[], widths: number[]): number {
   let left = 0;
