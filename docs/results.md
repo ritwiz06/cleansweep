@@ -933,6 +933,7 @@ By the freeze: 792 checks over 1,931 audited edits (452 wrong, 199 debatable, 14
 | Set | Method | Kept code edits | Wrong, all tiers (share) | Wrong, confirmed (share) |
 |---|---|---|---|---|
 | INJECT | Team | 227 | 3 (0.013) | 2 (0.009) |
+| INJECT | Team, resolver off | 227 | 3 (0.013) | 2 (0.009) |
 | INJECT | Team, batching | 229 | 4 (0.017) | 3 (0.013) |
 | INJECT | No research squad | 398 | 12 (0.030) | 11 (0.028) |
 | INJECT | Single agent | 165 | 37 (0.224) | 36 (0.218) |
