@@ -89,13 +89,46 @@ function borderPoint(node: InternalNode, other: InternalNode) {
 
 // A message: a line from the sender's border to the recipient's, ending in an arrow. The newest
 // one is highlighted, labelled with its type, and a dot travels along it.
+// The path between two agents and where its label goes. Neighbours in one squad get a curve out
+// to the squad's outer side, long enough to read as an arrow; others a straight line with the
+// label just above its middle, beside the line rather than on it.
+function edgeGeometry(from: InternalNode, to: InternalNode) {
+  const box = (n: InternalNode) => {
+    const { x, y } = n.internals.positionAbsolute;
+    const w = n.measured.width ?? 0;
+    const h = n.measured.height ?? 0;
+    return { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
+  };
+  const f = box(from);
+  const t = box(to);
+  if (Math.abs(f.cx - t.cx) < 40) {
+    const left = f.cx < 400;
+    const ax = left ? f.x : f.x + f.w;
+    const bx = left ? t.x : t.x + t.w;
+    const out = left ? -44 : 44;
+    return {
+      path: `M ${ax},${f.cy} C ${ax + out},${f.cy} ${bx + out},${t.cy} ${bx},${t.cy}`,
+      label: { x: ax + out * 0.8, y: (f.cy + t.cy) / 2 },
+    };
+  }
+  const a = borderPoint(from, to);
+  const b = borderPoint(to, from);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // the normal that points up, 16 units off the line
+  const flip = dx >= 0 ? 1 : -1;
+  return {
+    path: `M ${a.x},${a.y} L ${b.x},${b.y}`,
+    label: { x: (a.x + b.x) / 2 + (dy / len) * 16 * flip, y: (a.y + b.y) / 2 - (dx / len) * 16 * flip },
+  };
+}
+
 function MessageEdge({ id, source, target, markerEnd, data }: EdgeProps<Edge<{ fresh: boolean; label?: string }>>) {
   const from = useInternalNode(source);
   const to = useInternalNode(target);
   if (!from || !to) return null;
-  const a = borderPoint(from, to);
-  const b = borderPoint(to, from);
-  const path = `M ${a.x},${a.y} L ${b.x},${b.y}`;
+  const { path, label } = edgeGeometry(from, to);
   return (
     <>
       <BaseEdge id={id} path={path} markerEnd={markerEnd} className={data?.fresh ? "msg-edge fresh" : "msg-edge"} />
@@ -111,7 +144,7 @@ function MessageEdge({ id, source, target, markerEnd, data }: EdgeProps<Edge<{ f
       )}
       {data?.label && (
         <EdgeLabelRenderer>
-          <div className="msg-label" style={{ transform: `translate(-50%, -50%) translate(${(a.x + b.x) / 2}px, ${(a.y + b.y) / 2}px)` }}>
+          <div className="msg-label" style={{ transform: `translate(-50%, -50%) translate(${label.x}px, ${label.y}px)` }}>
             {data.label}
           </div>
         </EdgeLabelRenderer>
@@ -123,14 +156,19 @@ function MessageEdge({ id, source, target, markerEnd, data }: EdgeProps<Edge<{ f
 const nodeTypes = { agent: AgentNode, squad: GroupNode };
 const edgeTypes = { message: MessageEdge };
 
+// The recent messages as edges, newest first; two agents get one edge, the newest message's, so
+// an older reply never adds a second arrowhead to the same line.
 function edgesFor(messages: Message[]): Edge[] {
   const edges: Edge[] = [];
-  messages.forEach((m, i) => {
-    const fresh = i === messages.length - 1;
+  const pairs = new Set<string>();
+  [...messages].reverse().forEach((m, i) => {
+    const fresh = i === 0;
     const from = roleOf(m.sender);
     for (const r of m.recipients) {
       const to = roleOf(r);
-      if (!POS[from] || !POS[to] || from === to) continue;
+      const pair = [from, to].sort().join("|");
+      if (!POS[from] || !POS[to] || from === to || pairs.has(pair)) continue;
+      pairs.add(pair);
       edges.push({
         id: `${m.eventId}-${to}`,
         source: from,
@@ -220,8 +258,11 @@ function Graph({ state, recent }: { state: RunState; recent: number }) {
             <span className="arrow" aria-label="to">
               →
             </span>
-            {last.recipients.map((r) => (
-              <AgentTag key={r} agent={r} />
+            {last.recipients.map((r, i) => (
+              <span key={r} className="recipient">
+                <AgentTag agent={r} />
+                {i < last.recipients.length - 1 && ","}
+              </span>
             ))}
             <span className="msg-type">{last.type.replace(/_/g, " ")}</span>
           </>

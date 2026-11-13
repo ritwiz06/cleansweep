@@ -1,24 +1,13 @@
-import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useEffect, useRef, useState } from "react";
 import { api, useApi } from "../api";
-import { AXIS, SeriesKey, TOOLTIP, SegmentCount, nameOf, stackTotal } from "../components/Charts";
-import { CodeBlock, DiffView, Md } from "../components/Code";
-import { ANIMATE, Async, Badge, Card, Empty, PageHeader, StatsRow, Status, Tabs, seconds } from "../components/common";
+import { DiffView, Md } from "../components/Code";
+import { Async, Badge, Card, Empty, PageHeader, StatsRow, Status, Tabs, seconds } from "../components/common";
 import { RunOutcome } from "../components/RunOutcome";
 import { categoryLabel } from "../state/annotate";
+import { caseTitle, shortDuration } from "../state/names";
 
 export const REVIEW_LABEL = "LLM-reviewer acceptance (independent model, blinded)";
 const OUTCOMES = ["kept", "repaired", "rolled_back", "skipped"];
-// the item states' colors (docs/studio_design.md): repaired is kept, so it takes the kept color
-const OUTCOME_COLOR: Record<string, string> = {
-  kept: "var(--st-kept)",
-  repaired: "var(--st-kept)",
-  rolled_back: "var(--st-rolled-back)",
-  skipped: "var(--st-untouched)",
-};
-// "skipped" results are the candidates left as suggestions or dropped
-const OUTCOME_LABEL: Record<string, string> = { skipped: "not applied" };
-const outcomeName = (o: string) => OUTCOME_LABEL[o] || o.replace("_", " ");
 
 interface CaseRow {
   name: string;
@@ -46,6 +35,75 @@ interface CaseDetail {
   review: { label: string; model: string | null; runs: Record<string, string | null>; rows: Record<string, any>[] };
 }
 
+// The slop found in each category, largest first, as grey bars with the count at their end; what
+// the cleanup kept and rolled back follows each bar in words.
+function CategoryBars({ byCategory }: { byCategory: Record<string, Record<string, number>> }) {
+  const rows = Object.entries(byCategory)
+    .map(([category, counts]) => ({
+      name: categoryLabel(category),
+      found: OUTCOMES.reduce((sum, o) => sum + (counts[o] || 0), 0),
+      kept: (counts.kept || 0) + (counts.repaired || 0),
+      rolledBack: counts.rolled_back || 0,
+    }))
+    .sort((a, b) => b.found - a.found);
+  const most = Math.max(1, ...rows.map((r) => r.found));
+  return (
+    <div className="chart" role="img" aria-label="Slop found by category">
+      <div className="chart-title">
+        Slop found by category, with what was kept and rolled back <span className="better">(more kept is better)</span>
+      </div>
+      <ul className="cat-bars">
+        {rows.map((r) => (
+          <li key={r.name}>
+            <span className="cat-name">{r.name}</span>
+            <span className="cat-track">
+              <span className="cat-bar" style={{ width: `${(r.found / most) * 100}%` }} />
+              <span className="cat-value">{r.found} found</span>
+            </span>
+            <span className="cat-outcome">
+              {r.kept > 0 && <span className="good-text">{r.kept} kept</span>}
+              {r.rolledBack > 0 && <span>{r.rolledBack} rolled back</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// git's diff stat as a table: each file with its changed lines, and the summary line under it.
+function DiffStats({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  const files = lines.filter((l) => l.includes("|")).map((l) => {
+    const [path, rest] = l.split("|");
+    return { path: path.trim(), changed: Number.parseInt(rest, 10) || 0 };
+  });
+  const summary = lines.find((l) => !l.includes("|"));
+  return (
+    <>
+      <div className="table-wrap" tabIndex={0}>
+        <table className="data" aria-label="Diff stats">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th className="num">Lines changed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {files.map((f) => (
+              <tr key={f.path}>
+                <td className="ident">{f.path}</td>
+                <td className="num">{f.changed}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {summary && <p className="muted small">{summary.trim()}</p>}
+    </>
+  );
+}
+
 function CaseView({ name }: { name: string }) {
   const res = useApi<CaseDetail>(`case:${name}`, () => api(`/api/cases/${encodeURIComponent(name)}`));
   const [tab, setTab] = useState<"health" | "report" | "review" | "diff">("health");
@@ -54,22 +112,18 @@ function CaseView({ name }: { name: string }) {
     <Async res={res} what="Loading the case study">
       {(c) => {
         const s = c.summary;
-        const byCat = Object.entries((s.by_category || {}) as Record<string, Record<string, number>>).map(([category, counts]) => ({
-          category: categoryLabel(category),
-          ...Object.fromEntries(OUTCOMES.map((o) => [o, counts[o] || 0])),
-        }));
-        // only the outcomes that happened; the axis ends at the largest category
-        const shown = OUTCOMES.filter((o) => byCat.some((r) => Number(r[o as keyof typeof r]) > 0));
-        const most = Math.max(1, ...byCat.map((r) => OUTCOMES.reduce((sum, o) => sum + Number(r[o as keyof typeof r] || 0), 0)));
         const reviewed = c.review.rows.filter((r) => r.llm_decision);
         const accepted = reviewed.filter((r) => r.llm_decision === "accept").length;
         const decided = reviewed.filter((r) => r.llm_decision !== "unsure").length;
         return (
           <div>
-            <h3>
-              {c.name} <RunOutcome verdict={s.verdict} kept={s.packages?.kept} rolledBack={s.packages?.rolled_back} lines={s.lines_removed} />
+            <h3 title={c.name}>
+              {caseTitle(c.name, s.project)}{" "}
+              <RunOutcome verdict={s.verdict} kept={s.packages?.kept} rolledBack={s.packages?.rolled_back} lines={s.lines_removed} />
             </h3>
-            <p className="muted">{s.project}</p>
+            <p className="muted one-line" title={s.project}>
+              {s.project}
+            </p>
             <Tabs
               tabs={[
                 { key: "health", label: "Health before / after" },
@@ -90,38 +144,18 @@ function CaseView({ name }: { name: string }) {
                     { label: "Files removed", value: s.files_removed ?? "-" },
                     { label: "Candidates", value: s.candidates ?? "-" },
                     { label: "Test runs", value: s.test_runs ?? "-" },
-                    { label: "Time", value: seconds(s.seconds) },
+                    { label: "Time", value: shortDuration(s.seconds), hint: seconds(s.seconds) },
                   ]}
                 />
                 <p className="stats-note">
                   {c.brief.python_files ?? "-"} Python files · {s.llm_requests ?? "-"} LLM requests
                 </p>
-                <Card title="Slop by category: what happened to each candidate">
-                  {byCat.length ? (
-                    <div className="chart">
-                      <SeriesKey series={shown.map((o) => ({ name: outcomeName(o), color: OUTCOME_COLOR[o] }))} />
-                      <ResponsiveContainer width="100%" height={Math.max(120, byCat.length * 36 + 32)}>
-                        <BarChart data={byCat} layout="vertical" margin={{ top: 8, right: 40, bottom: 8, left: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" horizontal={false} />
-                          <XAxis type="number" allowDecimals={false} domain={[0, most]} tick={AXIS} />
-                          <YAxis type="category" dataKey="category" width={140} tick={AXIS} />
-                          <Tooltip contentStyle={TOOLTIP} />
-                          {shown.map((o) => (
-                            <Bar key={o} dataKey={o} name={outcomeName(o)} stackId="a" fill={OUTCOME_COLOR[o]} stroke="var(--surface)" strokeWidth={1} isAnimationActive={ANIMATE}>
-                              <LabelList dataKey={o} content={SegmentCount} />
-                              <LabelList valueAccessor={nameOf("category")} content={stackTotal(byCat, "category", shown, o, String, true)} />
-                            </Bar>
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <Empty>No candidates by category in this record.</Empty>
-                  )}
+                <Card title="Slop by category">
+                  {Object.keys(s.by_category || {}).length ? <CategoryBars byCategory={s.by_category} /> : <Empty>No candidates by category in this record.</Empty>}
                 </Card>
                 {c.docs["diffstat.txt"] && (
                   <Card title="Diff stats">
-                    <CodeBlock code={c.docs["diffstat.txt"]} />
+                    <DiffStats text={c.docs["diffstat.txt"]} />
                   </Card>
                 )}
               </>
@@ -199,6 +233,44 @@ function CaseView({ name }: { name: string }) {
   );
 }
 
+// The case studies, the chosen one outlined in the accent and scrolled into view inside the list.
+function CaseList({ rows, name, onPick }: { rows: CaseRow[]; name: string; onPick: (name: string) => void }) {
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = list.current;
+    const card = box?.querySelector<HTMLElement>(".case-card.active");
+    if (!box || !card) return;
+    if (card.offsetTop < box.scrollTop || card.offsetTop + card.offsetHeight > box.scrollTop + box.clientHeight) {
+      box.scrollTop = card.offsetTop - box.clientHeight / 2 + card.offsetHeight / 2;
+    }
+  }, [name, rows.length]);
+  return (
+    <div className="case-list" aria-label="Case studies" ref={list}>
+      {rows.map((r) => (
+        <button
+          key={r.name}
+          title={r.name}
+          aria-current={r.name === name ? "true" : undefined}
+          className={`case-card ${r.name === name ? "active" : ""}`}
+          onClick={() => onPick(r.name)}
+        >
+          <span className="case-card-head">
+            <b>{caseTitle(r.name, r.project)}</b>
+            <RunOutcome verdict={r.verdict} kept={r.packages?.kept} rolledBack={r.packages?.rolled_back} lines={r.lines_removed} />
+          </span>
+          <span className="small muted one-line" title={r.project}>
+            {r.project}
+          </span>
+          <span className="small case-card-numbers">
+            tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"}
+            {r.reviewed > 0 && ` · LLM reviewer: ${r.accepted} accept, ${r.rejected} reject`}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Cases({ name, onPick }: { name: string; onPick: (name: string) => void }) {
   const res = useApi<CaseRow[]>("cases", () => api("/api/cases"));
   return (
@@ -216,28 +288,9 @@ export function Cases({ name, onPick }: { name: string; onPick: (name: string) =
       >
         {(rows) => (
           <div className="cases">
-            <div className="case-list" aria-label="Case studies">
-              {rows.map((r) => (
-                <button
-                  key={r.name}
-                  aria-current={r.name === name ? "true" : undefined}
-                  className={`case-card ${r.name === name ? "active" : ""}`}
-                  onClick={() => onPick(r.name)}
-                >
-                  <span className="case-card-head">
-                    <b>{r.name}</b>
-                    <RunOutcome verdict={r.verdict} kept={r.packages?.kept} rolledBack={r.packages?.rolled_back} lines={r.lines_removed} />
-                  </span>
-                  <span className="small muted">{r.project}</span>
-                  <span className="small case-card-numbers">
-                    tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"}
-                    {r.reviewed > 0 && ` · LLM reviewer: ${r.accepted} accept, ${r.rejected} reject`}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <CaseList rows={rows} name={name} onPick={onPick} />
             <div className="case-main">
-              {name ? <CaseView name={name} /> : <Empty action={{ label: `Open ${rows[0].name}`, onClick: () => onPick(rows[0].name) }}>Pick a case study.</Empty>}
+              {name ? <CaseView name={name} /> : <Empty action={{ label: `Open ${caseTitle(rows[0].name, rows[0].project)}`, onClick: () => onPick(rows[0].name) }}>Pick a case study.</Empty>}
             </div>
           </div>
         )}

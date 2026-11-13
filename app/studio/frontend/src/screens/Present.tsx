@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, runHash, useApi, type RunDetail } from "../api";
 import { Pointer } from "../components/AfterParts";
-import { Decisions } from "../components/Metrics";
 import { AgentGraph } from "../components/AgentGraph";
 import { AgentIcon } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
 import { TreeList, itemKey, treeFiles, useProjectFiles, useTreeView } from "../components/ProjectView";
-import { StateLegend } from "../components/states";
 import { captionSteps, type CaptionStep } from "../state/caption";
 import { PHASES, SQUADS, agentName, repoName, roleOf, type RunState, type StudioEvent } from "../state/fold";
 import { useEvents, useFolded } from "../state/hooks";
+import { targetName } from "../state/names";
 import { STEP_MS, nextDecisionStep } from "../state/present";
 import { buildTree } from "../state/tree";
 
@@ -71,20 +70,13 @@ function Spotlight({ step, state }: { step: CaptionStep | null; state: RunState 
         <Counter label="rolled back" value={count("rolled_back")} state="rolled_back" />
         <Counter label="packages done" value={`${done}/${state.packageOrder.length}`} />
       </div>
-      {state.focus.length === 1 && state.items[state.focus[0]] ? (
+      {state.focus.length === 1 && state.items[state.focus[0]] && (
         <section className="spot-item" aria-label="The item at work">
           <h3>
             At work on <code>{state.items[state.focus[0]].unit.split("::").pop()}</code>
           </h3>
           <Pointer note={{ items: [state.focus[0]], match: "exact" }} state={state} />
         </section>
-      ) : (
-        state.decisions.length > 0 && (
-          <section className="spot-item" aria-label="The Manager's latest decisions">
-            <h3>The Manager's latest decisions</h3>
-            <Decisions state={{ ...state, decisions: state.decisions.slice(-3) }} />
-          </section>
-        )
       )}
     </aside>
   );
@@ -165,7 +157,7 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
   return (
     <PresentShell
       extra={<ViewSwitch view={view} onChange={setView} />}
-      title={`${live ? "Live" : "Replay"}: ${repoName(state.repo || detail.target || detail.name)}`}
+      title={`${live ? "Live" : "Replay"}: ${targetName(detail.target) || repoName(state.repo || detail.name)}`}
       position={live ? `${steps.length} steps so far` : `step ${here + 1} of ${steps.length}`}
       progress={steps.length ? (here + 1) / steps.length : 0}
       playing={playing}
@@ -215,11 +207,6 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
         )}
         <Spotlight step={step} state={state} />
       </div>
-      {view === "project" && (
-        <div className="present-foot">
-          <StateLegend />
-        </div>
-      )}
     </PresentShell>
   );
 }

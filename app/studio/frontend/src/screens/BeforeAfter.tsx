@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
-import { AfterTop, FileDiff, SMALL, TreeCard } from "../components/AfterParts";
+import { AfterTop, FileDiff, SMALL, TreeCard, checkClass, checkGlyph } from "../components/AfterParts";
 import { AgentIcon, agentName } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading, PageHeader } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
@@ -12,6 +12,7 @@ import { afterModel } from "../state/beforeAfter";
 import { itemLabel } from "../state/caption";
 import type { Item, RunState, StudioEvent } from "../state/fold";
 import { useEvents } from "../state/hooks";
+import { runTitle, targetName } from "../state/names";
 import { SLIDE_MS, afterSlides, type Slide } from "../state/present";
 
 // Everything both views draw: the folded run, the parsed diff, both trees and the numbers.
@@ -110,8 +111,8 @@ function ChangeSlide({ slide, state }: { slide: Extract<Slide, { kind: "change" 
       {pkg && (
         <ul className="check-chips" aria-label="Checks">
           {packageChecks(pkg).map((c, i) => (
-            <li key={i} className={c.ok === true ? "ok" : c.ok === false ? "fail" : "info"}>
-              <span aria-hidden>{c.ok === true ? "✓" : c.ok === false ? "✗" : "·"}</span> {c.label}
+            <li key={i} className={checkClass(c)}>
+              <span aria-hidden>{checkGlyph(c)}</span> {c.label}
             </li>
           ))}
         </ul>
@@ -143,7 +144,7 @@ function PresentAfter({ detail, events, diff }: { detail: RunDetail; events: Stu
   const changes = slides.length - 2;
   return (
     <PresentShell
-      title={`Before / after: ${name}`}
+      title={`Before / after: ${targetName(detail.target) || name}`}
       position={slide.kind === "change" ? `change ${slide.n} of ${slide.of}` : `${changes} changes`}
       progress={slides.length > 1 ? at / (slides.length - 1) : 1}
       playing={playing}
@@ -186,7 +187,8 @@ export function BeforeAfter({ root, path, present = false }: { root: string; pat
     <div className={`screen before-after ${present ? "present-screen" : ""}`}>
       {!present && (
         <PageHeader
-          title={`Before / after: ${path.split("/").pop()}`}
+          title={`Before / after: ${res.data ? runTitle(res.data) : path.split("/").pop()}`}
+          titleTip={path}
           description="What the cleanup changed: both file trees, the numbers before and after, and every change with the decisions behind it."
           help="Click a changed file for its diff. The note above each change names its category, the agents' decisions, the evidence and the checks it passed."
           actions={

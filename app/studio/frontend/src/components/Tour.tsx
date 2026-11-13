@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { placeCard, scrollDelta, spotlight, type Box } from "../state/tour";
+import { dimAround, placeCard, scrollDelta, spotlight, type Box } from "../state/tour";
 
 export interface TourStep {
   target: string; // a CSS selector for the part of the screen the step explains
@@ -13,6 +13,13 @@ const CARD = { width: 380, height: 190 };
 
 function viewport() {
   return { width: window.innerWidth, height: window.innerHeight };
+}
+
+// The height of a bar that sticks to the top of the screen (the run band), unless the target is
+// in it: the target and the card must not end up under it.
+function stickyInset(target: Element): number {
+  const bar = document.querySelector("[data-sticky]");
+  return bar && !bar.contains(target) ? bar.getBoundingClientRect().height + 8 : 0;
 }
 
 // A short guided overlay: a spotlight on one part of the screen and a card that explains it.
@@ -38,7 +45,7 @@ export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
     const r = el.getBoundingClientRect();
     const target = { top: r.top, left: r.left, width: r.width, height: r.height };
     setSpot(spotlight(target, view));
-    setCard(placeCard(target, size, view));
+    setCard(placeCard(target, size, view, stickyInset(el)));
   }, [step.target]);
 
   useEffect(() => {
@@ -49,7 +56,7 @@ export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
       if (el) {
         const r = el.getBoundingClientRect();
         const card = cardRef.current?.offsetHeight ?? CARD.height;
-        window.scrollBy(0, scrollDelta({ top: r.top, left: r.left, width: r.width, height: r.height }, card, window.innerHeight));
+        window.scrollBy(0, scrollDelta({ top: r.top, left: r.left, width: r.width, height: r.height }, card, window.innerHeight, stickyInset(el)));
       }
       measure();
       nextRef.current?.focus();
@@ -97,7 +104,8 @@ export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => voi
 
   return createPortal(
     <div className="tour">
-      <div className="tour-scrim" onClick={(e) => e.stopPropagation()} />
+      <div className={spot ? "tour-scrim" : "tour-scrim dim"} onClick={(e) => e.stopPropagation()} />
+      {spot && dimAround(spot, viewport()).map((box, i) => <div key={i} className="tour-dim" style={box} aria-hidden />)}
       {spot && <div className="tour-spot" style={spot} aria-hidden />}
       <div
         ref={cardRef}

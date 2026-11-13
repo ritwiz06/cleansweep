@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { annotateFile, categoryLabel, decisionSteps, packageChecks, type HunkNote } from "../state/annotate";
+import { annotateFile, categoryLabel, decisionSteps, packageChecks, type Check, type HunkNote } from "../state/annotate";
 import type { FileTree, Metrics, Pair } from "../state/beforeAfter";
 import type { DiffFile } from "../state/diff";
 import type { RunState } from "../state/fold";
@@ -10,6 +10,15 @@ import { StateChip } from "./states";
 
 // The pieces of before / after that the screen, presentation mode and the exported report share.
 export const SMALL = 60;
+
+// A check as a glyph and a tone: ✓ passed, ✗ failed, ! passed with something to look at, · not run.
+export function checkClass(c: Check): string {
+  return c.ok === true ? "ok" : c.ok === false ? "fail" : c.ok === "warn" ? "warn" : "info";
+}
+
+export function checkGlyph(c: Check): string {
+  return c.ok === true ? "✓" : c.ok === false ? "✗" : c.ok === "warn" ? "!" : "·";
+}
 
 function num(v: number | null): string {
   return v === null ? "?" : v.toLocaleString();
@@ -164,12 +173,13 @@ function TreeLines({ node, depth, selected, onSelect }: { node: FileTree; depth:
             title={c.path}
           >
             <span className="ba-name">{c.status === "removed" || c.status === "gone" ? <del>{c.name}</del> : c.name}</span>
-            {c.status === "removed" && <span className="ba-tag bad-text">removed</span>}
-            {c.status === "gone" && <span className="ba-tag bad-text">folder removed</span>}
-            {c.status === "added" && <span className="ba-tag good-text">new</span>}
+            {/* a tree is not a diff: what the cleanup removed reads as its result, not as an error */}
+            {c.status === "removed" && <span className="ba-tag good-text">removed</span>}
+            {c.status === "gone" && <span className="ba-tag good-text">folder removed</span>}
+            {c.status === "added" && <span className="ba-tag muted">new</span>}
             {c.status === "edited" && c.kind === "file" && (
               <span className="ba-tag">
-                {c.added > 0 && <span className="added">+{c.added}</span>} {c.removed > 0 && <span className="removed">−{c.removed}</span>}
+                {c.added > 0 && <span className="muted">+{c.added}</span>} {c.removed > 0 && <span className="good-text">−{c.removed}</span>}
               </span>
             )}
             {c.status === "unchanged" && c.kind === "file" && c.lines !== null && <span className="ba-tag muted">{c.lines}</span>}
@@ -257,8 +267,8 @@ export function Pointer({ note, state, n = 0 }: { note: HunkNote; state: RunStat
                 {pkg ? (
                   <ul className="checks-list">
                     {packageChecks(pkg).map((c, i) => (
-                      <li key={i} className={c.ok === true ? "ok" : c.ok === false ? "fail" : "info"}>
-                        <span aria-hidden>{c.ok === true ? "✓" : c.ok === false ? "✗" : "·"}</span> {c.label}
+                      <li key={i} className={checkClass(c)}>
+                        <span aria-hidden>{checkGlyph(c)}</span> {c.label}
                       </li>
                     ))}
                   </ul>

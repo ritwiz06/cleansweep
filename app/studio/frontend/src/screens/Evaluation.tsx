@@ -148,7 +148,7 @@ function Bars({
   const grouped = series.length > 1 && !stacked;
   const rowHeight = (presenting ? 40 : 28) * (grouped ? series.length * 0.8 : 1);
   const nameWidth = Math.min(Math.max(...rows.map((d) => String(d[x]).length)) * (presenting ? 10 : 7.6) + 16, presenting ? 280 : 200);
-  const colors = series.map((s, i) => s.color ?? (series.length === 1 ? "var(--muted)" : `var(--series-${i + 1})`));
+  const colors = series.map((s, i) => s.color ?? (series.length === 1 ? "var(--bar-other)" : `var(--series-${i + 1})`));
   const most = Math.max(...rows.map((d) => (stacked ? total(d) : Math.max(...keys.map((k) => Number(d[k]) || 0))) + (error ? Number((d[error] as number[])?.[1]) || 0 : 0)));
   return (
     <div className="chart" role="img" aria-label={title}>
@@ -175,7 +175,9 @@ function Bars({
               isAnimationActive={ANIMATE}
             >
               {series.length === 1 && rows.map((d) => <Cell key={String(d[x])} fill={d[x] === FOCUS ? "var(--accent)" : colors[0]} />)}
-              {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={6} stroke="var(--text)" />}
+              {/* the interval in the secondary text color, outlined in the surface so it reads over the bar */}
+              {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={7} stroke="var(--surface)" strokeWidth={3} />}
+              {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={6} stroke="var(--text-2)" strokeWidth={1.5} />}
               {!stacked && <LabelList valueAccessor={nameOf(x)} content={valueAtEnd(rows, x, s.key, format, i === 0 ? error : undefined)} />}
               {stacked && <LabelList valueAccessor={nameOf(x)} content={stackTotal(rows, x, keys, s.key, format, true)} />}
             </Bar>
