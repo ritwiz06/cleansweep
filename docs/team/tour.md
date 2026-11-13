@@ -188,8 +188,10 @@ Two cautions we always state. Only flagged edits are checked, so the wrong count
 bounds; Phase 3 estimates how many the auditor misses by testing a random sample of "no"-voted
 edits. And the reading tier rests on LLM judgment: Phase 3 checks it with a blinded panel of
 three LLM judges from other model families (`gpt-oss-120b`, `llama4-maverick-17b` and
-`gemma4-31b-it`), measured against the test-confirmed verdicts (pre-registration Deviation 9).
-The panel's numbers come after the freeze.
+`gemma4-31b-it`), measured against the verdicts confirmed by a test or a rule (pre-registration
+Deviation 9). The judges agree with each other moderately (Fleiss' κ = 0.382) and with the
+recorded labels at κ = 0.455 (wrong vs not wrong), and are right on 11 of 18 confirmed verdicts:
+they lean toward "wrong" ([judge_panel.md](../../results/summary/v3/judge_panel.md)).
 
 ![Evaluation: the diff audit tab, wrong edits per method by tier and by kind](../images/studio/evaluation.png)
 

@@ -108,7 +108,7 @@ Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_sh
 cleansweep clean path/to/project --dry-run   # plan only: writes blueprint.md, changes nothing
 cleansweep clean path/to/project             # safe mode: deterministic edits, each one verified
 cleansweep clean path/to/project --mode thorough --budget llm=150,minutes=60,tests=80
-cleansweep clean tests/fixtures/toy_repo --no-llm   # try it offline on the toy repo
+cleansweep clean tests/fixtures/toy_repo --no-llm --sandbox none   # offline, on our own toy repo
 cleansweep clean path/to/their/project --untrusted   # their code runs only in a Docker container
 ```
 

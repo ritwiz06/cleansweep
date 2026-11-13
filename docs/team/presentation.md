@@ -3,9 +3,9 @@
 Five minutes, four speakers, about 75 seconds each. Rehearse twice between Nov 16 and Nov 20,
 with a timer; the talk is on Nov 21 or Nov 28.
 
-Lines marked **[after the freeze]** wait for the Phase 3 numbers, which are final after Nov 13,
-12:00. Phase 2 numbers below come from the README's "v2 results" section and
-[results.md](../results.md), and can be used as they are.
+The Phase 3 numbers are final since the results freeze (Nov 13, 12:00); they come from the
+README's "v3 results" section and [results.md](../results.md). Phase 2 numbers come from the
+README's "v2 results" section.
 
 ## Plan
 
@@ -17,7 +17,7 @@ Lines marked **[after the freeze]** wait for the Phase 3 numbers, which are fina
 | 2:30 – 3:10 | Maninderjit | 4. The agent team | the Manager's eight steps, the ten agents, the message board and lessons |
 | 3:10 – 3:45 | Maninderjit | 5. The Guard and the audit | tests and differential probes, rollback by halves, the blinded audit |
 | 3:45 – 4:20 | Simran | 6. Results: Phase 2 | SlopBench, the single agent, the one-shot cleanup, the audit |
-| 4:20 – 5:00 | Simran | 7. Results: Phase 3, and what we learned | H1–H4 [after the freeze]; the takeaway |
+| 4:20 – 5:00 | Simran | 7. Results: Phase 3, and what we learned | H1–H4 (H1 and H2 not supported, H3 and H4 supported); the takeaway |
 | after | everyone | 8+. Backup slides | figures and tables for the Q&A |
 
 At a calm pace (130 words a minute), 75 seconds is about 160 words. The scripts below come to
@@ -89,22 +89,21 @@ Simran's part, not add them. Read yours aloud with a timer and cut, rather than 
 
 ### Simran: results (slides 6 and 7)
 
-> We compared the team with a single agent and with a one-shot LLM cleanup.
+> On SlopBench, the team removed 81 percent of the planted slop and no trap, and no hidden test
+> changed in its 30 runs. The single agent changed hidden behavior in 16 of 30 runs; the one-shot
+> cleanup in 19 of 20.
 >
-> On SlopBench, ten projects and three seeds, the team removed 81 percent of the planted slop
-> and none of the traps, and no hidden test changed in its 30 runs. The single agent removed
-> 54 percent and changed hidden behavior in 16 of 30 runs. The one-shot cleanup removed
-> 76 percent, but broke the hidden test in 19 of 20 runs.
+> Passing tests is not enough: the audit found 18 wrong among the team's 804 kept edits, mostly
+> code called by name.
 >
-> Passing tests is still not the same as no wrong edits. The audit found 18 wrong among the
-> team's 804 kept code edits, 12 confirmed by targeted tests, mostly code a framework calls by
-> name.
+> *(slide 7)* Phase 3 tested four hypotheses we registered before the runs. Against Aider on real
+> projects, the team's edits were wrong far less often, but Aider keeps almost nothing, so the
+> team changed more held-out tests: H1 is not supported. The resolver had no measurable effect.
+> Batching used 41 percent of the requests with the same wrong edits. And the tool finished on
+> its own on 27 of 30 projects.
 >
-> *(slide 7)* Phase 3 tested four hypotheses we registered before the runs.
-> **[after the freeze: one short sentence per hypothesis, supported or not.]**
->
-> What we learned: checking every edit makes cleanup much safer, and what remains is code used
-> by name. Thank you.
+> What we learned: checking every edit makes cleanup much safer; what remains is code used by
+> name, and safer per edit is not safer overall. Thank you.
 
 ## Transitions
 
@@ -141,7 +140,6 @@ with no network.
 ## Q&A sheet
 
 Short answers, then where the number comes from. Answer in one or two sentences, then stop.
-**[after the freeze]** answers get their numbers once the Phase 3 tables are in.
 
 | # | Question | Short answer | Source |
 |---|---|---|---|
@@ -151,7 +149,7 @@ Short answers, then where the number comes from. Answer in one or two sentences,
 | 4 | Why a team instead of one agent? | One agent that checks its own edits is not safe: on SlopBench it changed hidden behavior in 16 of 30 runs, the team in 0 of 30. | [results.md](../results.md#slop-injection-benchmark) |
 | 5 | Does the research squad matter? | On the benchmark it costs requests without adding recall: without it the team removed 176 planted items against 170. On five real projects, 0 of the team's 14 kept code edits were wrong, against 4 of 20 without the squad (p = 0.13), which suggests but does not establish that it helps. | [results.md](../results.md#real-project-ablation) |
 | 6 | How do you decide an edit is wrong? | A written rubric: wrong if something in the project or its users can trigger the change. Confirmed by a targeted test where possible; otherwise a reading, labeled LLM-judged. | [tour.md](tour.md#the-blinded-diff-audit-and-its-two-tiers) |
-| 7 | Isn't the reading tier just an LLM's opinion? | Yes, and we label it so. Phase 3 checks it with a blinded panel of three judges from other model families, measured against the verdicts targeted tests confirmed (Deviation 9). **[after the freeze]** | [preregistration_v3.md](../preregistration_v3.md#deviations) |
+| 7 | Isn't the reading tier just an LLM's opinion? | Yes, and we label it so. A blinded panel of three LLM judges from other model families agrees with the recorded labels at κ = 0.455 (wrong vs not wrong) and is right on 11 of 18 verdicts confirmed by a test or a rule; it leans toward "wrong" (Deviation 9). No human checked the labels. | [judge_panel.md](../../results/summary/v3/judge_panel.md) |
 | 8 | Are the wrong counts complete? | No, they are lower bounds: only edits the auditor flags are checked. We estimate the misses by testing a random sample of the edits it passed. | [experiments.md](../experiments.md#v3-audit-miss-estimate) |
 | 9 | What does it cost? | On the answer keys, 41.5 LLM requests per run against 5.5 for Phase 1, but fewer minutes (median 1.7 against 4.8). | README "v2 results" table |
 | 10 | What does the team still miss? | Exact duplicates across two modules (0 of 30; rewrites only handle uses in the same file), and a few unused imports and dependencies. | [results.md](../results.md#slop-injection-benchmark) |
@@ -163,5 +161,5 @@ Short answers, then where the number comes from. Answer in one or two sentences,
 | 16 | When should you sweep a project? | In our replay, a daily sweep cuts slop debt by 87% against never sweeping, at 1.8 times the test runs of sweeping after every agent pull request. | README "v1 results summary" |
 | 17 | What does the LLM add to the Manager? | In a budget scenario it stopped at the right time 3 of 3 times, the rules 0 of 3; neither went back after many rollbacks. | [results.md](../results.md#manager-scenarios) |
 | 18 | Why pre-register? | So we could not choose hypotheses or thresholds after seeing results. Every later change is a dated deviation. | [preregistration_v3.md](../preregistration_v3.md) |
-| 19 | How does it compare with an existing coding agent? | Phase 3 runs Aider with the same model and checks; H1 compares their wrong edits and held-out failures. **[after the freeze]** | [status.md](status.md#the-hypotheses) |
-| 20 | What would you do next? | Find code that is used by name at run time, since that is most of the remaining wrong edits; more seeds and projects; release SlopBench. **[after the freeze: add what Phase 3 showed]** | README "Known limitations" |
+| 19 | How does it compare with an existing coding agent? | Same model, same checks: the team's kept edits were wrong far less often (4 of 191 against 4 of 13, confirmed), but Aider keeps almost nothing (22 lines), so it changed no held-out test while the team changed them on 4 of 10 projects. H1 is not supported. | README "v3 results" |
+| 20 | What would you do next? | Find code that is used by name at run time, since that is most of the remaining wrong edits; judge a cleaner per edit and in total, since Phase 3 shows the two can disagree; more seeds and projects; release SlopBench. | README "Known limitations" |
