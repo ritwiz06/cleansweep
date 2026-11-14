@@ -683,4 +683,5 @@ Sri Vaishnavi Yeluri (Data architect: loaders, AIDev, code graph, comment mining
 Sharma (Experiment architect: ranker, Scheduler replay, baselines, evaluation).
 
 How the four of us set up, work together and present: the team pack in
-[docs/team/](docs/team/README.md).
+[docs/team/](docs/team/README.md), starting with the two-page
+[handoff](docs/team/handoff.md).

@@ -160,7 +160,8 @@ cleansweep studio --port 8800         # if 8765 is taken
 The first start runs `npm ci` and builds the web page; on the fresh clone that took under a
 minute. Without npm, build it by hand: `cd app/studio/frontend && npm ci && npm run build`.
 Studio listens on your machine only. Replay plays the seven recordings in `demo/replay/` without
-calling the LLM or running tests; every screen except Launch works offline.
+calling the LLM or running tests; every screen except Launch works offline. To see the demo, press
+**Try the demo** on Home, or open **Runs** and pick `20261102_demo_feature_agentic`.
 
 ## Your Voyager key
 

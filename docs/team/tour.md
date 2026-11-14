@@ -27,7 +27,7 @@ is the hard part. That is what CleanSweep is about.
 |---|---|---|---|---|
 | Phase 1 | v1, `method=cleansweep` | Oct 19 – Oct 30 | the pipeline: detect, judge, batch, Guard | v1.0 (Oct 30), v1.0.1–v1.0.3 |
 | Phase 2 | v2, `cleansweep clean`, `method=agentic` | Oct 31 – Nov 5 | the agent team, and Studio, the web UI | v2.0 (Nov 5), v2.1 (Nov 6) |
-| Phase 3 | v3 | Nov 6 – Nov 15 | the pre-registered final evaluation, and the fixes it needed | v2.1.1, v2.1.2 (the code the runs used); v3.0 on Nov 15 |
+| Phase 3 | v3 | Nov 6 – Nov 15 | the pre-registered final evaluation, and the fixes it needed | v2.1.1, v2.1.2 (the code the runs used); v3.0 planned for Nov 15 |
 
 The repository uses the internal names in folder and method names (`results/summary/v2/`,
 `scripts/experiments/v3/`), so you will see both. In the report and the talk we say Phase 1,
@@ -101,9 +101,9 @@ The original project is never touched: `clean` works on a copy and hands over a 
 yourself. Secrets never reach the LLM: the copy is scanned, secret files are withheld, and every
 request goes through one redaction wrapper.
 
-![Replay of the demo app cleanup: metrics, the step timeline, the agent graph and the Manager's decisions](../images/studio/replay.png)
+![Replay of the demo app cleanup, Agents tab: the sentence, the controls and steps, and the agent team](../images/studio/replay.png)
 
-The Project tab of the same replay shows each file, class and function in its state. Here a
+The Project tab (the default) of the same replay shows each file, class and function in its state. Here a
 rolled-back duplicate's evidence is open:
 
 ![Replay: the project tree and a rolled-back duplicate's evidence](../images/studio/project.png)
@@ -211,7 +211,7 @@ method, and the rules for timed-out runs were committed on Nov 6, before any mai
 
 The methods compared: the team, the team without its research squad, a single agent with every
 tool, the team with batching, the team without the resolver, Aider and the Phase 1 pipeline.
-[status.md](status.md) states H1 to H4.
+[status.md](status.md) has the scorecard for H1 to H4 in plain words, and the limits.
 
 ## Where each table and figure comes from
 
@@ -235,21 +235,22 @@ screens read the same files. The full list, file by file, is in
 
 | Screen | Screenshot |
 |---|---|
-| Home: clean a folder | [home.png](../images/studio/home.png) |
+| Home: clean a folder, "Take the tour", "Try the demo" | [home.png](../images/studio/home.png) |
 | Runs: every recording | [runs.png](../images/studio/runs.png) |
 | Launch: start a cleanup, a sweep or a watch | [launch.png](../images/studio/launch.png) |
-| Replay: timeline, agent graph, decisions | [replay.png](../images/studio/replay.png) |
-| Replay: the Project tab | [project.png](../images/studio/project.png) |
+| Replay: the Agents tab (the team, the steps, the decisions) | [replay.png](../images/studio/replay.png) |
+| Replay: the Project tab (the default) | [project.png](../images/studio/project.png) |
 | A Manager step-back | [step_back.png](../images/studio/step_back.png) |
 | Before / after | [before_after.png](../images/studio/before_after.png), [before_after_diff.png](../images/studio/before_after_diff.png) |
-| Presentation mode | [present.png](../images/studio/present.png), [present_after.png](../images/studio/present_after.png) |
+| Present (presentation mode) | [present.png](../images/studio/present.png), [present_after.png](../images/studio/present_after.png) |
 | Compare | [compare.png](../images/studio/compare.png) |
 | Case studies | [case_study.png](../images/studio/case_study.png) |
 | Watch | [watch.png](../images/studio/watch.png) |
 | Results and Evaluation | [results.png](../images/studio/results.png), [evaluation.png](../images/studio/evaluation.png) |
 | Saved reports (Phase 1) | [saved_report.png](../images/studio/saved_report.png) |
 
-The [user guide](../user_guide.md#studio) describes each screen.
+The [user guide](../user_guide.md#studio) describes each screen. To see the demo: Home, then
+"Try the demo".
 
 ## Glossary
 
