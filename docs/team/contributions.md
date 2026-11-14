@@ -71,12 +71,13 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 13 | The team pack after the freeze, and the README's toy cleanup without Docker | [#219](https://github.com/ritwiz06/cleansweep/pull/219) |
 | Ritik | Nov 13 | Requirements R17–R28 with the frozen results as evidence | [#220](https://github.com/ritwiz06/cleansweep/pull/220) |
 | Ritik | Nov 14 | Why H2's two arms are identical and what H3's tie pairs, in the results notes and the README | [#224](https://github.com/ritwiz06/cleansweep/pull/224) |
-| Ritik | Nov 14 | The team handoff: the handoff page, the handoff meeting, the Q&A, tasks with usernames, and the handoff checklist | [#225](https://github.com/ritwiz06/cleansweep/pull/225); issue [#223](https://github.com/ritwiz06/cleansweep/issues/223) |
+| Ritik | Nov 14 | The team handoff: the handoff page, a handoff agenda (archived since), the Q&A, tasks with usernames, and the handoff checklist | [#225](https://github.com/ritwiz06/cleansweep/pull/225); issue [#223](https://github.com/ritwiz06/cleansweep/issues/223) |
 | Ritik | Nov 14 | The v3.0 release: requirements R29–R30, the CHANGELOG, the fresh-clone rehearsal, the archive | [#226](https://github.com/ritwiz06/cleansweep/pull/226); issue [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
 | Ritik | Nov 13 – Nov 14 | Final report, talk deck and paper draft, with their number audits | offline: report sources on Overleaf |
 | Ritik | Nov 14 | The handoff bundle for the Drive folder (submission files, both Overleaf zips, the decision and run logs as PDFs, the archive tarball), and the shared locations and repository control in the handoff page | [#227](https://github.com/ritwiz06/cleansweep/pull/227); offline: the ASU Drive folder |
 | Ritik | Nov 14 | Course-facing wording in phases (docs, team pack, Studio labels, the Phase 3 figures' labels) and a talk with "Since the progress report" and a hypotheses scorecard; tag v3.0.1 | [#228](https://github.com/ritwiz06/cleansweep/pull/228) |
 | Ritik | Nov 14 | The Manager's stages called steps in course-facing text, and a talk that fits a hard 5-minute stop (8 slides, 599 words) | [#229](https://github.com/ritwiz06/cleansweep/pull/229) |
+| Ritik | Nov 14 | The self-serve team handoff: the five-step start path, `start_aiwork.md` (setup, folder layout, the archive, the starter prompt), the "Finalize the report and the talk" issue | [#231](https://github.com/ritwiz06/cleansweep/pull/231); issue [#230](https://github.com/ritwiz06/cleansweep/issues/230) |
 
 ## Add your rows here
 

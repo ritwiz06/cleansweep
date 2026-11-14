@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.3 (2026-11-14)
+
+Self-serve team handoff; no result changes.
+
 ## v3.0.2 (2026-11-14)
 
 Course-facing wording uses phases and steps; talk notes cut to 8 slides; no result changes.

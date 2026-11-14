@@ -13,8 +13,9 @@ Every task has a GitHub issue with the labels `team`, a role label (`data`, `sof
 When you finish a task: comment on its issue with what you did and what you found, close it, and
 add a row to [contributions.md](contributions.md). Problems you find go into new issues with the
 `team` label and your role label; say what you ran, what you expected and what happened, with
-your operating system. The first thing to do is [meeting_handoff.md](meeting_handoff.md)'s
-agenda and the ["Handoff checklist" issue](https://github.com/ritwiz06/cleansweep/issues/223).
+your operating system. The first thing to do is the five steps in
+[README.md](README.md#five-steps-on-your-own); everything left before the talk and the report is
+in ["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/cleansweep/issues/230).
 
 | ID | Task | Owner | Due | Issue |
 |---|---|---|---|---|
@@ -33,7 +34,7 @@ agenda and the ["Handoff checklist" issue](https://github.com/ritwiz06/cleanswee
 | P2 | [Assemble and submit the final report](#p2-assemble-and-submit-the-final-report) | Ritik | Dec 4 | [#212](https://github.com/ritwiz06/cleansweep/issues/212) |
 | A1 | [Everyone: proofread the final report](#a1-everyone-proofread-the-final-report) | all four | Nov 30 | [#214](https://github.com/ritwiz06/cleansweep/issues/214) |
 | A2 | [Everyone: prepare the Q&A](#a2-everyone-prepare-the-qa) | all four | Nov 20 | [#215](https://github.com/ritwiz06/cleansweep/issues/215) |
-| A3 | [Everyone: two timed rehearsals](#a3-everyone-two-timed-rehearsals) | all four | Nov 20 | [#216](https://github.com/ritwiz06/cleansweep/issues/216) |
+| A3 | [Everyone: time your part, then one run-through](#a3-everyone-time-your-part-then-one-run-through) | all four | Nov 20 | [#216](https://github.com/ritwiz06/cleansweep/issues/216), [#230](https://github.com/ritwiz06/cleansweep/issues/230) |
 | A4 | [Everyone: individual peer evaluation](#a4-everyone-individual-peer-evaluation) | each of us | after the talk | [#222](https://github.com/ritwiz06/cleansweep/issues/222) |
 
 ## Maninderjit (software architect), `@msbhullar`
@@ -113,10 +114,11 @@ hf download hao-li/AIDev repository.parquet pull_request.parquet --repo-type dat
     --revision b8dc67df93e7c11f6f20c84129db7232eb1ec253 --local-dir data/raw/aidev
 ```
 
-SWE-bench Verified (2 MB) downloads itself the first time a script needs it. Ask Ritik for the
-mined data the builders read: the contents of `aidev/data_processed/` in the archive tarball,
-copied into `data/processed/` (`aidev_requests.parquet`, `aidev_labels.parquet`,
-`aidev_detection.parquet` and the `aidev_full/` folder). Without `aidev_full/`, the funnel counts
+SWE-bench Verified (2 MB) downloads itself the first time a script needs it. The mined data the
+builders read is in the archive tarball in the Drive folder: unpack it and copy
+`aidev_requests.parquet`, `aidev_labels.parquet`, `aidev_detection.parquet` and the `aidev_full/`
+folder into `data/processed/` ([start_aiwork.md](start_aiwork.md#which-tasks-need-the-archive)
+has the commands). Without `aidev_full/`, the funnel counts
 only the repositories in the committed files and will differ. These files hold third-party
 review comments: never commit them.
 
@@ -274,11 +276,12 @@ Due **Nov 20**. Read the [Q&A sheet](presentation.md#qa-sheet). Each of us takes
 on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19, 20 and 22) and practices a
 one-sentence answer for each. Add questions you expect to the sheet by pull request.
 
-### A3. Everyone: two timed rehearsals
+### A3. Everyone: time your part, then one run-through
 
-Between **Nov 16 and Nov 20**. Two full run-throughs with the slides, the demo and a timer, at
-least a day apart. Note each speaker's time; the whole talk must fit in 5 minutes. After each,
-fix what ran long and update [presentation.md](presentation.md).
+Between **Nov 16 and Nov 20**. Time your part with a stopwatch against its seconds in
+[presentation.md](presentation.md#plan), and cut until it fits. Then the four of us do one full
+run-through on a call before the presentation, with the slides and the clip. The plan is 4:38
+and the stop at 5:00 is hard; fix what ran long in [presentation.md](presentation.md).
 
 ### A4. Everyone: individual peer evaluation
 
