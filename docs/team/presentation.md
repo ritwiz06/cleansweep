@@ -102,7 +102,7 @@ that. Read yours aloud with a timer and cut, rather than speed up.
 ## Transitions
 
 Each speaker ends with the next speaker's name and topic, as in the scripts. Hand over the
-clicker with that sentence, not after it. Simran's part has no outgoing line: she ends with
+clicker with that sentence, not after it. Simran's part has no outgoing line: it ends with
 "Thank you". If a speaker runs long, the next one cuts their second paragraph; nobody speeds up.
 
 ## Demo plan

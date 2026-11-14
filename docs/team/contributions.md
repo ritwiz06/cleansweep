@@ -16,13 +16,13 @@ or an issue in the repository. The decision log records why:
 
 - On Oct 19, Ritik built a runnable prototype across all four areas, so that nobody would start
   from an empty repository.
-- From Oct 25, because no other member had joined the repository before the milestones, he also
+- From Oct 25, because no other member had joined the repository before the milestones, Ritik also
   built the critical path in the other areas (the probes, the SWE-bench and AIDev work).
 
 The README's Team section names an owner for each area by role (software, data, experiments).
 Owning an area by role is not the same as having done the work in it, and this log credits only
 what the record shows. Work under Ritik's account includes code written with a coding assistant
-under his direction; the final report's statement on the use of AI tools covers that.
+under Ritik's direction; the final report's statement on the use of AI tools covers that.
 
 From here on, each of us adds rows for our own work.
 
@@ -70,6 +70,10 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 13 | Studio design pass: a simpler Home, a first-run tour, presentation-grade screens, accessibility and quality checks, the user guide's screenshots retaken | [#218](https://github.com/ritwiz06/cleansweep/pull/218) |
 | Ritik | Nov 13 | The team pack after the freeze, and the README's toy cleanup without Docker | [#219](https://github.com/ritwiz06/cleansweep/pull/219) |
 | Ritik | Nov 13 | Requirements R17–R28 with the frozen results as evidence | [#220](https://github.com/ritwiz06/cleansweep/pull/220) |
+| Ritik | Nov 14 | Why H2's two arms are identical and what H3's tie pairs, in the results notes and the README | [#224](https://github.com/ritwiz06/cleansweep/pull/224) |
+| Ritik | Nov 14 | The team handoff: the handoff page, the handoff meeting, the Q&A, tasks with usernames, and the handoff checklist | [#225](https://github.com/ritwiz06/cleansweep/pull/225); issue [#223](https://github.com/ritwiz06/cleansweep/issues/223) |
+| Ritik | Nov 14 | The v3.0 release: requirements R29–R30, the CHANGELOG, the fresh-clone rehearsal, the archive | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
+| Ritik | Nov 13 – Nov 14 | Final report, talk deck and paper draft, with their number audits | offline: report sources on Overleaf |
 
 ## Add your rows here
 

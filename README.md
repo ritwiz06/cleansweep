@@ -41,7 +41,8 @@ new projects with planted slop and on 15 real projects whose held-out tests no m
   while the team changed held-out behavior on 4 of 10 paired projects.
 - **H2, not supported.** The resolver did not lower wrong edits.
 - **H3, supported by a tie.** Batching used 41% of the team's requests with the same number of
-  wrong edits.
+  wrong edits. It stays off by default; `core.agents.investigate_batch: on` in
+  `configs/base.yaml` turns it on.
 - **H4, supported, at the threshold.** 27 of 30 repositories ran end to end.
 - **No human checked the labels.** Three LLM judges agree with the recorded labels at
   κ = 0.455 (wrong vs not wrong), and are right on 11 of 18 confirmed verdicts (each confirmed
