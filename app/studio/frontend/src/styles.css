@@ -3368,8 +3368,10 @@ button.primary kbd {
 }
 
 @media (max-width: 720px) {
+  /* the bar on top keeps its own height while the screen below loads */
   .app {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 
   .sidebar {

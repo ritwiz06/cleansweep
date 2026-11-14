@@ -311,7 +311,18 @@ export function ProjectView({
         <Card
           title={
             <>
-              Project files <span className="muted small">{list.length} files</span>
+              Project files{" "}
+              {/* a run without a file list: the tree has the files its events name, said in the tooltip */}
+              <span
+                className="muted small"
+                title={
+                  files && !files.complete
+                    ? `This run saved no file list, so the tree shows the ${list.length} files its events name${state.facts?.python_files ? ` (${py} of the ${state.facts.python_files} Python files the Explorer counted)` : ""}.`
+                    : undefined
+                }
+              >
+                {list.length} files{files && !files.complete ? " named" : ""}
+              </span>
             </>
           }
           actions={
@@ -322,12 +333,6 @@ export function ProjectView({
           className="tree-card"
         >
           <LegendLine />
-          {files && !files.complete && list.length > 0 && (
-            <p className="tree-note small">
-              This run saved no file list, so the tree shows the {list.length} files its events name
-              {state.facts?.python_files ? ` (${py} of the ${state.facts.python_files} Python files the Explorer counted)` : ""}.
-            </p>
-          )}
           {!view.rows.length ? (
             <Empty>No files yet: the Explorer lists them when the run starts.</Empty>
           ) : (

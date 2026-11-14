@@ -138,67 +138,74 @@ function V2Run({
     <Status value="in progress" />
   );
   if (feed.error) return <ErrorBox error={feed.error} />;
-  if (!live && !feed.done) return <Loading what="Loading the recording" />;
+  // the header is drawn once and stays where it is while the recording loads, so nothing jumps
+  const loading = !live && !feed.done;
   return (
     <RunContext.Provider value={{ root: detail.root, path: detail.path }}>
-      {header(status, live && feed.done && state.finished, runSentence(state))}
-      {tour && feed.events.length > 0 && <Tour steps={steps} onClose={() => window.location.replace(runHash(detail))} />}
-      <RunBand state={state} events={feed.events} player={live ? null : player} />
-      <Tabs
-        tabs={[
-          { key: "project", label: "Project" },
-          { key: "overview", label: "Agents" },
-          { key: "report", label: "Report" },
-        ]}
-        value={tab}
-        onChange={setTab}
-      />
-      {tab === "project" && <ProjectView state={state} events={feed.events} detail={detail} files={files.data} />}
-      {tab === "overview" && (
+      {header(loading ? null : status, live && feed.done && state.finished, loading ? " " : runSentence(state))}
+      {loading ? (
+        <Loading what="Loading the recording" />
+      ) : (
         <>
-          <Card title="Agent team" className="graph-card">
-            <AgentGraph state={state} />
-          </Card>
-          <ShowMore label="Show the Manager's decisions and the latest thoughts">
-            <div className="grid two side">
-              <Card title="The Manager's decisions" scroll>
-                <Decisions state={state} onPick={pick} />
+          {tour && feed.events.length > 0 && <Tour steps={steps} onClose={() => window.location.replace(runHash(detail))} />}
+          <RunBand state={state} events={feed.events} player={live ? null : player} />
+          <Tabs
+            tabs={[
+              { key: "project", label: "Project" },
+              { key: "overview", label: "Agents" },
+              { key: "report", label: "Report" },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+          {tab === "project" && <ProjectView state={state} events={feed.events} detail={detail} files={files.data} />}
+          {tab === "overview" && (
+            <>
+              <Card title="Agent team" className="graph-card">
+                <AgentGraph state={state} />
               </Card>
-              <Card
-                title={
-                  <>
-                    Latest thoughts <Badge tone="info">LLM-judged</Badge>
-                  </>
-                }
-                scroll
-              >
-                {state.thoughts.length ? (
-                  <ul className="thoughts">
-                    {state.thoughts.slice(-4).reverse().map((t, i) => (
-                      <li key={i}>
-                        <b>{t.agent}</b>: {t.text}
-                      </li>
+              <ShowMore label="Show the Manager's decisions and the latest thoughts">
+                <div className="grid two side">
+                  <Card title="The Manager's decisions" scroll>
+                    <Decisions state={state} onPick={pick} />
+                  </Card>
+                  <Card
+                    title={
+                      <>
+                        Latest thoughts <Badge tone="info">LLM-judged</Badge>
+                      </>
+                    }
+                    scroll
+                  >
+                    {state.thoughts.length ? (
+                      <ul className="thoughts">
+                        {state.thoughts.slice(-4).reverse().map((t, i) => (
+                          <li key={i}>
+                            <b>{t.agent}</b>: {t.text}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="muted">No thoughts yet. Agents record thoughts in their tool loops; runs without an LLM record none.</p>
+                    )}
+                    {state.budgetNotes.map((b, i) => (
+                      <p key={i} className="small warn-text">
+                        budget: {b.agent} {b.text}
+                      </p>
                     ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No thoughts yet. Agents record thoughts in their tool loops; runs without an LLM record none.</p>
-                )}
-                {state.budgetNotes.map((b, i) => (
-                  <p key={i} className="small warn-text">
-                    budget: {b.agent} {b.text}
-                  </p>
-                ))}
-                {state.errors.map((e, i) => (
-                  <p key={i} className="small bad-text">
-                    error in {e.agent}: {e.text}
-                  </p>
-                ))}
-              </Card>
-            </div>
-          </ShowMore>
+                    {state.errors.map((e, i) => (
+                      <p key={i} className="small bad-text">
+                        error in {e.agent}: {e.text}
+                      </p>
+                    ))}
+                  </Card>
+                </div>
+              </ShowMore>
+            </>
+          )}
+          {tab === "report" && <ReportTab detail={detail} state={state} />}
         </>
       )}
-      {tab === "report" && <ReportTab detail={detail} state={state} />}
     </RunContext.Provider>
   );
 }

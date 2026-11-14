@@ -83,6 +83,13 @@ def test_stream_sends_the_events_after_an_index_then_ends(client):
         body = "".join(response.iter_text())
     sent = [json.loads(line[6:]) for line in body.splitlines() if line.startswith('data: {"')]
     assert sent == events[5:] and body.rstrip().endswith("event: end\ndata: {}")
+    assert "content-encoding" not in response.headers
+
+
+def test_large_responses_are_compressed(client):
+    events = client.get("/api/run/events", params={"root": "replay", "path": REPLAY_RUN})
+    assert events.headers["content-encoding"] == "gzip"
+    assert events.json()[0]["kind"] == "run_start"
 
 
 @pytest.mark.parametrize(

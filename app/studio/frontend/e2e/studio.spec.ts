@@ -139,7 +139,7 @@ test("replay of a v2 run: one sentence, the controls, the steps, the agents and 
 test("project view: the tree follows the events, and a node shows its evidence, diff and checks", async ({ page }) => {
   await open(page, `replay?root=replay&path=${DEMO}`);
   const tree = page.getByRole("tree", { name: "Project tree" });
-  await expect(page.getByText("This run saved no file list")).toBeVisible();
+  await expect(page.getByTitle(/This run saved no file list/)).toBeVisible();
   // mid-investigation: an Investigator is on _print_low_stock
   await scrubTo(page, 69);
   const unit = tree.locator('[data-key="unit:bookshelf/inventory.py::_print_low_stock"]');
