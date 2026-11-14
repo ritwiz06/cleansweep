@@ -246,8 +246,8 @@ function Graph({ state }: { state: RunState }) {
             </span>
             {last.recipients.map((r, i) => (
               <span key={r} className="recipient">
+                {i > 0 && <span className="sep">and</span>}
                 <AgentTag agent={r} />
-                {i < last.recipients.length - 1 && ","}
               </span>
             ))}
             <span className="msg-type">{last.type.replace(/_/g, " ")}</span>

@@ -182,7 +182,7 @@ test("before / after: both trees, the numbers, and each change with the decision
   const change = page.getByRole("region", { name: "change 1 of 1" });
   await expect(change).toContainText("duplicate");
   await expect(change).toContainText("Investigator #6");
-  await expect(change).toContainText("P5 kept");
+  await expect(change).toContainText("kept the change");
   await expect(change).toContainText("public names unchanged");
   await expect(change.getByRole("table")).toContainText("normalize_isbn");
   await page.getByRole("link", { name: "Replay", exact: true }).click();
@@ -202,7 +202,8 @@ test("presentation mode: large captions, a fixed pace, and the space bar jumps t
   await expect(controls).toContainText("step 9 of 158");
   await page.keyboard.press("ArrowRight");
   await expect(caption).toContainText("Manager moves on to the baseline");
-  await expect(page.getByLabel("Active agent")).toContainText("runs the phases");
+  // the caption and the tree only: no side card
+  await expect(page.getByLabel("Active agent")).toHaveCount(0);
   // one step every 1.5 s, whatever the step took in the run
   await page.keyboard.press("p");
   await expect(controls).toContainText("step 11 of 158", { timeout: 2500 });
@@ -234,7 +235,9 @@ test("presentation mode on before / after: the summary, then one change per slid
   await expect(page.getByText("Behavior that nothing tests isn't covered").first()).toBeVisible();
   await page.keyboard.press("Space");
   await expect(controls).toContainText("change 1 of 5");
-  await expect(page.getByLabel("Decisions")).toContainText("Manager");
+  // one change, the reason and the checks: no decision list
+  await expect(page.getByLabel("Decisions")).toHaveCount(0);
+  await expect(page.getByLabel("Checks")).toBeVisible();
   await page.keyboard.press("Space");
   await page.keyboard.press("Space");
   await expect(page.getByLabel("Caption")).toContainText("_clean_isbn()");

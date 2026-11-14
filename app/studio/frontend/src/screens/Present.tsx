@@ -1,86 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, runHash, useApi, type RunDetail } from "../api";
-import { Pointer } from "../components/AfterParts";
 import { AgentGraph } from "../components/AgentGraph";
 import { AgentIcon } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
 import { TreeList, itemKey, treeFiles, useProjectFiles, useTreeView } from "../components/ProjectView";
-import { captionSteps, type CaptionStep } from "../state/caption";
-import { PHASES, SQUADS, agentName, repoName, roleOf, type RunState, type StudioEvent } from "../state/fold";
+import { captionSteps } from "../state/caption";
+import { agentName, repoName, type StudioEvent } from "../state/fold";
 import { useEvents, useFolded } from "../state/hooks";
 import { targetName } from "../state/names";
 import { STEP_MS, nextDecisionStep } from "../state/present";
 import { buildTree } from "../state/tree";
-
-const ROLE: Record<string, string> = {
-  manager: "runs the phases, hands out the work and keeps the budget",
-  explorer: "reads the project and writes the brief",
-  auditor: "runs the detectors and lists the candidates",
-  investigator: "gathers evidence on one candidate and decides",
-  planner: "groups the safe candidates into work packages",
-  engineer: "applies a package's edits and commits them",
-  tester: "runs the project's tests",
-  validator: "probes behavior before and after, checks public names",
-  fixer: "repairs a failed package or rolls it back",
-  reporter: "writes the report and the pull request text",
-  solo: "does every job alone (an ablation)",
-};
-
-function Counter({ label, value, state }: { label: string; value: number | string; state?: string }) {
-  return (
-    <div className={`counter ${state ? `st-${state}` : ""}`}>
-      <div className="counter-value">{value}</div>
-      <div className="counter-label">{label}</div>
-    </div>
-  );
-}
-
-function Spotlight({ step, state }: { step: CaptionStep | null; state: RunState }) {
-  const agent = step?.agent || "manager";
-  const role = roleOf(agent);
-  const stages = Object.values(state.items).map((i) => i.stage);
-  const count = (...s: string[]) => stages.filter((x) => s.includes(x)).length;
-  const done = Object.values(state.packages).filter((p) => ["kept", "repaired", "rolled_back", "reverted", "skipped"].includes(p.status)).length;
-  return (
-    <aside className="spotlight" aria-label="Active agent">
-      <div className={`spot-agent squad-${SQUADS[role] === "single" ? "manager" : SQUADS[role] || "manager"}`}>
-        <AgentIcon agent={agent} />
-        <div>
-          <div className="spot-name">{agentName(agent)}</div>
-          <div className="spot-role">{ROLE[role] || ""}</div>
-        </div>
-      </div>
-      <ol className="phase-steps" aria-label="Phases">
-        {PHASES.filter((p) => p !== "DONE").map((p) => {
-          const seen = state.phases.some((s) => s.phase === p);
-          const now = state.phase === p && !state.finished;
-          return (
-            <li key={p} className={now ? "now" : seen ? "seen" : ""} aria-current={now ? "step" : undefined}>
-              {p.replace("_", " ").toLowerCase()}
-            </li>
-          );
-        })}
-      </ol>
-      <div className="counters">
-        <Counter label="candidates" value={state.itemOrder.length} />
-        <Counter label="investigating" value={count("investigating")} state="investigating" />
-        <Counter label="suggestions" value={count("suggest")} state="suggest" />
-        <Counter label="kept" value={count("kept", "repaired")} state="kept" />
-        <Counter label="rolled back" value={count("rolled_back")} state="rolled_back" />
-        <Counter label="packages done" value={`${done}/${state.packageOrder.length}`} />
-      </div>
-      {state.focus.length === 1 && state.items[state.focus[0]] && (
-        <section className="spot-item" aria-label="The item at work">
-          <h3>
-            At work on <code>{state.items[state.focus[0]].unit.split("::").pop()}</code>
-          </h3>
-          <Pointer note={{ items: [state.focus[0]], match: "exact" }} state={state} />
-        </section>
-      )}
-    </aside>
-  );
-}
 
 type View = "project" | "agents";
 
@@ -140,7 +70,6 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
     for (let k = here - 1; k >= 0; k--) if (steps[k].decision) return go(k);
     go(0);
   };
-  const recent = steps.slice(Math.max(0, here - 1), here).reverse();
   // the one item the latest step is about, when there is one; a step about many has none
   const atWork = state.focus.length === 1 && state.items[state.focus[0]] ? itemKey(state.items[state.focus[0]].unit) : null;
   const exit = runHash(detail, live ? "live" : "replay");
@@ -182,19 +111,8 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
           <p className="muted">Waiting for the first step...</p>
         )}
       </div>
-      {/* without the side panel (the agent graph on a smaller screen) the agent's role joins the caption */}
-      {view === "agents" && step && (
-        <p className="caption-role">
-          {agentName(step.agent)} {ROLE[roleOf(step.agent)] || ""}
-        </p>
-      )}
-      {/* always two lines high, so the panel below keeps its size from step to step */}
-      <p className="caption-detail">{step?.detail || ""}</p>
-      {recent[0] && (
-        <p className="caption-before" aria-label="The step before">
-          Before that: {agentName(recent[0].agent)} {recent[0].text}
-        </p>
-      )}
+      {/* the reason, when the step has one */}
+      {step?.detail && <p className="caption-detail">{step.detail}</p>}
       <div className={`present-run view-${view}`}>
         {view === "agents" ? (
           <div className="present-graph">
@@ -205,7 +123,6 @@ function Run({ detail, events, live, view }: { detail: RunDetail; events: Studio
             <TreeList view={treeView} chosen={null} onSelect={() => undefined} atWork={atWork} />
           </div>
         )}
-        <Spotlight step={step} state={state} />
       </div>
     </PresentShell>
   );

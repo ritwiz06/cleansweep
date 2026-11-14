@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
 import { AfterTop, FileDiff, SMALL, TreeCard, checkClass, checkGlyph } from "../components/AfterParts";
-import { AgentIcon, agentName } from "../components/AgentIcon";
 import { Async, Empty, ErrorBox, Loading, PageHeader } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
 import { useProjectFiles } from "../components/ProjectView";
 import { SideBySide } from "../components/SideBySide";
 import { StateChip } from "../components/states";
-import { categoryLabel, decisionSteps, packageChecks } from "../state/annotate";
+import { categoryLabel, packageChecks } from "../state/annotate";
 import { afterModel } from "../state/beforeAfter";
 import { itemLabel } from "../state/caption";
-import type { Item, RunState, StudioEvent } from "../state/fold";
+import type { RunState, StudioEvent } from "../state/fold";
 import { useEvents } from "../state/hooks";
 import { runTitle, targetName } from "../state/names";
 import { SLIDE_MS, afterSlides, type Slide } from "../state/present";
@@ -73,21 +72,6 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
   );
 }
 
-function Chain({ item, state }: { item: Item; state: RunState }) {
-  return (
-    <ol className="chain-strip" aria-label="Decisions">
-      {decisionSteps(item, state).map((s, i) => (
-        <li key={i} title={s.text}>
-          <AgentIcon agent={s.agent} />
-          <span>
-            <b>{agentName(s.agent)}</b> {s.brief}
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 function ChangeSlide({ slide, state }: { slide: Extract<Slide, { kind: "change" }>; state: RunState }) {
   const items = slide.note.items.map((id) => state.items[id]);
   const main = items[0];
@@ -104,7 +88,6 @@ function ChangeSlide({ slide, state }: { slide: Extract<Slide, { kind: "change" 
         {main && <StateChip state={main.stage} />}
       </div>
       <p className="caption-detail">{main?.verdict?.reason || (slide.note.match === "none" ? "No applied candidate is in this file." : " ")}</p>
-      {main && <Chain item={main} state={state} />}
       <div className="slide-diff">
         <SideBySide hunk={slide.file.hunks[slide.hunk]} path={slide.file.path} only={removed ? "left" : slide.file.status === "added" ? "right" : undefined} />
       </div>

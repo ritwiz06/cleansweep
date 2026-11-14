@@ -1361,8 +1361,13 @@ table.compare th {
   color: var(--text);
 }
 
-.graph-active {
-  margin-left: auto;
+.recipient .sep {
+  margin-right: var(--space-2);
+}
+
+/* on a projector the caption above says it already */
+.present-graph .graph-caption {
+  display: none;
 }
 
 .side .card {
@@ -3062,14 +3067,6 @@ table.sbs.only-right td:nth-child(2) {
   margin-left: var(--space-3);
 }
 
-/* the side card's item takes the room left and fades out where it is cut */
-.spot-item {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
-}
-
 
 .present-bar {
   display: flex;
@@ -3180,45 +3177,12 @@ button.primary kbd {
   overflow: hidden;
 }
 
-.caption-before {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--text-lg);
-  line-height: 1.35;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* the agent's role, in the caption only when the side panel is not there */
-.caption-role {
-  margin: 0;
-  color: var(--text-2);
-  font-size: var(--text-md);
-}
-
+/* the caption, then the tree or the graph: nothing beside it */
 .present-run {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: var(--space-3);
-}
-
-@media (max-width: 1439px) {
-  .present-run.view-agents {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .present-run.view-agents .spotlight {
-    display: none;
-  }
-}
-
-@media (min-width: 1440px) {
-  .caption-role {
-    display: none;
-  }
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* the graph on a projector: larger type in the graph's units, so it zooms up to readable */
@@ -3229,16 +3193,6 @@ button.primary kbd {
 
 .present-graph .agent {
   width: 190px;
-}
-
-.spotlight .pointer-body {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
-}
-
-.spot-item h3 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-md);
 }
 
 .present-tree {
@@ -3327,124 +3281,6 @@ button.primary kbd {
   font-weight: 600;
 }
 
-.spotlight {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  padding: var(--space-3);
-  overflow: hidden;
-}
-
-.spot-agent {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-.spot-agent .agent-icon {
-  width: 56px;
-  height: 56px;
-  stroke-width: 1.6;
-}
-
-.spot-agent.squad-manager {
-  color: var(--agent-manager);
-}
-
-.spot-agent.squad-research {
-  color: var(--agent-research);
-}
-
-.spot-agent.squad-development {
-  color: var(--agent-development);
-}
-
-.spot-name {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text);
-}
-
-.spot-role {
-  font-size: var(--text-sm);
-  color: var(--text-2);
-}
-
-.phase-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: var(--text-xs);
-}
-
-.phase-steps li {
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-
-.phase-steps li.seen {
-  color: var(--text-2);
-}
-
-.phase-steps li.now {
-  background: var(--accent-fill);
-  border-color: var(--accent-fill);
-  color: var(--accent-ink);
-  font-weight: 700;
-}
-
-.counters {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.counter {
-  border-top: 3px solid var(--st, var(--border));
-  padding-top: var(--space-1);
-}
-
-.counter-value {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--st, var(--text));
-  line-height: 1.1;
-}
-
-.counter-label {
-  font-size: var(--text-xs);
-  color: var(--muted);
-}
-
-.present-foot {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.trail {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
-
-.trail li {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .present .ba-tree .card-body {
   max-height: calc(100vh - 400px);
 }
@@ -3461,29 +3297,6 @@ button.primary kbd {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.chain-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: var(--text-sm);
-}
-
-.chain-strip li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-/* the arrow ends a line rather than starting the next one */
-.chain-strip li:not(:last-child)::after {
-  content: "→";
-  color: var(--muted);
-  margin-left: var(--space-1);
 }
 
 /* the diff takes the room it needs, and the checks sit right under it */
