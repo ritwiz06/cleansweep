@@ -1,7 +1,11 @@
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type RunDetail, type RunRow } from "../api";
-import { ANIMATE, Async, Card, Empty, Status, seconds } from "../components/common";
+import { TOOLTIP } from "../components/Charts";
+import { ANIMATE, Async, Card, Empty, PageHeader, ShowMore, seconds } from "../components/common";
+import { RunOutcome } from "../components/RunOutcome";
+import { formatNumber } from "../state/labels";
 import { PHASES } from "../state/fold";
+import { runTitle, targetName } from "../state/names";
 import { useRuns } from "./Runs";
 
 const SERIES = ["var(--series-1)", "var(--series-2)"];
@@ -31,13 +35,86 @@ function numbers(d: RunDetail): Record<string, string | number | null> {
     "test runs": s.test_runs ?? null,
     "LLM calls": s.llm_calls ?? null,
     tokens: s.prompt_tokens !== undefined ? s.prompt_tokens + s.completion_tokens : null,
-    time: s.wall_seconds !== undefined ? seconds(s.wall_seconds) : null,
+    time: s.wall_seconds ?? null,
     "packages kept": pk.length ? pk.filter((p) => p.status === "kept").length : null,
     "packages rolled back": pk.length ? pk.filter((p) => p.status === "rolled_back").length : null,
     "step backs": a.back_steps ? Object.values(a.back_steps as Record<string, number>).reduce((x, y) => x + y, 0) : null,
     "verdicts safe / suggest / drop": a.decisions ? `${a.decisions.safe} / ${a.decisions.suggest} / ${a.decisions.drop}` : null,
     lessons: a.lessons ? a.lessons.length : null,
   };
+}
+
+// A run's letter in its series color, as on the chart.
+function RunTag({ which }: { which: "A" | "B" }) {
+  return <span className={`run-tag run-${which.toLowerCase()}`}>{which}</span>;
+}
+
+function show(key: string, value: string | number | null | undefined) {
+  if (value === null || value === undefined) return "-";
+  if (key === "time" && typeof value === "number") return seconds(value);
+  return typeof value === "number" ? formatNumber(value) : value;
+}
+
+// The rows worth pointing at; "Show all the numbers" has the rest.
+const MAIN = ["result", "edits kept", "rolled back", "lines removed", "test runs", "LLM calls", "time"];
+
+// B minus A for a number both runs have, signed; nothing for text.
+function difference(key: string, a: unknown, b: unknown) {
+  if (typeof a !== "number" || typeof b !== "number") return "";
+  const d = b - a;
+  if (d === 0) return <span className="muted">0</span>;
+  const size = key === "time" ? seconds(Math.abs(d)) : formatNumber(Math.abs(d));
+  return `${d > 0 ? "+" : "−"}${size}`;
+}
+
+// The two runs in one sentence: what each removed and how long it took.
+function compareSentence(both: (RunDetail | null | undefined)[]): string | null {
+  const [a, b] = both;
+  if (!a || !b) return null;
+  const say = (d: RunDetail) => {
+    const s = d.report?.stats || {};
+    const lines = typeof s.lines_removed === "number" ? `${formatNumber(s.lines_removed)} lines` : "an unknown number of lines";
+    return { name: targetName(d.target) || d.name, lines, time: typeof s.wall_seconds === "number" ? seconds(s.wall_seconds) : null };
+  };
+  const [x, y] = [say(a), say(b)];
+  const time = (t: string | null) => (t ? ` in ${t}` : "");
+  return `B, ${y.name}, removed ${y.lines}${time(y.time)}; A, ${x.name}, removed ${x.lines}${time(x.time)}.`;
+}
+
+function CompareTable({ both, keys, label }: { both: (RunDetail | null | undefined)[]; keys?: string[]; label: string }) {
+  const rows = both.map((d) => (d ? numbers(d) : {}));
+  return (
+    <div className="table-wrap" tabIndex={0}>
+      <table className="data compare" aria-label={label}>
+        <thead>
+          <tr>
+            <th />
+            {both.map((d, i) => (
+              <th key={i} className="num">
+                <RunTag which={i ? "B" : "A"} /> <span title={d?.name}>{d && runTitle(d)}</span> {d && <a href={runHash(d)}>replay</a>}
+              </th>
+            ))}
+            <th className="num">B − A</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(rows[0])
+            .filter((k) => !keys || keys.includes(k))
+            .map((k) => (
+              <tr key={k}>
+                <th>{k.charAt(0).toUpperCase() + k.slice(1)}</th>
+                {rows.map((r, i) => (
+                  <td key={i} className="num">
+                    {k === "result" ? <RunOutcome verdict={r[k] as string} /> : show(k, r[k])}
+                  </td>
+                ))}
+                <td className="num">{difference(k, rows[0][k], rows[1][k])}</td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function Picker({ label, value, runs, onChange }: { label: string; value: string; runs: RunRow[]; onChange: (v: string) => void }) {
@@ -47,8 +124,9 @@ function Picker({ label, value, runs, onChange }: { label: string; value: string
       <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
         <option value="">pick a run</option>
         {runs.map((r) => (
-          <option key={key(r)} value={key(r)}>
-            {r.name} ({r.kind}, {r.root})
+          <option key={key(r)} value={key(r)} title={r.name}>
+            {runTitle(r)}
+            {r.root === "replay" ? " · shipped recording" : ""}
           </option>
         ))}
       </select>
@@ -66,15 +144,19 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
   const right = useDetail(split(b));
   const both = [left.data, right.data];
   const phaseData = PHASES.filter((p) => p !== "DONE").map((p) => ({
-    phase: p.replace("_", " "),
+    phase: p.charAt(0) + p.slice(1).toLowerCase().replace("_", " "),
     A: left.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
     B: right.data?.report?.stats?.agentic?.phase_seconds?.[p] ?? 0,
   }));
+  const shipped = (runs.data || []).filter((r) => r.root === "replay" && r.kind === "v2");
+  const example = shipped.length > 1 ? { label: "Compare two recordings", onClick: () => onChange(key(shipped[0]), key(shipped[1])) } : undefined;
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Compare two runs</h2>
-      </header>
+      <PageHeader
+        title="Compare two runs"
+        description="Two runs side by side: what each removed, what it cost, and its time per phase."
+        help="Pick a run for A and one for B. Each row is the same number for both runs; the chart shows where each spent its time."
+      />
       <Async res={runs} what="Finding runs">
         {(rows) => {
           const choices = rows.filter((r) => r.kind !== "watch");
@@ -87,61 +169,48 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
         }}
       </Async>
       {!a || !b ? (
-        <Empty>Pick two runs to see them side by side.</Empty>
+        <Empty action={example}>Pick two runs to see them side by side.</Empty>
       ) : (
         <>
           <Card title="Side by side">
             <Async res={left}>
               {() => (
                 <Async res={right}>
-                  {() => {
-                    const rows = both.map((d) => (d ? numbers(d) : {}));
-                    return (
-                      <table className="data compare" aria-label="Comparison">
-                        <thead>
-                          <tr>
-                            <th />
-                            {both.map((d, i) => (
-                              <th key={i}>
-                                {i ? "B" : "A"}: {d?.name} {d && <a href={runHash(d)}>replay</a>}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.keys(rows[0]).map((k) => (
-                            <tr key={k}>
-                              <th>{k}</th>
-                              {rows.map((r, i) => (
-                                <td key={i}>{k === "result" ? <Status value={r[k] as string} /> : (r[k] ?? "-")}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
-                  }}
+                  {() => (
+                    <>
+                      <p className="takeaway">{compareSentence(both)}</p>
+                      <CompareTable both={both} keys={MAIN} label="Comparison" />
+                      <ShowMore label="Show all the numbers">
+                        <CompareTable both={both} label="All the numbers" />
+                      </ShowMore>
+                    </>
+                  )}
                 </Async>
               )}
             </Async>
           </Card>
-          <Card title="Time per phase (seconds)">
+          <Card title="Time per phase">
             {both.some((d) => d?.report?.stats?.agentic) ? (
-              <div className="chart">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={phaseData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
-                    <XAxis dataKey="phase" tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "var(--muted)", fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
-                    <Legend />
-                    <Bar dataKey="A" name={`A: ${left.data?.name || ""}`} fill={SERIES[0]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
-                    <Bar dataKey="B" name={`B: ${right.data?.name || ""}`} fill={SERIES[1]} radius={[3, 3, 0, 0]} isAnimationActive={ANIMATE} />
+              <div className="chart" role="img" aria-label="Time per phase of both runs">
+                <div className="chart-title">
+                  Time per phase: <RunTag which="A" /> {left.data && runTitle(left.data)} vs <RunTag which="B" /> {right.data && runTitle(right.data)}{" "}
+                  <span className="better">(less is faster)</span>
+                </div>
+                <ResponsiveContainer width="100%" height={phaseData.length * 44 + 16}>
+                  <BarChart data={phaseData} layout="vertical" margin={{ top: 4, right: 64, bottom: 4, left: 0 }} barCategoryGap="20%">
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="phase" width={110} tick={{ fill: "var(--text-2)", fontSize: 13 }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={TOOLTIP} formatter={(v) => seconds(Number(v))} />
+                    {(["A", "B"] as const).map((k, i) => (
+                      <Bar key={k} dataKey={k} name={`${k}: ${(i ? right : left).data?.name || ""}`} fill={SERIES[i]} radius={[0, 3, 3, 0]} minPointSize={1} isAnimationActive={ANIMATE}>
+                        <LabelList dataKey={k} position="right" formatter={(v: unknown) => (Number(v) ? seconds(Number(v)) : "0")} className="bar-label" />
+                      </Bar>
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <Empty>Phases exist for agent-team (v2) runs only.</Empty>
+              <Empty>Phases exist for agent-team runs only.</Empty>
             )}
           </Card>
         </>

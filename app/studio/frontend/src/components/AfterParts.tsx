@@ -1,66 +1,85 @@
-import { useMemo } from "react";
-import { annotateFile, categoryLabel, decisionSteps, packageChecks, type HunkNote } from "../state/annotate";
+import { useMemo, type ReactNode } from "react";
+import { annotateFile, categoryLabel, decisionSteps, packageChecks, type Check, type HunkNote } from "../state/annotate";
 import type { FileTree, Metrics, Pair } from "../state/beforeAfter";
 import type { DiffFile } from "../state/diff";
 import type { RunState } from "../state/fold";
 import { AgentTag } from "./AgentIcon";
-import { Card, Empty, Status } from "./common";
+import { Card, Empty, ShowMore, Status } from "./common";
 import { SideBySide } from "./SideBySide";
 import { StateChip } from "./states";
 
 // The pieces of before / after that the screen, presentation mode and the exported report share.
 export const SMALL = 60;
 
+// A check as a glyph and a tone: ✓ passed, ✗ failed, ! passed with something to look at, · not run.
+export function checkClass(c: Check): string {
+  return c.ok === true ? "ok" : c.ok === false ? "fail" : c.ok === "warn" ? "warn" : "info";
+}
+
+export function checkGlyph(c: Check): string {
+  return c.ok === true ? "✓" : c.ok === false ? "✗" : c.ok === "warn" ? "!" : "·";
+}
+
 function num(v: number | null): string {
   return v === null ? "?" : v.toLocaleString();
 }
 
-function Change({ pair, unit = "" }: { pair: Pair; unit?: string }) {
-  if (pair.before === null && pair.after === null) return <span className="muted">not recorded</span>;
+// One headline number before and after, with its change: green when it moved the right way.
+function Figure({ label, pair, fewer, note }: { label: string; pair: Pair; fewer: boolean; note?: string }) {
   const delta = pair.before !== null && pair.after !== null ? pair.after - pair.before : null;
+  const good = delta !== null && delta !== 0 && (fewer ? delta < 0 : delta > 0);
+  const bad = delta !== null && delta !== 0 && !good;
   return (
-    <span className="change">
-      <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
-      {unit}
-      {delta !== null && delta !== 0 && <span className="delta">{delta > 0 ? `+${delta}` : `−${-delta}`}</span>}
-    </span>
+    <div className="ba-figure">
+      {pair.before === null && pair.after === null ? (
+        <div className="ba-numbers muted">not recorded</div>
+      ) : (
+        <div className="ba-numbers">
+          <span className="ba-pair">
+            <b>{num(pair.before)}</b> <span className="arrow">→</span> <b>{num(pair.after)}</b>
+          </span>
+          {delta !== null && (
+            <span className={`delta ${good ? "good-text" : bad ? "bad-text" : "muted"}`}>{delta === 0 ? "no change" : delta > 0 ? `+${delta}` : `−${-delta}`}</span>
+          )}
+        </div>
+      )}
+      <div className="ba-label">
+        {label}
+        {note && <span className="muted"> · {note}</span>}
+      </div>
+    </div>
   );
 }
 
-export function MetricsCard({ m }: { m: Metrics }) {
+// The four numbers that say how the project changed, across the whole width.
+export function HeadlineBand({ m }: { m: Metrics }) {
+  const loc = `non-test Python${m.loc.source === "hidden checks" ? ", hidden checks" : ""}; diff −${m.linesRemoved} +${m.linesAdded}`;
+  return (
+    <div className="ba-band">
+      <Figure label="Lines of code" pair={m.loc} fewer note={m.loc.source ? loc : undefined} />
+      <Figure label="Files" pair={m.files} fewer />
+      <Figure label="Python files" pair={m.pyFiles} fewer />
+      <Figure label="Tests passing" pair={m.tests ? m.tests.passed : { before: null, after: null }} fewer={false} />
+    </div>
+  );
+}
+
+// Everything else about the result: the verdict, the tests, the probes, the public names, the
+// slop by category, and what no check can see.
+export function DetailsCard({ m }: { m: Metrics }) {
   const shortName = (unit: string) => unit.split("::").pop();
   return (
-    <Card title="Before → after" className="metrics-card">
-      <dl className="ba-metrics" aria-label="Before and after">
+    <Card title="The result" className="metrics-card">
+      <dl className="ba-metrics">
         <dt>Result</dt>
         <dd>{m.finished ? <Status value={m.verdict} /> : <Status value="in progress" />}</dd>
-        <dt>Files</dt>
-        <dd>
-          <Change pair={m.files} />
-        </dd>
-        <dt>Python files</dt>
-        <dd>
-          <Change pair={m.pyFiles} />
-        </dd>
-        <dt title="lines in Python files outside the tests">Lines of code</dt>
-        <dd>
-          <Change pair={m.loc} />
-          {m.loc.source && <span className="muted small"> (non-test Python{m.loc.source === "hidden checks" ? ", hidden checks" : ""})</span>}
-          <span className="muted small">
-            {" "}
-            diff: −{m.linesRemoved} +{m.linesAdded}
-          </span>
-        </dd>
-        <dt>Tests passing</dt>
+        <dt>Tests</dt>
         <dd>
           {m.tests ? (
             <>
-              <Change pair={m.tests.passed} />
-              <span className="small">
-                {" "}
-                · failing before {m.tests.failing} · new failures <b className={m.tests.newFailures.length ? "bad-text" : ""}>{m.tests.newFailures.length}</b> · flaky {m.tests.flaky}
-                <span className="muted"> (baseline, 3 runs)</span>
-              </span>
+              failing before {m.tests.failing} · new failures <b className={m.tests.newFailures.length ? "bad-text" : ""}>{m.tests.newFailures.length}</b> · flaky{" "}
+              {m.tests.flaky}
+              <span className="muted small"> (baseline, 3 runs)</span>
               {m.tests.removed.length > 0 && <div className="small warn-text">tests in removed files: {m.tests.removed.join(", ")}</div>}
             </>
           ) : (
@@ -97,17 +116,17 @@ export function MetricsCard({ m }: { m: Metrics }) {
       <table className="data slop-table" aria-label="Slop by category">
         <thead>
           <tr>
-            <th>slop by category</th>
-            <th>found</th>
-            <th>left</th>
+            <th>Slop by category</th>
+            <th className="num">Found</th>
+            <th className="num">Left</th>
           </tr>
         </thead>
         <tbody>
           {m.slop.map((s) => (
             <tr key={s.category}>
               <td>{categoryLabel(s.category)}</td>
-              <td>{s.before}</td>
-              <td>
+              <td className="num">{s.before}</td>
+              <td className="num">
                 {s.after}
                 {s.after < s.before && <span className="muted"> (−{s.before - s.after})</span>}
               </td>
@@ -117,6 +136,21 @@ export function MetricsCard({ m }: { m: Metrics }) {
       </table>
       <p className="honest">Behavior that nothing tests isn't covered: the tests and the probes check only the code they run.</p>
     </Card>
+  );
+}
+
+// The top of before / after: the headline band, then both trees and the details in columns of
+// one height.
+export function AfterTop({ m, before, after }: { m: Metrics; before: ReactNode; after: ReactNode }) {
+  return (
+    <section className="ba-summary" aria-label="Before and after">
+      <HeadlineBand m={m} />
+      <div className="ba-top">
+        {before}
+        {after}
+        <DetailsCard m={m} />
+      </div>
+    </section>
   );
 }
 
@@ -139,12 +173,13 @@ function TreeLines({ node, depth, selected, onSelect }: { node: FileTree; depth:
             title={c.path}
           >
             <span className="ba-name">{c.status === "removed" || c.status === "gone" ? <del>{c.name}</del> : c.name}</span>
-            {c.status === "removed" && <span className="ba-tag bad-text">removed</span>}
-            {c.status === "gone" && <span className="ba-tag bad-text">folder removed</span>}
-            {c.status === "added" && <span className="ba-tag good-text">new</span>}
+            {/* a tree is not a diff: what the cleanup removed reads as its result, not as an error */}
+            {c.status === "removed" && <span className="ba-tag good-text">removed</span>}
+            {c.status === "gone" && <span className="ba-tag good-text">folder removed</span>}
+            {c.status === "added" && <span className="ba-tag muted">new</span>}
             {c.status === "edited" && c.kind === "file" && (
               <span className="ba-tag">
-                {c.added > 0 && <span className="added">+{c.added}</span>} {c.removed > 0 && <span className="removed">−{c.removed}</span>}
+                {c.added > 0 && <span className="muted">+{c.added}</span>} {c.removed > 0 && <span className="good-text">−{c.removed}</span>}
               </span>
             )}
             {c.status === "unchanged" && c.kind === "file" && c.lines !== null && <span className="ba-tag muted">{c.lines}</span>}
@@ -167,10 +202,25 @@ export function TreeCard({ title, tree, selected, onSelect, all }: { title: stri
   );
 }
 
-export function Pointer({ note, state }: { note: HunkNote; state: RunState }) {
-  if (!note.items.length) return <div className="pointer">Not tied to a candidate: no applied candidate is in this file.</div>;
+// The decisions, evidence and checks behind a change; `brief` shows the latest decision only, with
+// the rest behind "Show details".
+export function Pointer({ note, state, n = 0, brief = false }: { note: HunkNote; state: RunState; n?: number; brief?: boolean }) {
+  const marker = n > 0 && (
+    <span className="pointer-n" aria-hidden>
+      {n}
+    </span>
+  );
+  if (!note.items.length) {
+    return (
+      <div className="pointer">
+        {marker}
+        Not tied to a candidate: no applied candidate is in this file.
+      </div>
+    );
+  }
   return (
-    <div className="pointer">
+    <div className={`pointer st-${state.items[note.items[0]].stage}`}>
+      {marker}
       {note.match !== "exact" && (
         <p className="small muted">
           {note.match === "only" ? "The only candidate applied in this file:" : "The hunk names none of this file's applied candidates; they are:"}
@@ -179,19 +229,14 @@ export function Pointer({ note, state }: { note: HunkNote; state: RunState }) {
       {note.items.map((id) => {
         const item = state.items[id];
         const pkg = item.pkg ? state.packages[item.pkg] : null;
-        return (
-          <div key={id} className="pointer-item">
-            <div className="pointer-head">
-              <span className="category-chip">{categoryLabel(item.category)}</span>
-              <code>{item.unit.split("::").pop()}</code>
-              <StateChip state={item.stage} />
-              {pkg && <span className="muted small">{pkg.id}</span>}
-            </div>
+        const steps = decisionSteps(item, state);
+        const last = steps[steps.length - 1];
+        const body = (
             <div className="pointer-body">
               <div>
                 <h4>Decisions</h4>
                 <ol className="steps">
-                  {decisionSteps(item, state).map((s, i) => (
+                  {steps.map((s, i) => (
                     <li key={i}>
                       <AgentTag agent={s.agent} /> {s.text}
                     </li>
@@ -219,8 +264,8 @@ export function Pointer({ note, state }: { note: HunkNote; state: RunState }) {
                 {pkg ? (
                   <ul className="checks-list">
                     {packageChecks(pkg).map((c, i) => (
-                      <li key={i} className={c.ok === true ? "ok" : c.ok === false ? "fail" : "info"}>
-                        <span aria-hidden>{c.ok === true ? "✓" : c.ok === false ? "✗" : "·"}</span> {c.label}
+                      <li key={i} className={checkClass(c)}>
+                        <span aria-hidden>{checkGlyph(c)}</span> {c.label}
                       </li>
                     ))}
                   </ul>
@@ -229,6 +274,24 @@ export function Pointer({ note, state }: { note: HunkNote; state: RunState }) {
                 )}
               </div>
             </div>
+        );
+        return (
+          <div key={id} className="pointer-item">
+            <div className="pointer-head">
+              <span className="category-chip">{categoryLabel(item.category)}</span>
+              <code>{item.unit.split("::").pop()}</code>
+              <StateChip state={item.stage} />
+            </div>
+            {brief ? (
+              <>
+                <p className="pointer-last">
+                  <AgentTag agent={last.agent} /> {last.text}
+                </p>
+                <ShowMore label="Show details">{body}</ShowMore>
+              </>
+            ) : (
+              body
+            )}
           </div>
         );
       })}
@@ -253,7 +316,7 @@ export function FileDiff({ file, state }: { file: DiffFile; state: RunState }) {
       {file.status === "renamed" && <p>Renamed from <code>{file.oldPath}</code>.</p>}
       {file.hunks.map((hunk, i) => (
         <section key={i} className="hunk" aria-label={`change ${i + 1} of ${file.hunks.length}`}>
-          <Pointer note={notes[i]} state={state} />
+          <Pointer note={notes[i]} state={state} n={file.hunks.length > 1 ? i + 1 : 0} />
           {whole ? (
             <details>
               <summary>

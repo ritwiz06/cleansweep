@@ -1,6 +1,7 @@
 import { useContext, useState } from "react";
 import { api, useApi, type RunDetail } from "../api";
 import { parseMismatch, type Package, type RunState } from "../state/fold";
+import { plural } from "../state/labels";
 import { ArtifactBody, ArtifactLink, RunContext } from "./Artifact";
 import { DiffView, Md } from "./Code";
 import { Async, Badge, Card, Empty, Status, percent } from "./common";
@@ -20,11 +21,11 @@ function ProbeTable({ probes }: { probes: any }) {
   return (
     <div>
       <p>
-        {probes.n_cases} probe cases, {probes.n_unstable || 0} unstable:{" "}
+        {plural(probes.n_cases, "probe case")}, {probes.n_unstable || 0} unstable:{" "}
         {probes.same ? <Badge tone="good">same behavior before and after</Badge> : <Badge tone="bad">{rows.length} differ</Badge>}
       </p>
       {rows.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0}>
           <table className="data" aria-label="Probe results before and after">
             <thead>
               <tr>

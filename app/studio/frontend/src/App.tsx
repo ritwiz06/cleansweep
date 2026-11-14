@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { DarkContext } from "./components/Code";
+import { Presenting } from "./components/common";
 import { ThemeToggle } from "./components/PresentShell";
 import { BeforeAfter } from "./screens/BeforeAfter";
 import { Cases } from "./screens/Cases";
 import { Compare } from "./screens/Compare";
-import { BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
+import { ARCHIVE, ArchiveScreen, BaselinesScreen, DataScreen, GuardScreen, ReportsScreen, SchedulerScreen } from "./screens/Dashboard";
 import { Evaluation } from "./screens/Evaluation";
 import { Home } from "./screens/Home";
 import { Launcher } from "./screens/Launcher";
@@ -16,31 +17,15 @@ import { Watch } from "./screens/Watch";
 
 type Theme = "light" | "dark";
 
-const NAV: { section: string; links: [string, string][] }[] = [
-  {
-    section: "Studio",
-    links: [
-      ["home", "Home"],
-      ["runs", "Runs"],
-      ["launch", "Launch"],
-      ["compare", "Compare"],
-      ["cases", "Case studies"],
-      ["watch", "Watch"],
-      ["results", "Results"],
-      ["evaluation", "Evaluation"],
-    ],
-  },
-  {
-    section: "Dashboard (v1)",
-    links: [
-      ["reports", "Saved reports"],
-      ["sweeps", "Live sweep and replay"],
-      ["scheduler", "Scheduler"],
-      ["baselines", "Baselines"],
-      ["data", "Data"],
-      ["guard", "Guard"],
-    ],
-  },
+const NAV: [string, string][] = [
+  ["home", "Home"],
+  ["runs", "Runs"],
+  ["launch", "Launch"],
+  ["compare", "Compare"],
+  ["cases", "Case studies"],
+  ["watch", "Watch"],
+  ["results", "Results"],
+  ["evaluation", "Evaluation"],
 ];
 
 function parseHash(): { route: string; q: URLSearchParams } {
@@ -80,7 +65,7 @@ export function App() {
       // not saved; the theme still applies
     }
   }, [theme]);
-  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : route;
+  const active = ["run", "replay", "after", "present"].includes(route) ? "runs" : ARCHIVE.some(([key]) => key === route) ? "archive" : route;
   const presenting = route === "present" || q.get("present") === "1";
   let screen;
   switch (route) {
@@ -92,7 +77,15 @@ export function App() {
       break;
     case "run":
     case "replay":
-      screen = <RunView key={`${route}:${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={route === "run"} />;
+      screen = (
+        <RunView
+          key={`${route}:${q.get("root")}:${q.get("path")}`}
+          root={q.get("root") || ""}
+          path={q.get("path") || ""}
+          live={route === "run"}
+          tour={q.get("tour") === "1"}
+        />
+      );
       break;
     case "after":
       screen = (
@@ -100,7 +93,15 @@ export function App() {
       );
       break;
     case "present":
-      screen = <Present key={`${q.get("root")}:${q.get("path")}`} root={q.get("root") || ""} path={q.get("path") || ""} live={q.get("live") === "1"} />;
+      screen = (
+        <Present
+          key={`${q.get("root")}:${q.get("path")}`}
+          root={q.get("root") || ""}
+          path={q.get("path") || ""}
+          live={q.get("live") === "1"}
+          view={q.get("view") === "agents" ? "agents" : "project"}
+        />
+      );
       break;
     case "compare":
       screen = <Compare a={q.get("a") || ""} b={q.get("b") || ""} onChange={(a, b) => go("compare", { a, b })} />;
@@ -115,10 +116,10 @@ export function App() {
       screen = <Results />;
       break;
     case "evaluation":
-      screen = <Evaluation tab={q.get("tab") || ""} onTab={(tab) => go("evaluation", { tab })} />;
+      screen = <Evaluation tab={q.get("tab") || ""} onTab={(tab) => go("evaluation", { tab, present: presenting ? "1" : "" })} />;
       break;
     case "sweeps":
-      screen = <RunsScreen kinds={["v1"]} title="Live sweep and replay (v1 runs)" />;
+      screen = <RunsScreen kinds={["v1"]} title="Live sweep and replay (Phase 1 runs)" />;
       break;
     case "reports":
       screen = <ReportsScreen root={q.get("root") || ""} path={q.get("path") || ""} onPick={(root, path) => go("reports", { root, path })} />;
@@ -132,6 +133,9 @@ export function App() {
     case "data":
       screen = <DataScreen />;
       break;
+    case "archive":
+      screen = <ArchiveScreen />;
+      break;
     case "guard":
       screen = <GuardScreen />;
       break;
@@ -141,29 +145,31 @@ export function App() {
   return (
     <DarkContext.Provider value={theme === "dark"}>
       <ThemeToggle.Provider value={{ dark: theme === "dark", toggle: () => setTheme(theme === "dark" ? "light" : "dark") }}>
-        <div className={presenting ? "app present" : "app"}>
-          {!presenting && (
-            <nav className="sidebar" aria-label="Screens">
-              <a className="brand" href="#/home">
-                CleanSweep <span>Studio</span>
-              </a>
-              {NAV.map((group) => (
-                <div key={group.section} className="nav-group">
-                  <div className="nav-section">{group.section}</div>
-                  {group.links.map(([key, label]) => (
+        <Presenting.Provider value={presenting}>
+          <div className={presenting ? "app present" : "app"}>
+            {!presenting && (
+              <nav className="sidebar" aria-label="Screens">
+                <a className="brand" href="#/home">
+                  CleanSweep <span>Studio</span>
+                </a>
+                <div className="nav-group">
+                  {NAV.map(([key, label]) => (
                     <a key={key} href={`#/${key}`} className={active === key ? "active" : ""} aria-current={active === key ? "page" : undefined}>
                       {label}
                     </a>
                   ))}
                 </div>
-              ))}
-              <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label="Switch theme">
-                {theme === "dark" ? "☀ Light theme" : "☾ Dark theme"}
-              </button>
-            </nav>
-          )}
-          <main className="content">{screen}</main>
-        </div>
+                <a href="#/archive" className={`nav-archive ${active === "archive" ? "active" : ""}`} aria-current={active === "archive" ? "page" : undefined}>
+                  Phase 1 archive
+                </a>
+                <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} title="Switch theme">
+                  <span aria-hidden>{theme === "dark" ? "☀" : "☾"}</span> {theme === "dark" ? "Light theme" : "Dark theme"}
+                </button>
+              </nav>
+            )}
+            <main className="content">{screen}</main>
+          </div>
+        </Presenting.Provider>
       </ThemeToggle.Provider>
     </DarkContext.Provider>
   );

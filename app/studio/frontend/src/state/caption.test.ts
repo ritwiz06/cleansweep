@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { captionFor, captionSteps, captionText, itemLabel } from "./caption";
+import { captionFor, captionSteps, captionText, itemLabel, runSentence, short } from "./caption";
 import { fold, type StudioEvent } from "./fold";
 import { afterSlides, nextDecisionStep } from "./present";
 import { parseDiff } from "./diff";
@@ -16,6 +16,14 @@ const ev = (kind: string, agent: string, payload: object, extra: Partial<StudioE
 });
 
 describe("captions", () => {
+  it("says where a run is in one sentence", () => {
+    const { events } = recording("20261102_demo_feature_agentic");
+    const at = (phase: string) => fold(events.slice(0, events.findIndex((e) => e.kind === "phase_change" && e.payload.to === phase) + 1));
+    expect(runSentence(fold([]))).toBe("The team is reading the project.");
+    expect(runSentence(at("INVESTIGATE"))).toBe("The team is investigating 16 candidates; 0 removed so far.");
+    expect(runSentence(fold(events))).toBe("Done: the team removed 5 of 16 candidates, 1 rolled back; everything still runs.");
+  });
+
   it("says each step of the demo recording in one plain line", () => {
     const steps = captionSteps(recording("20261102_demo_feature_agentic").events);
     const text = steps.map(captionText);
@@ -24,6 +32,9 @@ describe("captions", () => {
     expect(text).toContain("Investigator #1 checks who uses bookshelf/inventory_old.py");
     expect(text).toContain("Tester measures the baseline (3 runs): 12 pass, 0 fail, 0 flaky");
     expect(text).toContain("Validator probes P4: behavior changed in 4 of 20 cases");
+    // the probe caption says which cases differ, before and after
+    const probe = steps.find((s) => captionText(s) === "Validator probes P4: behavior changed in 4 of 20 cases");
+    expect(probe?.detail).toContain("half_up_0125: 0.13 before, 0.12 after");
     expect(text).toContain("Engineer replaces _round_money() with the original it duplicates");
     expect(text).toContain("Investigator #7 leaves cmd_add() as a suggestion for a person");
     expect(text[text.length - 1]).toBe("Manager ends the run: everything runs, 5 edits applied");
@@ -31,6 +42,17 @@ describe("captions", () => {
     expect(steps.length).toBe(158);
     expect(steps.filter((s) => s.decision).map((s) => s.text).slice(-5)).toEqual(["keeps P3", "rolls back P4", "decides to continue", "keeps P5", "keeps P6"]);
     expect(captionFor(ev("llm_start", "explorer", { n: 1 }), fold([]))).toBeNull();
+  });
+
+  it("says 'including' when the categories it names are not all the candidates", () => {
+    const steps = captionSteps(recording("20261102_demo_feature_agentic").events);
+    expect(steps.map((s) => s.text)).toContain("finds 16 candidates, including dead code 9, leftover file 2, duplicate 2");
+  });
+
+  it("cuts a reason only at the end of a sentence", () => {
+    const reason = "The rules propose INVESTIGATE for the 16 candidates. The budget is sufficient to proceed. " + "More words. ".repeat(30);
+    expect(short(reason)).toBe("The rules propose INVESTIGATE for the 16 candidates. The budget is sufficient to proceed. More words. More words. More words. More words. More words. More words. More words. More words. More words.");
+    expect(short("One very long sentence without an end ".repeat(10)).endsWith("end")).toBe(true);
   });
 
   it("names a step back and a revert", () => {

@@ -1,7 +1,9 @@
-import { useState, type ReactNode } from "react";
-import { Bar, BarChart, CartesianGrid, ErrorBar, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useContext, useEffect, useState, type ReactNode } from "react";
+import { Bar, BarChart, Cell, ErrorBar, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, ApiError, useApi, type Table } from "../api";
-import { ANIMATE, Async, Badge, Card, DataTable, Empty, Tabs } from "../components/common";
+import { SeriesKey, TOOLTIP, nameOf, rowNamed, stackTotal, type LabelBox } from "../components/Charts";
+import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, Presenting, ShowMore, Tabs } from "../components/common";
+import { formatNumber } from "../state/labels";
 import {
   auditBars,
   costBars,
@@ -10,6 +12,7 @@ import {
   kindBars,
   methodName,
   probeBars,
+  realAblationBars,
   records,
   reviewBars,
   scenarioBars,
@@ -18,6 +21,20 @@ import {
   watchBars,
   type Row,
 } from "../state/evaluation";
+import {
+  auditTakeaway,
+  autonomyTakeaway,
+  hypothesesTakeaway,
+  injectionTakeaway,
+  managerTakeaway,
+  probeTakeaway,
+  realAblationTakeaway,
+  realTakeaway,
+  reviewerTakeaway,
+  v3AuditTakeaway,
+  v3InjectionTakeaway,
+  watchTakeaway,
+} from "../state/takeaways";
 
 type TabKey =
   | "injection"
@@ -33,25 +50,29 @@ type TabKey =
   | "v3-audit"
   | "v3-autonomy";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "injection", label: "Injection benchmark" },
-  { key: "ablations", label: "Ablations" },
-  { key: "audit", label: "Diff audit" },
-  { key: "probes", label: "Probe strength" },
-  { key: "manager", label: "Manager scenarios" },
-  { key: "reviewer", label: "LLM reviewer" },
-  { key: "watch", label: "Watch" },
-  { key: "v3-hypotheses", label: "v3: hypotheses" },
-  { key: "v3-injection", label: "v3: injection" },
-  { key: "v3-real", label: "v3: real projects" },
-  { key: "v3-audit", label: "v3: audit" },
-  { key: "v3-autonomy", label: "v3: autonomy and cost" },
-];
+type Phase = "Phase 2" | "Phase 3";
 
-const AXIS = { fill: "var(--muted)", fontSize: 12 };
+const TABS: { key: TabKey; label: string; phase: Phase }[] = [
+  { key: "injection", label: "Injection benchmark", phase: "Phase 2" },
+  { key: "ablations", label: "Ablations", phase: "Phase 2" },
+  { key: "audit", label: "Diff audit", phase: "Phase 2" },
+  { key: "probes", label: "Probe strength", phase: "Phase 2" },
+  { key: "manager", label: "Manager scenarios", phase: "Phase 2" },
+  { key: "reviewer", label: "LLM reviewer", phase: "Phase 2" },
+  { key: "watch", label: "Watch", phase: "Phase 2" },
+  { key: "v3-hypotheses", label: "Hypotheses", phase: "Phase 3" },
+  { key: "v3-injection", label: "Injection", phase: "Phase 3" },
+  { key: "v3-real", label: "Real projects", phase: "Phase 3" },
+  { key: "v3-audit", label: "Audit", phase: "Phase 3" },
+  { key: "v3-autonomy", label: "Autonomy and cost", phase: "Phase 3" },
+];
+const PHASES: Phase[] = ["Phase 2", "Phase 3"];
+
+// tables show the methods by the same names as the charts
+const NAMES = { method: methodName };
+
 // the kinds in KINDS order; series-6 sits too close to series-3, so "other" takes series-7
 const KIND_COLORS = [1, 2, 3, 4, 5, 7].map((n) => `var(--series-${n})`);
-const TOOLTIP = { background: "var(--surface)", border: "1px solid var(--border)" };
 const judged = (text = "LLM-judged") => <Badge tone="info">{text}</Badge>;
 
 // A committed table (v2's or v3's); a missing one comes back empty, so the screen can say it is
@@ -68,12 +89,52 @@ function useTable(name: string, version = "v2") {
 function Loaded({ name, version, children }: { name: string; version?: string; children: (table: Table) => ReactNode }) {
   const res = useTable(name, version);
   return (
-    <Async res={res} what={`Loading ${name}`} empty={(t) => (t.columns.length ? null : `${name} is not built yet (scripts/reproduce_tables.sh).`)}>
+    <Async
+      res={res}
+      what={`Loading ${name}`}
+      empty={(t) => (t.columns.length ? null : `${name} is not built yet; scripts/reproduce_tables.sh builds it.`)}
+      emptyAction={{ label: "Check again", onClick: res.reload }}
+    >
       {children}
     </Async>
   );
 }
 
+// The method every chart is about: drawn in the accent, the others in a quiet grey.
+const FOCUS = "team";
+
+// A bar's value just past its end, or past the end of its interval when it has one (the label's
+// value is the row's name: valueAccessor={nameOf(name)}).
+function valueAtEnd(rows: Row[], name: string, key: string, format: (v: number) => string, error?: string) {
+  return function ValueLabel({ x, y, width, height, value: label }: LabelBox) {
+    const row = rowNamed(rows, name, label);
+    if (!row) return null;
+    const value = Number(row[key]) || 0;
+    const [bx, by, bw, bh] = [x, y, width, height].map(Number);
+    const up = error ? Number((row[error] as number[])?.[1]) || 0 : 0;
+    const whisker = value > 0 ? (bw / value) * up : 0;
+    return (
+      <text x={bx + bw + whisker + 6} y={by + bh / 2} dy={4} className="bar-label">
+        {format(value)}
+      </text>
+    );
+  };
+}
+
+// A category name on the left of its bar, left-aligned; the focus method in bold.
+function nameTick(width: number) {
+  return function NameTick({ x, y, payload }: { x?: number | string; y?: number | string; payload?: { value: string } }) {
+    const name = payload?.value ?? "";
+    return (
+      <text x={Number(x) - width + 14} y={Number(y)} dy={4} textAnchor="start" className={name === FOCUS ? "bar-name focus" : "bar-name"}>
+        {name}
+      </text>
+    );
+  };
+}
+
+// Horizontal bars, best on top, each with its value at its end; the title says which way is
+// better. One series: the focus method in the accent; several: the series' colors, named above.
 function Bars({
   data,
   x,
@@ -82,6 +143,7 @@ function Bars({
   percent = false,
   error,
   title,
+  better,
 }: {
   data: Row[];
   x: string;
@@ -90,35 +152,49 @@ function Bars({
   percent?: boolean;
   error?: string;
   title: string;
+  better: "higher" | "fewer";
 }) {
+  const presenting = useContext(Presenting);
   if (!data.length) return <Empty>Nothing to chart.</Empty>;
-  const format = (v: unknown) => (percent ? `${Math.round(Number(v) * 100)}%` : String(v));
-  // long or many labels are tilted so they never overlap
-  const tilt = data.length > 6 || data.some((d) => String(d[x]).length > 14);
+  const format = (v: number) => (percent ? `${Math.round(v * 100)}%` : formatNumber(v));
+  const keys = series.map((s) => s.key);
+  const total = (d: Row) => keys.reduce((sum, k) => sum + (Number(d[k]) || 0), 0);
+  const rows = [...data].sort((a, b) => (better === "fewer" ? total(a) - total(b) : total(b) - total(a)));
+  const grouped = series.length > 1 && !stacked;
+  const rowHeight = (presenting ? 40 : 28) * (grouped ? series.length * 0.8 : 1);
+  const nameWidth = Math.min(Math.max(...rows.map((d) => String(d[x]).length)) * (presenting ? 10 : 7.6) + 16, presenting ? 280 : 200);
+  const colors = series.map((s, i) => s.color ?? (series.length === 1 ? "var(--bar-other)" : `var(--series-${i + 1})`));
+  const most = Math.max(...rows.map((d) => (stacked ? total(d) : Math.max(...keys.map((k) => Number(d[k]) || 0))) + (error ? Number((d[error] as number[])?.[1]) || 0 : 0)));
   return (
     <div className="chart" role="img" aria-label={title}>
-      <div className="chart-title">{title}</div>
-      <ResponsiveContainer width="100%" height={tilt ? 280 : 260}>
-        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: tilt ? 48 : 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
-          <XAxis dataKey={x} tick={AXIS} interval={0} angle={tilt ? -20 : 0} textAnchor={tilt ? "end" : "middle"} height={tilt ? 84 : 30} />
-          <YAxis tick={AXIS} tickFormatter={format} domain={percent ? [0, 1] : [0, "auto"]} width={44} />
-          <Tooltip contentStyle={TOOLTIP} formatter={(v) => format(v)} cursor={{ fill: "var(--grid)", opacity: 0.4 }} />
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+      <div className="chart-title">
+        {title} <span className="better">({better === "fewer" ? "fewer is better" : "higher is better"})</span>
+      </div>
+      {series.length > 1 && <SeriesKey series={series.map((s, i) => ({ name: s.name, color: colors[i] }))} />}
+      <ResponsiveContainer width="100%" height={rows.length * rowHeight + 16}>
+        <BarChart data={rows} layout="vertical" margin={{ top: 4, right: presenting ? 72 : 56, bottom: 4, left: 0 }} barCategoryGap="22%">
+          <XAxis type="number" hide domain={[0, percent ? Math.max(1, most) : most || 1]} />
+          <YAxis type="category" dataKey={x} width={nameWidth} tick={nameTick(nameWidth)} tickLine={false} axisLine={false} interval={0} />
+          <Tooltip contentStyle={TOOLTIP} formatter={(v) => format(Number(v))} cursor={{ fill: "var(--grid)", opacity: 0.4 }} />
           {series.map((s, i) => (
             <Bar
               key={s.key}
               dataKey={s.key}
               name={s.name}
               stackId={stacked ? "one" : undefined}
-              fill={s.color ?? `var(--series-${i + 1})`}
+              fill={colors[i]}
               stroke="var(--surface)"
-              strokeWidth={stacked ? 2 : 0}
-              maxBarSize={36}
-              radius={stacked && i < series.length - 1 ? 0 : [4, 4, 0, 0]}
+              strokeWidth={stacked ? 1 : 0}
+              minPointSize={series.length === 1 ? 2 : 0}
+              radius={stacked && i < series.length - 1 ? 0 : [0, 3, 3, 0]}
               isAnimationActive={ANIMATE}
             >
-              {error && i === 0 && <ErrorBar dataKey={error} width={6} stroke="var(--text)" />}
+              {series.length === 1 && rows.map((d) => <Cell key={String(d[x])} fill={d[x] === FOCUS ? "var(--accent)" : colors[0]} />)}
+              {/* the interval in the secondary text color, outlined in the surface so it reads over the bar */}
+              {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={7} stroke="var(--surface)" strokeWidth={3} />}
+              {error && i === 0 && <ErrorBar dataKey={error} direction="x" width={6} stroke="var(--text-2)" strokeWidth={1.5} />}
+              {!stacked && <LabelList valueAccessor={nameOf(x)} content={valueAtEnd(rows, x, s.key, format, i === 0 ? error : undefined)} />}
+              {stacked && <LabelList valueAccessor={nameOf(x)} content={stackTotal(rows, x, keys, s.key, format, true)} />}
             </Bar>
           ))}
         </BarChart>
@@ -127,34 +203,38 @@ function Bars({
   );
 }
 
+// The tab's answer in one sentence, above its chart.
+function Takeaway({ text }: { text: string | null }) {
+  return text ? <p className="takeaway">{text}</p> : null;
+}
+
 function Injection() {
   return (
-    <>
-      <Card title="Planted slop removed and traps removed, per method">
-        <Loaded name="injection_seeds.csv">
-          {(t) => {
-            const bars = injectionBars(records(t));
-            return (
+    <Card title="Planted slop removed and traps removed, per method">
+      <Loaded name="injection_seeds.csv">
+        {(t) => {
+          const bars = injectionBars(records(t));
+          return (
+            <>
+              <Takeaway text={injectionTakeaway(bars)} />
               <div className="chart-pair">
-                <Bars data={bars} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed per run (mean, 95% CI)" />
-                <Bars data={bars} x="method" series={[{ key: "traps", name: "traps removed" }]} title="Traps removed (each one changes behavior)" />
+                <Bars data={bars} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed per run (mean, 95% CI)" better="higher" />
+                <Bars data={bars} x="method" series={[{ key: "traps", name: "traps removed" }]} title="Traps removed: each one changes behavior" better="fewer" />
               </div>
-            );
-          }}
-        </Loaded>
-        <p className="muted">All seeds pooled, with a bootstrap CI over project and seed. The table has each seed.</p>
-      </Card>
-      <Card title="By seed and pooled">
-        <Loaded name="injection_seeds.csv">{(t) => <DataTable table={t} label="injection_seeds.csv" maxHeight={320} />}</Loaded>
-      </Card>
-      <Card title="The team against the other methods, paired by project and seed">
-        <Loaded name="injection_paired.csv">{(t) => <DataTable table={t} label="injection_paired.csv" />}</Loaded>
-      </Card>
-      <Card title="The extended framework rule, re-scored (as run and with the rule)">
-        <Loaded name="inject_rule.csv">{(t) => <DataTable table={t} label="inject_rule.csv" />}</Loaded>
+            </>
+          );
+        }}
+      </Loaded>
+      <ShowMore label="Show the tables">
+        <p className="muted">All seeds pooled, with a bootstrap CI over project and seed. The first table has each seed.</p>
+        <Loaded name="injection_seeds.csv">{(t) => <DataTable table={t} names={NAMES} label="injection_seeds.csv" maxHeight={320} />}</Loaded>
+        <h4>The team against the other methods, paired by project and seed</h4>
+        <Loaded name="injection_paired.csv">{(t) => <DataTable table={t} names={NAMES} label="injection_paired.csv" />}</Loaded>
+        <h4>The extended framework rule, re-scored (as run and with the rule)</h4>
+        <Loaded name="inject_rule.csv">{(t) => <DataTable table={t} names={NAMES} label="inject_rule.csv" />}</Loaded>
         <p className="muted">In-sample: the rule was extended after seeing these wrong edits and is re-scored on the same runs, so the drop is optimistic until fresh projects or seeds test it.</p>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
@@ -164,16 +244,17 @@ function AblationCost({ rows }: { rows: Row[] }) {
   const bars = costBars(rows, set);
   return (
     <>
-      <div className="card-actions">
+      <label className="card-actions">
+        Target set{" "}
         <select value={set} onChange={(e) => setSet(e.target.value)} aria-label="Ablation set">
           {sets.map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-      </div>
+      </label>
       <div className="chart-pair">
-        <Bars data={bars} x="method" series={[{ key: "llm", name: "LLM requests" }]} title="LLM requests per run (mean)" />
-        <Bars data={bars} x="method" series={[{ key: "minutes", name: "minutes" }]} title="Minutes per run (median)" />
+        <Bars data={bars} x="method" series={[{ key: "llm", name: "LLM requests" }]} title="LLM requests per run (mean)" better="fewer" />
+        <Bars data={bars} x="method" series={[{ key: "minutes", name: "minutes" }]} title="Minutes per run (median)" better="fewer" />
       </div>
     </>
   );
@@ -181,18 +262,25 @@ function AblationCost({ rows }: { rows: Row[] }) {
 
 function Ablations() {
   return (
-    <>
-      <Card title="Real projects: the team, no research squad, a single agent">
-        <Loaded name="real_ablation.csv">{(t) => <DataTable table={t} label="real_ablation.csv" />}</Loaded>
-        <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged. The table scrolls sideways for the UI check, requests and minutes.</p>
+    <Card title={<>Real projects: the team, no research squad, a single agent {judged("reading tier: LLM-judged")}</>}>
+      <Loaded name="real_ablation.csv">
+        {(t) => (
+          <>
+            <Takeaway text={realAblationTakeaway(records(t))} />
+            <Bars data={realAblationBars(records(t))} x="method" series={[{ key: "wrong", name: "wrong edits" }]} title="Wrong kept code edits on five real projects, all tiers" better="fewer" />
+          </>
+        )}
+      </Loaded>
+      <ShowMore label="Show the tables and the cost">
+        <Loaded name="real_ablation.csv">{(t) => <DataTable table={t} names={NAMES} label="real_ablation.csv" />}</Loaded>
+        <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged.</p>
         <p className="muted">Five projects, one run each, with every wrong edit in three of them: these differences suggest, but don't establish, that investigating each candidate pays off on real code. Fisher's exact test against the team:</p>
-        <Loaded name="real_ablation_tests.csv">{(t) => <DataTable table={t} label="real_ablation_tests.csv" />}</Loaded>
-      </Card>
-      <Card title="Ablations on the answer keys, SWE-bench, AIDev and the injected set">
+        <Loaded name="real_ablation_tests.csv">{(t) => <DataTable table={t} names={NAMES} label="real_ablation_tests.csv" />}</Loaded>
+        <h4>Cost on the answer keys, SWE-bench, AIDev and the injected set</h4>
         <Loaded name="ablations.csv">{(t) => <AblationCost rows={records(t)} />}</Loaded>
-        <Loaded name="ablations.csv">{(t) => <DataTable table={t} label="ablations.csv" maxHeight={360} />}</Loaded>
-      </Card>
-    </>
+        <Loaded name="ablations.csv">{(t) => <DataTable table={t} names={NAMES} label="ablations.csv" maxHeight={360} />}</Loaded>
+      </ShowMore>
+    </Card>
   );
 }
 
@@ -202,43 +290,46 @@ function AuditCharts({ audit, types }: { audit: Row[]; types: Row[] }) {
   const shown = audit.filter((r) => r.source === source);
   return (
     <>
-      <div className="card-actions">
+      <Takeaway text={auditTakeaway(audit, source)} />
+      <label className="card-actions">
+        Target set{" "}
         <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Target set">
           {all.map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-      </div>
-      <div className="chart-pair">
-        <Bars
-          data={auditBars(audit, source)}
-          x="method"
-          stacked
-          series={[
-            { key: "confirmed", name: "wrong, confirmed (test, UI check or rule)" },
-            { key: "reading", name: "wrong, reading (LLM-judged)" },
-          ]}
-          title="Wrong edits per 100 kept code edits, by tier"
-        />
-        <Bars data={kindBars(types, source)} x="method" stacked series={KINDS.map((k, i) => ({ key: k, name: k, color: KIND_COLORS[i] }))} title="Wrong edits by kind (count)" />
-      </div>
-      <DataTable
-        table={{
-          columns: ["method", "kept code edits", "wrong (all tiers)", "confirmed", "reading (LLM-judged)", "debatable", "wrong rate [95% CI]", "missed by every check"],
-          rows: shown.map((r) => [methodName(r.method), r.kept_code_edits, r.wrong, r.wrong_confirmed, r.wrong_reading, r.debatable, `${r.wrong_rate} [${r.ci_low}, ${r.ci_high}]`, r.missed_by_every_check]),
-        }}
-        label="diff_audit.csv"
+      </label>
+      <Bars
+        data={auditBars(audit, source)}
+        x="method"
+        stacked
+        series={[
+          { key: "confirmed", name: "wrong, confirmed (test, UI check or rule)" },
+          { key: "reading", name: "wrong, reading (LLM-judged)" },
+        ]}
+        title="Wrong edits per 100 kept code edits, by tier"
+        better="fewer"
       />
+      <ShowMore label="Show the kinds and the table">
+        <p className="muted">
+          An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that its method labels cannot bias, though the share left unchecked differs by method.
+        </p>
+        <Bars data={kindBars(types, source)} x="method" stacked series={KINDS.map((k, i) => ({ key: k, name: k, color: KIND_COLORS[i] }))} title="Wrong edits by kind (count)" better="fewer" />
+        <DataTable
+          table={{
+            columns: ["method", "kept code edits", "wrong (all tiers)", "confirmed", "reading (LLM-judged)", "debatable", "wrong rate [95% CI]", "missed by every check"],
+            rows: shown.map((r) => [methodName(r.method), r.kept_code_edits, r.wrong, r.wrong_confirmed, r.wrong_reading, r.debatable, `${r.wrong_rate} [${r.ci_low}, ${r.ci_high}]`, r.missed_by_every_check]),
+          }}
+          label="diff_audit.csv"
+        />
+      </ShowMore>
     </>
   );
 }
 
 function Audit() {
   return (
-    <Card title={<>Diff audit: wrong edits by tier and kind {judged("reading tier: LLM-judged")}</>}>
-      <p className="muted">
-        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that its method labels cannot bias, though the share left unchecked differs by method.
-      </p>
+    <Card title={<>Diff audit: wrong edits by tier {judged("reading tier: LLM-judged")}</>}>
       <Loaded name="diff_audit.csv">{(audit) => <Loaded name="diff_audit_types.csv">{(types) => <AuditCharts audit={records(audit)} types={records(types)} />}</Loaded>}</Loaded>
     </Card>
   );
@@ -250,6 +341,7 @@ function Probes() {
       <Loaded name="probe_strength.csv">
         {(t) => (
           <>
+            <Takeaway text={probeTakeaway(records(t))} />
             <Bars
               data={probeBars(records(t))}
               x="label"
@@ -260,8 +352,11 @@ function Probes() {
                 { key: "probes", name: "caught only by the probes" },
               ]}
               title="Share of mutations and PatchDiff changes caught"
+              better="higher"
             />
-            <DataTable table={t} label="probe_strength.csv" />
+            <ShowMore label="Show the table">
+              <DataTable table={t} names={NAMES} label="probe_strength.csv" />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -275,6 +370,7 @@ function Manager() {
       <Loaded name="manager_scenarios.csv">
         {(t) => (
           <>
+            <Takeaway text={managerTakeaway(records(t))} />
             <Bars
               data={scenarioBars(records(t))}
               x="scenario"
@@ -284,8 +380,11 @@ function Manager() {
                 { key: "rules", name: "rule-based Manager" },
               ]}
               title="Runs where the Manager did what the scenario expects"
+              better="higher"
             />
-            <DataTable table={t} label="manager_scenarios.csv" />
+            <ShowMore label="Show the table">
+              <DataTable table={t} names={NAMES} label="manager_scenarios.csv" />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -296,12 +395,15 @@ function Manager() {
 function Reviewer() {
   return (
     <Card title={<>LLM-reviewer acceptance of the case studies' changes {judged()}</>}>
-      <p className="muted">An independent model, blinded to the method, judged each change; no person has checked these verdicts.</p>
       <Loaded name="llm_review_acceptance.csv">
         {(t) => (
           <>
-            <Bars data={reviewBars(records(t))} x="project" percent series={[{ key: "acceptance", name: "accepted" }]} title="Changes the LLM reviewer accepts, per project (LLM-judged)" />
-            <DataTable table={t} label="llm_review_acceptance.csv" maxHeight={320} />
+            <Takeaway text={reviewerTakeaway(records(t))} />
+            <Bars data={reviewBars(records(t))} x="project" percent series={[{ key: "acceptance", name: "accepted" }]} title="Changes the LLM reviewer accepts, per project (LLM-judged)" better="higher" />
+            <ShowMore label="Show the table">
+              <p className="muted">An independent model, blinded to the method, judged each change; no person has checked these verdicts.</p>
+              <DataTable table={t} names={NAMES} label="llm_review_acceptance.csv" maxHeight={320} />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -317,11 +419,14 @@ function Watch() {
           const bars = watchBars(records(t));
           return (
             <>
+              <Takeaway text={watchTakeaway(records(t))} />
               <div className="chart-pair">
-                <Bars data={bars} x="policy" series={[{ key: "debt", name: "slop debt per commit" }]} title="Slop debt per commit (mean over repositories)" />
-                <Bars data={bars} x="policy" series={[{ key: "tests", name: "test runs" }]} title="Test runs spent (mean over repositories)" />
+                <Bars data={bars} x="policy" series={[{ key: "debt", name: "slop debt per commit" }]} title="Slop debt per commit (mean over repositories)" better="fewer" />
+                <Bars data={bars} x="policy" series={[{ key: "tests", name: "test runs" }]} title="Test runs spent (mean over repositories)" better="fewer" />
               </div>
-              <DataTable table={t} label="watch_replay.csv" maxHeight={280} />
+              <ShowMore label="Show the table">
+                <DataTable table={t} names={NAMES} label="watch_replay.csv" maxHeight={280} />
+              </ShowMore>
             </>
           );
         }}
@@ -330,82 +435,95 @@ function Watch() {
   );
 }
 
-const V3_NOTE = "Interim until the results freeze (2026-11-13 12:00); the hypotheses are tested as docs/preregistration_v3.md states them.";
+const V3_NOTE = "The hypotheses are tested as the Phase 3 pre-registration states them.";
 
 function V3Table({ name }: { name: string }) {
-  return <Loaded name={name} version="v3">{(t) => <DataTable table={t} label={name} maxHeight={360} />}</Loaded>;
+  return <Loaded name={name} version="v3">{(t) => <DataTable table={t} names={NAMES} label={name} maxHeight={360} />}</Loaded>;
+}
+
+// A Phase 3 tab: its sentence from one table, and the tables behind one "Show" line.
+function V3Answer({ name, say }: { name: string; say: (rows: Row[]) => string | null }) {
+  return <Loaded name={name} version="v3">{(t) => <Takeaway text={say(records(t))} />}</Loaded>;
 }
 
 function V3Hypotheses() {
   return (
     <Card title="H1–H4, as pre-registered">
-      <V3Table name="hypotheses.csv" />
-      <p className="muted">{V3_NOTE} Each is supported, not supported, or not run by the freeze.</p>
+      <V3Answer name="hypotheses.csv" say={hypothesesTakeaway} />
+      <ShowMore label="Show the evidence">
+        <V3Table name="hypotheses.csv" />
+        <p className="muted">{V3_NOTE} Each is supported, not supported, or not run by the freeze.</p>
+      </ShowMore>
     </Card>
   );
 }
 
 function V3Injection() {
   return (
-    <>
-      <Card title="INJECT, seed 4 (out of sample): planted slop removed">
-        <Loaded name="injection.csv" version="v3">
-          {(t) => <Bars data={v3RecallBars(records(t))} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed (95% interval over repositories)" />}
-        </Loaded>
+    <Card title="INJECT, seed 4 (out of sample): planted slop removed">
+      <Loaded name="injection.csv" version="v3">
+        {(t) => (
+          <>
+            <Takeaway text={v3InjectionTakeaway(records(t))} />
+            <Bars data={v3RecallBars(records(t))} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed (95% interval over repositories)" better="higher" />
+          </>
+        )}
+      </Loaded>
+      <ShowMore label="Show the table">
         <p className="muted">A run that hit the cap or the budget is timed out: it stays in the denominator and removes nothing. {V3_NOTE}</p>
-      </Card>
-      <Card title="Per method">
         <V3Table name="injection.csv" />
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Real() {
   return (
-    <>
-      <Card title="REAL, run 1: held-out real tests and visible breaks">
+    <Card title="REAL, run 1: held-out real tests and visible breaks">
+      <V3Answer name="real.csv" say={realTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="real.csv" />
         <p className="muted">Half of each project's own test modules are held out (seed 4); only tests that pass in all three baseline runs count. {V3_NOTE}</p>
-      </Card>
-      <Card title="Safety against yield">
+        <h4>Safety against yield</h4>
         <V3Table name="curve.csv" />
         <p className="muted">Wrong edits in all tiers include readings (LLM-judged); the confirmed tier rests on targeted tests, the UI check and rules.</p>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Audit() {
   return (
-    <>
-      <Card title="The blinded diff audit on the v3 runs, two tiers">
+    <Card title={<>The blinded diff audit on the Phase 3 runs {judged("reading tier: LLM-judged")}</>}>
+      <V3Answer name="audit.csv" say={v3AuditTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="audit.csv" />
         <p className="muted">{judged("reading tier: LLM-judged")} Counts on finished runs; Fisher's exact test against the team.</p>
-      </Card>
-      <Card title="What the audit misses (estimate)">
+        <h4>What the audit misses (estimate)</h4>
         <V3Table name="audit_miss.csv" />
         <p className="muted">Targeted tests on a stratified sample of edits the auditor voted "no"; every number here is an estimate.</p>
-      </Card>
-      <Card title="Human ratings">
-        <V3Table name="human_kappa.csv" />
-        <p className="muted">Cohen's kappa between the two raters and against the LLM labels, or "not human-validated".</p>
-      </Card>
-    </>
+        <h4>LLM judge panel</h4>
+        <V3Table name="judge_panel.csv" />
+        <p className="muted">
+          Three LLM judges from other model families (gpt-oss-120b, llama4-maverick-17b, gemma4-31b-it) rate the blinded 100-item packet: their
+          agreement, and their accuracy on test-confirmed verdicts. LLM-judged: no human checked these labels.
+        </p>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Autonomy() {
   return (
-    <>
-      <Card title="AUTONOMY: clean on 30 diverse repositories, no human help">
+    <Card title="AUTONOMY: clean on 30 diverse repositories, no human help">
+      <V3Answer name="autonomy.csv" say={autonomyTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="autonomy.csv" />
         <p className="muted">Completed means a cleanup verdict; "stopped" is a valid ending but not completed. The raw rate decides H4 and R19; the rate without environment-impossible runs is shown beside it.</p>
-      </Card>
-      <Card title="Cost per finished run">
+        <h4>Cost per finished run</h4>
         <V3Table name="cost.csv" />
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
@@ -425,14 +543,66 @@ export function Evaluation({ tab, onTab }: { tab: string; onTab: (tab: string) =
     "v3-audit": <V3Audit />,
     "v3-autonomy": <V3Autonomy />,
   };
+  const presenting = useContext(Presenting);
+  const at = TABS.findIndex((t) => t.key === active);
+  const phase = TABS[at].phase;
+  const here = `#/evaluation?${new URLSearchParams({ tab: active })}`;
   return (
-    <div className="screen">
-      <header className="screen-head">
-        <h2>Evaluation</h2>
-        <span className="muted">The v2 results (results/summary/v2/) and the v3 results (results/summary/v3/), read from the committed tables.</span>
-      </header>
-      <Tabs tabs={TABS} value={active} onChange={onTab} />
+    <div className="screen evaluation">
+      <PageHeader
+        title="Evaluation"
+        description="The Phase 2 and Phase 3 results, charted from the committed tables."
+        help="One tab per experiment, read from results/summary/v2/ and v3/. Each bar carries its value, the team in the accent; anything an LLM judged says LLM-judged."
+        actions={
+          presenting ? (
+            <a className="button" href={here}>
+              Exit <kbd>Esc</kbd>
+            </a>
+          ) : (
+            <a className="button" href={`${here}&present=1`}>
+              Present
+            </a>
+          )
+        }
+      />
+      {presenting ? (
+        <PresentNav at={at} onTab={onTab} exit={here} />
+      ) : (
+        <div className="eval-nav">
+          <div className="view-switch" role="group" aria-label="Phase">
+            {PHASES.map((p) => (
+              <button key={p} type="button" aria-pressed={p === phase} onClick={() => p !== phase && onTab(TABS.find((t) => t.phase === p)!.key)}>
+                {p}
+              </button>
+            ))}
+          </div>
+          <Tabs tabs={TABS.filter((t) => t.phase === phase)} value={active} onChange={onTab} />
+        </div>
+      )}
       {screens[active]}
     </div>
+  );
+}
+
+// Presentation mode: one line instead of the tabs; the arrow keys move between them and Escape
+// leaves.
+function PresentNav({ at, onTab, exit }: { at: number; onTab: (tab: string) => void; exit: string }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") window.location.hash = exit;
+      else if (e.key === "ArrowRight" && at < TABS.length - 1) onTab(TABS[at + 1].key);
+      else if (e.key === "ArrowLeft" && at > 0) onTab(TABS[at - 1].key);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [at, exit]);
+  const t = TABS[at];
+  return (
+    <p className="present-nav" aria-live="polite">
+      {t.phase} · <b>{t.label}</b> · {at + 1} of {TABS.length}{" "}
+      <span className="muted">
+        <kbd>←</kbd>/<kbd>→</kbd>
+      </span>
+    </p>
   );
 }

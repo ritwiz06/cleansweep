@@ -17,8 +17,10 @@ export function PresentShell({
   onStep,
   exit,
   nextLabel = "Next decision",
+  extra,
   children,
 }: {
+  extra?: ReactNode;
   title: ReactNode;
   position: ReactNode;
   progress: number;
@@ -59,16 +61,17 @@ export function PresentShell({
       <header className="present-bar" aria-label="Presentation controls">
         <h2>{title}</h2>
         <span className="present-pos">{position}</span>
-        <button className="primary" onClick={click(onPlay)} aria-label={playing ? "Pause" : "Play"}>
-          {playing ? "❚❚ Pause" : "▶ Play"}
+        {extra}
+        <button className="primary" onClick={click(onPlay)}>
+          <span aria-hidden>{playing ? "❚❚" : "▶"}</span> {playing ? "Pause" : "Play"}
         </button>
         <button onClick={click(onNext)} title="space bar">
           {nextLabel} <kbd>Space</kbd>
         </button>
-        <button onClick={click(theme.toggle)} aria-label="Switch theme">
-          {theme.dark ? "☀" : "☾"}
+        <button onClick={click(theme.toggle)} aria-label="Switch theme" title="Switch theme">
+          <span aria-hidden>{theme.dark ? "☀" : "☾"}</span>
         </button>
-        <a className="present-exit" href={exit}>
+        <a className="button present-exit" href={exit}>
           Exit <kbd>Esc</kbd>
         </a>
       </header>

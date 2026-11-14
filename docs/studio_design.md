@@ -32,9 +32,12 @@ Radii: `--radius-sm` 4px (chips, marks), `--radius` 6px (controls), `--radius-lg
 ## Colors
 
 Surfaces and text: `--page`, `--surface`, `--surface-2`, `--text`, `--text-2`, `--muted`,
-`--border`, `--grid`, `--accent`. Outcome tones (verdicts, gauges): `--good`, `--warn`,
-`--bad`, `--info`, each with an `-ink` variant for text. Phases and chart series:
-`--series-1` … `--series-8`.
+`--border`, `--grid`. One accent: `--accent` for links, focus rings and the selected tab, and
+`--accent-fill` with `--accent-ink` text for filled controls (the primary button, a selected
+segment). Outcome tones (verdicts, gauges): `--good`, `--warn`, `--bad`, `--info`, each with an
+`-ink` variant for text; a verdict badge is the tone at 14% with its ink text. Chart series:
+`--series-1` … `--series-8`; the bars a chart is not about are `--bar-other`. Red and green
+are kept for diffs and for outcomes; a tree's removed lines and counts are muted or "good".
 
 ### Item states
 
@@ -42,19 +45,19 @@ Every candidate (a file, class, function or line range) is in one state. Each st
 (`--st-<state>`), a glyph and a label; the glyph and the label always appear with the color, so
 no state is told by color alone. The hues are the Okabe–Ito set (plus violet for "in
 package"), which stays distinct for the common color-vision deficiencies, darkened for the light
-theme and lightened for the dark one until text in them reaches 4.5:1 on `--surface`.
+theme and lightened for the dark one until text in them reaches 4.5:1 on `--surface` and on their own 14% tint (the background of a state chip).
 
 | State | Glyph | Light | Dark | Meaning |
 |---|---|---|---|---|
-| untouched | (none) | `#6f6d68` | `#9a988f` | no detector flagged it |
-| candidate | ○ | `#00679f` | `#56a8e0` | a detector flagged it |
-| investigating | ◐ | `#965800` | `#e9a93a` | an Investigator is gathering evidence |
-| safe | ◇ | `#1a6a92` | `#79c4ec` | the Investigator cleared it; waiting for a package |
-| suggest | ? | `#a8457c` | `#dc93bb` | reported for a person to decide, not applied |
-| dropped | ⊘ | `#6f6d68` | `#9a988f` | the Investigator said leave it |
-| in package | ▣ | `#6a3fb0` | `#a98be6` | in a work package being applied and checked |
-| kept | ✓ | `#00744f` | `#3cc79b` | applied, every check passed, committed |
-| rolled back | ↺ | `#ad4500` | `#ff8f52` | a check failed; undone (a lesson was written) |
+| untouched | (none) | `#5f5e59` | `#a19f97` | no detector flagged it |
+| candidate | ○ | `#006297` | `#56a8e0` | a detector flagged it |
+| investigating | ◐ | `#8a5100` | `#e9a93a` | an Investigator is gathering evidence |
+| safe | ◇ | `#186489` | `#79c4ec` | the Investigator cleared it; waiting for a package |
+| suggest | ? | `#973e70` | `#dc93bb` | reported for a person to decide, not applied |
+| dropped | ⊘ | `#5f5e59` | `#a19f97` | the Investigator said leave it |
+| in package | ▣ | `#6a3fb0` | `#ac90e7` | in a work package being applied and checked |
+| kept | ✓ | `#006b49` | `#3cc79b` | applied, every check passed, committed |
+| rolled back | ↺ | `#9f3f00` | `#ff8f52` | a check failed; undone (a lesson was written) |
 
 "Repaired" is kept (✓) with the label "repaired"; "reverted" (undone in FINAL VERIFY) is rolled
 back (↺) with the label "reverted"; "skipped" (not applied) is untouched with the label.
@@ -78,11 +81,11 @@ least 4.5:1 and marks at least 3:1 on `--surface` in both themes.
 
 `--motion-fast` 120ms (hover, focus), `--motion` 200ms (state changes, bars),
 `--ease` `cubic-bezier(0.2, 0, 0, 1)`. Motion only shows a change; nothing loops except the
-spinner, the current phase's pulse and a message travelling on the agent graph. With
-`prefers-reduced-motion: reduce` every animation and transition is off, charts skip their
-entry animation and the agent graph shows messages without the travelling dot. Replay speed
-is the reader's choice (1–50×), except in presentation mode, where it is fixed: 1.5 s per
-captioned step of a run and 5 s per before / after slide, whatever the step took in the run.
+spinner and a message travelling on the agent graph. With `prefers-reduced-motion: reduce`
+every animation and transition is off, charts skip their entry animation and the agent graph
+shows messages without the travelling dot. A replay plays at ten times the run's pace; in
+presentation mode the pace is fixed: 1.5 s per captioned step of a run and 5 s per before /
+after slide, whatever the step took in the run.
 
 ## Legibility at 1280×720
 
@@ -91,6 +94,66 @@ captioned step of a run and 5 s per before / after slide, whatever the step took
 - Long paths keep their file name: they are cut at the start (`…/cli/main.py`) with the whole
   path in the tooltip.
 - A state, an outcome or an agent is never shown by color alone: glyph, label or icon too.
-- Focus rings are always visible (2px `--accent`); every control has an accessible name.
-- Empty, loading and error states say what is missing and what to do, in one line.
+- Focus rings are always visible (2px `--accent`); every control has an accessible name, and a
+  box that scrolls takes the focus so the keyboard can scroll it.
+- Empty, loading and error states say what is missing in one line, with a button for what to
+  do (try again, check again, open another screen).
 - Anything an LLM judged carries an "LLM-judged" label.
+
+## Screens
+
+Simple first: each screen answers one question, and its header says the answer in one plain
+sentence. Only what someone would point at while explaining the screen is on it; the rest
+waits behind a tab, the Report tab, a "Show ..." line or a tooltip. Words, not ids: a run is
+"Demo app · agent team · Nov 2" (the id is in the tooltip), and a count reads "Removed 5 of 16".
+
+Every screen opens with the same header: the title (balanced, no orphan word), the one-line
+answer (folder paths go in the help, not here), the "What am I looking at?" button (a one-line
+popover; Escape closes it) and the screen's actions on the right. Home is the folder to clean,
+Start (the options open on request) and the recent runs, one outcome line each; it offers "Take
+the tour" (four steps of one sentence over the demo app's recording: the controls, the count,
+the project, the team; the arrow keys move, Escape ends it) and "Try the demo" (the same
+recording in Replay). The sidebar lists the Studio screens; the Phase 1 screens sit behind one
+"Phase 1 archive" entry at its foot.
+
+Run screens (Replay, Live run) have one sticky band: Play, Next decision and the slider (the
+arrow keys move one event, Page Up / Page Down ten), the slop removed as one number with its bar,
+and the steps in words ("✓ Onboard › … › **Investigate** › Plan › …"), the done ones ticked and
+the current one bold. Three tabs follow: Project, Agents, Report. The project tree highlights
+only the item at work and keeps it in view inside the tree's own box; the key is one small line
+at the top of the tree. Beside the tree, the item at work shows its latest decision, with the
+decision card (decisions, evidence, checks) behind "Show details". The agent graph draws each
+agent as its icon and name (its numbers in the tooltip), the agent at work filled with the
+accent and marked "at work", and the latest message as one arrow with its type. The Report tab
+holds the rest: the run's setup, its budgets and probes, the documents, the whole diff, and the
+message board, the items and the work packages behind their "Show" lines.
+
+Numbers: a row of numbers, where a screen still has one, is in equal columns: the value (20px,
+tabular) with a bar when it is a share of a budget, and a short sentence-case label under it.
+Before / after opens with a band of four numbers (lines of code, files, Python files, tests
+passing) at 28px with their change, green when it moved the right way. A run's outcome reads as
+what differs ("5 removed · 1 rolled back · −47 lines"); a badge appears only for an unusual
+result.
+
+Tables: one label map turns column names and snake_case values into words; numbers are
+right-aligned in tabular figures with thousands separators and one number of decimals per
+column; a table is as wide as its content; dates read "Nov 1, 10:05" with the full time in the
+tooltip; outcome columns are chips; names and paths never break, and a wide table scrolls inside
+its card. Evaluation, Results, Watch and Saved reports keep their tables behind "Show the table".
+
+Charts: one chart per tab, under the tab's one-sentence answer ("The team removed 81% of the
+planted slop and deleted no trap; one-shot deleted 36."). Horizontal bars, sorted best first, the
+names on the left (13px) and each value at its bar's end (12px semibold, tabular; 0 is written
+too). The method a chart is about, the team, is in the accent and the others grey
+(`--bar-other`, darker in the dark theme); several series are named above the plot instead of in
+a legend, a stack carries its total. Every title says which way is better ("higher is better",
+"fewer is better").
+
+Presentation mode works at 1280×720 and 1920×1080, and at 17px for names and values on charts.
+A replay's presentation shows only the caption (with its reason when it has one), the project
+tree or the agent graph (the Project / Agents switch, or G), and the progress line. In the tree
+only the item at work stands out (its tint, its bar and its state in words). The agent graph
+zooms to fill its box (names at about 19px at 1280×720). A before / after slide shows one change,
+its reason and its checks, its code sized to the screen (15 to 22px). Evaluation has a Present
+button too: one line ("Injection benchmark · 1 of 12") instead of the tabs, moved with the
+arrow keys.

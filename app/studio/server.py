@@ -15,6 +15,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from . import data, files, jobs, runs
@@ -43,6 +44,8 @@ def create_app(
     app = FastAPI(title="CleanSweep Studio", docs_url=None, redoc_url=None)
     # other host names (DNS rebinding) are refused; no CORS, so other sites cannot call the API
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(hosts))
+    # the page's script and a recording's events are large text; the live stream is left as it is
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.state.jobs = manager
 
     @app.exception_handler(Forbidden)

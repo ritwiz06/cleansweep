@@ -50,6 +50,22 @@ export function StateChip({ state, label }: { state: string; label?: string }) {
 
 export const LEGEND_STATES = ["untouched", "candidate", "investigating", "safe", "suggest", "in_package", "kept", "rolled_back"];
 
+// The key as one small line of glyphs and names, for the head of the project tree.
+export function LegendLine() {
+  return (
+    <p className="legend-line" aria-label="Key">
+      {LEGEND_STATES.filter((s) => STATE_GLYPH[s]).map((s) => (
+        <span key={s} className={`st-${s}`}>
+          <span className="state-glyph" aria-hidden>
+            {STATE_GLYPH[s]}
+          </span>{" "}
+          {stateLabel(s)}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 export function StateLegend({ states = LEGEND_STATES }: { states?: string[] }) {
   return (
     <div className="state-legend" aria-label="State legend">

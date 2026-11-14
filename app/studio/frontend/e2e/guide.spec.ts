@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { toEnd } from "./replay";
 
 // The user guide's screenshots (docs/images/studio/), light theme at 1280x720. They need the
 // case studies and the watch demo under results/raw/, so they run on purpose only, against a
@@ -18,10 +19,7 @@ async function shot(page: Page, route: string, name: string, end = false, tab = 
   await expect(page.locator("main h2").first()).toBeVisible();
   await expect(page.locator(".state.loading")).toHaveCount(0);
   if (name === "home") await expect(page.getByText("Try it on")).toBeVisible();
-  if (end) {
-    await page.getByRole("button", { name: "Jump to the end" }).click();
-    await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
-  }
+  if (end) await toEnd(page);
   if (tab) await page.getByRole("tab", { name: tab }).click();
   await page.screenshot({ path: `${OUT}/${name}.png` });
 }
@@ -42,7 +40,7 @@ const SHOTS: [string, string, boolean?, string?][] = [
 
 test("user guide screenshot: project", async ({ page }) => {
   await page.goto("/#/replay?root=replay&path=20261102_demo_feature_agentic");
-  await page.getByRole("button", { name: "Jump to the end" }).click();
+  await toEnd(page);
   await page.getByRole("tree", { name: "Project tree" }).getByRole("treeitem", { name: /^_round_money\(\)/ }).click();
   await expect(page.getByLabel("Details").locator(".diff")).toContainText("def _round_money");
   await page.screenshot({ path: `${OUT}/project.png` });

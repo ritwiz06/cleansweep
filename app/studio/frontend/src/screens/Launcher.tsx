@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, post, useApi } from "../api";
-import { Async, Card, ErrorBox, Status } from "../components/common";
+import { Async, Card, ErrorBox, PageHeader, Status } from "../components/common";
 import { CodeBlock } from "../components/Code";
 
 interface Options {
@@ -92,10 +92,11 @@ export function Launcher() {
 
   return (
     <div className="screen">
-      <header className="screen-head">
-        <h2>Launch a run</h2>
-        <span className="muted">Runs go to Studio's runs folder; the project itself is never changed.</span>
-      </header>
+      <PageHeader
+        title="Launch a run"
+        description="Clean, sweep or watch a project with every option. Runs go to Studio's runs folder; the project is never changed."
+        help="The full set of options: the agent team (mode, model, budgets), a Phase 1 sweep, or a watch on a git repository."
+      />
       <Async res={options} what="Loading the options">
         {(o) => (
           <div className="grid two">
@@ -111,8 +112,8 @@ export function Launcher() {
                   <legend>Run</legend>
                   {(
                     [
-                      ["clean", "Clean (agent team, v2)"],
-                      ["sweep", "Sweep (v1 pipeline)"],
+                      ["clean", "Clean (agent team)"],
+                      ["sweep", "Sweep (Phase 1 pipeline)"],
                       ["watch", "Watch a git repository"],
                     ] as [Kind, string][]
                   ).map(([k, label]) => (

@@ -1,4 +1,4 @@
-// Chart data for the Evaluation screen, from the committed v2 tables (results/summary/v2/).
+// Chart data for the Evaluation screen, from the committed tables (results/summary/v2/ and v3/).
 import type { Table } from "../api";
 
 export type Row = Record<string, unknown>;
@@ -18,15 +18,15 @@ export const METHOD_NAMES: Record<string, string> = {
   "agentic-inline_artifacts": "inline artifacts",
   "agentic-no_lessons": "no lessons",
   "agentic-no_coverage": "no coverage",
-  cleansweep: "v1",
-  "cleansweep-gatekeeper": "v1",
+  cleansweep: "Phase 1",
+  "cleansweep-gatekeeper": "Phase 1",
   "agentic-no_resolver": "team, resolver off",
   "agentic-batch": "team, batching",
   "agentic-thorough": "team, thorough",
   "agentic-m2": "team, second model",
   "agentic-single_agent-m2": "single agent, second model",
   aider: "Aider",
-  "cleansweep-advisory": "v1 (advisory)",
+  "cleansweep-advisory": "Phase 1 (advisory)",
   one_shot_llm: "one-shot",
 };
 
@@ -93,6 +93,13 @@ export function v3RecallBars(rows: Row[]) {
 
 export function sources(rows: Row[], column = "source"): string[] {
   return [...new Set(rows.map((r) => String(r[column])))];
+}
+
+// real_ablation.csv's wrong kept code edits per method, all tiers: "4 of 20 (3)" -> 4.
+export function realAblationBars(rows: Row[]) {
+  const column = Object.keys(rows[0] ?? {}).find((c) => c.startsWith("wrong of kept code edits"));
+  if (!column) return [];
+  return rows.map((r) => ({ method: methodName(r.method), wrong: num(String(r[column]).match(/^\d+/)?.[0]) }));
 }
 
 // LLM requests and minutes per run of each method, for one target set of the ablations.

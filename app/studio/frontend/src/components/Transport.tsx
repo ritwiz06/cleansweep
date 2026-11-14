@@ -11,17 +11,16 @@ export function Transport({ player, total, end }: { player: Player; total: numbe
           if (atEnd) player.setCount(0);
           player.setPlaying(!player.playing);
         }}
-        aria-label={player.playing ? "Pause" : "Play"}
       >
-        {player.playing ? "❚❚ Pause" : "▶ Play"}
+        <span aria-hidden>{player.playing ? "❚❚" : "▶"}</span> {player.playing ? "Pause" : "Play"}
       </button>
-      <button onClick={player.stepOne} disabled={atEnd} aria-label="Step">
+      <button onClick={player.stepOne} disabled={atEnd}>
         Step
       </button>
-      <button onClick={player.nextDecision} disabled={atEnd} aria-label="Next decision">
-        Next decision ⏭
+      <button onClick={player.nextDecision} disabled={atEnd}>
+        Next decision <span aria-hidden>⏭</span>
       </button>
-      <button onClick={() => player.setCount(total)} disabled={atEnd} aria-label="Jump to the end">
+      <button onClick={() => player.setCount(total)} disabled={atEnd} aria-label="Jump to the end" title="Jump to the end">
         End
       </button>
       <input
@@ -36,6 +35,7 @@ export function Transport({ player, total, end }: { player: Player; total: numbe
       <span className="small clock">
         {seconds(player.clock)} / {seconds(end)} · event {player.count} of {total}
       </span>
+      <span className="transport-divider" aria-hidden />
       <label className="speed">
         Speed{" "}
         <input

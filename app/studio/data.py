@@ -48,7 +48,7 @@ def read_csv(path: Path) -> pd.DataFrame | None:
 def results_index(results: Path) -> dict:
     """The tables and figures under results/summary/<v> and results/figures/<v>."""
     out = {}
-    for version in ("v1", "v2"):
+    for version in ("v1", "v2", "v3"):
         summary, figures = results / "summary" / version, results / "figures" / version
         out[version] = {
             "tables": sorted(p.name for p in summary.glob("*.csv")) if summary.is_dir() else [],

@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { afterHash, api, runHash, useApi, type RunDetail } from "../api";
-import { FileDiff, MetricsCard, SMALL, TreeCard } from "../components/AfterParts";
-import { AgentIcon, agentName } from "../components/AgentIcon";
-import { Async, Empty, ErrorBox, Loading } from "../components/common";
+import { AfterTop, FileDiff, SMALL, TreeCard, checkClass, checkGlyph } from "../components/AfterParts";
+import { Async, Empty, ErrorBox, Loading, PageHeader } from "../components/common";
 import { PresentShell } from "../components/PresentShell";
 import { useProjectFiles } from "../components/ProjectView";
 import { SideBySide } from "../components/SideBySide";
 import { StateChip } from "../components/states";
-import { categoryLabel, decisionSteps, packageChecks } from "../state/annotate";
+import { categoryLabel, packageChecks } from "../state/annotate";
 import { afterModel } from "../state/beforeAfter";
 import { itemLabel } from "../state/caption";
-import type { Item, RunState, StudioEvent } from "../state/fold";
+import type { RunState, StudioEvent } from "../state/fold";
 import { useEvents } from "../state/hooks";
+import { runTitle, targetName } from "../state/names";
 import { SLIDE_MS, afterSlides, type Slide } from "../state/present";
 
 // Everything both views draw: the folded run, the parsed diff, both trees and the numbers.
@@ -52,11 +52,11 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
           mentions are not shown.
         </p>
       )}
-      <div className="ba-top">
-        <TreeCard title="Before" tree={trees.before} selected={file?.path || ""} onSelect={pick} all={showAll} />
-        <TreeCard title="After" tree={trees.after} selected={file?.path || ""} onSelect={pick} all={showAll} />
-        <MetricsCard m={m} />
-      </div>
+      <AfterTop
+        m={m}
+        before={<TreeCard title="Before" tree={trees.before} selected={file?.path || ""} onSelect={pick} all={showAll} />}
+        after={<TreeCard title="After" tree={trees.after} selected={file?.path || ""} onSelect={pick} all={showAll} />}
+      />
       <div className="ba-tools">
         <label className="check">
           <input type="checkbox" checked={showAll} onChange={(e) => setAll(e.target.checked)} /> Show unchanged files
@@ -69,21 +69,6 @@ function View({ detail, events, diff }: { detail: RunDetail; events: StudioEvent
       </div>
       <div ref={diffRef}>{file ? <FileDiff key={file.path} file={file} state={state} /> : <Empty>No changes: nothing was applied.</Empty>}</div>
     </>
-  );
-}
-
-function Chain({ item, state }: { item: Item; state: RunState }) {
-  return (
-    <ol className="chain-strip" aria-label="Decisions">
-      {decisionSteps(item, state).map((s, i) => (
-        <li key={i} title={s.text}>
-          <AgentIcon agent={s.agent} />
-          <span>
-            <b>{agentName(s.agent)}</b> {s.brief}
-          </span>
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -103,15 +88,14 @@ function ChangeSlide({ slide, state }: { slide: Extract<Slide, { kind: "change" 
         {main && <StateChip state={main.stage} />}
       </div>
       <p className="caption-detail">{main?.verdict?.reason || (slide.note.match === "none" ? "No applied candidate is in this file." : " ")}</p>
-      {main && <Chain item={main} state={state} />}
       <div className="slide-diff">
         <SideBySide hunk={slide.file.hunks[slide.hunk]} path={slide.file.path} only={removed ? "left" : slide.file.status === "added" ? "right" : undefined} />
       </div>
       {pkg && (
         <ul className="check-chips" aria-label="Checks">
           {packageChecks(pkg).map((c, i) => (
-            <li key={i} className={c.ok === true ? "ok" : c.ok === false ? "fail" : "info"}>
-              <span aria-hidden>{c.ok === true ? "✓" : c.ok === false ? "✗" : "·"}</span> {c.label}
+            <li key={i} className={checkClass(c)}>
+              <span aria-hidden>{checkGlyph(c)}</span> {c.label}
             </li>
           ))}
         </ul>
@@ -143,7 +127,7 @@ function PresentAfter({ detail, events, diff }: { detail: RunDetail; events: Stu
   const changes = slides.length - 2;
   return (
     <PresentShell
-      title={`Before / after: ${name}`}
+      title={`Before / after: ${targetName(detail.target) || name}`}
       position={slide.kind === "change" ? `change ${slide.n} of ${slide.of}` : `${changes} changes`}
       progress={slides.length > 1 ? at / (slides.length - 1) : 1}
       playing={playing}
@@ -164,11 +148,11 @@ function PresentAfter({ detail, events, diff }: { detail: RunDetail; events: Stu
             </p>
           </div>
           <p className="caption-detail">Behavior that nothing tests isn't covered: the tests and the probes check only the code they run.</p>
-          <div className="ba-top">
-            <TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={false} />
-            <TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={false} />
-            <MetricsCard m={m} />
-          </div>
+          <AfterTop
+            m={m}
+            before={<TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={false} />}
+            after={<TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={false} />}
+          />
         </div>
       ) : (
         <ChangeSlide key={at} slide={slide} state={state} />
@@ -181,20 +165,33 @@ export function BeforeAfter({ root, path, present = false }: { root: string; pat
   const res = useApi<RunDetail>(`${root}/${path}`, () => api("/api/run", { root, path }));
   const diff = useApi<{ text: string }>(`diff:${root}/${path}`, () => api("/api/run/diff", { root, path }));
   const feed = useEvents<StudioEvent>(root, path, false);
-  if (!root || !path) return <Empty>Pick a run on the Runs screen.</Empty>;
+  if (!root || !path) return <Empty action={{ label: "Open Runs", href: "#/runs" }}>Pick a finished cleanup to see what it changed.</Empty>;
   return (
     <div className={`screen before-after ${present ? "present-screen" : ""}`}>
       {!present && (
-        <header className="screen-head">
-          <h2>Before / after: {path.split("/").pop()}</h2>
-          <a href={runHash({ root, path })}>Replay</a>
-          <a href={`${afterHash({ root, path })}&present=1`}>Present</a>
-        </header>
+        <PageHeader
+          title={`Before / after: ${res.data ? runTitle(res.data) : path.split("/").pop()}`}
+          titleTip={path}
+          description="What the cleanup changed: both file trees, the numbers before and after, and every change with the decisions behind it."
+          help="Click a changed file for its diff. The note above each change names its category, the agents' decisions, the evidence and the checks it passed."
+          actions={
+            <>
+              <a className="button" href={runHash({ root, path })}>
+                Replay
+              </a>
+              <a className="button" href={`${afterHash({ root, path })}&present=1`}>
+                Present
+              </a>
+            </>
+          }
+        />
       )}
       <Async res={res} what="Loading the run">
         {(d) =>
           d.kind !== "v2" ? (
-            <Empty>Before / after is for agent-team cleanups; this is a {d.kind === "v1" ? "v1 sweep" : "watch folder"}.</Empty>
+            <Empty action={{ label: "Open the replay", href: runHash({ root, path }) }}>
+              Before / after is for agent-team cleanups; this is a {d.kind === "v1" ? "Phase 1 sweep" : "watch folder"}.
+            </Empty>
           ) : feed.error ? (
             <ErrorBox error={feed.error} />
           ) : !feed.done || diff.loading ? (

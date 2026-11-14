@@ -2,6 +2,7 @@
 // and checks behind it.
 import type { DiffFile, Hunk } from "./diff";
 import type { Item, Package, RunState } from "./fold";
+import { plural } from "./labels";
 import { splitUnit } from "./tree";
 
 export const CATEGORY_LABEL: Record<string, string> = {
@@ -94,7 +95,7 @@ export function decisionSteps(item: Item, state: RunState): Step[] {
   }
   if (pkg.validation) {
     const p = pkg.validation.probes;
-    const probes = p ? `${p.n_cases} probe cases, ${p.same ? "same behavior" : `${(p.mismatches || []).length} differ`}` : "no probes";
+    const probes = p ? `${plural(p.n_cases, "probe case")}, ${p.same ? "same behavior" : `${(p.mismatches || []).length} differ`}` : "no probes";
     const brief = p ? `${p.n_cases} probes, ${p.same ? "same" : "differ"}` : pkg.validation.ok ? "checks pass" : "checks fail";
     steps.push({ agent: "validator", text: `${pkg.validation.ok ? "passed" : "failed"}: ${probes}`, brief });
   }
@@ -103,25 +104,30 @@ export function decisionSteps(item: Item, state: RunState): Step[] {
     steps.push({ agent: "fixer", text: `${outcome}${pkg.repair.turns ? ` after ${pkg.repair.turns} turns` : ""}`, brief: outcome });
   }
   const done = state.decisions.find((d) => d.rule === "package_done" && d.pkg === pkg.id);
-  if (done) steps.push({ agent: done.agent || "manager", text: done.text, brief: (done.status || "done").replace(/_/g, " ") });
+  // in words, not the package id: "kept the change", "rolled back the change"
+  if (done) steps.push({ agent: done.agent || "manager", text: done.status ? `${done.status.replace(/_/g, " ")} the change` : done.text, brief: (done.status || "done").replace(/_/g, " ") });
   return steps;
 }
 
 export interface Check {
   label: string;
-  ok: boolean | null;
+  ok: boolean | null | "warn";
 }
 
-// The checks a package passed (ok), failed (not ok) or did not run (null).
+// The checks a package passed (ok), failed (not ok), did not run (null), or passed with
+// something for a person to look at (warn: a kept package that removes public names).
 export function packageChecks(pkg: Package): Check[] {
   const out: Check[] = [];
   const last = pkg.tests[pkg.tests.length - 1];
   out.push(last ? { label: last.ok ? "tests pass" : "tests fail", ok: last.ok } : { label: "tests not run", ok: null });
   const p = pkg.validation?.probes;
-  if (p) out.push({ label: `${p.n_cases} probe cases: ${p.same ? "same before and after" : "behavior differs"}`, ok: Boolean(p.same) });
+  if (p) out.push({ label: `${plural(p.n_cases, "probe case")}: ${p.same ? "same before and after" : "behavior differs"}`, ok: Boolean(p.same) });
   if (typeof pkg.coverage === "number") out.push({ label: `probe coverage of the changed lines ${Math.round(pkg.coverage * 100)}%`, ok: pkg.coverage >= 0.9 ? true : null });
   const api = pkg.validation?.checks?.public_api_removed;
-  if (Array.isArray(api)) out.push(api.length ? { label: `public names removed: ${api.join(", ")}`, ok: false } : { label: "public names unchanged", ok: true });
+  if (Array.isArray(api)) {
+    const removes = `Removes ${plural(api.length, "public name")}: ${api.join(", ")}. Check that nothing outside the project uses ${api.length === 1 ? "it" : "them"}.`;
+    out.push(api.length ? { label: removes, ok: "warn" } : { label: "public names unchanged", ok: true });
+  }
   const ui = pkg.ui || pkg.validation?.checks?.ui;
   if (ui && !String(ui).startsWith("not applicable")) out.push({ label: `UI check: ${ui}`, ok: !/fail/i.test(String(ui)) });
   return out;

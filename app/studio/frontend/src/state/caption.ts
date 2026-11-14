@@ -44,9 +44,17 @@ function lower(text: string): string {
   return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
 }
 
-function short(text: string, n = 110): string {
+// A reason, cut only at the end of a sentence: as many whole sentences as fit in about two lines
+// of a caption, and always at least the first one.
+export function short(text: string, n = 200): string {
   const one = text.replace(/\s+/g, " ").trim();
-  return one.length > n ? `${one.slice(0, n - 1)}…` : one;
+  const sentences = one.match(/[^.!?]+(?:[.!?]+(?=\s|$)|$)/g) || [one];
+  let out = sentences[0].trim();
+  for (const s of sentences.slice(1)) {
+    if ((out + s).length > n) break;
+    out += s;
+  }
+  return out.trim();
 }
 
 // How a candidate reads in a sentence: a file's path, a function with (), "line 37 of x.py".
@@ -142,7 +150,10 @@ function message(e: StudioEvent, s: RunState): Caption | null {
       const counts: Record<string, number> = {};
       for (const c of b.items || []) counts[c.category] = (counts[c.category] || 0) + 1;
       const top = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 3);
-      return { agent: from, text: `finds ${plural((b.items || []).length, "candidate")}: ${top.map(([c, n]) => `${categoryLabel(c)} ${n}`).join(", ")}` };
+      const all = (b.items || []).length;
+      // the three largest categories; when they are not all of them, say so
+      const lead = top.reduce((sum, [, n]) => sum + n, 0) < all ? ", including" : ":";
+      return { agent: from, text: `finds ${plural(all, "candidate")}${lead} ${top.map(([c, n]) => `${categoryLabel(c)} ${n}`).join(", ")}` };
     }
     case "verdict": {
       const item = s.items[b.item_id];
@@ -162,9 +173,18 @@ function message(e: StudioEvent, s: RunState): Caption | null {
     case "validation": {
       const pr = b.probes;
       if (!pr) return { agent: from, text: `checks ${b.package}: ${b.ok ? "passed" : "failed"}` };
-      return pr.same
-        ? { agent: from, text: `probes ${b.package} with ${plural(pr.n_cases, "case")}: same behavior before and after` }
-        : { agent: from, text: `probes ${b.package}: behavior changed in ${(pr.mismatches || []).length} of ${plural(pr.n_cases, "case")}` };
+      if (pr.same) return { agent: from, text: `probes ${b.package} with ${plural(pr.n_cases, "case")}: same behavior before and after` };
+      // the first cases that differ, as "half_up_0125: 0.13 before, 0.12 after"
+      const differ = (pr.mismatches || [])
+        .map((m: string) => /\[([^\]]+)\]: before (.+), after (.+)$/.exec(String(m)))
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((m: RegExpExecArray) => `${m[1]}: ${m[2]} before, ${m[3]} after`);
+      return {
+        agent: from,
+        text: `probes ${b.package}: behavior changed in ${(pr.mismatches || []).length} of ${plural(pr.n_cases, "case")}`,
+        ...(differ.length ? { detail: `${differ.join("; ")}.` } : {}),
+      };
     }
     case "failure":
       return { agent: from, text: `sends ${b.package} to the Fixer: its ${b.stage} failed` };
@@ -233,4 +253,33 @@ export function captionSteps(events: StudioEvent[]): CaptionStep[] {
 
 export function captionText(c: Caption): string {
   return `${agentName(c.agent)} ${c.text}`;
+}
+
+// The one sentence over a run screen: what the team is doing and how much slop it has removed.
+export function runSentence(s: RunState): string {
+  const found = plural(s.candidates, "candidate");
+  const removed = `${s.applied} of ${s.candidates} removed`;
+  const rolledBack = Object.values(s.items).filter((i) => i.stage === "rolled_back").length;
+  const back = rolledBack ? `, ${rolledBack} rolled back` : "";
+  if (s.finished || s.phase === "DONE") {
+    const how = s.verdict === "everything runs" ? "; everything still runs" : s.verdict ? ` (${s.verdict})` : "";
+    return `Done: the team removed ${s.applied} of ${found}${back}${how}.`;
+  }
+  switch (s.phase) {
+    case "BASELINE":
+      return "The team is running the project's tests before it changes anything.";
+    case "AUDIT":
+      return s.candidates ? `The team is looking for slop: ${found} so far.` : "The team is looking for slop.";
+    case "INVESTIGATE":
+      return `The team is investigating ${found}; ${s.applied} removed so far.`;
+    case "PLAN":
+      return `The team is planning the edits; ${removed} so far.`;
+    case "EXECUTE":
+      return `The team is removing slop: ${removed} so far${back}.`;
+    case "FINAL_VERIFY":
+      return `The team is testing the whole project again; ${removed}${back}.`;
+    case "REPORT":
+      return `The team is writing its report; ${removed}${back}.`;
+  }
+  return "The team is reading the project.";
 }

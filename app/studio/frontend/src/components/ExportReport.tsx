@@ -3,7 +3,7 @@ import css from "../styles.css?raw";
 import type { AfterModel } from "../state/beforeAfter";
 import { itemLabel } from "../state/caption";
 import { buildTree, type TreeNode } from "../state/tree";
-import { FileDiff, MetricsCard, SMALL, TreeCard } from "./AfterParts";
+import { AfterTop, FileDiff, SMALL, TreeCard } from "./AfterParts";
 import { categoryLabel } from "../state/annotate";
 import { STATE_GLYPH, StateChip, StateLegend, stateLabel } from "./states";
 
@@ -51,11 +51,11 @@ export function ExportReport({ model, run }: { model: AfterModel; run: ExportRun
           Result: <StateChip state={m.verdict === "everything runs" ? "kept" : "untouched"} label={m.verdict || "not finished"} />
         </p>
       </header>
-      <section className="ba-top">
-        <TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={list.length <= SMALL} />
-        <TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={list.length <= SMALL} />
-        <MetricsCard m={m} />
-      </section>
+      <AfterTop
+        m={m}
+        before={<TreeCard title="Before" tree={trees.before} selected="" onSelect={() => undefined} all={list.length <= SMALL} />}
+        after={<TreeCard title="After" tree={trees.after} selected="" onSelect={() => undefined} all={list.length <= SMALL} />}
+      />
       <h2>Every change, with the decisions behind it</h2>
       {parsed.length ? parsed.map((f) => <FileDiff key={f.path} file={f} state={state} />) : <p className="muted">No changes: nothing was applied.</p>}
       <h2>Left for a person ({suggestions.length})</h2>

@@ -12,6 +12,8 @@ export interface RunRow {
   verdict: string | null;
   finished: boolean;
   live?: boolean;
+  outcome?: { kept: number; rolled_back: number; lines_removed: number | null };
+  started?: string | null;
 }
 
 export interface Table {

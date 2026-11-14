@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { roleOf, type Message, type RunState } from "../state/fold";
+import { plural } from "../state/labels";
 import { ArtifactLink } from "./Artifact";
 import { Badge, Empty } from "./common";
 
@@ -21,7 +22,7 @@ export function summarize(m: Message): string {
     case "test_result":
       return `${b.package}: ${b.ok ? "tests pass" : `new failures: ${(b.new_failures || []).join(", ")}`}`;
     case "validation":
-      return `${b.package}: ${b.ok ? "checks pass" : "checks fail"}${b.probes ? `, ${b.probes.n_cases} probe cases` : ""}`;
+      return `${b.package}: ${b.ok ? "checks pass" : "checks fail"}${b.probes ? `, ${plural(b.probes.n_cases, "probe case")}` : ""}`;
     case "baseline":
       return `${b.passed} passed, ${b.failed} failed, ${b.errors} errors`;
     case "failure":

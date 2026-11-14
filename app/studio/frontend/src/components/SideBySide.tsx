@@ -1,13 +1,13 @@
-import { Highlight, themes } from "prism-react-renderer";
+import { Highlight } from "prism-react-renderer";
 import { useContext } from "react";
 import { sideBySide, type Hunk } from "../state/diff";
-import { DarkContext } from "./Code";
+import { DarkContext, codeTheme } from "./Code";
 
 // One hunk as a table: the old lines on the left, the new ones on the right, highlighted.
 export function SideBySide({ hunk, path, only }: { hunk: Hunk; path: string; only?: "left" | "right" }) {
   const dark = useContext(DarkContext);
   const rows = sideBySide(hunk);
-  const theme = dark ? themes.vsDark : themes.github;
+  const theme = codeTheme(dark);
   const language = path.endsWith(".py") ? "python" : "plain";
   const left = rows.filter((r) => r.left).map((r) => r.left!.text).join("\n");
   const right = rows.filter((r) => r.right).map((r) => r.right!.text).join("\n");

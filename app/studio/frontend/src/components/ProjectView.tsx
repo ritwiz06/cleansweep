@@ -1,14 +1,16 @@
-import { useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { api, useApi, type RunDetail } from "../api";
 import type { Item, RunState, StudioEvent } from "../state/fold";
 import { buildTree, defaultExpanded, filesFromEvents, findNode, focusPath, pathTo, visibleRows, type FileEntry, type TreeNode } from "../state/tree";
 import { AgentIcon, AgentTag, agentName } from "./AgentIcon";
 import { RunContext } from "./Artifact";
+import { Pointer } from "./AfterParts";
 import { DiffView, filterDiff } from "./Code";
 import { Card, Empty, Loading } from "./common";
 import { ItemDetail } from "./ItemBoard";
 import { PackageChecks } from "./Packages";
-import { STATE_GLYPH, StateChip, StateLegend, stateLabel } from "./states";
+import { LegendLine, STATE_GLYPH, StateChip, stateLabel } from "./states";
+import { itemLabel } from "../state/caption";
 
 const FINAL = ["kept", "repaired", "rolled_back"];
 const COUNT_ORDER = ["investigating", "in_package", "kept", "repaired", "rolled_back", "safe", "candidate", "suggest", "dropped", "skipped"];
@@ -28,15 +30,27 @@ export function treeFiles(saved: ProjectFiles | null, events: StudioEvent[]): Fi
   return filesFromEvents(events).map((path) => ({ path, lines: null }));
 }
 
+// The tree's key of a candidate: a class, function or line range sits under its file.
+export function itemKey(unit: string): string {
+  return unit.includes("::") ? `unit:${unit}` : `file:${unit}`;
+}
+
 function Counts({ counts }: { counts: Record<string, number> }) {
   const shown = COUNT_ORDER.filter((s) => counts[s]);
   if (!shown.length) return null;
   return (
-    <span className="tree-counts" aria-label={shown.map((s) => `${counts[s]} ${stateLabel(s)}`).join(", ")}>
+    <span className="tree-counts">
       {shown.map((s) => (
         <span key={s} className={`tree-count st-${s}`}>
-          {STATE_GLYPH[s]}
-          {counts[s]}
+          {/* a thin space keeps "○ 14" from reading as "014" */}
+          <span aria-hidden>
+            {STATE_GLYPH[s]}
+            {" "}
+            {counts[s]}
+          </span>
+          <span className="sr-only">
+            , {counts[s]} {stateLabel(s)}
+          </span>
         </span>
       ))}
     </span>
@@ -50,6 +64,7 @@ export function TreeRow({
   selected,
   onToggle,
   onSelect,
+  atWork = false,
 }: {
   node: TreeNode;
   depth: number;
@@ -57,34 +72,47 @@ export function TreeRow({
   selected: boolean;
   onToggle: () => void;
   onSelect: () => void;
+  atWork?: boolean;
 }) {
   const parent = node.children.length > 0;
-  const label = `${node.name}: ${stateLabel(node.state)}${node.actor ? `, last ${agentName(node.actor)}` : ""}`;
+  // the row's name is its text: the name, then (for screen readers) its state and last agent
+  const said = `: ${stateLabel(node.state)}${node.actor ? `, last ${agentName(node.actor)}` : ""}`;
   return (
     <div
-      className={`tree-row kind-${node.kind} st-${node.state} ${selected ? "selected" : ""} ${node.focus ? "focus" : ""}`}
+      className={`tree-row kind-${node.kind} st-${node.state} ${selected ? "selected" : ""} ${node.focus ? "focus" : ""} ${atWork ? "at-work" : ""}`}
       style={{ paddingLeft: `calc(${depth} * var(--tree-indent))` }}
       data-key={node.key}
     >
-      <button className="tree-caret" onClick={onToggle} tabIndex={-1} aria-hidden={!parent} disabled={!parent}>
+      {/* the arrow keys open and close a row; the caret is for the mouse */}
+      <span className={`tree-caret ${parent ? "parent" : ""}`} onClick={parent ? onToggle : undefined} aria-hidden>
         {parent ? (open ? "▾" : "▸") : ""}
-      </button>
+      </span>
       <button
         className="tree-label"
         onClick={onSelect}
         role="treeitem"
         aria-selected={selected}
         aria-expanded={parent ? open : undefined}
-        aria-label={label}
         title={node.path || node.name}
       >
         <span className="state-glyph" aria-hidden>
           {STATE_GLYPH[node.state] || ""}
         </span>
         <span className="tree-name">{node.name}</span>
-        {node.kind === "file" && node.lines !== null && <span className="tree-lines">{node.lines} lines</span>}
+        <span className="sr-only">{said}</span>
+        {atWork && (
+          <span className="tree-state" aria-hidden>
+            {stateLabel(node.state)}
+          </span>
+        )}
+        {node.kind === "file" && node.lines !== null && (
+          <span className="tree-lines">
+            <span className="sr-only">, </span>
+            {node.lines} lines
+          </span>
+        )}
         {(node.kind === "folder" || node.kind === "file") && <Counts counts={node.counts} />}
-        {node.actor && <AgentIcon agent={node.actor} label />}
+        {node.actor && <AgentIcon agent={node.actor} />}
       </button>
     </div>
   );
@@ -152,7 +180,7 @@ function NodeDetail({ node, state, detail, onPick }: { node: TreeNode; state: Ru
           <h4>Candidates in here ({below.length})</h4>
           <ul className="node-items">
             {below.map((item) => {
-              const key = item.unit.includes("::") ? `unit:${item.unit}` : `file:${item.unit}`;
+              const key = itemKey(item.unit);
               return (
                 <li key={item.id}>
                   <button className="link" onClick={() => onPick(key)}>
@@ -169,6 +197,25 @@ function NodeDetail({ node, state, detail, onPick }: { node: TreeNode; state: Ru
   );
 }
 
+// The height left under the cards' top edge (in a window scrolled to the top), so the tree and
+// its details fit on the screen and scroll only inside themselves.
+function useFitHeight(): [RefObject<HTMLDivElement | null>, number] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(480);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setHeight(Math.max(240, window.innerHeight - top - 16));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  return [ref, height];
+}
+
 export type TreeView = ReturnType<typeof useTreeView>;
 
 // Which nodes are open; with `follow`, the latest action is opened and scrolled into view
@@ -183,13 +230,13 @@ export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
     setOpen((o) => new Set([...(o ?? defaultExpanded(tree)), ...path.split(",")]));
   }, [follow, path]);
   useEffect(() => {
-    const row = treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
+    const row = treeRef.current?.querySelector(".tree-row.at-work") ?? treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
     const box = treeRef.current?.parentElement;
     if (!follow || !row || !box) return;
+    // the row goes to the middle of the tree's own box; the page itself never scrolls
     const r = row.getBoundingClientRect();
     const b = box.getBoundingClientRect();
-    if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
-    else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+    box.scrollTop += r.top + r.height / 2 - (b.top + b.height / 2);
   }, [follow, count, open]);
   const rows = visibleRows(tree, expanded);
   const toggle = (key: string) => {
@@ -214,7 +261,7 @@ export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
   return { expanded, setOpen, rows, toggle, onKey, treeRef };
 }
 
-export function TreeList({ view, chosen, onSelect }: { view: TreeView; chosen: string | null; onSelect: (key: string) => void }) {
+export function TreeList({ view, chosen, onSelect, atWork }: { view: TreeView; chosen: string | null; onSelect: (key: string) => void; atWork?: string | null }) {
   return (
     <div className="tree" role="tree" aria-label="Project tree" ref={view.treeRef} onKeyDown={view.onKey}>
       {view.rows.map(({ node: n, depth }) => (
@@ -226,6 +273,7 @@ export function TreeList({ view, chosen, onSelect }: { view: TreeView; chosen: s
           selected={n.key === chosen}
           onToggle={() => view.toggle(n.key)}
           onSelect={() => (chosen === n.key && n.children.length ? view.toggle(n.key) : onSelect(n.key))}
+          atWork={n.key === atWork}
         />
       ))}
     </div>
@@ -249,6 +297,7 @@ export function ProjectView({
   const [chosen, setChosen] = useState<string | null>(null);
   const [follow, setFollow] = useState(true);
   const view = useTreeView(tree, follow, state.count);
+  const [fit, height] = useFitHeight();
   const node = chosen ? findNode(tree, chosen) : null;
   const pick = (key: string) => {
     setChosen(key);
@@ -258,31 +307,36 @@ export function ProjectView({
   const focusItem = state.focus.length ? state.items[state.focus[0]] : null;
   return (
     <div className="project-view">
-      <div className="project-bar">
-        <StateLegend />
-        <label className="check follow">
-          <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
-        </label>
-      </div>
-      <div className="project">
+      <div className="project" ref={fit} style={{ ["--fit" as string]: `${height}px` }}>
         <Card
           title={
             <>
-              Project files <span className="muted small">{list.length} files</span>
+              Project files{" "}
+              {/* a run without a file list: the tree has the files its events name, said in the tooltip */}
+              <span
+                className="muted small"
+                title={
+                  files && !files.complete
+                    ? `This run saved no file list, so the tree shows the ${list.length} files its events name${state.facts?.python_files ? ` (${py} of the ${state.facts.python_files} Python files the Explorer counted)` : ""}.`
+                    : undefined
+                }
+              >
+                {list.length} files
+              </span>
             </>
+          }
+          actions={
+            <label className="check follow">
+              <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
+            </label>
           }
           className="tree-card"
         >
-          {files && !files.complete && list.length > 0 && (
-            <p className="tree-note small">
-              This run saved no file list, so the tree shows the {list.length} files its events name
-              {state.facts?.python_files ? ` (${py} of the ${state.facts.python_files} Python files the Explorer counted)` : ""}.
-            </p>
-          )}
+          <LegendLine />
           {!view.rows.length ? (
             <Empty>No files yet: the Explorer lists them when the run starts.</Empty>
           ) : (
-            <TreeList view={view} chosen={chosen} onSelect={setChosen} />
+            <TreeList view={view} chosen={chosen} onSelect={setChosen} atWork={focusItem ? itemKey(focusItem.unit) : null} />
           )}
         </Card>
         <Card className="detail-card">
@@ -290,20 +344,21 @@ export function ProjectView({
             <NodeDetail node={node} state={state} detail={detail} onPick={pick} />
           ) : (
             <div className="node-empty">
-              <p>Click a file, class or function to see its evidence chain, its diff and the checks it passed.</p>
-              {focusItem && (
-                <p>
-                  Now: <AgentTag agent={focusItem.actor || state.active || "manager"} /> on{" "}
-                  <button className="link" onClick={() => pick(focusItem.unit.includes("::") ? `unit:${focusItem.unit}` : `file:${focusItem.unit}`)}>
-                    <code>{focusItem.unit}</code>
-                  </button>{" "}
-                  <StateChip state={focusItem.stage} />
-                </p>
+              {focusItem ? (
+                <>
+                  <p className="now">
+                    Now: <AgentTag agent={focusItem.actor || state.active || "manager"} /> on{" "}
+                    <button className="link" onClick={() => pick(itemKey(focusItem.unit))} title={focusItem.unit}>
+                      {itemLabel(focusItem)}
+                    </button>
+                  </p>
+                  {/* following the action: the latest decision on the item at work, the rest behind "Show details" */}
+                  {follow && <Pointer note={{ items: [focusItem.id], match: "exact" }} state={state} brief />}
+                </>
+              ) : (
+                <p>Click a file, class or function to see its evidence chain, its diff and the checks it passed.</p>
               )}
-              <p className="muted small">
-                {state.itemOrder.length} candidates · {tree.counts.kept || 0} kept · {tree.counts.rolled_back || 0} rolled back ·{" "}
-                {tree.counts.suggest || 0} suggestions
-              </p>
+              <p className="muted small">Click any file or function for its diff.</p>
             </div>
           )}
         </Card>

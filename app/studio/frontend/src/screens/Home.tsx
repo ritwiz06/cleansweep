@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { afterHash, api, post, runHash, useApi, type RunRow } from "../api";
-import { Async, Badge, Status } from "../components/common";
+import { afterHash, api, post, runHash, useApi, type Loaded, type RunRow } from "../api";
+import { Async, Badge, PageHeader, ShowMore } from "../components/common";
+import { RunOutcome } from "../components/RunOutcome";
+import { runTitle } from "../state/names";
 import { useRuns } from "./Runs";
 
 interface Options {
@@ -54,22 +56,27 @@ function Segmented({
   );
 }
 
-function when(mtime: number): string {
-  return mtime ? new Date(mtime * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
+
+// The shipped recording of the demo app's cleanup, or any shipped agent-team recording.
+export const DEMO_RUN = "20261102_demo_feature_agentic";
+
+export function demoRun(rows: RunRow[] | null): RunRow | null {
+  const shipped = (rows || []).filter((r) => r.root === "replay" && r.kind === "v2" && r.finished);
+  return shipped.find((r) => r.path === DEMO_RUN) || shipped[0] || null;
 }
 
-function RecentRuns() {
-  const runs = useRuns();
+function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | null }) {
   return (
     <section aria-label="Recent runs">
-      <header className="screen-head">
+      <header className="section-head">
         <h3>Recent runs</h3>
         <a href="#/runs">All runs</a>
       </header>
       <Async
         res={runs}
         what="Finding runs"
-        empty={(rows) => (rows.some((r) => r.kind === "v2") ? null : "No cleanups yet. Start one above; it appears here.")}
+        empty={(rows) => (rows.some((r) => r.kind === "v2") ? null : "No cleanups yet. Start one above and it shows up here.")}
+        emptyAction={demo ? { label: "Try the demo", href: runHash(demo) } : undefined}
       >
         {(rows) => (
           <div className="recent">
@@ -78,18 +85,16 @@ function RecentRuns() {
               .slice(0, RECENT)
               .map((r) => (
                 <div key={`${r.root}/${r.path}`} className="recent-row" data-run={r.name}>
-                  <span className="run-name" title={`${r.root}/${r.path}`}>
-                    {r.name} {r.live && <Badge tone="warn">running</Badge>}
+                  <span className="run-name" title={r.name}>
+                    {runTitle(r)} {r.live && <Badge tone="warn">running</Badge>}
                   </span>
                   <span className="run-actions">
-                    {r.verdict ? <Status value={r.verdict} /> : <span className="muted">{r.finished ? "finished" : "unfinished"}</span>}
                     {r.live && <a href={runHash(r, "live")}>Follow live</a>}
                     <a href={runHash(r)}>Open</a>
                     {r.finished && <a href={afterHash(r)}>Before / after</a>}
                   </span>
                   <span className="run-meta">
-                    {r.target || "?"} · {r.mode || "?"} mode · model {r.model || "none"}
-                    {r.root === "replay" ? " · shipped recording" : ` · ${when(r.mtime)}`}
+                    <RunOutcome verdict={r.verdict} kept={r.outcome?.kept} rolledBack={r.outcome?.rolled_back} lines={r.outcome?.lines_removed} finished={r.finished} />
                   </span>
                 </div>
               ))}
@@ -102,6 +107,8 @@ function RecentRuns() {
 
 export function Home() {
   const options = useApi<Options>("targets", () => api("/api/targets"));
+  const runs = useRuns();
+  const demo = demoRun(runs.data);
   const [path, setPath] = useState("");
   const [mode, setMode] = useState("safe");
   const [sandbox, setSandbox] = useState("auto");
@@ -140,6 +147,23 @@ export function Home() {
 
   return (
     <div className="screen home">
+      <PageHeader
+        title="Clean a folder"
+        description="Paste a Python project's path. CleanSweep cleans a copy, one checked change at a time."
+        help="Start here: clean a project of your own (CleanSweep works on a copy, so your folder is never changed), or watch a recorded cleanup of a small demo app first."
+        actions={
+          demo && (
+            <>
+              <a className="button" href={`${runHash(demo)}&tour=1`}>
+                Take the tour
+              </a>
+              <a className="button" href={runHash(demo)}>
+                Try the demo
+              </a>
+            </>
+          )
+        }
+      />
       <form
         className="clean-box"
         aria-label="Clean a folder"
@@ -148,11 +172,6 @@ export function Home() {
           start();
         }}
       >
-        <h2>Clean a folder</h2>
-        <p className="lead">
-          Paste the path of a Python project. CleanSweep copies it and cleans the copy, one checked change at a time; your
-          folder is never changed.
-        </p>
         <div className="path-row">
           <input
             value={path}
@@ -179,41 +198,43 @@ export function Home() {
             ))}
           </div>
         )}
-        <div className="clean-options">
-          <fieldset>
-            <legend>Mode</legend>
-            <Segmented name="Mode" value={mode} options={MODES.map(([k, l]) => [k, l])} onChange={setMode} />
-            <span className="option-hint">{MODES.find(([k]) => k === mode)?.[2]}</span>
-          </fieldset>
-          <fieldset>
-            <legend>Sandbox</legend>
-            <Segmented
-              name="Sandbox"
-              value={sandbox}
-              options={(options.data?.sandboxes || ["auto", "docker", "none"]).map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)])}
-              onChange={setSandbox}
-              disabled={sandboxReady ? [] : ["docker"]}
-            />
-            <span className="option-hint">
-              {SANDBOX_HINT[sandbox]}
-              {!sandboxReady && options.data && " The Docker sandbox is not in this version yet."}
-            </span>
-          </fieldset>
-          <fieldset>
-            <legend>LLM</legend>
-            <label className="check">
-              <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} /> Offline: the agents decide by rules
-            </label>
-            <span className="option-hint">Otherwise the LLM in .env is used, if a key is set. More options on the Launch screen.</span>
-          </fieldset>
-        </div>
+        <ShowMore label={`Options: ${MODES.find(([k]) => k === mode)?.[1]} mode, ${sandbox} sandbox${offline ? ", offline" : ""}`}>
+          <div className="clean-options">
+            <fieldset>
+              <legend>Mode</legend>
+              <Segmented name="Mode" value={mode} options={MODES.map(([k, l]) => [k, l])} onChange={setMode} />
+              <span className="option-hint">{MODES.find(([k]) => k === mode)?.[2]}</span>
+            </fieldset>
+            <fieldset>
+              <legend>Sandbox</legend>
+              <Segmented
+                name="Sandbox"
+                value={sandbox}
+                options={(options.data?.sandboxes || ["auto", "docker", "none"]).map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)])}
+                onChange={setSandbox}
+                disabled={sandboxReady ? [] : ["docker"]}
+              />
+              <span className="option-hint">
+                {SANDBOX_HINT[sandbox]}
+                {!sandboxReady && options.data && " The Docker sandbox is not in this version yet."}
+              </span>
+            </fieldset>
+            <fieldset>
+              <legend>LLM</legend>
+              <label className="check">
+                <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} /> Offline: the agents decide by rules
+              </label>
+              <span className="option-hint">Otherwise the LLM in .env is used, if a key is set. More options on the Launch screen.</span>
+            </fieldset>
+          </div>
+        </ShowMore>
         {error && (
           <div className="state error home-error" role="alert">
             {error}
           </div>
         )}
       </form>
-      <RecentRuns />
+      <RecentRuns runs={runs} demo={demo} />
     </div>
   );
 }

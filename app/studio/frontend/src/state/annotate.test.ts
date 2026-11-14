@@ -40,7 +40,7 @@ describe("diff annotation", () => {
     const steps = decisionSteps(item, state);
     expect(steps.map((s) => roleOf(s.agent))).toEqual(["auditor", "investigator", "planner", "engineer", "tester", "validator", "manager"]);
     expect(steps[0].text).toBe("flagged it as duplicate (safe lane)");
-    expect(steps[steps.length - 1].text).toBe("P5 kept");
+    expect(steps[steps.length - 1].text).toBe("kept the change");
     expect(packageChecks(state.packages[item.pkg!]).map((c) => `${c.ok}:${c.label}`)).toEqual([
       "true:tests pass",
       "true:24 probe cases: same before and after",
