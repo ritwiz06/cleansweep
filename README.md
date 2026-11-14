@@ -285,8 +285,8 @@ tables are in `results/summary/v3/` and every number in
 | | Hypothesis | Result |
 |---|---|---|
 | H1 | On real projects, the team makes fewer wrong edits than Aider in both tiers, and fewer held-out failures | not supported: fewer wrong edits (4/191 vs 4/13 confirmed, p=0.0006; 13/191 vs 5/13 all tiers, p=0.0025), but held-out changes on 4 vs 0 of 10 projects |
-| H2 | The resolver lowers the team's wrong edits on the planted-slop set | not supported: 3 vs 3 over 9 repositories |
-| H3 | Batching keeps the team's safety at no more than 60% of its requests | supported, by a tie: 41% of the requests, 16 vs 16 wrong edits |
+| H2 | The resolver lowers the team's wrong edits on the planted-slop set | not supported: 3 vs 3 over 9 repositories, where both arms gave byte-identical diffs (the resolver changed no decision) |
+| H3 | Batching keeps the team's safety at no more than 60% of its requests | supported, by a tie: 41% of the requests, 16 vs 16 wrong edits on the 20 projects both finished (batching's 36 openbench wrong edits are unpaired: the team ran out of budget there) |
 | H4 | At least 90% of 30 repositories run end to end | supported: 27 of 30 (0.900) |
 
 On the planted-slop set (out of sample) the team removed 72% of the planted items and no trap.
