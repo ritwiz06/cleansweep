@@ -154,7 +154,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
     <div className="screen">
       <PageHeader
         title="Compare two runs"
-        description="Two runs side by side: what each removed, what it cost, and its time per phase."
+        description="Two runs side by side: what each removed, what it cost, and its time per step."
         help="Pick a run for A and one for B. Each row is the same number for both runs; the chart shows where each spent its time."
       />
       <Async res={runs} what="Finding runs">
@@ -189,11 +189,11 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
               )}
             </Async>
           </Card>
-          <Card title="Time per phase">
+          <Card title="Time per step">
             {both.some((d) => d?.report?.stats?.agentic) ? (
-              <div className="chart" role="img" aria-label="Time per phase of both runs">
+              <div className="chart" role="img" aria-label="Time per step of both runs">
                 <div className="chart-title">
-                  Time per phase: <RunTag which="A" /> {left.data && runTitle(left.data)} vs <RunTag which="B" /> {right.data && runTitle(right.data)}{" "}
+                  Time per step: <RunTag which="A" /> {left.data && runTitle(left.data)} vs <RunTag which="B" /> {right.data && runTitle(right.data)}{" "}
                   <span className="better">(less is faster)</span>
                 </div>
                 <ResponsiveContainer width="100%" height={phaseData.length * 44 + 16}>
@@ -210,7 +210,7 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
                 </ResponsiveContainer>
               </div>
             ) : (
-              <Empty>Phases exist for agent-team runs only.</Empty>
+              <Empty>Steps exist for agent-team runs only.</Empty>
             )}
           </Card>
         </>

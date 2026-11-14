@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, plural, ruleLabel, shortDate, valueLabel } from "./labels";
+import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, phaseWords, plural, ruleLabel, shortDate, valueLabel } from "./labels";
 
 describe("labels", () => {
   it("writes column names in plain words", () => {
@@ -14,6 +14,17 @@ describe("labels", () => {
     expect(valueLabel("bookshelf/inventory.py::_print_low_stock")).toBe("bookshelf/inventory.py::_print_low_stock");
     expect(valueLabel("cleansweep-gatekeeper")).toBe("cleansweep-gatekeeper");
     expect(ruleLabel("llm_manager")).toBe("LLM Manager");
+  });
+
+  it("writes version tokens as phases and leaves names and paths alone", () => {
+    expect(phaseWords("injected v3")).toBe("injection (Phase 3)");
+    expect(phaseWords("real v3")).toBe("real projects (Phase 3)");
+    expect(phaseWords("v2 Auditor (v1 + line-level detectors)")).toBe("Phase 2 Auditor (Phase 1 + line-level detectors)");
+    expect(phaseWords("v3 (out of sample)")).toBe("Phase 3 (out of sample)");
+    expect(phaseWords("method vs v1 gatekeeper")).toBe("method vs Phase 1 gatekeeper");
+    expect(phaseWords("dir(verifiers.v1)")).toBe("dir(verifiers.v1)");
+    expect(phaseWords("results/summary/v2/")).toBe("results/summary/v2/");
+    expect(headerLabel("hidden changed only with v1")).toBe("Hidden changed only with Phase 1");
   });
 
   it("shortens dates and separates thousands", () => {

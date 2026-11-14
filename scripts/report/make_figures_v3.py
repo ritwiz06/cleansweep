@@ -42,7 +42,7 @@ NAMES = {
     "agentic-no_research": "no research squad",
     "agentic-single_agent": "single agent",
     "aider": "Aider",
-    "cleansweep": "v1",
+    "cleansweep": "Phase 1 pipeline",
     "agentic-thorough": "team, thorough",
     "agentic-adaptive": "team, adaptive",
 }

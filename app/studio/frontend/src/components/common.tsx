@@ -1,6 +1,6 @@
 import { createContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Loaded, Table } from "../api";
-import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, shortDate, valueLabel } from "../state/labels";
+import { columnDecimals, formatNumber, headerLabel, isIsoDate, numericColumn, phaseWords, shortDate, valueLabel } from "../state/labels";
 import { StateChip, stateOf } from "./states";
 
 // charts skip their entry animation when the reader asks for reduced motion (and the
@@ -322,7 +322,7 @@ function cell(value: unknown, column: string, decimals: number, rename?: (v: str
   if (STATUS_COLUMNS.has(column)) return <Status value={text} />;
   if (isIsoDate(text)) return <span title={text}>{shortDate(text)}</span>;
   // long cells are cut; the whole text is in the tooltip
-  if (text.length > CELL_CHARS) return <span title={text}>{text.slice(0, CELL_CHARS - 3)}...</span>;
+  if (text.length > CELL_CHARS) return <span title={phaseWords(text)}>{phaseWords(text.slice(0, CELL_CHARS - 3))}...</span>;
   return valueLabel(text);
 }
 

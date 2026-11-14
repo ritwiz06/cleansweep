@@ -10,12 +10,14 @@ code that can go, a **Guard** applies each edit and keeps it only if the program
 behaves the same, and a **Scheduler** decides how to batch edits and when to
 sweep. This is our CSE 572 project (Group 30).
 
+Project phases: Phase 1 = release v1.0, Phase 2 = v2.0–v2.1, Phase 3 = v3.0 (git tags).
+
 **Results in brief.** On 57 SWE-bench agent patches, CleanSweep removed about as much code as
 an unchecked one-shot LLM cleanup and changed hidden behavior on none of them; the one-shot
-cleanup changed it on 9. On 20 real repositories with agent-written code, the v1.0 Reviewer
+cleanup changed it on 9. On 20 real repositories with agent-written code, the Phase 1 Reviewer
 policies leave CleanSweep with 0 of 19 hidden changes.
 
-v2's agent team, on a benchmark of slop planted in 10 projects (3 seeds), removed 81% of the
+The agent team (Phase 2), on a benchmark of slop planted in 10 projects (3 seeds), removed 81% of the
 planted items [77, 84], removed no trap and changed hidden behavior in none of its 30 runs, yet a
 blinded audit found 18 wrong edits among its 804 kept code edits (12 confirmed by targeted tests,
 the rest by reading, LLM-judged) that no test, probe or hidden check caught, 14 of them code a
@@ -25,14 +27,14 @@ wrong edits of 489 (50 confirmed): a single agent that checks its own edits is n
 On five real projects, one run each, the audit flagged none of the team's 14 kept code edits,
 against 4 wrong of 20 without its research squad (Fisher p = 0.13) and 17 of 65 for the single
 agent (p = 0.03), which suggests, but doesn't establish, that investigating each candidate pays
-off on real code. Against v1 the team is about as safe on the confirmed tier (12 of 804 wrong
-against 13 of 610) and lower across all tiers (18 against 48, 35 of v1's by reading); on AIDev it
-removed about a fifth of v1's code lines, so part of its safety there is caution. The auditor never sees the method, so
+off on real code. Against the Phase 1 pipeline the team is about as safe on the confirmed tier (12 of 804 wrong
+against 13 of 610) and lower across all tiers (18 against 48, 35 of the pipeline's by reading); on AIDev it
+removed about a fifth of the pipeline's code lines, so part of its safety there is caution. The auditor never sees the method, so
 its wrong counts are lower bounds not biased by who made the edit. Re-scored with the framework
 rule, which was extended after these failures, the team's 18 become 9; that estimate is in-sample
 and so optimistic. Details below and in [docs/results.md](docs/results.md).
 
-v3 (Phase 3) tested the team as pre-registered. Every method had one 120-minute cap and one
+Phase 3 tested the team as pre-registered. Every method had one 120-minute cap and one
 400-request budget, and the team was compared with the outside agent Aider. The tests ran on 10
 new projects with planted slop and on 15 real projects whose held-out tests no method sees.
 - **H1, not supported.** On the real projects, the team's kept edits were wrong far less often
@@ -103,7 +105,7 @@ Methods: `cleansweep`, `guard_tests_only`, `tools_only`, `one_shot_llm`, `one_sh
 `no_ranker`, `no_batching`. Every package has a stub with the same interface;
 `CLEANSWEEP_STUBS=analysis,guard` (or `all`) swaps packages for their stubs.
 
-### Clean your own project (v2)
+### Clean your own project (the agent team)
 
 ```bash
 cleansweep clean path/to/project --dry-run   # plan only: writes blueprint.md, changes nothing
@@ -179,7 +181,7 @@ sweep). Turn it off in `configs/reviewer.yaml` (`overengineering: false`) or for
 
 The judge model is `VOYAGER_MODEL` in `.env` (we use `qwen36-35b-a3b`).
 
-Two policies run after the judge (both on by default since v1.0): `keep_public_api: auto` keeps
+Two policies run after the judge (both on by default since the Phase 1 release): `keep_public_api: auto` keeps
 dead code on public names in package modules in the suggest lane, and `framework_callbacks: on`
 does the same for methods a framework calls by name (Textual, Django, Flask/FastAPI,
 Click/Typer, pytest).
@@ -217,13 +219,13 @@ bash demo/prepare_demo.sh --with-feature   # builds .cleansweep/demo/shop_app as
 cleansweep studio                           # then open Launch
 ```
 
-On **Launch**, choose **Sweep (v1 pipeline)**, a target (toy repo, demo app, prepared demo or
+On **Launch**, choose **Sweep (Phase 1 pipeline)**, a target (toy repo, demo app, prepared demo or
 any folder), a method and a judge mode, and press **Start**. The live run shows each stage as
 it finishes, the Reviewer's plan, one card per Guard check (including bisection splits), the
 diffs, the hidden-check verdict, the score against the answer key, and the run log. Studio
 saves its runs under `results/raw/studio/`, and **Replay** on **Live sweep and replay** plays a
-saved run back at 1–50x without calling the LLM or running tests. Three v1 demo recordings ship
-in `demo/replay/`, so Replay works offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory run with the v1.0
+saved run back at 1–50x without calling the LLM or running tests. Three Phase 1 demo recordings ship
+in `demo/replay/`, so Replay works offline on a fresh clone; `20261030_demo_feature_advisory_v1` is the advisory run with the Phase 1
 defaults (outcome 7/7, hidden behavior unchanged). To record a run without the browser:
 
 ```bash
@@ -232,7 +234,7 @@ python -m cleansweep.live --target .cleansweep/demo/shop_app --judge-mode adviso
 
 ## Studio
 
-CleanSweep Studio is the v2 web UI: it starts runs, follows them live, replays recordings and
+CleanSweep Studio is the web UI built in Phase 2: it starts runs, follows them live, replays recordings and
 shows the results. It needs node 20 or later once, to build the frontend.
 
 ```bash
@@ -253,13 +255,13 @@ Skill_Seekers case study in safe mode; two product names in that project's code 
 recording with relative paths and refuses one with a secret left in it.
 
 Screens: **Runs** (every recording), **Launch** (clean, sweep or watch a project), **Live run** and
-**Replay** (phase timeline with step-backs and the Manager's decisions, the agent graph, the
+**Replay** (step timeline with step-backs and the Manager's decisions, the agent graph, the
 message board, the item board, work packages with diffs, tests, probes and checks, metrics and
 budget gauges; Replay adds play/pause, step, 1–50x, a scrubber and "next decision"), **Compare**,
 **Case studies** (health before and after, diffs, report, review sheet with the
 "LLM-reviewer acceptance (independent model, blinded)" decisions), **Watch** (commit stream, slop
 over time, decisions with reasons) and **Results**, plus the dashboard's pages (saved reports,
-Live sweep and Replay of v1 runs, Scheduler, Baselines, Data, Guard). The user guide describes each screen.
+Live sweep and Replay of Phase 1 runs, Scheduler, Baselines, Data, Guard). The user guide describes each screen.
 
 ## Reproduce
 
@@ -275,7 +277,7 @@ ran at, its inputs and outputs, runtime and models, how to download the data (SW
 Verified, PatchDiff, AIDev), and the Docker and disk needs (about 65 GB for all images and
 data).
 
-## v3 results: the evaluation (frozen 2026-11-13 12:00)
+## Phase 3 results: the evaluation (frozen 2026-11-13 12:00)
 
 Every method on every set had one cap (120 minutes) and one budget (400 LLM requests); a run that
 hits either counts as timed out, with nothing removed. Hypotheses, metrics and thresholds are in
@@ -297,16 +299,16 @@ them. A panel of three LLM judges agrees with the recorded labels at κ = 0.455 
 wrong), and is right on 11 of 18 confirmed verdicts, each confirmed by a targeted test or a rule
 (`judge_panel.md`).
 
-## v2 results: the agent team
+## Phase 2 results: the agent team
 
 `cleansweep clean` and `method=agentic` (the agent team, safe mode, `qwen36-35b-a3b`) against
-v1's sweep (`method=cleansweep`, gatekeeper). Hidden changed = the hidden checks (tests no agent
+the Phase 1 pipeline's sweep (`method=cleansweep`, gatekeeper). Hidden changed = the hidden checks (tests no agent
 sees) give a different result after the cleanup. Code lines removed counts lines removed from
-non-test Python files in the final diff, measured the same way for both versions (v1 from its
+non-test Python files in the final diff, measured the same way for both (the pipeline from its
 archived reports). Means per target with 95% bootstrap CIs; full tables, per-target rows and
 how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
 
-| target set | runs | team: everything runs / nothing applied / not verified | team: code lines removed | team: hidden changed | v1: code lines removed | v1: hidden changed | LLM requests, team vs v1 | minutes, team vs v1 (median) |
+| target set | runs | team: everything runs / nothing applied / not verified | team: code lines removed | team: hidden changed | Phase 1 pipeline: code lines removed | Phase 1 pipeline: hidden changed | LLM requests, team vs pipeline | minutes, team vs pipeline (median) |
 |---|---|---|---|---|---|---|---|---|
 | answer keys (toy, demo ×3) | 6 | 6 / 0 / 0 (60/60 planted items) | 57.0 [51.7, 62.3] | 0/6 | 57.0 [51.7, 62.3] | 0/6 | 41.5 vs 5.5 | 1.7 vs 4.8 |
 | SWE-bench Tier 1 | 10 | 7 / 3 / 0 | 37.5 [9.2, 73.1] | 0/10 | 37.5 [9.2, 73.1] | 0/10 | 11.8 vs 0.8 | 1.1 vs 1.5 |
@@ -317,13 +319,13 @@ how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
   303 lines in total). On SWE-bench that is the scratch files the coding agents left at the
   repository root (`reproduce_error.py`, a whole `test_app/` Django project); we read every diff (LLM-judged: by the coding assistant that ran
   the evaluation, not a person).
-- On AIDev, v1 as it ran removed more and changed hidden behavior on 3 of the 6 repositories,
+- On AIDev, the Phase 1 pipeline as it ran removed more and changed hidden behavior on 3 of the 6 repositories,
   each time by deleting a function nothing in the project calls that the hidden tests use as
   public API (paired: McNemar p = 0.25, Wilcoxon p = 0.063, n = 6). The team kept those functions
-  because its Auditor runs v1's detectors with the v1.0 public-API rule, which v1's recorded runs
-  predate; re-scored with that rule, v1 changes 0 of 19 (v1 results below). The six were chosen
-  from v1's results (its three hidden changes, the near-duplicate and framework-callback cases,
-  one clean repository), so they lean toward v1's hardest cases.
+  because its Auditor runs the pipeline's detectors with the Phase 1 public-API rule, which the pipeline's recorded runs
+  predate; re-scored with that rule, the pipeline changes 0 of 19 (Phase 1 results below). The six were chosen
+  from the pipeline's results (its three hidden changes, the near-duplicate and framework-callback cases,
+  one clean repository), so they lean toward the pipeline's hardest cases.
 - Reading every diff of the team's (LLM-judged, as above) found one wrong edit the hidden checks
   cannot see: on pytorch_connectomics it removed a `pdb.set_trace()` under `if self.debug_on_nan:`,
   an opt-in debugger. A debugger call behind a condition is only a suggestion since #124, after
@@ -340,7 +342,7 @@ how each was run in [docs/results.md](docs/results.md#v2-the-agent-team).
 differently, a framework callback) planted in the toy repository and 9 AIDev repositories. Each
 plant is checked to be a right answer, and each hidden test passes on the injected project before
 any cleanup; each method then cleans the whole project. The team, the no research squad and the
-single agent ran three seeds (30 runs each), v1 and the one-shot LLM two (20 runs). Planted items
+single agent ran three seeds (30 runs each), the Phase 1 pipeline and the one-shot LLM two (20 runs). Planted items
 removed per kind:
 
 | | leftover file | dead code | exact duplicate | unused import | debug print | commented-out code | unused dependency | all planted | traps removed | hidden changed |
@@ -348,16 +350,16 @@ removed per kind:
 | team | 30/30 | 29/30 | 0/30 | 26/30 | 30/30 | 30/30 | 25/30 | 170/210 (0.81) | 0/60 | 0/30 |
 | no research squad | 30/30 | 28/30 | 0/30 | 29/30 | 30/30 | 30/30 | 29/30 | 176/210 (0.84) | 2/60 | 2/30 |
 | single agent | 30/30 | 26/30 | 0/30 | 27/30 | 9/30 | 6/30 | 16/30 | 114/210 (0.54) | 16/60 | 16/30 |
-| v1 | 20/20 | 19/20 | 0/20 | 19/20 | 0/20 | 0/20 | 20/20 | 78/140 (0.56) | 1/40 | 1/20 |
+| Phase 1 pipeline | 20/20 | 19/20 | 0/20 | 19/20 | 0/20 | 0/20 | 20/20 | 78/140 (0.56) | 1/40 | 1/20 |
 | one-shot LLM | 19/20 | 19/20 | 19/20 | 14/20 | 18/20 | 18/20 | 0/20 | 107/140 (0.76) | 36/40 | 19/20 |
 
 - Paired by project and seed (`injection_paired.md`):
   - **Team vs the single agent:** 170 against 114 planted items removed (Wilcoxon p < 0.0001); 0 against 16 hidden changes (McNemar p < 0.0001).
   - **Team vs the no research squad:** 170 against 176 (p = 0.063); 0 against 2 hidden changes (p = 0.5).
   - The team's share per seed is 0.81, 0.80 and 0.81 (`injection_seeds.md`, with 95% CIs).
-- Every trap the single agent, the no research squad and v1 removed is the framework callback (`visit_Name`, which `ast.NodeVisitor` calls by name). None of them merged the near-duplicate.
+- Every trap the single agent, the no research squad and the Phase 1 pipeline removed is the framework callback (`visit_Name`, which `ast.NodeVisitor` calls by name). None of them merged the near-duplicate.
 - The one-shot LLM removes most of the slop, including the exact duplicates that no detector-based method touches. It also removes 36 of the 40 traps and changes hidden behavior in 19 of 20 runs.
-- **Team against v1, on the seeds both ran** (1 and 2, `injection_summary_seeds12.csv`): 113 against 78 of 140 planted items. The whole gain is in the two kinds the line-level detectors find, debug prints (20 against 0 of 20) and commented-out code (20 against 0), for which v1 has no detector; v1 removed a few more unused dependencies (20 against 17) and unused imports (19 against 17).
+- **Team against the Phase 1 pipeline, on the seeds both ran** (1 and 2, `injection_summary_seeds12.csv`): 113 against 78 of 140 planted items. The whole gain is in the two kinds the line-level detectors find, debug prints (20 against 0 of 20) and commented-out code (20 against 0), for which the pipeline has no detector; the pipeline removed a few more unused dependencies (20 against 17) and unused imports (19 against 17).
 - Four projects are left out, with the reasons in `EXCLUDED` (`exp_inject.py`):
   - imgviz: its hidden test failed before any cleanup;
   - openwebui-extensions: its hidden test failed on every injected draw;
@@ -400,16 +402,16 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
   - Wrong: 147. 88 are confirmed. The 59 by reading each record the observed reason no test could run.
   - Debatable: 252, by reading.
   - Fine: 162.
-- **Lower bounds, not biased by method.** Only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so its flags are not biased by who made the edit, but how loose the bound is differs by method: it voted "no" on 82% of the team's injected edits and 60% of v1's and the single agent's. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
+- **Lower bounds, not biased by method.** Only flagged edits are checked, so the wrong counts are lower bounds. The auditor never sees the method, so its flags are not biased by who made the edit, but how loose the bound is differs by method: it voted "no" on 82% of the team's injected edits and 60% of the pipeline's and the single agent's. The checks after a flag saw which run an edit came from; the confirmed tier rests on tests and rules.
 - Wrong of the kept code edits, all tiers, with the confirmed count in brackets:
 
-| target | team | no research squad | single agent | v1 |
+| target | team | no research squad | single agent | Phase 1 pipeline |
 |---|---|---|---|---|
 | injected, all seeds | 18 of 804 (12) | 27 of 825 (22) | 63 of 489 (50) | 48 of 610 (13) |
 | real projects (below) | 0 of 14 | 4 of 20 (3) | 17 of 65 (12) | |
 | AIDev (6 repositories) | 1 of 10 (1) | | | 8 of 53 (5) |
 
-- **Team against v1 on the injected set:** about the same on the confirmed tier (1.5% [0.8, 1.9] against 2.1% [1.5, 3.8]); lower across all tiers (2.2% [1.5, 2.8] against 7.9% [2.6, 9.0]), though 35 of v1's 48 are readings. On AIDev the team removed about a fifth of v1's code lines (280 against 1,537 in 6 runs), so part of its safety there is caution.
+- **Team against the Phase 1 pipeline on the injected set:** about the same on the confirmed tier (1.5% [0.8, 1.9] against 2.1% [1.5, 3.8]); lower across all tiers (2.2% [1.5, 2.8] against 7.9% [2.6, 9.0]), though 35 of the pipeline's 48 are readings. On AIDev the team removed about a fifth of the pipeline's code lines (280 against 1,537 in 6 runs), so part of its safety there is caution.
 - **No check caught the team's 18 injected wrong edits**: no test, probe or hidden test failed on them.
   - 14 are code that a framework or grader calls by name. 9 are methods (CORAL's eval-viewer `do_GET` and `do_POST`, torch `forward` methods), and 5 are classes (the `KernelBuilder` class of a published kernel demo, dropkit's hatchling build hook).
   - 3 remove dependencies, and 1 changes logic.
@@ -425,7 +427,7 @@ squad and the single agent; 20 for the other variants, which ran seeds 1 and 2.
 | team | 18 → 9 (12 → 7) | 0 → 0 | 0 → 0 | 170 → 170 |
 | no research squad | 27 → 20 (22 → 17) | 2 → 0 | 2 → 0 | 176 → 176 |
 | single agent | 63 → 47 (50 → 34) | 16 → 0 | 16 → 1 | 114 → 114 |
-| v1 | 48 → 37 (13 → 8) | 1 → 0 | 1 → 0 | 78 → 78 |
+| Phase 1 pipeline | 48 → 37 (13 → 8) | 1 → 0 | 1 → 0 | 78 → 78 |
 
 The reported numbers stay as run. The re-score is in-sample: the rule was extended after seeing
 these failures and is scored on the same runs, so 18 → 9 is an optimistic estimate; fresh projects
@@ -470,9 +472,9 @@ investigation helps on real projects.
   - One run per project and 14 to 65 kept code edits per method make this a small sample.
   - The single agent's 120 minutes start after its test baseline (14 minutes on shotgun); the team's start at the beginning of the run.
 
-**Probe strength** (`probe_strength.csv`): v1's mutants and PatchDiff patches, checked by the
+**Probe strength** (`probe_strength.csv`): the Phase 1 mutants and PatchDiff patches, checked by the
 tests and then the coverage-guided probes. On the 163 mutants and patches both versions checked,
-the two catch the same ones except one toy mutant that v1's probes caught
+the two catch the same ones except one toy mutant that the Phase 1 probes caught
 (`probe_strength_vs_v1.csv`).
 
 | target set | mutants caught | caught by the tests | only by the probes | PatchDiff recall |
@@ -511,7 +513,7 @@ verdict: "LLM-reviewer acceptance (independent model, blinded)", 3 votes per row
 back (this repository, slop-guard in thorough mode).
 
 **Detection** (`detection.csv`): of 163 removals human reviewers asked for in 116 AIDev pull
-requests, v1's static detectors flag 19 (recall 0.117) and the team's Auditor (v1's detectors
+requests, the Phase 1 static detectors flag 19 (recall 0.117) and the team's Auditor (the Phase 1 detectors
 plus the line-level ones) 24 (0.147).
 
 **Watch** (`watch_replay.csv`, 20 AIDev histories, static detectors): the watch rule leaves a
@@ -519,7 +521,7 @@ mean slop debt of 41 open items summed over the commits, against 693 for a daily
 9,863 for never sweeping, at 68.7 estimated test runs against 27.7; held to the adaptive
 policy's test budget it does worse than every policy but never sweeping (8,841).
 
-## v1 results summary
+## Phase 1 results summary
 
 Means per target with 95% bootstrap CIs; hidden changed = the hidden checks (tests the Guard
 never sees) give a different result after the cleanup. Full tables in
@@ -549,10 +551,10 @@ code-level edits comes from the rest:
   filter on the one-shot cleanup, the Guard blocks all 12 runs that changed hidden behavior.
 - **AIDev, 20 repositories** (agent-written code only; hidden tests by a second model). As run,
   CleanSweep changed hidden behavior on 3 of 19 repositories, every time by deleting a function
-  nothing in the project calls. The v1.0 policies, re-scored on the same runs
+  nothing in the project calls. The Phase 1 policies, re-scored on the same runs
   (`aidev_final_policy.md`):
 
-| method | lines removed as run | hidden as run | lines removed, v1.0 policies | hidden, v1.0 policies |
+| method | lines removed as run | hidden as run | lines removed, Phase 1 policies | hidden, Phase 1 policies |
 |---|---|---|---|---|
 | cleansweep, gatekeeper | 64.8 [12.1, 133.4] | 3/19 | 12.2 [1.9, 30.0] | **0/19** |
 | cleansweep, advisory | 121.7 [18.9, 292.9] | 3/19 | 31.3 [7.0, 63.3] | **0/19** |
@@ -582,7 +584,7 @@ code-level edits comes from the rest:
 - **No human checked the labels.** The diff audit's reading tier and the review sheets are
   LLM-judged. Three LLM judges from other model families agree with the recorded labels only
   moderately (κ = 0.455, wrong vs not wrong), and of 6 edits confirmed fine they call 4 wrong
-  and 2 debatable (v3, Deviation 9).
+  and 2 debatable (Phase 3, Deviation 9).
 - **Unused is not unneeded.** The Guard can't check the deletion of a function nothing in the
   project calls: there is nothing to run. `keep_public_api: auto` keeps public names in package
   modules in the suggest lane, and the framework rule keeps framework callbacks there; anything
@@ -611,14 +613,14 @@ code-level edits comes from the rest:
   On the demo app it passed all 11 of the
   single agent's deletions of command functions the app dispatches through `getattr`, though
   those runs failed visible tests.
-- **Containers read files through Docker Desktop's file sharing until v2.1.1.** In v2.0 and
-  v2.1, the checks that run in containers (the Guard's tests and probes on AIDev and injected
+- **Containers read files through Docker Desktop's file sharing until a Phase 2 fix.** Before it, the
+  checks that run in containers (the Guard's tests and probes on AIDev and injected
   targets, the hidden checks and the diff audit's targeted tests) saw the workspace through a
   bind mount, which can briefly show a container a deleted file or the old content of a file
   git or an atomic write replaced (2 to 3 of every 60 to 100 such operations in a reproduction,
-  idle or under load). Whether any v2 check read a stale file is possible, not measured: the
+  idle or under load). Whether any Phase 2 check read a stale file is possible, not measured: the
   logs record outcomes, not file hashes. A stale read hides a change, so it can only have made a
-  check pass that should have failed. From v2.1.1 each container holds its own copy, synced and
+  check pass that should have failed. Since that fix, each container holds its own copy, synced and
   checked by hash before every command.
 - **Probes check only what the model thinks to call.** A target that needs files, the network
   or the clock gets no probe cases; direct-mode probes can't set up a framework (runner mode,
@@ -650,7 +652,7 @@ src/cleansweep/
   sandbox/     git-backed workspaces: local folders, SWE-bench and AIDev Docker containers
   guard/       applies edits, verifies them (tests, AST, differential probes), rolls back failures
   workflow/    run_sweep: open -> analyze -> plan -> rank -> batch -> guard -> report
-  agents/      v2 agent team behind `cleansweep clean` and method=agentic
+  agents/      the agent team (Phase 2) behind `cleansweep clean` and method=agentic
   analysis/    code graph, duplicate finder, features
   reviewer/    detectors, duplicate/wrapper rewrites, LLM judge, over-engineering review, repair, planner
   ranking/     safe-to-remove scores (category priors; a classifier trained on AIDev labels)
@@ -673,7 +675,7 @@ tests/         mirrors src/, app/ and scripts/, plus fixtures/ (toy repo, answer
 
 Roles follow the proposal, except that the Reviewer moved from the Software architect to the
 Project manager. Ritik Agarwal (Project manager, UI lead) built a cross-area prototype on the
-first day, then the Reviewer, the toy repository and demo app, the v1 dashboard and the report
+first day, then the Reviewer, the toy repository and demo app, the Phase 1 dashboard and the report
 assets. Because no other member had joined the repository before the milestones, the Project
 manager also built the critical path in the other areas, as recorded in our decision log: the
 differential probes and their runner mode, the SWE-bench and PatchDiff loaders and Docker

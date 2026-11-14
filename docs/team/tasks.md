@@ -28,7 +28,7 @@ agenda and the ["Handoff checklist" issue](https://github.com/ritwiz06/cleanswee
 | E1 | [Reproduce the tables and check `hypotheses.csv`](#e1-reproduce-the-tables-and-check-hypothesescsv) | Simran (`SIMRANSHARMA2140`) | Nov 15 | [#208](https://github.com/ritwiz06/cleansweep/issues/208) |
 | E2 | [Review the Results section](#e2-review-the-results-section) | Simran | Nov 30 | [#209](https://github.com/ritwiz06/cleansweep/issues/209) |
 | E3 | [Present the Results part](#e3-present-the-results-part) | Simran | Nov 20 | [#210](https://github.com/ritwiz06/cleansweep/issues/210) |
-| P1 | [Integration and the v3.0 release](#p1-integration-and-the-v30-release) | Ritik (`ritwiz06`) | Nov 15 | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
+| P1 | [Integration and the final release](#p1-integration-and-the-final-release) | Ritik (`ritwiz06`) | Nov 15 | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
 | P3 | [Introduction, demo and slides](#p3-introduction-demo-and-slides) | Ritik | Nov 20 | [#213](https://github.com/ritwiz06/cleansweep/issues/213) |
 | P2 | [Assemble and submit the final report](#p2-assemble-and-submit-the-final-report) | Ritik | Dec 4 | [#212](https://github.com/ritwiz06/cleansweep/issues/212) |
 | A1 | [Everyone: proofread the final report](#a1-everyone-proofread-the-final-report) | all four | Nov 30 | [#214](https://github.com/ritwiz06/cleansweep/issues/214) |
@@ -88,8 +88,8 @@ issues or pull requests.
 
 ### S4. Present the Methods part
 
-Due **Nov 20**. Your slot is slides 4 and 5 (how CleanSweep keeps edits safe, and the audit), 2:30 to 3:45. Learn the script in
-[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-4-and-5) and time it at about 75
+Due **Nov 20**. Your slot is slides 4 and 5 (how CleanSweep keeps edits safe, and the audit), 1:19 to 2:28. Learn the script in
+[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-4-and-5) and time it at about 70
 seconds. Take the Q&A questions on how it works (questions 3, 10 and 11).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
@@ -187,10 +187,10 @@ says what you checked.
 
 ### D3. Present the Data part
 
-Due **Nov 20**. Your slot is slide 3, 1:15 to 2:30. Learn the script in
-[presentation.md](presentation.md#badri-data-slide-3), say it aloud with a timer (about 75
-seconds), and change the wording until it sounds like you. Check slide 3 with Ritik. Take the
-Q&A questions on data (questions 12 and 13).
+Due **Nov 20**. Your slot is slide 6 (our data and the benchmark, out of sample), 2:28 to 3:32. Learn the
+script in [presentation.md](presentation.md#badri-data-and-the-benchmark-slide-6), say it aloud
+with a timer (about 65 seconds), and change the wording until it sounds like you. Check slide 6
+with Ritik. Take the Q&A questions on data and the benchmark (questions 4, 12, 13 and 21).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
 
@@ -209,7 +209,7 @@ Due **Nov 15**. Goal: a second machine confirms that the committed tables rebuil
    ```
 
 2. Open `results/summary/v3/hypotheses.csv`. For each of H1 to H4, find its row in the README's
-   "v3 results" table and in [results.md](../results.md#hypotheses-as-pre-registered-tested-at-the-freeze),
+   "Phase 3 results" table and in [results.md](../results.md#hypotheses-as-pre-registered-tested-at-the-freeze),
    and check that the verdict and every number match, with the tier named in each safety claim.
    Then do the same for the final report on Overleaf.
 3. Optional, if you want to go further: redo one test from the counts in `audit.csv`, `real.csv`
@@ -232,26 +232,27 @@ each figure says which direction is better. Leave comments on Overleaf.
 
 ### E3. Present the Results part
 
-Due **Nov 20**. Your slot is slides 6, 7 and 8, 3:45 to 5:00. Learn the script in
-[presentation.md](presentation.md#simran-results-slides-6-7-and-8) and check its numbers against
-`hypotheses.csv`. Take the Q&A questions on results (questions 4, 5, 14, 15, 16, 17 and 18).
+Due **Nov 20**. Your slot is slides 7 and 8, 3:32 to 4:38. Learn the script in
+[presentation.md](presentation.md#simran-results-slides-7-and-8) and check its numbers against
+`hypotheses.csv`. Take the Q&A questions on results (questions 5, 14, 15, 16, 17 and 18).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
 
 ## Ritik (project manager and UI lead), `@ritwiz06`
 
-### P1. Integration and the v3.0 release
+### P1. Integration and the final release
 
 Due **Nov 15**. Merge the team's pull requests; answer the issues the team files; check
-R1–R30; run the fresh-clone rehearsal; tag v3.0; build, verify and upload the archive tarball to
+R1–R30; run the fresh-clone rehearsal; tag the final release (`v3.0`); build, verify and upload the archive tarball to
 the ASU Drive. Then update the release date in [handoff.md](handoff.md) and
 [status.md](status.md).
 
 ### P3. Introduction, demo and slides
 
-Due **Nov 20**. The slide deck (slides 1 to 8 and the backup slides), shared with everyone before
-the first rehearsal; the introduction and the demo in [presentation.md](presentation.md#demo-plan),
-tested offline with Studio Replay at the first rehearsal.
+Due **Nov 20**. The slide deck (slides 1 to 8 and the three backup slides), shared with everyone
+before the first rehearsal; the introduction and the demo in
+[presentation.md](presentation.md#demo-plan): the clip on slide 3, and Studio Replay as the
+backup, tested offline at the first rehearsal.
 
 ### P2. Assemble and submit the final report
 
@@ -270,7 +271,7 @@ done.
 ### A2. Everyone: prepare the Q&A
 
 Due **Nov 20**. Read the [Q&A sheet](presentation.md#qa-sheet). Each of us takes the questions
-on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19 and 20) and practices a
+on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19, 20 and 22) and practices a
 one-sentence answer for each. Add questions you expect to the sheet by pull request.
 
 ### A3. Everyone: two timed rehearsals
