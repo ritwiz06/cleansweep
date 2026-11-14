@@ -3,14 +3,27 @@
 Two pages: where the project is, where things are, who owns what, and what to do if something
 breaks. The details are in the other pages of this folder, listed in [README.md](README.md).
 
+## Start here
+
+1. **Accept the GitHub invitation** to `ritwiz06/cleansweep` (in your email, or at
+   https://github.com/ritwiz06/cleansweep/invitations), then run `gh auth login`.
+2. **Download the Drive folder** "CleanSweep – Final" into `~/CleanSweep/handoff/` (the link is
+   under [Shared locations](handoff.md#shared-locations)).
+3. **Paste the starter prompt** from [start_aiwork.md](start_aiwork.md) into your AI coding
+   assistant, opened in `~/CleanSweep/cleansweep`, with your name and role filled in. It sets
+   you up and lists your tasks.
+4. **Do your tasks:** your issues labeled `team` ([tasks.md](tasks.md)) and your boxes in
+   ["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/cleansweep/issues/230).
+5. **Tick the ["Handoff checklist" (#223)](https://github.com/ritwiz06/cleansweep/issues/223)** as you go.
+
 ## The state
 
 CleanSweep removes leftover AI-written code from a Python project with a team of ten LLM agents,
 and keeps an edit only if the project still behaves the same. Phase 1 (the pipeline) and Phase 2
 (the team and Studio) are released. **Phase 3, the pre-registered evaluation, is frozen** (Nov 13,
 12:00). **The final release is out** (Nov 14): the git tag `v3.0` and its GitHub release.
-**Final commit: v3.0.2** (the git tag `v3.0.2`: the course-facing wording and the shorter talk, no
-result changes).
+**Final commit: v3.0.3** (the git tag `v3.0.3`: the course-facing wording, the shorter talk and
+this self-serve handoff, no result changes).
 
 | | Result |
 |---|---|
@@ -87,11 +100,14 @@ knows the part well enough to give it if the owner cannot.
 |---|---|
 | Nov 14 | the final release |
 | Nov 15 | setup and checks done on your machine |
-| Nov 16 – Nov 20 | two timed rehearsals |
+| Nov 16 – Nov 20 | time your part; one full run-through on a call |
 | Nov 21 or Nov 28 | the presentation |
 | Nov 30 | section reviews and proofreading done |
 | Dec 4 (confirm on Canvas) | final report submission |
 | after the presentation | individual peer evaluation |
+
+Everything left before the presentation and the report, with a box for each of us:
+["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/cleansweep/issues/230).
 
 ## How to get help
 

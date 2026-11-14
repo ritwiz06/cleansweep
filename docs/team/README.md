@@ -1,11 +1,24 @@
 # Start here
 
-**First, read [handoff.md](handoff.md): the state of the project, the owners and the dates, in two pages.**
-
 This folder is for the four of us: Ritik (project manager and UI lead), Badri (data
 architect), Maninderjit (software architect) and Simran (experiment architect). It tells you how
 to set up, how the system works, where the project stands, and what each of us does until the
 presentation.
+
+## Five steps, on your own
+
+1. **Accept the GitHub invitation** to `ritwiz06/cleansweep` (in your email, or at
+   https://github.com/ritwiz06/cleansweep/invitations), then run `gh auth login`.
+2. **Download the Drive folder** "CleanSweep – Final" into `~/CleanSweep/handoff/` (the link is
+   under [Shared locations](handoff.md#shared-locations)).
+3. **Paste the starter prompt** from [start_aiwork.md](start_aiwork.md) into your AI coding
+   assistant, opened in `~/CleanSweep/cleansweep`, with your name and role filled in. It sets
+   you up and lists your tasks.
+4. **Do your tasks:** your issues labeled `team` ([tasks.md](tasks.md)) and your boxes in
+   ["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/cleansweep/issues/230).
+5. **Tick the ["Handoff checklist" (#223)](https://github.com/ritwiz06/cleansweep/issues/223)** as you go.
+
+[handoff.md](handoff.md) has the state of the project, the owners and the dates, in two pages.
 
 ## What CleanSweep is
 
@@ -23,13 +36,15 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
 | What | Where | Notes |
 |---|---|---|
 | Code, tests, docs, the committed tables and figures | the GitHub repository `ritwiz06/cleansweep` (private) | every change goes through a pull request ([contributing.md](contributing.md)) |
-| The final report's LaTeX sources and figures | the Overleaf project Ritik shares with you | edit there; the report's numbers come from the committed tables |
-| The archive tarball (raw run results, LLM caches) and the submission files | the ASU Drive folder Ritik shares with you | Ritik uploads; you read |
+| The LaTeX sources of the final report and the paper draft | two Overleaf projects ([links](handoff.md#shared-locations)) | edit there; the report's numbers come from the committed tables |
+| The submission files, the Overleaf zips and the archive tarball (raw run results, LLM caches) | the Drive folder "CleanSweep – Final" ([link](handoff.md#shared-locations)) | download it to `~/CleanSweep/handoff/` ([start_aiwork.md](start_aiwork.md)) |
 | Your `.env` with your own Voyager key | your machine only | never committed, never shared ([setup.md](setup.md#your-voyager-key)) |
 | Downloaded data (`data/raw/`, `data/processed/`), run output (`results/raw/`), caches (`.cleansweep/`) | your machine only | git ignores them; raw runs hold third-party code, so they are not published |
 | Ritik's working notes (plan, decision log, run log) | Ritik's machine | [status.md](status.md) is their public summary |
 
-## Your first 30 minutes
+## Look around by hand (30 minutes, optional)
+
+If you set up without the assistant, or want to see the system first:
 
 1. **Install (about 10 minutes).** Follow [setup.md](setup.md) up to "Check the install". You
    need Python 3.11 and git; Docker and a Voyager key are not needed for this path.
@@ -55,6 +70,8 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
 
 ## Then read
 
+- [start_aiwork.md](start_aiwork.md): what you need first, the folder layout, the archive, and
+  the starter prompt.
 - [tour.md](tour.md): the phases, the ten agents, the Guard, the benchmark, the audit, where each
   table comes from, and a glossary.
 - [status.md](status.md): the three phases, the scorecard, the limits, what is left.
@@ -63,4 +80,3 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
 - [presentation.md](presentation.md): the 5-minute talk, the script per speaker, the demo plan
   and the Q&A sheet.
 - [contributions.md](contributions.md): who did what, from the repository history.
-- [meeting_handoff.md](meeting_handoff.md): the agenda for the 30-minute handoff meeting.

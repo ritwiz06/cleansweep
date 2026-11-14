@@ -1,8 +1,8 @@
 # The presentation
 
 Five minutes, a hard stop: four speakers, eight slides and three backups, planned for 4:38 so
-that 20 seconds are left for the handovers. Rehearse twice between Nov 16 and Nov 20 with a timer;
-the talk is on Nov 21 or Nov 28.
+that 20 seconds are left for the handovers. Time your part with a stopwatch,
+then we do one full run-through on a call (Nov 16 – Nov 20); the talk is on Nov 21 or Nov 28.
 
 The Phase 3 numbers are final since the results freeze (Nov 13, 12:00). They come from
 `results/summary/v3/hypotheses.csv`, the README's "Phase 3 results" section and
