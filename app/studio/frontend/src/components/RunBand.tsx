@@ -82,6 +82,11 @@ export function RunBand({ state, events, player }: { state: RunState; events: St
           {label}
         </li>
       ))}
+      {state.backSteps > 0 && (
+        <li className="back">
+          ↩ {state.backSteps} step back{state.backSteps > 1 ? "s" : ""}
+        </li>
+      )}
     </ol>
   );
   // a replay has its controls on the first line and the steps under them; a live run, one line

@@ -193,18 +193,24 @@ The theme button switches between light and dark, and the "?" beside each screen
 in one line what the screen shows. [studio_design.md](studio_design.md) has the rules every
 screen follows (type, spacing, the colors and glyphs of each item state, motion).
 
-**Home** is where Studio opens. Paste a project's absolute path into "Clean a folder", choose
-safe or thorough mode and the sandbox (auto, docker or none; docker needs a CleanSweep that has
-the Docker sandbox), and Start: Studio runs `cleansweep clean` on a copy and opens the live run.
-A path that can't be cleaned gets a one-line reason (no such folder, a file, no Python files).
-"Try it on" fills in the toy repo or the demo app. Below are the most recent cleanups. New to
-Studio? "Take the tour" walks through the replay of the demo app's cleanup in six short steps
-(the arrow keys move, Escape ends it), and "Try the demo" opens that recording in Replay.
+Every screen says its answer in one sentence under its title (on a replay: "The team is
+investigating 16 candidates; 0 removed so far."), shows only what you would point at, and keeps
+the rest behind a tab, a "Show ..." line or a tooltip.
+
+**Home** is where Studio opens. Paste a project's absolute path into "Clean a folder" and Start:
+Studio runs `cleansweep clean` on a copy and opens the live run. "Options" opens safe or
+thorough mode, the sandbox (auto, docker or none; docker needs a CleanSweep that has the Docker
+sandbox) and offline. A path that can't be cleaned gets a one-line reason (no such folder, a
+file, no Python files). "Try it on" fills in the toy repo or the demo app. Below are the most
+recent cleanups, each with one outcome line ("5 removed · 1 rolled back · −47 lines"). New to
+Studio? "Take the tour" walks through the replay of the demo app's cleanup in four one-sentence
+steps (the arrow keys move, Escape ends it), and "Try the demo" opens that recording in Replay.
 
 ![Home: clean a folder, and the recent runs](images/studio/home.png)
 
-**Runs** lists every recorded run (agent-team cleanups, v1 sweeps, watch folders) with its
-target, mode, model and result. Open one in Replay, follow a live one, or send it to Compare.
+**Runs** lists every recorded run (agent-team cleanups, v1 sweeps, watch folders) by name
+("Demo app · agent team · Nov 1"; the folder is in the tooltip) with its result. Open one in
+Replay, follow a live one, or send it to Compare.
 
 ![Runs: every recorded run, filtered by place and kind](images/studio/runs.png)
 
@@ -215,31 +221,35 @@ in this session are listed with their status, output and a stop button.
 
 ![Launch: what to run, the target, the mode and the budgets](images/studio/launch.png)
 
-**Live run** and **Replay** show a run as it happens or from its recording:
-- the Project tab (the default): the project's file tree. Every file, class, function and line
-  range a detector flagged has the color, glyph and name of its state (candidate,
-  investigating, safe, suggest, in package, kept, rolled back) and the icon of the agent that
-  acted on it last; the latest action is outlined, and "Follow the action" opens the tree to it.
-  Click a node for its evidence chain (the verdict, the evidence, the Investigator's tool calls,
-  the lessons it cited), its diff and the checks its work package passed. A run saves its file
-  list (`project_files.json`), so the tree shows every file with its line count; for a recording
-  made before v2.1 the tree shows the files the events name, and says so;
-- the metrics bar: slop meter, packages done, test runs, probe cases, probe coverage, LLM calls
-  and tokens, elapsed time, with gauges against the run's budgets;
-- the phase timeline: time per phase, step-backs outlined, the Manager's decisions as marks;
-- the agent graph: the Manager between the research and development squads, each message
-  travelling from its sender to its recipients, each agent's steps, LLM calls and time;
-- the message board (filterable, with links to the cached artifacts), the item board (each
-  candidate's verdict, evidence and the investigator's tool calls), the work packages (diff,
-  tests, the probe table before and after, coverage, the commit) and the report with the whole
-  diff.
+**Live run** and **Replay** show a run as it happens or from its recording. Under the title, one
+sentence says what the team is doing; a band stays on top with Play, Next decision and the
+slider (drag it, or use the arrow keys: one event, Page Up / Page Down ten, Home and End), the
+slop removed so far ("Removed 5 of 16") and the steps in words, the done ones ticked and the
+current one bold (a Manager's step back is noted after them). Three tabs follow:
+- Project (the default): the project's file tree. Every file, class, function and line range a
+  detector flagged has the color, glyph and name of its state (candidate, investigating, safe,
+  suggest, in package, kept, rolled back); the key is the line at the top of the tree. Only the
+  item at work is highlighted, and "Follow the action" keeps it in view. Beside the tree, the
+  item at work shows its latest decision; "Show details" opens its decisions, evidence and
+  checks. Click a node for its evidence chain (the verdict, the evidence, the Investigator's tool
+  calls, the lessons it cited), its diff and the checks its work package passed. A run saves its
+  file list (`project_files.json`), so the tree shows every file; for a recording made before
+  v2.1 the tree shows the files the events name (the file count's tooltip says so);
+- Agents: the Manager between the research and development squads, each agent by its icon and
+  name (its steps, LLM calls and time in the tooltip), the agent at work marked, and the latest
+  message as an arrow from its sender. "Show the Manager's decisions and the latest thoughts"
+  opens both (the thoughts are LLM-judged);
+- Report: the run's setup, its work packages, budgets used (test runs, LLM calls, minutes),
+  probes and tokens, the documents, the whole diff, and the message board (filterable, with
+  links to the cached artifacts), the items (each candidate's verdict, evidence and tool calls)
+  and the work packages (diff, tests, the probe table, coverage, the commit) behind their own
+  "Show" lines.
 
-Replay adds play/pause, step, a 1–50x speed, a scrubber and "Next decision"; a click on a
-decision jumps to it. A run folder from `cleansweep clean` replays as it is.
+A run folder from `cleansweep clean` replays as it is.
 
 ![Replay of the demo app cleanup: the project tree, and a rolled-back duplicate's evidence](images/studio/project.png)
 
-![Replay of the demo app cleanup: metrics, phase timeline, agent graph and the Manager's decisions](images/studio/replay.png)
+![Replay of the demo app cleanup: the sentence, the controls and steps, and the agent team](images/studio/replay.png)
 
 **Before / after** (from Runs, Home or a replay's header) shows a finished cleanup's result:
 the project's tree before and after side by side (removed files struck through, edited files
@@ -262,68 +272,78 @@ server and no network, for sharing or printing.
 ![Before / after: one change of the demo app cleanup with the decisions behind it](images/studio/before_after_diff.png)
 
 **Presentation mode** ("Present" in a replay's or a before / after header) is for a projector:
-no sidebar, large type, and one plain caption per step ("Investigator #3 checks who calls
-_print_low_stock()"). The tree follows the agent at work and a panel shows that agent and the
-counts so far. Play advances at a fixed pace (1.5 s per step); the space bar (or a clicker's
-Page Down) jumps to the next decision, Shift+space back, the arrow keys one step, P plays or
-pauses, G switches between the project tree and the agent graph, Escape leaves. On before /
-after it shows the summary, then one change per slide (5 s each when playing): the category,
-the Investigator's reason, the decisions as a chain of agents, the side-by-side diff and the
-checks.
+no sidebar, large type, and only the caption ("Investigator #3 checks who calls
+_print_low_stock()", with its reason when it has one), the project tree or the agent graph, and
+the progress line. In the tree only the item at work stands out. Play advances at a fixed pace
+(1.5 s per step); the space bar (or a clicker's Page Down) jumps to the next decision,
+Shift+space back, the arrow keys one step, P plays or pauses, G switches between the project
+tree and the agent graph, Escape leaves. On before / after it shows the summary, then one change
+per slide (5 s each when playing): the category, the Investigator's reason, the side-by-side
+diff and the checks.
 
-![Presentation mode: a caption per step, the tree following the agent at work](images/studio/present.png)
+![Presentation mode: the caption and the tree, the item at work highlighted](images/studio/present.png)
 
 ![Presentation mode on before / after: one change per slide](images/studio/present_after.png)
 
 In the step-back recording, FINAL VERIFY finds the full suite worse than the baseline, and the
-Manager goes back to EXECUTE and undoes only the package that broke a test (outlined on the
-timeline):
+Manager goes back to EXECUTE and undoes only the package that broke a test ("↩ 1 step back"
+after the steps; the decision is under "Show the Manager's decisions"):
 
 ![Replay of a Manager step-back from FINAL VERIFY to EXECUTE](images/studio/step_back.png)
 
-**Compare** puts two runs side by side (result, edits, lines and files removed, test runs, LLM
-calls and tokens, time, packages, step-backs, verdicts, lessons) with their time per phase.
+**Compare** puts two runs side by side: one sentence (what each removed and how long it took),
+the main numbers (result, edits kept, rolled back, lines removed, test runs, LLM calls, time)
+with B − A beside them, and their time per phase; "Show all the numbers" adds files, tokens,
+packages, step-backs, verdicts and lessons.
 
 ![Compare: the offline toy run beside the demo app run](images/studio/compare.png)
 
-**Case studies** (`results/raw/case_studies/`) shows each real project's tests before and after,
-its size, what happened to each candidate by category, the diff and its stats,
-`CLEANUP_REPORT.md`, and the review sheet with the "LLM-reviewer acceptance (independent model,
-blinded)" decisions, votes and reasons. These are an LLM's judgment, not a human review.
+**Case studies** (`results/raw/case_studies/`) lists the real projects by name, each with one
+outcome line. A project opens on one sentence (the changes kept and rolled back, the lines
+removed, the tests before and after), the tests passing before → after, the lines removed and
+the slop found by category, with what was kept and rolled back. The Report tab has
+`CLEANUP_REPORT.md` and, behind "Show the review sheet", the "LLM-reviewer acceptance
+(independent model, blinded)" decisions, votes and reasons: an LLM's judgment, not a human
+review. The Diff tab has the diff, with the changed files behind a "Show" line.
 
-![Case studies: shotgun in safe mode, health before and after, candidates by category](images/studio/case_study.png)
+![Case studies: shotgun in safe mode, its sentence, the tests and the slop by category](images/studio/case_study.png)
 
-**Watch** shows a `cleansweep watch` folder: the commit stream with each decision and its
-reason, open slop over time with the cleans marked, the test budget used and links to the clean
-runs; below it, the simulated watch over recorded histories
-(`results/summary/v2/watch_replay.csv`).
+**Watch** shows a `cleansweep watch` folder: one sentence (how often it cleaned, the slop now,
+the test runs used), the open slop poll by poll with each decision (a chart once there are
+enough polls), and each poll's reason behind a "Show" line, with links to the clean runs; below
+it, the simulated watch over recorded histories in one sentence, its table
+(`results/summary/v2/watch_replay.csv`) behind "Show the table".
 
 ![Watch: the demo app's two commits, one clean and one wait](images/studio/watch.png)
 
-**Results** shows every table under `results/summary/v1` and `v2` (sortable, with its Markdown
-notes) and every figure.
+**Results** has one tab per phase. Each opens on the phase's main figure under one sentence
+(Phase 3: the planted slop the team removed on the out-of-sample seed); "Show all ... figures"
+opens the others, and "Show the tables" every table under `results/summary/` (sortable, with
+its Markdown notes).
 
-![Results: the v1 main table](images/studio/results.png)
+![Results: Phase 3's main figure under its sentence](images/studio/results.png)
 
 **Evaluation** charts the results from the same committed tables, with a Phase 2 | Phase 3
-switch and one tab per experiment. Phase 2: the injection benchmark (each seed and all seeds
-pooled, with 95% CIs, and the paired tests), the ablations (with their LLM requests and
-minutes) and the real-project ablation, the diff audit (wrong edits per method in two tiers,
-confirmed and reading, and by kind), probe strength, the Manager scenarios, the LLM reviewer's
-acceptance and watch. Phase 3: the pre-registered hypotheses, injection, the real projects, the
-audit (with the LLM judge panel) and autonomy and cost. Bars are sorted best first with their
-values at their ends, and each title says which way is better. Anything an LLM judged carries
-an "LLM-judged" label. A table that is not built yet says so. "Present" shows the charts without
+switch and one tab per experiment. Each tab says its answer in one sentence above one chart
+("The team removed 81% of the planted slop and deleted no trap; one-shot deleted 36."), and keeps
+its tables and notes behind "Show the table". Phase 2: the injection benchmark (each seed and all
+seeds pooled, with 95% CIs, and the paired tests), the real-project ablation (with the ablations'
+LLM requests and minutes), the diff audit (wrong edits per method in two tiers, confirmed and
+reading, and by kind), probe strength, the Manager scenarios, the LLM reviewer's acceptance and
+watch. Phase 3: the pre-registered hypotheses, injection, the real projects, the audit (with
+the LLM judge panel) and autonomy and cost. Bars are sorted best first with their values at
+their ends, and each title says which way is better. Anything an LLM judged carries an
+"LLM-judged" label. A table that is not built yet says so. "Present" shows the charts without
 the sidebar, in large type, for a projector; the arrow keys move between the tabs.
 
-![Evaluation: the diff audit tab, wrong edits per method by tier and by kind](images/studio/evaluation.png)
+![Evaluation: the diff audit tab, wrong edits per method by tier](images/studio/evaluation.png)
 
 **Phase 1 archive** (the last entry in the sidebar) has the old Streamlit dashboard's pages, with the same data. **Saved
-reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: its
-numbers, slop meter, plan, Guard verdicts with diffs and the command that restores a quarantined
-file. **Live sweep and replay** lists the v1 runs (stages, the Reviewer's plan, Guard checks,
-diffs, hidden checks, the answer-key score). **Scheduler**, **Baselines**, **Data** and
-**Guard** show the v1 result tables and figures.
+reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: one
+sentence with its numbers, its plan, and behind "Show the Guard's verdicts" each verdict with
+its diff and the command that restores a quarantined file. **Live sweep and replay** lists the
+v1 runs (stages, the Reviewer's plan, Guard checks, diffs, hidden checks, the answer-key score).
+**Scheduler**, **Baselines**, **Data** and **Guard** show the v1 result tables and figures.
 
 ![Saved reports: the v1 demo app sweep](images/studio/saved_report.png)
 

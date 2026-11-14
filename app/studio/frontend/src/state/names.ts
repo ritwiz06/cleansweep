@@ -22,9 +22,11 @@ export function shortDay(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// "Demo app · agent team · Nov 2" (the date only when the run recorded when it started).
-export function runTitle(run: { name: string; target: string | null; kind: string; started?: string | null }): string {
-  return [targetName(run.target) || run.name, KIND_LABEL[run.kind] || run.kind, shortDay(run.started)].filter(Boolean).join(" · ");
+// "Demo app · agent team · Nov 2" (the date only when the run recorded when it started); a watch
+// folder named "watch" goes by the folder it sits in ("watch_demo · watch").
+export function runTitle(run: { name: string; target: string | null; kind: string; started?: string | null; path?: string }): string {
+  const folder = run.kind === "watch" && run.name === "watch" && run.path ? run.path.split("/").slice(-2, -1)[0] : "";
+  return [targetName(run.target) || folder || run.name, KIND_LABEL[run.kind] || run.kind, shortDay(run.started)].filter(Boolean).join(" · ");
 }
 
 // "main_table.csv" -> "Main table"; "aidev_funnel.png" -> "AIDev funnel".

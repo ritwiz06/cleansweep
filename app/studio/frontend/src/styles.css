@@ -1146,6 +1146,16 @@ table.compare th {
   color: var(--text-2);
 }
 
+/* a Manager's step back, after the steps: said, not drawn */
+.run-steps li.back {
+  margin-left: var(--space-2);
+  color: var(--warn-ink);
+}
+
+.run-steps li.back::before {
+  content: none;
+}
+
 .run-steps li.current {
   color: var(--text);
   font-weight: 700;

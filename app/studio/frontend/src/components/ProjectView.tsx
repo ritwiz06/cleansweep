@@ -321,7 +321,7 @@ export function ProjectView({
                     : undefined
                 }
               >
-                {list.length} files{files && !files.complete ? " named" : ""}
+                {list.length} files
               </span>
             </>
           }

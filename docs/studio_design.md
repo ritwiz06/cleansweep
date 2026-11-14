@@ -35,9 +35,9 @@ Surfaces and text: `--page`, `--surface`, `--surface-2`, `--text`, `--text-2`, `
 `--border`, `--grid`. One accent: `--accent` for links, focus rings and the selected tab, and
 `--accent-fill` with `--accent-ink` text for filled controls (the primary button, a selected
 segment). Outcome tones (verdicts, gauges): `--good`, `--warn`, `--bad`, `--info`, each with an
-`-ink` variant for text; a verdict badge is the tone at 14% with its ink text. Phases and chart
-series: `--series-1` … `--series-8`. A phase on the timeline is its series color as a bar on
-top and a tint behind the text, so the label keeps the text color.
+`-ink` variant for text; a verdict badge is the tone at 14% with its ink text. Chart series:
+`--series-1` … `--series-8`; the bars a chart is not about are `--bar-other`. Red and green
+are kept for diffs and for outcomes; a tree's removed lines and counts are muted or "good".
 
 ### Item states
 
@@ -81,11 +81,11 @@ least 4.5:1 and marks at least 3:1 on `--surface` in both themes.
 
 `--motion-fast` 120ms (hover, focus), `--motion` 200ms (state changes, bars),
 `--ease` `cubic-bezier(0.2, 0, 0, 1)`. Motion only shows a change; nothing loops except the
-spinner, the current phase's pulse and a message travelling on the agent graph. With
-`prefers-reduced-motion: reduce` every animation and transition is off, charts skip their
-entry animation and the agent graph shows messages without the travelling dot. Replay speed
-is the reader's choice (1–50×), except in presentation mode, where it is fixed: 1.5 s per
-captioned step of a run and 5 s per before / after slide, whatever the step took in the run.
+spinner and a message travelling on the agent graph. With `prefers-reduced-motion: reduce`
+every animation and transition is off, charts skip their entry animation and the agent graph
+shows messages without the travelling dot. A replay plays at ten times the run's pace; in
+presentation mode the pace is fixed: 1.5 s per captioned step of a run and 5 s per before /
+after slide, whatever the step took in the run.
 
 ## Legibility at 1280×720
 
@@ -102,40 +102,58 @@ captioned step of a run and 5 s per before / after slide, whatever the step took
 
 ## Screens
 
-Every screen opens with the same header: the title (balanced, no orphan word), a one-line
-description (folder paths go in the help, not here), the "What am I looking at?" button (a
-one-line popover; Escape closes it) and the screen's actions on the right. Home offers "Take
-the tour" (a six-step overlay over the demo app's recording: the controls, the numbers, the
-phases, the project, the agents, what next; the card sits beside what it explains, the arrow
-keys move, Escape ends it) and "Try the demo" (the same recording in Replay). The sidebar lists
-the Studio screens; the Phase 1 screens sit behind one "Phase 1 archive" entry at its foot.
+Simple first: each screen answers one question, and its header says the answer in one plain
+sentence. Only what someone would point at while explaining the screen is on it; the rest
+waits behind a tab, the Report tab, a "Show ..." line or a tooltip. Words, not ids: a run is
+"Demo app · agent team · Nov 2" (the id is in the tooltip), and a count reads "Removed 5 of 16".
 
-Numbers: one stats row everywhere, in equal columns: the value (20px, tabular) with a bar when
-it is a share of a budget, and a short sentence-case label under it. A screen's lead number
-(the slop cleaned on a run, the tests on a case study) is 28px and two columns wide. Before /
-after opens with a band of four numbers (lines of code, files, Python files, tests passing) at
-28px with their change, green when it moved the right way. A run's outcome reads as what
-differs ("5 kept · 1 rolled back · −47 lines"); a badge appears only for an unusual result.
+Every screen opens with the same header: the title (balanced, no orphan word), the one-line
+answer (folder paths go in the help, not here), the "What am I looking at?" button (a one-line
+popover; Escape closes it) and the screen's actions on the right. Home is the folder to clean,
+Start (the options open on request) and the recent runs, one outcome line each; it offers "Take
+the tour" (four steps of one sentence over the demo app's recording: the controls, the count,
+the project, the team; the arrow keys move, Escape ends it) and "Try the demo" (the same
+recording in Replay). The sidebar lists the Studio screens; the Phase 1 screens sit behind one
+"Phase 1 archive" entry at its foot.
+
+Run screens (Replay, Live run) have one sticky band: Play, Next decision and the slider (the
+arrow keys move one event, Page Up / Page Down ten), the slop removed as one number with its bar,
+and the steps in words ("✓ Onboard › … › **Investigate** › Plan › …"), the done ones ticked and
+the current one bold. Three tabs follow: Project, Agents, Report. The project tree highlights
+only the item at work and keeps it in view inside the tree's own box; the key is one small line
+at the top of the tree. Beside the tree, the item at work shows its latest decision, with the
+decision card (decisions, evidence, checks) behind "Show details". The agent graph draws each
+agent as its icon and name (its numbers in the tooltip), the agent at work filled with the
+accent and marked "at work", and the latest message as one arrow with its type. The Report tab
+holds the rest: the run's setup, its budgets and probes, the documents, the whole diff, and the
+message board, the items and the work packages behind their "Show" lines.
+
+Numbers: a row of numbers, where a screen still has one, is in equal columns: the value (20px,
+tabular) with a bar when it is a share of a budget, and a short sentence-case label under it.
+Before / after opens with a band of four numbers (lines of code, files, Python files, tests
+passing) at 28px with their change, green when it moved the right way. A run's outcome reads as
+what differs ("5 removed · 1 rolled back · −47 lines"); a badge appears only for an unusual
+result.
 
 Tables: one label map turns column names and snake_case values into words; numbers are
-right-aligned in tabular figures with thousands separators; dates read "Nov 1, 10:05" with the
-full time in the tooltip; outcome columns are chips; names and paths never break, and a wide
-table scrolls inside its card with a shade at the edge that has more.
+right-aligned in tabular figures with thousands separators and one number of decimals per
+column; a table is as wide as its content; dates read "Nov 1, 10:05" with the full time in the
+tooltip; outcome columns are chips; names and paths never break, and a wide table scrolls inside
+its card. Evaluation, Results, Watch and Saved reports keep their tables behind "Show the table".
 
-Charts: horizontal bars, sorted best first, the names on the left (13px) and each value at its
-bar's end (12px semibold, tabular; 0 is written too). The method a chart is about, the team, is
-in the accent and the others grey; several series are named above the plot instead of in a
-legend, a stack carries its total, and a segment its count when it has room. Every title says
-which way is better ("higher is better", "fewer is better").
+Charts: one chart per tab, under the tab's one-sentence answer ("The team removed 81% of the
+planted slop and deleted no trap; one-shot deleted 36."). Horizontal bars, sorted best first, the
+names on the left (13px) and each value at its bar's end (12px semibold, tabular; 0 is written
+too). The method a chart is about, the team, is in the accent and the others grey
+(`--bar-other`, darker in the dark theme); several series are named above the plot instead of in
+a legend, a stack carries its total. Every title says which way is better ("higher is better",
+"fewer is better").
 
 Presentation mode works at 1280×720 and 1920×1080, and at 17px for names and values on charts.
-A replay's presentation shows the project tree or the agent graph (the Project / Agents switch,
-or G). In the tree only the item at work stands out (its tint, its bar and its state in words);
-the others keep their glyph and colored name. The caption's reason wraps to two lines and is
-cut only where a sentence ends, and the step before it follows. The agent graph zooms to fill
-its box (names at about 19px at 1280×720); below 1440px wide the side card leaves and the
-agent's role joins the caption; the agent at work is filled with the accent and marked "at
-work", and the newest message is an accent arrow with its type on it and a dot travelling along
-it. A before / after slide sizes its code to the screen (15 to 22px) with the checks right under
-it. Evaluation has a Present button too: one line ("Injection benchmark · 1 of 12") instead of
-the tabs, moved with the arrow keys.
+A replay's presentation shows only the caption (with its reason when it has one), the project
+tree or the agent graph (the Project / Agents switch, or G), and the progress line. In the tree
+only the item at work stands out (its tint, its bar and its state in words). The agent graph
+zooms to fill its box (names at about 19px at 1280×720). A before / after slide shows one change,
+its reason and its checks, its code sized to the screen (15 to 22px). Evaluation has a Present
+button too: one line ("Injection benchmark · 1 of 12") instead of the tabs, moved with the
+arrow keys.

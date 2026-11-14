@@ -12,6 +12,7 @@ describe("names", () => {
     const run = { name: "20261102_demo_feature_agentic", target: "local:shop_app", kind: "v2", started: "2026-11-02T06:00:32+00:00" };
     expect(runTitle(run)).toBe(`Demo app · agent team · ${shortDay(run.started)}`);
     expect(runTitle({ ...run, kind: "v1", started: null })).toBe("Demo app · Phase 1 sweep");
+    expect(runTitle({ name: "watch", target: null, kind: "watch", path: "raw/watch_demo/watch" })).toBe("watch_demo · watch");
   });
 
   it("titles results files and case studies", () => {

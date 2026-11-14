@@ -2,6 +2,7 @@ import { useState } from "react";
 import { afterHash, api, runHash, useApi, type RunRow } from "../api";
 import { Async, Badge, PageHeader, Status } from "../components/common";
 import { KIND_LABEL, runTitle } from "../state/names";
+import { RunOutcome } from "../components/RunOutcome";
 
 export function useRuns() {
   return useApi<RunRow[]>("runs", () => api("/api/runs"));
@@ -54,14 +55,9 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
             <table className="data runs" aria-label="Runs">
               <thead>
                 <tr>
-                  <th>run</th>
-                  <th>kind</th>
-                  <th>where</th>
-                  <th>target</th>
-                  <th>mode</th>
-                  <th>model</th>
-                  <th>result</th>
-                  <th>open</th>
+                  <th>Run</th>
+                  <th>Result</th>
+                  <th>Open</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,18 +65,14 @@ export function RunsScreen({ kinds = ["v2", "v1", "watch"], title = "Runs" }: { 
                   .filter((r) => kinds.includes(r.kind) && (!root || r.root === root) && (!kind || r.kind === kind))
                   .map((r) => (
                     <tr key={`${r.root}/${r.path}`} data-run={r.name}>
+                      {/* the folder, target, mode and model are in the name's tooltip */}
+                      <td title={[r.name, `${r.root}/${r.path}`, [r.target, r.mode && `${r.mode} mode`, r.model && `model ${r.model}`].filter(Boolean).join(" · ")].filter(Boolean).join("\n")}>
+                        {runTitle(r)} {r.live && <Badge tone="warn">live</Badge>}
+                      </td>
                       <td>
-                        <span title={r.name}>{runTitle(r)}</span>
-                        {r.live && <Badge tone="warn">live</Badge>}
+                        {r.verdict ? <Status value={r.verdict} /> : r.finished ? "finished" : <span className="muted">unfinished</span>}{" "}
+                        {r.outcome && <RunOutcome verdict="everything runs" kept={r.outcome.kept} rolledBack={r.outcome.rolled_back} lines={r.outcome.lines_removed} />}
                       </td>
-                      <td>{KIND_LABEL[r.kind]}</td>
-                      <td className="muted">
-                        {r.root}/{r.path.split("/").slice(0, -1).join("/")}
-                      </td>
-                      <td>{r.target || "-"}</td>
-                      <td>{r.mode || "-"}</td>
-                      <td>{r.model || "-"}</td>
-                      <td>{r.verdict ? <Status value={r.verdict} /> : r.finished ? "finished" : <span className="muted">unfinished</span>}</td>
                       <td className="actions">
                         {r.kind === "watch" ? (
                           <a href={`#/watch?${new URLSearchParams({ root: r.root, path: r.path })}`}>Watch</a>
