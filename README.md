@@ -255,7 +255,7 @@ Skill_Seekers case study in safe mode; two product names in that project's code 
 recording with relative paths and refuses one with a secret left in it.
 
 Screens: **Runs** (every recording), **Launch** (clean, sweep or watch a project), **Live run** and
-**Replay** (phase timeline with step-backs and the Manager's decisions, the agent graph, the
+**Replay** (step timeline with step-backs and the Manager's decisions, the agent graph, the
 message board, the item board, work packages with diffs, tests, probes and checks, metrics and
 budget gauges; Replay adds play/pause, step, 1–50x, a scrubber and "next decision"), **Compare**,
 **Case studies** (health before and after, diffs, report, review sheet with the

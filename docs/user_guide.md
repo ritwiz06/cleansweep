@@ -29,12 +29,12 @@ cleansweep clean tests/fixtures/toy_repo --no-llm   # a first try, offline, on t
 ```
 
 The original folder is never changed. `clean` copies the project into a scratch workspace next
-to it (`<project>-cleanup-<time>/`, or `--out`) and the agent team works in phases: ONBOARD
-(what the project is and how its tests run), BASELINE (the tests three times, so flaky tests
-are known), AUDIT (the detectors list candidates), INVESTIGATE (each candidate gets a verdict:
-safe, suggest or drop, with evidence), PLAN (work packages of up to four edits), EXECUTE (one
+to it (`<project>-cleanup-<time>/`, or `--out`) and the agent team works in eight steps: Onboard
+(what the project is and how its tests run), Baseline (the tests three times, so flaky tests
+are known), Audit (the detectors list candidates), Investigate (each candidate gets a verdict:
+safe, suggest or drop, with evidence), Plan (work packages of up to four edits), Execute (one
 package at a time: apply, run the related tests and the probes, keep it or roll it back),
-FINAL VERIFY (the full suite against the baseline) and REPORT. The terminal shows each phase
+Final verify (the full suite against the baseline) and Report. The terminal shows each step
 and each package as it ends:
 
 ```
@@ -93,7 +93,7 @@ Inside that container the project's code runs in the container itself, with the 
 LLM needs.
 
 If a run is interrupted (Ctrl-C, a crash, the laptop sleeping), continue it from its last
-finished phase or work package with the options it started with:
+finished step or work package with the options it started with:
 
 ```bash
 cleansweep clean --resume path/to/project-cleanup-<time>   # or just the folder's name
@@ -299,7 +299,7 @@ after the steps; the decision is under "Show the Manager's decisions"):
 
 **Compare** puts two runs side by side: one sentence (what each removed and how long it took),
 the main numbers (result, edits kept, rolled back, lines removed, test runs, LLM calls, time)
-with B − A beside them, and their time per phase; "Show all the numbers" adds files, tokens,
+with B − A beside them, and their time per step; "Show all the numbers" adds files, tokens,
 packages, step-backs, verdicts and lessons.
 
 ![Compare: the offline toy run beside the demo app run](images/studio/compare.png)

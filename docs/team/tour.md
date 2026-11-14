@@ -60,7 +60,7 @@ report <- hidden checks (evaluation only) <- Guard: apply, verify, keep or roll 
 adapts AutoData (a multi-agent system for web data collection, NeurIPS 2025): a Manager and two
 squads that talk through a message board.
 
-The Manager walks through eight steps (the code calls them phases):
+The Manager walks through eight steps:
 
 | Step | What happens |
 |---|---|

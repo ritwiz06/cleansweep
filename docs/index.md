@@ -19,7 +19,7 @@ between packages (`core/models.py`, `core/contracts.py`), the events and every s
 
 **[Agentic design](agentic_design.md).** The agent team (Phase 2) behind `cleansweep clean`
 and `method=agentic`: how it adapts AutoData's manager, squads and OHCache to code cleanup, the
-Manager's phases, the 10 agents and their budgets, the message board and artifact cache,
+Manager's steps, the 10 agents and their budgets, the message board and artifact cache,
 lessons, coverage-guided probes, the safety rules, the command line and the ablations.
 
 **[SlopBench data card](slopbench.md).** The slop-injection benchmark: what a seed plants, how it
