@@ -890,8 +890,18 @@ three are recorded as timed out, as pre-registered (Deviation 5).
 - **H1** fails on its third part only. The team's wrong-edit shares are far lower than Aider's in
   both tiers, but Aider keeps almost nothing (13 kept code edits on 14 finished runs, 22 lines), so
   it changes no held-out test, while the team changes held-out behavior on 4 of 10 paired projects.
+- **H2** has no power here. On 9 of the 10 INJECT repositories, the team's and the resolver-off
+  arm's final diffs are byte-identical: the resolver changed no decision there, and the shared
+  reply cache made the two arms replay the same run. The tenth, gpt4free, timed out in both arms
+  and is excluded. So "3 vs 3" is one run counted twice; it does not show that the resolver has
+  no effect.
 - **H3** is supported at exactly the pre-registered rule, but the wrong-edit totals tie (16 vs 16),
-  so a single project could flip it; we report it as supported by a tie.
+  so a single project could flip it; we report it as supported by a tie. The test pairs the 20
+  projects where both arms finished: on 9 INJECT repositories, 4 for batching and 3 for the team;
+  on 11 REAL projects, 12 and 13. The audit table's 48 wrong REAL edits for batching are those
+  12 plus 36 on openbench. There the team's run used its whole request budget (timed out), so the
+  pair is excluded, while batching finished with 36 wrong edits, 33 of them deleted abstract
+  `placeholder_ground_truth` overrides. Batching stays off by default.
 - **H4** is at the threshold. vllm's first pass-1 run timed out on battery and was rerun on AC under
   a rule written before the timeout (Deviation 2); with the battery run the rate is 26/30 = 0.867.
   Pass 2 after the fixes (v2.1.2) completed all 3 of pass 1's failures (in-sample).
