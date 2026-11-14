@@ -900,8 +900,8 @@ three are recorded as timed out, as pre-registered (Deviation 5).
   projects where both arms finished: on 9 INJECT repositories, 4 for batching and 3 for the team;
   on 11 REAL projects, 12 and 13. The audit table's 48 wrong REAL edits for batching are those
   12 plus 36 on openbench. There the team's run used its whole request budget (timed out), so the
-  pair is excluded, while batching finished and deleted 35 abstract `placeholder_ground_truth`
-  overrides. Batching stays off by default.
+  pair is excluded, while batching finished with 36 wrong edits, 33 of them deleted abstract
+  `placeholder_ground_truth` overrides. Batching stays off by default.
 - **H4** is at the threshold. vllm's first pass-1 run timed out on battery and was rerun on AC under
   a rule written before the timeout (Deviation 2); with the battery run the rate is 26/30 = 0.867.
   Pass 2 after the fixes (v2.1.2) completed all 3 of pass 1's failures (in-sample).
