@@ -173,9 +173,18 @@ function message(e: StudioEvent, s: RunState): Caption | null {
     case "validation": {
       const pr = b.probes;
       if (!pr) return { agent: from, text: `checks ${b.package}: ${b.ok ? "passed" : "failed"}` };
-      return pr.same
-        ? { agent: from, text: `probes ${b.package} with ${plural(pr.n_cases, "case")}: same behavior before and after` }
-        : { agent: from, text: `probes ${b.package}: behavior changed in ${(pr.mismatches || []).length} of ${plural(pr.n_cases, "case")}` };
+      if (pr.same) return { agent: from, text: `probes ${b.package} with ${plural(pr.n_cases, "case")}: same behavior before and after` };
+      // the first cases that differ, as "half_up_0125: 0.13 before, 0.12 after"
+      const differ = (pr.mismatches || [])
+        .map((m: string) => /\[([^\]]+)\]: before (.+), after (.+)$/.exec(String(m)))
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((m: RegExpExecArray) => `${m[1]}: ${m[2]} before, ${m[3]} after`);
+      return {
+        agent: from,
+        text: `probes ${b.package}: behavior changed in ${(pr.mismatches || []).length} of ${plural(pr.n_cases, "case")}`,
+        ...(differ.length ? { detail: `${differ.join("; ")}.` } : {}),
+      };
     }
     case "failure":
       return { agent: from, text: `sends ${b.package} to the Fixer: its ${b.stage} failed` };

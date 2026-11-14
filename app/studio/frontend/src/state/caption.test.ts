@@ -32,6 +32,9 @@ describe("captions", () => {
     expect(text).toContain("Investigator #1 checks who uses bookshelf/inventory_old.py");
     expect(text).toContain("Tester measures the baseline (3 runs): 12 pass, 0 fail, 0 flaky");
     expect(text).toContain("Validator probes P4: behavior changed in 4 of 20 cases");
+    // the probe caption says which cases differ, before and after
+    const probe = steps.find((s) => captionText(s) === "Validator probes P4: behavior changed in 4 of 20 cases");
+    expect(probe?.detail).toContain("half_up_0125: 0.13 before, 0.12 after");
     expect(text).toContain("Engineer replaces _round_money() with the original it duplicates");
     expect(text).toContain("Investigator #7 leaves cmd_add() as a suggestion for a person");
     expect(text[text.length - 1]).toBe("Manager ends the run: everything runs, 5 edits applied");
