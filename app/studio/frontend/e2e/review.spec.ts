@@ -52,7 +52,7 @@ const SCREENS: [string, string, Prepare?][] = [
   ["present-evaluation", "evaluation?present=1"],
   ["tour", `replay?${DEMO_Q}&tour=1`, async (page) => {
     await expect(page.getByRole("dialog")).toContainText("Step 1 of");
-    for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowRight");
+    for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
   }],
 ];
 

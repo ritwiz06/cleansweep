@@ -1154,6 +1154,7 @@ table.compare th {
 /* "Show ..." lines: the detail a reader opens on purpose */
 .show-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin: var(--space-3) 0;
 }
