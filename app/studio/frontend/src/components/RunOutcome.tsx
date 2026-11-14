@@ -1,7 +1,7 @@
 import { plural } from "../state/labels";
 import { Status } from "./common";
 
-// What a finished run did, in words ("5 kept · 1 rolled back · −47 lines"). A badge appears only
+// What a finished run did, in words ("5 removed · 1 rolled back · −47 lines"). A badge appears only
 // when the result is not the usual one (not verified, stopped, nothing applied...).
 export function RunOutcome({
   verdict,
@@ -17,7 +17,7 @@ export function RunOutcome({
   finished?: boolean;
 }) {
   const parts: string[] = [];
-  if (kept !== undefined && kept !== null) parts.push(`${kept} kept`);
+  if (kept !== undefined && kept !== null) parts.push(`${kept} removed`);
   if (rolledBack) parts.push(`${rolledBack} rolled back`);
   if (lines) parts.push(`−${plural(lines, "line")}`);
   const unusual = Boolean(verdict) && verdict !== "everything runs";

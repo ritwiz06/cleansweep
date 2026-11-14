@@ -27,6 +27,8 @@ test("home: clean a folder with readable errors, and the recent runs", async ({ 
   await folder.fill("/no/such/folder");
   await start.click();
   await expect(page.getByRole("alert")).toContainText("There is no folder at /no/such/folder.");
+  // the options are one line until opened
+  await page.getByText(/^Options: Safe mode, auto sandbox/).click();
   await page.getByLabel("Mode").getByText("Thorough").click();
   await expect(page.getByRole("radio", { name: "Thorough" })).toBeChecked();
   await expect(page.getByText("Also LLM rewrites")).toBeVisible();

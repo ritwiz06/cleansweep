@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { afterHash, api, post, runHash, useApi, type Loaded, type RunRow } from "../api";
-import { Async, Badge, PageHeader } from "../components/common";
+import { Async, Badge, PageHeader, ShowMore } from "../components/common";
 import { RunOutcome } from "../components/RunOutcome";
 import { runTitle } from "../state/names";
 import { useRuns } from "./Runs";
@@ -89,14 +89,12 @@ function RecentRuns({ runs, demo }: { runs: Loaded<RunRow[]>; demo: RunRow | nul
                     {runTitle(r)} {r.live && <Badge tone="warn">running</Badge>}
                   </span>
                   <span className="run-actions">
-                    <RunOutcome verdict={r.verdict} kept={r.outcome?.kept} rolledBack={r.outcome?.rolled_back} lines={r.outcome?.lines_removed} finished={r.finished} />
                     {r.live && <a href={runHash(r, "live")}>Follow live</a>}
                     <a href={runHash(r)}>Open</a>
                     {r.finished && <a href={afterHash(r)}>Before / after</a>}
                   </span>
                   <span className="run-meta">
-                    {r.target || "?"} · {r.mode || "?"} mode · model {r.model || "none"}
-                    {r.root === "replay" ? " · shipped recording" : ""}
+                    <RunOutcome verdict={r.verdict} kept={r.outcome?.kept} rolledBack={r.outcome?.rolled_back} lines={r.outcome?.lines_removed} finished={r.finished} />
                   </span>
                 </div>
               ))}
@@ -200,34 +198,36 @@ export function Home() {
             ))}
           </div>
         )}
-        <div className="clean-options">
-          <fieldset>
-            <legend>Mode</legend>
-            <Segmented name="Mode" value={mode} options={MODES.map(([k, l]) => [k, l])} onChange={setMode} />
-            <span className="option-hint">{MODES.find(([k]) => k === mode)?.[2]}</span>
-          </fieldset>
-          <fieldset>
-            <legend>Sandbox</legend>
-            <Segmented
-              name="Sandbox"
-              value={sandbox}
-              options={(options.data?.sandboxes || ["auto", "docker", "none"]).map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)])}
-              onChange={setSandbox}
-              disabled={sandboxReady ? [] : ["docker"]}
-            />
-            <span className="option-hint">
-              {SANDBOX_HINT[sandbox]}
-              {!sandboxReady && options.data && " The Docker sandbox is not in this version yet."}
-            </span>
-          </fieldset>
-          <fieldset>
-            <legend>LLM</legend>
-            <label className="check">
-              <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} /> Offline: the agents decide by rules
-            </label>
-            <span className="option-hint">Otherwise the LLM in .env is used, if a key is set. More options on the Launch screen.</span>
-          </fieldset>
-        </div>
+        <ShowMore label={`Options: ${MODES.find(([k]) => k === mode)?.[1]} mode, ${sandbox} sandbox${offline ? ", offline" : ""}`}>
+          <div className="clean-options">
+            <fieldset>
+              <legend>Mode</legend>
+              <Segmented name="Mode" value={mode} options={MODES.map(([k, l]) => [k, l])} onChange={setMode} />
+              <span className="option-hint">{MODES.find(([k]) => k === mode)?.[2]}</span>
+            </fieldset>
+            <fieldset>
+              <legend>Sandbox</legend>
+              <Segmented
+                name="Sandbox"
+                value={sandbox}
+                options={(options.data?.sandboxes || ["auto", "docker", "none"]).map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)])}
+                onChange={setSandbox}
+                disabled={sandboxReady ? [] : ["docker"]}
+              />
+              <span className="option-hint">
+                {SANDBOX_HINT[sandbox]}
+                {!sandboxReady && options.data && " The Docker sandbox is not in this version yet."}
+              </span>
+            </fieldset>
+            <fieldset>
+              <legend>LLM</legend>
+              <label className="check">
+                <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} /> Offline: the agents decide by rules
+              </label>
+              <span className="option-hint">Otherwise the LLM in .env is used, if a key is set. More options on the Launch screen.</span>
+            </fieldset>
+          </div>
+        </ShowMore>
         {error && (
           <div className="state error home-error" role="alert">
             {error}
