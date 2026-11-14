@@ -80,3 +80,70 @@ for (const theme of ["light", "dark"]) {
     expect(await serious(page)).toEqual([]);
   });
 }
+
+// The screens speak of phases, not versions: a "v1", "v2", "v3" or "v2.1" shows only inside a
+// path or file name.
+const VERSION_TOKEN = /\bv[123](\.[0-9]+)*\b/g;
+const EVAL_TABS = ["injection", "ablations", "audit", "probes", "manager", "reviewer", "watch", "v3-hypotheses", "v3-injection", "v3-real", "v3-audit", "v3-autonomy"];
+const MORE_ROUTES = ["sweeps", "scheduler", "baselines", "data", "guard", "archive"];
+
+function versionTokens(text: string): string[] {
+  const found: string[] = [];
+  for (const word of text.split(/\s+/)) {
+    const path = /[/\\]/.test(word) || /\.(py|csv|json|png|md)\W*$/.test(word);
+    if (!path) found.push(...(word.match(VERSION_TOKEN) ?? []));
+  }
+  return found;
+}
+
+// opens every "Show ..." line, nested ones too
+async function openAll(page: Page) {
+  const closed = page.locator("details.show-more:not([open]) > summary");
+  for (let i = 0; i < 40 && (await closed.count()) > 0; i++) await closed.first().click();
+  await expect(page.locator(".state.loading")).toHaveCount(0);
+}
+
+test("no screen, Evaluation tab, Results tab, tour or help text shows a version number", async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const seen: string[] = [];
+  const scan = async (label: string) => {
+    const text = await page.evaluate(() => document.body.innerText);
+    seen.push(...versionTokens(text).map((t) => `${label}: ${t}`));
+  };
+  const routes = [...SCREENS.map(([, route]) => route), ...EVAL_TABS.map((tab) => `evaluation?tab=${tab}`), ...MORE_ROUTES];
+  for (const route of routes) {
+    await ready(page, route, route);
+    await openAll(page);
+    await scan(route);
+    const help = page.getByRole("button", { name: "What am I looking at?" });
+    if (await help.count()) {
+      await help.first().click();
+      await scan(`${route} (help)`);
+    }
+  }
+  await ready(page, "results", "results");
+  for (const phase of ["Phase 1", "Phase 2", "Phase 3"]) {
+    await page.getByRole("tab", { name: phase }).click();
+    await openAll(page);
+    await scan(`results: ${phase}`);
+    // every table of the phase, one after the other
+    const pick = page.getByLabel("Table", { exact: true });
+    const count = await pick.locator("option").count();
+    for (let i = 0; i < count; i++) {
+      await pick.selectOption({ index: i });
+      await expect(page.locator(".state.loading")).toHaveCount(0);
+      await scan(`results: ${phase}, table ${i + 1}`);
+    }
+  }
+  await page.goto(`/#/replay?${Q}&tour=1`);
+  const tour = page.getByRole("dialog");
+  await expect(tour).toContainText("Step 1 of");
+  for (let step = 0; step < 12; step++) {
+    await scan(`tour step ${step + 1}`);
+    const next = tour.getByRole("button", { name: "Next" });
+    if (!(await next.count())) break;
+    await next.click();
+  }
+  expect(seen).toEqual([]);
+});
