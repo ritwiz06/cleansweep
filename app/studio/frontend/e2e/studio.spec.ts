@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { scrubTo, toEnd } from "./replay";
 
 const V2 = "20261101_toy_clean_offline";
 const V1 = "20261030_demo_feature_advisory_v1";
@@ -11,16 +12,6 @@ const DEMO_AFTER = /^Before \/ after: Demo app · agent team/;
 
 async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
-}
-
-// Moves a replay to event n on the timeline, with the keys.
-async function scrubTo(page: Page, n: number) {
-  const slider = page.getByRole("slider", { name: "Scrubber" });
-  await slider.focus();
-  await page.keyboard.press("Home");
-  for (let i = 0; i < Math.floor(n / 10); i++) await page.keyboard.press("PageDown");
-  for (let i = 0; i < n % 10; i++) await page.keyboard.press("ArrowRight");
-  await expect(page.getByLabel("Replay controls")).toContainText(`event ${n} of`);
 }
 
 test("home: clean a folder with readable errors, and the recent runs", async ({ page }) => {
@@ -59,20 +50,19 @@ test("the tour walks through the replay screen and Escape ends it", async ({ pag
   await page.getByRole("link", { name: "Take the tour" }).click();
   await expect(page.getByRole("heading", { name: DEMO_REPLAY })).toBeVisible();
   const tour = page.getByRole("dialog");
-  await expect(tour).toContainText("Step 1 of 6");
-  await expect(tour.getByRole("heading", { name: "Play the recording" })).toBeVisible();
+  await expect(tour).toContainText("Step 1 of 4");
+  await expect(tour.getByRole("heading", { name: "Play the run" })).toBeVisible();
   // the tour shows the run part-way, and the card takes the focus
-  await expect(page.getByLabel("Replay controls")).not.toContainText("event 0 of");
+  await expect(page.locator(".run-scrub")).not.toHaveAttribute("aria-valuenow", "0");
   await expect(tour.getByRole("button", { name: "Next" })).toBeFocused();
   await tour.getByRole("button", { name: "Next" }).click();
-  await expect(tour).toContainText("Step 2 of 6");
+  await expect(tour).toContainText("Step 2 of 4");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
-  await page.keyboard.press("ArrowRight");
-  await expect(tour.getByRole("heading", { name: "The agent team" })).toBeVisible();
+  await expect(tour.getByRole("heading", { name: "The team" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Agents" })).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("ArrowLeft");
-  await expect(tour).toContainText("Step 4 of 6");
+  await expect(tour).toContainText("Step 3 of 4");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page).not.toHaveURL(/tour=1/);
@@ -102,42 +92,45 @@ test("runs list offers the shipped recordings and opens a replay", async ({ page
   await expect(page.getByRole("heading", { name: TOY_REPLAY })).toBeVisible();
 });
 
-test("replay of a v2 run: transport, timeline, agents, boards, packages and report", async ({ page }) => {
+test("replay of a v2 run: one sentence, the controls, the steps, the agents and the report", async ({ page }) => {
   await open(page, `replay?root=replay&path=${V2}`);
-  const transport = page.getByLabel("Replay controls");
-  await expect(transport).toContainText("event 0 of 234");
+  const slider = page.getByRole("slider", { name: "Scrubber" });
+  await expect(slider).toHaveAttribute("aria-valuemax", "234");
+  await expect(slider).toHaveAttribute("aria-valuenow", "0");
+  await expect(page.locator(".page-head")).toContainText("The team is reading the project.");
   await page.getByRole("tab", { name: "Agents" }).click();
   await page.getByRole("button", { name: "Next decision" }).click();
+  await page.getByText("Show the Manager's decisions and the latest thoughts").click();
   await expect(page.getByLabel("Manager decisions")).toContainText("P1 kept");
-  await page.getByRole("button", { name: "Step" }).click();
-  await page.getByLabel("Speed").fill("50");
   await page.getByRole("button", { name: "Play" }).click();
   await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
   await page.getByRole("button", { name: "Pause" }).click();
-  await page.getByRole("button", { name: "Jump to the end" }).click();
-  await expect(transport).toContainText("event 234 of 234");
+  await toEnd(page);
   await expect(page.locator(".page-title")).toContainText("everything runs");
-  await expect(page.getByLabel("Phase timeline")).toContainText("EXECUTE");
-  await expect(page.locator('[data-agent="investigator"]')).toContainText("×");
+  await expect(page.locator(".page-head")).toContainText(/^.*Done: the team removed \d+ of \d+ candidates/);
+  await expect(page.getByLabel("Steps")).toContainText("✓ Execute");
+  // an agent shows its icon and name; its numbers are in the tooltip
+  await expect(page.locator('[data-agent="investigator"]')).toHaveAttribute("title", /instances · \d+ tool steps/);
   await expect(page.getByLabel("Agent graph")).toContainText("reporter");
 
-  await page.getByRole("tab", { name: /Message board/ }).click();
+  // the rest is in the Report tab, behind its own "Show" lines
+  await page.getByRole("tab", { name: "Report" }).click();
+  await expect(page.getByLabel("Run numbers")).toContainText("Test runs used");
+  await page.getByText(/^Show the message board/).click();
   await page.getByLabel("Message type").selectOption("verdict");
   await expect(page.locator(".message").first()).toContainText("verdict");
 
-  await page.getByRole("tab", { name: /Items/ }).click();
+  await page.getByText(/^Show the items/).click();
   await expect(page.getByLabel("Item board")).toContainText("Rolled back");
   await page.locator(".stage-kept .item-card").first().click();
   await expect(page.getByRole("dialog")).toContainText("Evidence chain");
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("tab", { name: /Work packages/ }).click();
+  await page.getByText(/^Show the work packages/).click();
   await page.locator(".package-row", { hasText: "P1" }).first().click();
   await expect(page.locator(".package-detail")).toContainText("import os");
   await page.getByRole("button", { name: /Show blueprint.md/ }).click();
   await expect(page.locator(".package-main")).toContainText("P1");
-
-  await page.getByRole("tab", { name: "Report" }).click();
   await expect(page.locator(".markdown").first()).toContainText("everything runs");
 });
 
@@ -151,7 +144,11 @@ test("project view: the tree follows the events, and a node shows its evidence, 
   await expect(unit).toHaveClass(/st-investigating/);
   await expect(unit.locator('svg[data-role="investigator"]')).toHaveCount(1);
   await expect(unit.getByRole("treeitem")).toHaveAccessibleName(/investigating, last Investigator #3/);
-  await page.getByRole("button", { name: "Jump to the end" }).click();
+  // only the item at work is highlighted, and the side card says what happened to it last
+  await expect(unit).toHaveClass(/at-work/);
+  await expect(tree.locator(".tree-row.at-work")).toHaveCount(1);
+  await expect(page.locator(".pointer-last")).toBeVisible();
+  await toEnd(page);
   await expect(tree.locator('[data-key="file:bookshelf/inventory_old.py"]')).toHaveClass(/st-kept/);
   await expect(unit).toHaveClass(/st-kept/);
   await tree.getByRole("treeitem", { name: /^_round_money\(\)/ }).click();
@@ -160,7 +157,8 @@ test("project view: the tree follows the events, and a node shows its evidence, 
   await expect(details).toContainText("Evidence chain");
   await expect(details.locator(".diff")).toContainText("def _round_money");
   await expect(details).toContainText("differ");
-  await page.getByRole("tab", { name: /Items/ }).click();
+  await page.getByRole("tab", { name: "Report" }).click();
+  await page.getByText(/^Show the items/).click();
   await expect(page.getByLabel("Item board")).toContainText("Suggest");
 });
 
@@ -271,8 +269,9 @@ test("export: one self-contained HTML report that opens from file:// with no ser
 
 test("an artifact link opens the cached artifact", async ({ page }) => {
   await open(page, `replay?root=replay&path=${V2}`);
-  await page.getByRole("button", { name: "Jump to the end" }).click();
-  await page.getByRole("tab", { name: /Message board/ }).click();
+  await toEnd(page);
+  await page.getByRole("tab", { name: "Report" }).click();
+  await page.getByText(/^Show the message board/).click();
   await page.getByLabel("Message type").selectOption("package_applied");
   await page.locator(".message .artifact").first().click();
   await expect(page.getByRole("dialog")).toContainText("diff");
@@ -451,18 +450,21 @@ test("every shipped recording through every screen, in both themes at 1280x720",
     for (const run of shipped) {
       const q = `root=replay&path=${run.path}`;
       await open(page, `replay?${q}`);
-      await page.getByRole("button", { name: "Jump to the end" }).click();
-      await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
+      await expect(page.getByRole("slider", { name: "Scrubber" })).toBeVisible();
+      await toEnd(page);
       if (run.kind === "v1") {
         await checkScreen(page, `${run.name} replay`, `${theme}-${run.name}-replay`);
         await open(page, `reports?root=replay&path=${run.path}/report.json`);
         await checkScreen(page, `${run.name} saved report`, `${theme}-${run.name}-report`);
         continue;
       }
-      for (const tab of ["Project", "Agents", "Message board", "Items", "Work packages", "Report"]) {
-        await page.getByRole("tab", { name: new RegExp(`^${tab}`) }).click();
-        await checkScreen(page, `${run.name} ${tab}`, `${theme}-${run.name}-${tab.replace(" ", "_")}`);
+      for (const tab of ["Project", "Agents", "Report"]) {
+        await page.getByRole("tab", { name: tab }).click();
+        await checkScreen(page, `${run.name} ${tab}`, `${theme}-${run.name}-${tab}`);
       }
+      // the Report tab's "Show" lines open the message board, the items and the work packages
+      for (const more of ["message board", "items", "work packages"]) await page.getByText(new RegExp(`^Show the ${more}`)).click();
+      await checkScreen(page, `${run.name} Report, all shown`, `${theme}-${run.name}-Report-all`);
       for (const [route, view] of [[`after?${q}`, "after"], [`present?${q}`, "present"], [`after?${q}&present=1`, "present_after"]]) {
         await open(page, route);
         await checkScreen(page, `${run.name} ${view}`, `${theme}-${run.name}-${view}`);
@@ -510,11 +512,7 @@ test("every screen renders in both themes at 1280x720", async ({ page }) => {
       await expect(page.locator("main h2").first()).toBeVisible();
       await expect(page.locator(".state.loading")).toHaveCount(0);
       await expect(page.locator(".state.error")).toHaveCount(0);
-      const end = page.getByRole("button", { name: "Jump to the end" });
-      if (await end.count()) {
-        await end.click(); // a replay is shown at its last event
-        await expect(page.getByLabel("Replay controls")).toContainText(/event (\d+) of \1(?!\d)/);
-      }
+      await toEnd(page); // a replay is shown at its last event
       const width = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(width, `${route} fits 1280 px`).toBeLessThanOrEqual(1280);
       await page.screenshot({ path: `test-results/screens/${theme}-${route.split("?")[0]}-${routes.indexOf(route)}.png` });

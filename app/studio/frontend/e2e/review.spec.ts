@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { scrubTo } from "./replay";
 
 // Design review screenshots: every screen in both themes at 1280x720 and 1920x1080, named
 // <screen>-<theme>-<width>.png. They show the real data: the shipped recordings, and a results
@@ -15,15 +16,8 @@ test.skip(!OUT, "set REVIEW_SHOTS=<folder> to take the design review screenshots
 
 type Prepare = (page: Page) => Promise<void>;
 
-// moves a replay to event n with the timeline's keys, then lets go of the focus
-const scrub = (count: number): Prepare => async (page) => {
-  const slider = page.getByRole("slider", { name: "Scrubber" });
-  await slider.focus();
-  await page.keyboard.press("Home");
-  for (let i = 0; i < Math.floor(count / 10); i++) await page.keyboard.press("PageDown");
-  for (let i = 0; i < count % 10; i++) await page.keyboard.press("ArrowRight");
-  await slider.blur();
-};
+// moves a replay to event n with the slider's keys
+const scrub = (count: number): Prepare => (page) => scrubTo(page, count);
 
 const SCREENS: [string, string, Prepare?][] = [
   ["home", "home"],

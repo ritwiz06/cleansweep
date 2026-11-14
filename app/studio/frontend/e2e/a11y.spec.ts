@@ -12,6 +12,7 @@ const SCREENS: [string, string][] = [
   ["live run", `run?${Q}`],
   ["replay: project", `replay?${Q}`],
   ["replay: agents", `replay?${Q}`],
+  ["replay: report", `replay?${Q}`],
   ["before / after", `after?${Q}`],
   ["compare", `compare?a=replay:20261101_toy_clean_offline&b=replay:${DEMO}`],
   ["case studies", "cases?name=proj_a"],
@@ -47,6 +48,10 @@ async function ready(page: Page, route: string, label: string) {
     for (let i = 0; i < 20; i++) await page.keyboard.press("PageDown");
   }
   if (label === "replay: agents") await page.getByRole("tab", { name: "Agents" }).click();
+  if (label === "replay: report") {
+    await page.getByRole("tab", { name: "Report" }).click();
+    for (const more of ["message board", "items", "work packages"]) await page.getByText(new RegExp(`^Show the ${more}`)).click();
+  }
   if (label.startsWith("present")) await page.keyboard.press("Space");
 }
 

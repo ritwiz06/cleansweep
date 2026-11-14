@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { captionFor, captionSteps, captionText, itemLabel, short } from "./caption";
+import { captionFor, captionSteps, captionText, itemLabel, runSentence, short } from "./caption";
 import { fold, type StudioEvent } from "./fold";
 import { afterSlides, nextDecisionStep } from "./present";
 import { parseDiff } from "./diff";
@@ -16,6 +16,14 @@ const ev = (kind: string, agent: string, payload: object, extra: Partial<StudioE
 });
 
 describe("captions", () => {
+  it("says where a run is in one sentence", () => {
+    const { events } = recording("20261102_demo_feature_agentic");
+    const at = (phase: string) => fold(events.slice(0, events.findIndex((e) => e.kind === "phase_change" && e.payload.to === phase) + 1));
+    expect(runSentence(fold([]))).toBe("The team is reading the project.");
+    expect(runSentence(at("INVESTIGATE"))).toBe("The team is investigating 16 candidates; 0 removed so far.");
+    expect(runSentence(fold(events))).toBe("Done: the team removed 5 of 16 candidates, 1 rolled back; everything still runs.");
+  });
+
   it("says each step of the demo recording in one plain line", () => {
     const steps = captionSteps(recording("20261102_demo_feature_agentic").events);
     const text = steps.map(captionText);

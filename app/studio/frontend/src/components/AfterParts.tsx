@@ -4,7 +4,7 @@ import type { FileTree, Metrics, Pair } from "../state/beforeAfter";
 import type { DiffFile } from "../state/diff";
 import type { RunState } from "../state/fold";
 import { AgentTag } from "./AgentIcon";
-import { Card, Empty, Status } from "./common";
+import { Card, Empty, ShowMore, Status } from "./common";
 import { SideBySide } from "./SideBySide";
 import { StateChip } from "./states";
 
@@ -202,7 +202,9 @@ export function TreeCard({ title, tree, selected, onSelect, all }: { title: stri
   );
 }
 
-export function Pointer({ note, state, n = 0 }: { note: HunkNote; state: RunState; n?: number }) {
+// The decisions, evidence and checks behind a change; `brief` shows the latest decision only, with
+// the rest behind "Show details".
+export function Pointer({ note, state, n = 0, brief = false }: { note: HunkNote; state: RunState; n?: number; brief?: boolean }) {
   const marker = n > 0 && (
     <span className="pointer-n" aria-hidden>
       {n}
@@ -227,19 +229,14 @@ export function Pointer({ note, state, n = 0 }: { note: HunkNote; state: RunStat
       {note.items.map((id) => {
         const item = state.items[id];
         const pkg = item.pkg ? state.packages[item.pkg] : null;
-        return (
-          <div key={id} className="pointer-item">
-            <div className="pointer-head">
-              <span className="category-chip">{categoryLabel(item.category)}</span>
-              <code>{item.unit.split("::").pop()}</code>
-              <StateChip state={item.stage} />
-              {pkg && <span className="muted small">{pkg.id}</span>}
-            </div>
+        const steps = decisionSteps(item, state);
+        const last = steps[steps.length - 1];
+        const body = (
             <div className="pointer-body">
               <div>
                 <h4>Decisions</h4>
                 <ol className="steps">
-                  {decisionSteps(item, state).map((s, i) => (
+                  {steps.map((s, i) => (
                     <li key={i}>
                       <AgentTag agent={s.agent} /> {s.text}
                     </li>
@@ -277,6 +274,24 @@ export function Pointer({ note, state, n = 0 }: { note: HunkNote; state: RunStat
                 )}
               </div>
             </div>
+        );
+        return (
+          <div key={id} className="pointer-item">
+            <div className="pointer-head">
+              <span className="category-chip">{categoryLabel(item.category)}</span>
+              <code>{item.unit.split("::").pop()}</code>
+              <StateChip state={item.stage} />
+            </div>
+            {brief ? (
+              <>
+                <p className="pointer-last">
+                  <AgentTag agent={last.agent} /> {last.text}
+                </p>
+                <ShowMore label="Show details">{body}</ShowMore>
+              </>
+            ) : (
+              body
+            )}
           </div>
         );
       })}

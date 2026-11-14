@@ -16,7 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useContext, useEffect, useMemo, useRef, type RefObject } from "react";
-import { agentName, roleOf, type AgentStats, type Message, type RunState } from "../state/fold";
+import { roleOf, type AgentStats, type Message, type RunState } from "../state/fold";
 import { AgentIcon, AgentTag } from "./AgentIcon";
 import { ANIMATE, Presenting, seconds } from "./common";
 
@@ -43,25 +43,23 @@ const FIT = { padding: 0.05 };
 type AgentData = { stats: AgentStats; active: boolean };
 type GroupData = { label: string };
 
+// An agent: its icon and name, and "at work" when it is; its numbers are in the tooltip.
 function AgentNode({ data }: NodeProps<Node<AgentData>>) {
   const s = data.stats;
-  const many = s.instances.length > 1 ? ` ×${s.instances.length}` : "";
+  const many = s.instances.length > 1 ? `${s.instances.length} instances · ` : "";
+  const busy = s.seconds < 60 ? seconds(s.seconds) : `${Math.round(s.seconds / 60)} min`;
   return (
-    <div className={`agent squad-${s.squad} ${data.active ? "active" : ""}`} data-agent={s.role}>
+    <div
+      className={`agent squad-${s.squad} ${data.active ? "active" : ""}`}
+      data-agent={s.role}
+      title={`${many}${s.steps} tool steps · ${s.llmCalls} LLM calls · ${busy} busy`}
+    >
       <Handle type="target" position={Position.Left} className="hidden-handle" />
       <div className="agent-name">
         <AgentIcon agent={s.role} />
-        <span className="agent-role">
-          {s.role}
-          {many}
-        </span>
+        <span className="agent-role">{s.role}</span>
         {s.llmOpen > 0 && <span className="spinner small" aria-label="waiting for the LLM" />}
         {data.active && <span className="agent-now">at work</span>}
-      </div>
-      <div className="agent-stats">
-        <span title="tool steps">{s.steps} steps</span>
-        <span title="LLM calls">{s.llmCalls} LLM</span>
-        <span title={`busy time: ${seconds(s.seconds)}`}>{s.seconds < 60 ? seconds(s.seconds) : `${Math.round(s.seconds / 60)} min`}</span>
       </div>
       <Handle type="source" position={Position.Right} className="hidden-handle" />
     </div>
@@ -156,30 +154,19 @@ function MessageEdge({ id, source, target, markerEnd, data }: EdgeProps<Edge<{ f
 const nodeTypes = { agent: AgentNode, squad: GroupNode };
 const edgeTypes = { message: MessageEdge };
 
-// The recent messages as edges, newest first; two agents get one edge, the newest message's, so
-// an older reply never adds a second arrowhead to the same line.
-function edgesFor(messages: Message[]): Edge[] {
-  const edges: Edge[] = [];
-  const pairs = new Set<string>();
-  [...messages].reverse().forEach((m, i) => {
-    const fresh = i === 0;
-    const from = roleOf(m.sender);
-    for (const r of m.recipients) {
-      const to = roleOf(r);
-      const pair = [from, to].sort().join("|");
-      if (!POS[from] || !POS[to] || from === to || pairs.has(pair)) continue;
-      pairs.add(pair);
-      edges.push({
-        id: `${m.eventId}-${to}`,
-        source: from,
-        target: to,
-        type: "message",
-        markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: fresh ? "var(--accent)" : "var(--neutral-mark)" },
-        data: { fresh, label: fresh && to === roleOf(m.recipients[0]) ? m.type.replace(/_/g, " ") : undefined },
-      });
-    }
-  });
-  return edges;
+// The latest message as arrows from its sender to each recipient, labelled with its type once.
+function edgesFor(last: Message | null): Edge[] {
+  if (!last) return [];
+  const from = roleOf(last.sender);
+  const to = [...new Set(last.recipients.map(roleOf))].filter((r) => POS[from] && POS[r] && r !== from);
+  return to.map((r, i) => ({
+    id: `${last.eventId}-${r}`,
+    source: from,
+    target: r,
+    type: "message",
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "var(--accent)" },
+    data: { fresh: true, label: i === 0 ? last.type.replace(/_/g, " ") : undefined },
+  }));
 }
 
 // Keeps the whole team in view when the graph's box changes size (a tab, presentation mode).
@@ -194,12 +181,12 @@ function useFitOnResize(box: RefObject<HTMLDivElement | null>) {
   }, [flow]);
 }
 
-function Graph({ state, recent }: { state: RunState; recent: number }) {
+function Graph({ state }: { state: RunState }) {
   // the library is MIT licensed; its credit stays on screen except on a projector
   const presenting = useContext(Presenting);
   const box = useRef<HTMLDivElement>(null);
   useFitOnResize(box);
-  const lastIds = state.messages.slice(-recent).map((m) => m.eventId).join(",");
+  const last = state.lastMessage;
   const nodes = useMemo<Node[]>(
     () => [
       ...GROUPS.map((g) => ({
@@ -227,8 +214,7 @@ function Graph({ state, recent }: { state: RunState; recent: number }) {
     // the stats objects are updated in place, so redraw on every new event
     [state.count, state.agents, state.active, state.finished],
   );
-  const edges = useMemo(() => edgesFor(state.messages.slice(-recent)), [lastIds, recent]);
-  const last = state.lastMessage;
+  const edges = useMemo(() => edgesFor(last), [last?.eventId]);
   return (
     <div className="agent-graph" aria-label="Agent graph">
       <div className="agent-flow" ref={box}>
@@ -269,20 +255,15 @@ function Graph({ state, recent }: { state: RunState; recent: number }) {
         ) : (
           <span className="muted">No messages yet: the Manager sends the first one when the run starts.</span>
         )}
-        {state.active && !state.finished && (
-          <span className="graph-active">
-            at work: <b>{agentName(state.active)}</b>
-          </span>
-        )}
       </div>
     </div>
   );
 }
 
-export function AgentGraph({ state, recent = 3 }: { state: RunState; recent?: number }) {
+export function AgentGraph({ state }: { state: RunState }) {
   return (
     <ReactFlowProvider>
-      <Graph state={state} recent={recent} />
+      <Graph state={state} />
     </ReactFlowProvider>
   );
 }

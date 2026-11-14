@@ -1,53 +1,94 @@
-import type { RunDetail } from "../api";
-import { PHASES, type Decision, type RunState, type StudioEvent } from "../state/fold";
+import { useRef, type KeyboardEvent, type PointerEvent } from "react";
+import type { RunState, StudioEvent } from "../state/fold";
 import type { Player } from "../state/hooks";
-import { countAt } from "../state/replay";
 import { seconds } from "./common";
-import { PhaseTimeline } from "./PhaseTimeline";
 
-const DONE = ["kept", "rolled_back", "repaired", "reverted", "skipped"];
+// The run's steps in plain words, in order; a step back revisits one of them.
+export const STEPS: [string, string][] = [
+  ["ONBOARD", "Onboard"],
+  ["BASELINE", "Baseline"],
+  ["AUDIT", "Audit"],
+  ["INVESTIGATE", "Investigate"],
+  ["PLAN", "Plan"],
+  ["EXECUTE", "Execute"],
+  ["FINAL_VERIFY", "Verify"],
+  ["REPORT", "Report"],
+];
 
-// One sticky band over a run: the playback controls and the slop cleaned, the phase timeline
-// (which is also the scrubber), and one line with the rest of the numbers.
-export function RunBand({
-  state,
-  events,
-  detail,
-  player,
-  onDecision,
-}: {
-  state: RunState;
-  events: StudioEvent[];
-  detail: RunDetail | null;
-  player: Player | null;
-  onDecision: (d: Decision) => void;
-}) {
+const KEYS: Record<string, (count: number, total: number) => number> = {
+  ArrowRight: (c) => c + 1,
+  ArrowLeft: (c) => c - 1,
+  PageDown: (c) => c + 10,
+  PageUp: (c) => c - 10,
+  Home: () => 0,
+  End: (_, total) => total,
+};
+
+// The replay's slider: a click or a drag goes to that point of the run; the arrow keys move one
+// event, Page Up / Page Down ten, Home and End to either end.
+function Scrubber({ player, total }: { player: Player; total: number }) {
+  const dragging = useRef(false);
+  const share = total ? player.count / total : 0;
+  const seekAt = (e: PointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    player.setCount(Math.round(Math.min(Math.max((e.clientX - box.left) / box.width, 0), 1) * total));
+  };
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const move = KEYS[e.key];
+    if (!move) return;
+    player.setCount(Math.max(0, Math.min(total, move(player.count, total))));
+    e.preventDefault();
+  };
+  return (
+    <div
+      className="run-scrub"
+      role="slider"
+      tabIndex={0}
+      aria-label="Scrubber"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={player.count}
+      aria-valuetext={`event ${player.count} of ${total}, ${seconds(player.clock)}`}
+      onKeyDown={onKey}
+      onPointerDown={(e) => {
+        dragging.current = true;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        seekAt(e);
+      }}
+      onPointerMove={(e) => dragging.current && seekAt(e)}
+      onPointerUp={() => (dragging.current = false)}
+    >
+      <span className="scrub-track">
+        <span className="scrub-fill" style={{ width: `${share * 100}%` }} />
+      </span>
+      <span className="scrub-thumb" style={{ left: `${share * 100}%` }} />
+    </div>
+  );
+}
+
+// One sticky band over a run: Play, Next decision and the slider, the slop removed, and the steps
+// with the current one in bold.
+export function RunBand({ state, events, player }: { state: RunState; events: StudioEvent[]; player: Player | null }) {
   const total = events.length;
   const end = total ? events[total - 1].t : 0;
   const atEnd = player ? player.count >= total : true;
-  const packages = Object.values(state.packages);
-  const done = packages.filter((p) => DONE.includes(p.status)).length;
-  const kept = packages.filter((p) => p.status === "kept" || p.status === "repaired").length;
-  const rolledBack = packages.filter((p) => p.status === "rolled_back" || p.status === "reverted").length;
-  const stats = detail?.report?.stats || {};
-  // the events miss runs a step makes without a message; a finished run has the exact count
-  const testRuns = typeof stats.test_runs === "number" ? stats.test_runs : state.testRuns;
-  const minutes = Math.round((state.t / 60) * 10) / 10;
-  const of = (used: number, limit?: number) => (limit ? `${used}/${limit}` : `${used}`);
-  const now = state.phase && !state.finished ? PHASES.indexOf(state.phase as (typeof PHASES)[number]) : -1;
-  const next = now >= 0 ? PHASES.slice(now + 1).find((p) => p !== "DONE") : undefined;
   const share = state.candidates ? state.applied / state.candidates : 0;
-  const meta = [
-    `${of(done, state.packageOrder.length || undefined)} packages done`,
-    `${kept} kept`,
-    `${rolledBack} rolled back`,
-    `${of(testRuns, state.budget.test_runs)} test runs`,
-    `${of(state.llmCalls, state.budget.llm_calls)} LLM calls`,
-    `${of(minutes, state.budget.minutes)} min`,
-  ];
+  const now = state.finished ? STEPS.length : STEPS.findIndex(([p]) => p === state.phase);
+  const steps = (
+    <ol className="run-steps" aria-label="Steps">
+      {STEPS.map(([phase, label], i) => (
+        <li key={phase} className={i < now ? "done" : i === now ? "current" : undefined} aria-current={i === now ? "step" : undefined}>
+          {i < now && <span aria-hidden>✓ </span>}
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+  // a replay has its controls on the first line and the steps under them; a live run, one line
   return (
     <section className="run-band" aria-label={player ? "Replay controls" : "Run progress"} data-sticky>
       <div className="band-top">
+        {!player && steps}
         {player && (
           <div className="band-controls">
             <button
@@ -59,58 +100,31 @@ export function RunBand({
             >
               <span aria-hidden>{player.playing ? "❚❚" : "▶"}</span> {player.playing ? "Pause" : "Play"}
             </button>
-            <button onClick={player.stepOne} disabled={atEnd}>
-              Step
-            </button>
             <button onClick={player.nextDecision} disabled={atEnd}>
               Next decision <span aria-hidden>⏭</span>
             </button>
-            <button onClick={() => player.setCount(total)} disabled={atEnd} aria-label="Jump to the end" title="Jump to the end">
-              End
-            </button>
           </div>
         )}
-        <div className="band-lead" title="edits applied of the candidates found">
-          <span className="band-lead-value">
-            {state.applied}
-            <span className="stat-of"> / {state.candidates}</span>
+        {player && <Scrubber player={player} total={total} />}
+        {player && (
+          <span className="band-clock">
+            {seconds(player.clock)} / {seconds(end)}
           </span>
-          <span className="band-lead-label">slop cleaned</span>
-          <span className="bar" role="meter" aria-label="Slop cleaned" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
+        )}
+        <div className="band-lead">
+          {state.candidates ? (
+            <span>
+              Removed <b className="band-lead-value">{state.applied}</b> of {state.candidates}
+            </span>
+          ) : (
+            <span>No candidates yet</span>
+          )}
+          <span className="bar" role="meter" aria-label="Slop removed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)}>
             <span className="fill tone-good" style={{ width: `${share * 100}%` }} />
           </span>
         </div>
-        <span className="band-clock">
-          {player ? `${seconds(player.clock)} / ${seconds(end)} · event ${player.count} of ${total}` : `${total} events so far`}
-        </span>
-        {player && (
-          <label className="speed">
-            Speed{" "}
-            <input type="range" min={1} max={50} value={player.speed} onChange={(e) => player.setSpeed(Number(e.target.value))} aria-label="Speed" />{" "}
-            <b>{player.speed}×</b>
-          </label>
-        )}
       </div>
-      <PhaseTimeline
-        state={state}
-        onDecision={onDecision}
-        seek={
-          player
-            ? {
-                clock: player.clock,
-                count: player.count,
-                total,
-                toTime: (t) => player.setCount(countAt(events, t)),
-                toCount: player.setCount,
-              }
-            : undefined
-        }
-      />
-      <p className="band-meta">
-        {meta.join(" · ")}
-        {next && <span className="muted"> · next: {next.replace("_", " ")}</span>}
-        {state.backSteps > 0 && <span className="bad-text"> · ↩ {state.backSteps} step back{state.backSteps > 1 ? "s" : ""}</span>}
-      </p>
+      {player && steps}
     </section>
   );
 }

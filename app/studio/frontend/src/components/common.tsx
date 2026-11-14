@@ -272,6 +272,17 @@ export function StatsRow({ items, label }: { items: StatItem[]; label?: string }
   );
 }
 
+// Detail a reader opens on purpose: one "Show ..." line, drawn only once it is open.
+export function ShowMore({ label, children }: { label: ReactNode; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="show-more" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>{label}</summary>
+      {open && <div className="show-more-body">{children}</div>}
+    </details>
+  );
+}
+
 export function Tabs<K extends string>({
   tabs,
   value,

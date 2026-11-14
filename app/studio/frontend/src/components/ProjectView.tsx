@@ -6,10 +6,11 @@ import { AgentIcon, AgentTag, agentName } from "./AgentIcon";
 import { RunContext } from "./Artifact";
 import { Pointer } from "./AfterParts";
 import { DiffView, filterDiff } from "./Code";
-import { Card, Empty, Help, Loading } from "./common";
+import { Card, Empty, Loading } from "./common";
 import { ItemDetail } from "./ItemBoard";
 import { PackageChecks } from "./Packages";
-import { STATE_GLYPH, StateChip, StateLegend, stateLabel } from "./states";
+import { LegendLine, STATE_GLYPH, StateChip, stateLabel } from "./states";
+import { itemLabel } from "../state/caption";
 
 const FINAL = ["kept", "repaired", "rolled_back"];
 const COUNT_ORDER = ["investigating", "in_package", "kept", "repaired", "rolled_back", "safe", "candidate", "suggest", "dropped", "skipped"];
@@ -229,7 +230,7 @@ export function useTreeView(tree: TreeNode, follow: boolean, count: number) {
     setOpen((o) => new Set([...(o ?? defaultExpanded(tree)), ...path.split(",")]));
   }, [follow, path]);
   useEffect(() => {
-    const row = treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
+    const row = treeRef.current?.querySelector(".tree-row.at-work") ?? treeRef.current?.querySelector(".tree-row.focus:not(.kind-folder)");
     const box = treeRef.current?.parentElement;
     if (!follow || !row || !box) return;
     // the row goes to the middle of the tree's own box; the page itself never scrolls
@@ -314,17 +315,13 @@ export function ProjectView({
             </>
           }
           actions={
-            <>
-              <Help label="The states' colors, glyphs and names" face="Key">
-                <StateLegend />
-              </Help>
-              <label className="check follow">
-                <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
-              </label>
-            </>
+            <label className="check follow">
+              <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Follow the action
+            </label>
           }
           className="tree-card"
         >
+          <LegendLine />
           {files && !files.complete && list.length > 0 && (
             <p className="tree-note small">
               This run saved no file list, so the tree shows the {list.length} files its events name
@@ -334,7 +331,7 @@ export function ProjectView({
           {!view.rows.length ? (
             <Empty>No files yet: the Explorer lists them when the run starts.</Empty>
           ) : (
-            <TreeList view={view} chosen={chosen} onSelect={setChosen} />
+            <TreeList view={view} chosen={chosen} onSelect={setChosen} atWork={focusItem ? itemKey(focusItem.unit) : null} />
           )}
         </Card>
         <Card className="detail-card">
@@ -346,20 +343,17 @@ export function ProjectView({
                 <>
                   <p className="now">
                     Now: <AgentTag agent={focusItem.actor || state.active || "manager"} /> on{" "}
-                    <button className="link" onClick={() => pick(itemKey(focusItem.unit))}>
-                      <code>{focusItem.unit}</code>
+                    <button className="link" onClick={() => pick(itemKey(focusItem.unit))} title={focusItem.unit}>
+                      {itemLabel(focusItem)}
                     </button>
                   </p>
-                  {/* following the action: the decisions, evidence and checks of the item at work */}
-                  {follow && <Pointer note={{ items: [focusItem.id], match: "exact" }} state={state} />}
+                  {/* following the action: the latest decision on the item at work, the rest behind "Show details" */}
+                  {follow && <Pointer note={{ items: [focusItem.id], match: "exact" }} state={state} brief />}
                 </>
               ) : (
                 <p>Click a file, class or function to see its evidence chain, its diff and the checks it passed.</p>
               )}
-              <p className="muted small">
-                {state.itemOrder.length} candidates · {tree.counts.kept || 0} kept · {tree.counts.rolled_back || 0} rolled back ·{" "}
-                {tree.counts.suggest || 0} suggestions. Click any item for its diff.
-              </p>
+              <p className="muted small">Click any file or function for its diff.</p>
             </div>
           )}
         </Card>

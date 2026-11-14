@@ -104,7 +104,8 @@ export function decisionSteps(item: Item, state: RunState): Step[] {
     steps.push({ agent: "fixer", text: `${outcome}${pkg.repair.turns ? ` after ${pkg.repair.turns} turns` : ""}`, brief: outcome });
   }
   const done = state.decisions.find((d) => d.rule === "package_done" && d.pkg === pkg.id);
-  if (done) steps.push({ agent: done.agent || "manager", text: done.text, brief: (done.status || "done").replace(/_/g, " ") });
+  // in words, not the package id: "kept the change", "rolled back the change"
+  if (done) steps.push({ agent: done.agent || "manager", text: done.status ? `${done.status.replace(/_/g, " ")} the change` : done.text, brief: (done.status || "done").replace(/_/g, " ") });
   return steps;
 }
 

@@ -245,3 +245,32 @@ export function captionSteps(events: StudioEvent[]): CaptionStep[] {
 export function captionText(c: Caption): string {
   return `${agentName(c.agent)} ${c.text}`;
 }
+
+// The one sentence over a run screen: what the team is doing and how much slop it has removed.
+export function runSentence(s: RunState): string {
+  const found = plural(s.candidates, "candidate");
+  const removed = `${s.applied} of ${s.candidates} removed`;
+  const rolledBack = Object.values(s.items).filter((i) => i.stage === "rolled_back").length;
+  const back = rolledBack ? `, ${rolledBack} rolled back` : "";
+  if (s.finished || s.phase === "DONE") {
+    const how = s.verdict === "everything runs" ? "; everything still runs" : s.verdict ? ` (${s.verdict})` : "";
+    return `Done: the team removed ${s.applied} of ${found}${back}${how}.`;
+  }
+  switch (s.phase) {
+    case "BASELINE":
+      return "The team is running the project's tests before it changes anything.";
+    case "AUDIT":
+      return s.candidates ? `The team is looking for slop: ${found} so far.` : "The team is looking for slop.";
+    case "INVESTIGATE":
+      return `The team is investigating ${found}; ${s.applied} removed so far.`;
+    case "PLAN":
+      return `The team is planning the edits; ${removed} so far.`;
+    case "EXECUTE":
+      return `The team is removing slop: ${removed} so far${back}.`;
+    case "FINAL_VERIFY":
+      return `The team is testing the whole project again; ${removed}${back}.`;
+    case "REPORT":
+      return `The team is writing its report; ${removed}${back}.`;
+  }
+  return "The team is reading the project.";
+}
