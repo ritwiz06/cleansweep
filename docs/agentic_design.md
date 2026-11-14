@@ -30,8 +30,8 @@ Section 5.4 and Figure 3).
 
 | AutoData | CleanSweep v2 | Why |
 |---|---|---|
-| Manager agent (MGR) orchestrates and tracks progress; message delivery does not trigger execution | **Manager**: owns the phase machine, assigns work, enforces budgets, decides when the run is done | Same role. Rules propose every step (section 4): the phase order is known in advance, and rules keep the decisions fast, testable and explainable. At each phase boundary the LLM may choose another allowed option (go back, replan, stop); hard rules win. Each decision is logged with its rule or reason. `manager: rules` is the rule-based Manager (an ablation). |
-| Research squad: plan, web, tool, blueprint agents | **Explorer** (reads the project, like the web agent reads sources), **Auditor** (runs the detectors and the knowledge base, like the tool agent runs utilities), **Investigator** (a ReAct loop per finding), **Planner** (plan + blueprint agents in one: work packages and `blueprint.md`) | Code cleanup needs one more research step than data collection: each finding has to be investigated before anything is planned. AutoData's plan agent splits the goal up front; our phases already fix the steps, so the Planner's job is the blueprint. |
+| Manager agent (MGR) orchestrates and tracks progress; message delivery does not trigger execution | **Manager**: owns the sequence of steps, assigns work, enforces budgets, decides when the run is done | Same role. Rules propose every move (section 4): the order of the steps is known in advance, and rules keep the decisions fast, testable and explainable. At each step boundary the LLM may choose another allowed option (go back, replan, stop); hard rules win. Each decision is logged with its rule or reason. `manager: rules` is the rule-based Manager (an ablation). |
+| Research squad: plan, web, tool, blueprint agents | **Explorer** (reads the project, like the web agent reads sources), **Auditor** (runs the detectors and the knowledge base, like the tool agent runs utilities), **Investigator** (a ReAct loop per finding), **Planner** (plan + blueprint agents in one: work packages and `blueprint.md`) | Code cleanup needs one more research step than data collection: each finding has to be investigated before anything is planned. AutoData's plan agent splits the goal up front; our eight steps are fixed in advance, so the Planner's job is the blueprint. |
 | Development squad: engineering, test, validation agents | **Engineer**, **Tester**, **Validator**, plus **Fixer** and **Reporter** | AutoData's test agent both runs and debugs; we split debugging out into the Fixer, because a failed cleanup edit must be either repaired in at most 2 turns or rolled back, and every rollback teaches a lesson. The Reporter writes the deliverables. |
 | Oriented message hypergraph | **Message board**: messages are directed hyperedges (one sender, a set of recipients); an agent reads only its own inbox | Same idea. |
 | Oriented hyperedge formatter | **Message schemas**: one fixed schema per message type, checked when a message is posted | AutoData formats free text into each role's structure; we make the structure a schema, so a malformed message is caught in code. |
@@ -44,7 +44,7 @@ MetaGPT (Hong et al., ICLR 2024) also gives agents roles and a shared message po
 agents subscribe to what their role needs. Our board is closer to AutoData's: the sender names
 the recipients, so routing is decided when a message is written, not by each reader.
 
-## 2. Tool-calling protocol (measured in Phase 0)
+## 2. Tool-calling protocol (measured in build stage 0)
 
 Every agent step is one LLM reply that picks one tool, or finishes. We measured two ways to do
 that on Voyager, with 10 different Investigator steps (each with a known set of sensible next
@@ -108,13 +108,13 @@ conditional edges, step-backs are just edges, and the graph can be drawn for the
 Studio. What we do not use: LangGraph's checkpointer (the event log is our record, and Replay
 folds it) and its LLM wrappers (agents call our own client). Parallel Investigators run in a
 thread pool inside the Investigator node (at most 3 requests at once), which keeps the event
-order and budgets in one place. The graph state holds only plain data (phase, queues, counters,
+order and budgets in one place. The graph state holds only plain data (the step, queues, counters,
 artifact IDs); the workspace, LLM client, board and cache live in a runtime object the nodes
 share.
 
-## 4. The phases (the Manager's state machine)
+## 4. The steps (the Manager's state machine)
 
-| # | Phase | Agents | Produces | Next | May step back to |
+| # | Step | Agents | Produces | Next | May step back to |
 |---|---|---|---|---|---|
 | 1 | ONBOARD | Explorer | project brief (artifact), secret scan | BASELINE | — |
 | 2 | BASELINE | Tester | the project's environment (a venv in the run folder with the project installed; the copy's `src/` first on `PYTHONPATH`), then 3 test runs: passing, failing and flaky tests (artifacts) | AUDIT | ONBOARD, once: the install or test command failed, the Explorer revises the brief |
@@ -136,10 +136,10 @@ always ends.
 
 **The LLM-guided Manager** (`core.agents.manager: llm`, the default when an LLM is set; `rules`
 keeps the rule-based Manager, and is one of the ablations). The rules propose every step. At each
-phase boundary, after a rolled-back package, the first time a run cap (LLM calls, minutes or
+step boundary, after a rolled-back package, the first time a run cap (LLM calls, minutes or
 test runs) is 85% used with packages left, and when FINAL VERIFY finds the suite worse than the
 baseline, the Manager also sends the LLM one short JSON request (reasoning off): the run's status
-(phase, candidates and verdicts, undecided candidates, packages and packages left, baseline,
+(the step, candidates and verdicts, undecided candidates, packages and packages left, baseline,
 budget used, step-backs left), what the rules propose, and the options the hard rules allow, and
 it picks one, with a reason:
 - `continue`: the rules' step;
@@ -167,7 +167,7 @@ budget runs out, the agent stops and the Manager takes the cautious path (a cand
 
 | Agent | Squad | Job | Tools (wrapping existing code) | Reads (message types) | Writes | Default budget (steps / LLM calls / s) |
 |---|---|---|---|---|---|---|
-| Manager (MGR) | — | phases, assignments, budgets, progress, done | board, budgets, phase machine | every result message addressed to it | `task`, `phase_change` events | run budget (`--budget`) |
+| Manager (MGR) | — | steps, assignments, budgets, progress, done | board, budgets, sequence of steps | every result message addressed to it | `task`, `phase_change` events | run budget (`--budget`) |
 | Explorer | research | the project brief: languages, packages, frameworks, entry points, install and test commands, CI and config files | `list_files`, `read_file` (redacted), `read_config` (pyproject, setup.cfg, requirements, tox/nox, CI), `build_graph` (entry points), `frameworks.framework_for`, secret scan | `task` | `brief` | 12 / 4 / 300 |
 | Auditor | research | find candidates | v1 detectors (`reviewer.detectors.run_detectors`: leftovers, dead code, unused imports, unused dependencies, security, format, wrappers, duplicates), the new line-level detectors (section 9), the over-engineering review (thorough mode), `query_knowledge_base` | `task`, `brief`, `lesson` | `candidates` | 6 / 2 / 300 per instance |
 | Investigator | research | a ReAct loop per candidate: decision, an evidence chain where every step cites a tool result, the lessons it used | `find_references` (code graph callers + text search in code, tests, configs, strings), `read_code`, `check_dynamic_use` (`CodeGraph.dynamic_risk`, `framework_callback`, `dynamic_refs`), `find_related_tests`, `check_dependency_usage`, `compare_functions` (AST equality + shingle similarity from `analysis.minhash`), `query_lessons`, `query_knowledge_base`, `read_artifact` | `candidates` (its own), `lesson` | `verdict` | 6 / 6 / 600 per candidate |
@@ -215,7 +215,7 @@ only the messages addressed to that agent, and an agent's prompt is built only f
 
 | Type | Sender | Recipients | Body (besides artifact IDs) |
 |---|---|---|---|
-| `task` | Manager | one agent | phase, goal, inputs, budget |
+| `task` | Manager | one agent | step, goal, inputs, budget |
 | `brief` | Explorer | Manager, Tester, Auditor, Planner, Validator | languages, frameworks, install and test commands, entry points, UI framework, secret findings (masked) |
 | `baseline` | Tester | Manager, Planner, Validator, Fixer | passed / failed / errors / flaky counts, failing and flaky test IDs |
 | `candidates` | Auditor | Manager, Investigator | candidate list: item ID, unit, category, detector evidence, knowledge-base prior |
@@ -340,7 +340,7 @@ project's own modules are never stubbed. v1 never asks for this, so its probes a
   classes that differ between the two runs are left out; after each package a stable class that
   shows another widget tree or text, disappears without the package deleting it, or a module
   that stops importing fails the package; other UI frameworks are recorded as "not
-  applicable"). Two rules from the Phase 3b case studies: a rewrite (a merged duplicate or an
+  applicable"). Two rules from the build stage 3b case studies: a rewrite (a merged duplicate or an
   inlined wrapper) is verified only by probe cases on its own target that return something
   other than None (a method that only writes to a database looks the same either way), and a
   removed dependency that carries a version specifier while another dependency requires it is a
@@ -356,7 +356,7 @@ project's own modules are never stubbed. v1 never asks for this, so its probes a
 
 ## 13. Latency and budgets
 
-Voyager requests take 30–200 s under load (1–5 s when it is quiet, as in the Phase 0
+Voyager requests take 30–200 s under load (1–5 s when it is quiet, as in the build stage 0
 measurements). The design keeps the number of sequential requests small:
 - deterministic tools do the work (detectors, graph, edits, tests); the LLM chooses and explains;
 - reasoning is off for tool-choosing steps;
@@ -466,11 +466,11 @@ python -m cleansweep clean <path> [--sandbox auto|docker|none] [--untrusted] ...
   next start (`sandbox.cleanup.sweep_containers`); a resumed run starts a new one.
   `docker/Dockerfile` builds an image with CleanSweep installed (`CLEANSWEEP_SANDBOX=none`
   inside: that container is the sandbox); see the README for the one-line `docker run`.
-- `--resume` (`agents/checkpoint.py`): at each safe point (a phase entered, a work package
+- `--resume` (`agents/checkpoint.py`): at each safe point (a step entered, a work package
   finished) the run's state goes to `checkpoint.json` in the output folder, and `run.json` holds
   the options it started with. A resumed run resets the workspace to the checkpoint's commit
   (a package cut off half way starts again), restores the state, appends to `events.jsonl` and
-  goes on from that phase; the report says where it resumed.
+  goes on from that step; the report says where it resumed.
 - Every run that gets as far as its output folder ends with `CLEANUP_REPORT.md`, `report.json`
   and one verdict from a fixed set (`agents/reporter.py VERDICTS`): "everything runs" (tests
   ran, the final suite is at least as good as the baseline), "nothing applied" (a dry run, or
@@ -521,9 +521,9 @@ Each ablation is a config switch under `core.agents.ablation`, recorded in the r
 | `inline_artifacts` | artifacts are pasted into messages and prompts |
 | `no_lessons` | the Fixer writes no lessons and nobody queries them |
 | `no_coverage` | the Validator runs one probe round, as v1 does |
-| `single_agent` | one ReAct agent (`agents/solo.py`, agent `solo`) with every tool and one context, under the same total budget: it lists the detectors' candidates, investigates with the Investigator's tools, applies edits, runs the tests and the coverage-guided probes, and keeps or reverts each edit itself; no Manager, phases, board, packages or lessons. The baseline and the final suite are measured for the report, not enforced |
+| `single_agent` | one ReAct agent (`agents/solo.py`, agent `solo`) with every tool and one context, under the same total budget: it lists the detectors' candidates, investigates with the Investigator's tools, applies edits, runs the tests and the coverage-guided probes, and keeps or reverts each edit itself; no Manager, steps, board, packages or lessons. The baseline and the final suite are measured for the report, not enforced |
 | `core.agents.investigate_batch: on` | investigation batching (a separate setting, `off` by default; `agents/batching.py`): candidates with the same pattern (category and edit, lane, why they are uncertain, framework) share one Investigator request of at most five (`prompts/investigator_batch.txt`), each still gets its own verdict checked like a single investigation's, and a missing or rule-breaking verdict sends that candidate to the single-candidate investigation. A `suggest` or `drop` verdict is reused for a later candidate with an identical pattern (the batching key plus the lesson pattern: unit kind, name pattern, folder); `safe` is never reused. Decision events `batch` and `reuse` show both. The default stays off until Track C shows the same safety at no more than 60% of the requests |
-| `core.agents.manager: rules` | the rule-based Manager: no LLM decisions at phase boundaries (a separate setting, run as an ablation) |
+| `core.agents.manager: rules` | the rule-based Manager: no LLM decisions at step boundaries (a separate setting, run as an ablation) |
 | `core.agents.investigate: adaptive` | adaptive investigation (a separate setting; `all` is the default, `none` decides every candidate by rules): only the uncertain candidates go to an Investigator, namely near-duplicates and wrappers, dependency removals, framework-convention methods, units something reaches by name (`reviewer.dynamic_refs`), units the graph says may be used dynamically, and public names in package modules. The rest are decided by the Investigator's rules, as in `no_research`; the Explorer still writes its brief. Experiment label `agentic-adaptive` |
 
 ## 17. Contract changes (all additive)
@@ -569,13 +569,13 @@ Details worth knowing:
 - Agent turns are timed per role; an agent that raises ends the run cautiously (its package is
   rolled back) and the run still ends with a report.
 
-Phase 2 added the line-level detectors (section 9), coverage-guided probes (section 11), a
+Build stage 2 added the line-level detectors (section 9), coverage-guided probes (section 11), a
 prompt file per agent (`agents/prompts/`; the rule-based agents' files state their rules and are
 their profiles in the event log), the Fixer's own system prompt for repairs, and fixes from the
 first real-model runs (a thread-safe LLM reply cache, per-candidate isolation of investigations,
 budget charges that check only their own limit, the Investigator's first checks run before the
-LLM is asked, and a last-step nudge). Phase 3b added the UI snapshot check for Textual apps;
-Phase 4 the `single_agent` ablation.
+LLM is asked, and a last-step nudge). Build stage 3b added the UI snapshot check for Textual apps;
+build stage 4 the `single_agent` ablation.
 
 ## 19. Risks
 
