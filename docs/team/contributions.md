@@ -10,8 +10,8 @@ is not here, it is not in the report, so add it.
 
 ## What the record shows so far
 
-As of Nov 13, every commit on `main` (575, merge commits included) and every merged pull request
-(#4 to #198) comes from Ritik's account. No other account has a commit, a pull request, a review
+As of Nov 13, every commit on `main` (690, merge commits included) and every merged pull request
+(#4 to #221) comes from Ritik's account. No other account has a commit, a pull request, a review
 or an issue in the repository. The decision log records why:
 
 - On Oct 19, Ritik built a runnable prototype across all four areas, so that nobody would start
@@ -65,6 +65,11 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 6 – Nov 9 | Every Phase 3 run, and the blinded audit's checks | offline: run logs and audit records; the tables arrive with the results pull request |
 | Ritik | Nov 9 | Course progress report (Word and LaTeX), ready to submit | offline: report sources on Overleaf |
 | Ritik | Nov 13 | This team pack and the team's task issues | [#200](https://github.com/ritwiz06/cleansweep/pull/200); issues [#201](https://github.com/ritwiz06/cleansweep/issues/201) to [#216](https://github.com/ritwiz06/cleansweep/issues/216) |
+| Ritik | Nov 13 | The LLM judge panel in place of the human raters: the blinded 100-item packet, three judges, 900 votes, Fleiss' and Cohen's κ, validity against the confirmed verdicts | [#199](https://github.com/ritwiz06/cleansweep/pull/199) |
+| Ritik | Nov 13 | Phase 3 results at the freeze: the final audit pass, tables, figures, H1–H4, the README's v3 results and the results notes on token counts, the shared cache and batching's default | [#217](https://github.com/ritwiz06/cleansweep/pull/217), [#221](https://github.com/ritwiz06/cleansweep/pull/221) |
+| Ritik | Nov 13 | Studio design pass: a simpler Home, a first-run tour, presentation-grade screens, accessibility and quality checks, the user guide's screenshots retaken | [#218](https://github.com/ritwiz06/cleansweep/pull/218) |
+| Ritik | Nov 13 | The team pack after the freeze, and the README's toy cleanup without Docker | [#219](https://github.com/ritwiz06/cleansweep/pull/219) |
+| Ritik | Nov 13 | Requirements R17–R28 with the frozen results as evidence | [#220](https://github.com/ritwiz06/cleansweep/pull/220) |
 
 ## Add your rows here
 

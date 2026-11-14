@@ -1,5 +1,7 @@
 # Start here
 
+**First, read [handoff.md](handoff.md): the state of the project, the owners and the dates, in two pages.**
+
 This folder is for the four of us: Ritik (project manager and UI lead), Badri (data
 architect), Maninderjit (software architect) and Simran (experiment architect). It tells you how
 to set up, how the system works, where the project stands, and what each of us does until the
@@ -42,22 +44,23 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
    `../toy-cleanup/CLEANUP_REPORT.md` and read what was removed, what was only suggested, and
    why.
 3. **Open Studio Replay (10 minutes).** Start Studio with `cleansweep studio` (the first start
-   builds the web page, so it needs Node 20), open **Runs**, and replay
-   `20261102_demo_feature_agentic`: the agent team cleaning the demo bookstore app. Watch the
-   Guard roll back `_round_money`, a near-duplicate that every test passes but that rounds
-   0.125 differently. Then open **Before / after** for the same run. Replay calls no LLM and
-   runs no tests, so it works offline.
-4. **Read the results summary (5 minutes).** The README's "v3 results" section (Phase 3, frozen
-   on Nov 13 at 12:00) and "v2 results" section (Phase 2); [status.md](status.md) says what is
-   left.
+   builds the web page, so it needs Node 20). On **Home**, press **Try the demo**, or open
+   **Runs** and pick `20261102_demo_feature_agentic`: the agent team cleaning the demo bookstore
+   app. The **Project** tab shows each file and function in its state. Press **Next decision**
+   until the Guard rolls back `_round_money`, a near-duplicate that every test passes but that
+   rounds 0.125 differently. Then press **Before / after** in the header, and **Present** for
+   the projector view. Replay calls no LLM and runs no tests, so it works offline.
+4. **Read the results (5 minutes).** The README's "v3 results" section (Phase 3, frozen on
+   Nov 13 at 12:00); [status.md](status.md) has the scorecard in plain words.
 
 ## Then read
 
 - [tour.md](tour.md): the phases, the ten agents, the Guard, the benchmark, the audit, where each
   table comes from, and a glossary.
-- [status.md](status.md): what is done, what is left, the hypotheses, the key decisions.
-- [tasks.md](tasks.md): your tasks, each with a GitHub issue.
+- [status.md](status.md): the three phases, the scorecard, the limits, what is left.
+- [tasks.md](tasks.md): your tasks, each with a due date and a GitHub issue.
 - [contributing.md](contributing.md): branches, pull requests and the checks.
 - [presentation.md](presentation.md): the 5-minute talk, the script per speaker, the demo plan
   and the Q&A sheet.
 - [contributions.md](contributions.md): who did what, from the repository history.
+- [meeting_handoff.md](meeting_handoff.md): the agenda for the 30-minute handoff meeting.

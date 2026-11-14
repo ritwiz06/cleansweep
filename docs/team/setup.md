@@ -6,7 +6,7 @@ Docker and a Voyager key are needed only for the LLM features, the Docker tests 
 experiment runners.
 
 The repository commands on this page (install, checks, offline runs, Studio, the hook) were run
-on a fresh clone of `main` on macOS on Nov 13, with no key and Docker not running. The system
+on a fresh clone of `main` on macOS on Nov 13 and 14, with no key and Docker not running. The system
 install commands (Homebrew, apt, WSL) and the Docker steps were not run for this page; if one
 fails for you, file an issue with the error.
 
@@ -100,7 +100,7 @@ bash scripts/tools/install_hooks.sh
 
 This installs a git hook that runs the three checks CI runs (ruff, the offline tests and the
 contract check) before every `git push`, and blocks the push if one fails. The offline tests
-take about 6 minutes. The hook lives in `.git/hooks`, so it is never committed. If you already
+take 6 to 9 minutes. The hook lives in `.git/hooks`, so it is never committed. If you already
 have a pre-push hook of your own, the script leaves it alone and says so.
 
 ## Check the install
@@ -111,8 +111,8 @@ pytest -q -m "not llm and not docker and not network and not slow"
 python scripts/tools/check_contracts.py
 ```
 
-On the fresh clone: ruff printed "All checks passed!", pytest "629 passed, 21 deselected" in
-6.5 minutes, and the contract check printed OK for the stub and the real version of every
+On the fresh clone: ruff printed "All checks passed!", pytest "632 passed, 21 deselected" in
+9 minutes, and the contract check printed OK for the stub and the real version of every
 package. The deselected tests are the ones marked `llm` (need a key), `docker` (need Docker),
 `network` and `slow`.
 
@@ -160,7 +160,8 @@ cleansweep studio --port 8800         # if 8765 is taken
 The first start runs `npm ci` and builds the web page; on the fresh clone that took under a
 minute. Without npm, build it by hand: `cd app/studio/frontend && npm ci && npm run build`.
 Studio listens on your machine only. Replay plays the seven recordings in `demo/replay/` without
-calling the LLM or running tests; every screen except Launch works offline.
+calling the LLM or running tests; every screen except Launch works offline. To see the demo, press
+**Try the demo** on Home, or open **Runs** and pick `20261102_demo_feature_agentic`.
 
 ## Your Voyager key
 
