@@ -4,7 +4,7 @@ Every task has a GitHub issue with the labels `team`, a role label (`data`, `sof
 `experiments`, `pm`) and a due label. Due dates:
 
 - **Setup and checks:** within 2 days of getting access. Today that means **Nov 15**. Badri's
-  collaborator invitation is still pending, so his clock starts when he accepts it.
+  collaborator invitation is still pending, so Badri's clock starts when it is accepted.
 - **Section reviews and proofreading:** before the final report is submitted. Our date is
   **Nov 30**, which leaves four days before Dec 4 (confirm the date on Canvas).
 - **Talk parts, Q&A and rehearsals:** before the presentation. Our date is **Nov 20**; the
@@ -96,8 +96,8 @@ seconds. Take the Q&A questions on how it works (questions 3, 10 and 11).
 
 ## Badri (data architect), `@byeluri31`
 
-His collaborator invitation is still pending. Until he accepts, he cannot be assigned: the
-issues name him in their text, and Ritik assigns them when he accepts.
+Badri's collaborator invitation is still pending. Until it is accepted, Badri cannot be assigned:
+the issues give the name in their text, and Ritik assigns them once the invitation is accepted.
 
 ### D1. Rerun the offline data table builders
 

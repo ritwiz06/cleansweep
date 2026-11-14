@@ -8,7 +8,7 @@ breaks. The details are in the other pages of this folder, listed in [README.md]
 CleanSweep removes leftover AI-written code from a Python project with a team of ten LLM agents,
 and keeps an edit only if the project still behaves the same. Phase 1 (the pipeline) and Phase 2
 (the team and Studio) are released. **Phase 3, the pre-registered evaluation, is frozen** (Nov 13,
-12:00). **v3.0 is planned for Nov 15.**
+12:00). **v3.0 is released** (Nov 14): the tag `v3.0` and its GitHub release.
 
 | | Result |
 |---|---|
@@ -59,7 +59,8 @@ knows the part well enough to give it if the owner cannot.
 
 | When | What |
 |---|---|
-| Nov 15 | v3.0 release (planned); setup and checks done on your machine |
+| Nov 14 | v3.0 released |
+| Nov 15 | setup and checks done on your machine |
 | Nov 16 – Nov 20 | two timed rehearsals |
 | Nov 21 or Nov 28 | the presentation |
 | Nov 30 | section reviews and proofreading done |
@@ -79,7 +80,7 @@ its issue ([tasks.md](tasks.md)).
   not yours, so use `--sandbox none` for it. Code you did not write should run in Docker.
 - **`data_aidev_mine.py report` needs a `.notes/` folder** to exist (`mkdir -p .notes`), and
   writes mined review comments there; never commit them.
-- **Badri's collaborator invitation is still pending.** Until he accepts, he cannot clone the
+- **Badri's collaborator invitation is still pending.** Until it is accepted, Badri cannot clone the
   private repository or be assigned issues.
 
 ## If something breaks before the talk
