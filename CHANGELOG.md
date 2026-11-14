@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.1 (2026-11-14)
+
+Course-facing labels use phases; no result changes.
+
 ## v3.0 (2026-11-14)
 
 Phase 3: the pre-registered evaluation, frozen on 2026-11-13 at 12:00, a simpler Studio, and the
