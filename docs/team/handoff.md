@@ -9,6 +9,8 @@ CleanSweep removes leftover AI-written code from a Python project with a team of
 and keeps an edit only if the project still behaves the same. Phase 1 (the pipeline) and Phase 2
 (the team and Studio) are released. **Phase 3, the pre-registered evaluation, is frozen** (Nov 13,
 12:00). **The final release is out** (Nov 14): the git tag `v3.0` and its GitHub release.
+**Final commit: v3.0.2** (the git tag `v3.0.2`: the course-facing wording and the shorter talk, no
+result changes).
 
 | | Result |
 |---|---|
@@ -31,10 +33,34 @@ More: [status.md](status.md).
 | What | Where |
 |---|---|
 | Code, tests, docs, committed tables and figures | the GitHub repository `ritwiz06/cleansweep` (private); every change is a pull request ([contributing.md](contributing.md)) |
-| The final report's LaTeX sources and figures | Overleaf, shared by Ritik |
-| The submission bundle and the archive tarball (raw runs, LLM caches) | the ASU Drive folder, shared by Ritik |
-| Raw runs, the working notes and the decision log | Ritik's local workspace; not shared. [status.md](status.md) is the public summary |
+| The LaTeX sources of the final report and of the paper draft | two Overleaf projects ([shared locations](#shared-locations)) |
+| The handoff bundle: the submission files, both Overleaf zips, the decision log and the run log as PDFs, the archive tarball (raw runs, LLM caches) | the ASU Drive folder ([shared locations](#shared-locations)) |
+| The working notes | Ritik's local workspace; not shared. [status.md](status.md) is the public summary |
 | Your `.env` with your own Voyager key | your machine only; never committed ([setup.md](setup.md#your-voyager-key)) |
+
+## Shared locations
+
+| What | Link |
+|---|---|
+| The ASU Drive folder with the handoff bundle (its `README.txt` says what each folder holds) | [the Drive folder](https://drive.google.com/drive/folders/1huWKhITpigPLMp9Ax4u992OseHOHv_ov?usp=sharing) |
+| Overleaf: the final report | [the report's project](https://www.overleaf.com/project/6af8d81eb843f23a845c8c97/share#9d17cdcd6ece1e3f162abaacd220010ff41344107686ef5a) |
+| Overleaf: the paper draft | [the paper's project](https://www.overleaf.com/project/6af8d89f6729c38d6b15b722/share#fbafccb73abc80b3c5f0df4e92ee5d31304ac1b5c8b1b174) |
+| The repository | https://github.com/ritwiz06/cleansweep (may move to the team organization) |
+
+After you download the archive tarball, check it against its `.sha256` file: `shasum -a 256 -c`
+on macOS and Linux, `certutil -hashfile <file> SHA256` on Windows.
+
+## Repository control
+
+The repository is under Ritik's account, so only Ritik can change its settings, add people or
+transfer it. There are two ways to share control:
+
+- **A team organization (recommended):** all four of us as owners, and the repository
+  transferred to it. Any of us can then add people or change a setting, and the old address
+  redirects to the new one.
+- **Collaborators:** the repository stays where it is, and the other three get write access.
+  You can push branches and merge pull requests, but only Ritik can change settings or add
+  people.
 
 ## Who owns what
 
