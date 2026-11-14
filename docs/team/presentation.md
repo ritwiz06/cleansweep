@@ -1,7 +1,8 @@
 # The presentation
 
-Five minutes, four speakers, nine slides and two backups. Rehearse twice between Nov 16 and
-Nov 20 with a timer; the talk is on Nov 21 or Nov 28.
+Five minutes, a hard stop: four speakers, eight slides and three backups, planned for 4:38 so
+that 20 seconds are left for the handovers. Rehearse twice between Nov 16 and Nov 20 with a timer;
+the talk is on Nov 21 or Nov 28.
 
 The Phase 3 numbers are final since the results freeze (Nov 13, 12:00). They come from
 `results/summary/v3/hypotheses.csv`, the README's "Phase 3 results" section and
@@ -9,99 +10,91 @@ The Phase 3 numbers are final since the results freeze (Nov 13, 12:00). They com
 
 ## Plan
 
-| Time | Speaker | Slide | Content |
-|---|---|---|---|
-| 0:00 – 0:30 | Ritik | 1. CleanSweep: the problem | agents leave code behind; removing it safely is hard |
-| 0:30 – 0:55 | Ritik | 2. Since the progress report | each item the progress report left to do, with its number |
-| 0:55 – 1:35 | Ritik | 3. The agent team at work | the live Studio Replay (the clip as fallback): the team, the probes catch `_round_money`, the rollback |
-| 1:35 – 2:35 | Badri | 4. Our data | mined review comments, the test projects, SlopBench, the Phase 3 sets |
-| 2:35 – 3:15 | Maninderjit | 5. How CleanSweep keeps edits safe | the Manager and ten agents, the Guard, the probes |
-| 3:15 – 3:45 | Maninderjit | 6. The audit and its limits | confirmed vs LLM-judged readings; the judge panel |
-| 3:45 – 4:05 | Simran | 7. Out of sample | the benchmark on 10 new projects: the team, the single agent, Aider |
-| 4:05 – 4:25 | Simran | 8. Real projects with held-out tests | far fewer wrong edits than Aider, but held-out tests changed |
-| 4:25 – 5:00 | Simran | 9. Hypotheses scorecard | H1–H4, each with its evidence, and three takeaways |
-| after | everyone | 10–11. Backup slides | the Phase 2 benchmark; Studio screenshots if the demo fails |
+| Time | Seconds | Speaker | Slide | Content |
+|---|---|---|---|---|
+| 0:00 – 0:27 | 27 | Ritik | 1. CleanSweep: the problem | agents leave code behind; removing it safely is hard |
+| 0:27 – 0:42 | 15 | Ritik | 2. Since the progress report | each item the progress report left to do, with its number |
+| 0:42 – 1:19 | 37 | Ritik | 3. The agent team at work | the 36.5 s Studio clip: the team, the probes catch `_round_money`, the rollback |
+| 1:19 – 2:04 | 45 | Maninderjit | 4. How CleanSweep keeps edits safe | the Manager, its eight steps, the Guard, the probes |
+| 2:04 – 2:28 | 24 | Maninderjit | 5. The audit and its limits | confirmed vs LLM-judged readings; the judge panel |
+| 2:28 – 3:32 | 64 | Badri | 6. Our data and the benchmark, out of sample | the mined requests, the projects, SlopBench; 10 new projects: the team, the single agent, Aider |
+| 3:32 – 3:55 | 23 | Simran | 7. Real projects with held-out tests | far fewer wrong edits than Aider, but held-out tests changed |
+| 3:55 – 4:38 | 43 | Simran | 8. Hypotheses scorecard | H1–H4, each with its evidence, and three takeaways |
+| after | – | everyone | 9–11. Backup slides | our data in full; the Phase 2 benchmark; live Studio Replay |
 
-At a calm pace (130 words a minute) the four scripts below take about five minutes. Read yours
-aloud with a timer and cut, rather than speed up. Lines in square brackets are cues, not words to
-say.
+The scripts are 599 words: Ritik 156, Maninderjit 154, Badri 142, Simran 147. At about 135 words a
+minute that is the time above. Read yours aloud with a timer and cut, rather than speed up.
 
 ## Scripts
 
 ### Ritik: introduction, progress and demo (slides 1, 2 and 3)
 
+Timing: slide 1, 27 s · slide 2, 15 s · slide 3, 37 s = 79 s. The clip is 36.5 s; talk over it.
+
 > Hi, we are Group 30, and this is CleanSweep.
 >
-> Coding agents leave things behind: scratch scripts, old copies of files, duplicate helpers. Removing them by hand is risky. Code that looks dead may still be
-> used, for example a method a framework calls by name, and the tests often do not notice.
-> CleanSweep removes this leftover code and keeps an edit only if the project still behaves the
-> same.
+> Coding agents leave things behind: scratch scripts, old copies of files, duplicate helpers.
+> Removing them is risky, because code that looks dead may still be called by name, and the
+> tests do not notice. CleanSweep removes this code and keeps an edit only if the project still
+> behaves the same.
 >
-> *(slide 2)* Since our progress report, everything it listed as remaining is done. We ran
-> Phase 3, the final evaluation we pre-registered on November 6, froze its results on
-> November 13, and made the final release on November 14. Each line here is one item and its
-> number; Simran comes back to the four hypotheses at the end.
+> *(slide 2)* Since our progress report we finished Phase 3, the final evaluation we
+> pre-registered on November 6, and froze its results on November 13. Each line here is one item
+> and its number.
 >
-> *(slide 3)* [Cue: live Studio Replay. Switch to Studio, already open on Home. Press Try the
-> demo, then Next decision until the Guard rolls back _round_money, then Before / after. If
-> Studio is not ready, play the clip on this slide.]
->
-> This is Studio replaying a cleanup of a small bookstore app. A team of agents finds candidates
-> and checks each one. Here it merges a rounding helper into a near-copy, and every test passes.
-> But the probes call both versions on the same input: 0.125 rounds to 0.13 before, and to 0.12
-> after. So the Guard rolls the edit back, and the other edits are kept. Badri, where does this
-> code come from?
+> *(slide 3)* This is Studio replaying a cleanup of a bookstore app. A team of agents finds
+> candidates and checks each one. It merges a rounding helper into a near-copy, and every test
+> passes. But the probes call both versions on the same input: 0.125 rounds to 0.13 before and
+> to 0.12 after. So the Guard rolls the edit back and keeps the others. Maninderjit explains
+> how.
 
-### Badri: data (slide 4)
+### Maninderjit: safety and the audit (slides 4 and 5)
 
-> Our data has three parts.
->
-> First, what reviewers ask for: of 6,330 review comments on Python files in AIDev, 535 ask to
-> remove code. We clustered them into 15 kinds and mined 64 association rules, which the agents
-> use as a knowledge base.
->
-> Second, projects to clean: SWE-bench patches written by coding agents, and real AIDev
-> repositories. Of 120 we sampled, 21 installed and passed their tests in Docker.
->
-> Third, SlopBench, our benchmark: seven kinds of planted slop, two traps that must stay, and a
-> hidden test the cleaner never sees.
->
-> For Phase 3 we took only new repositories: 10 for the benchmark, 15 real projects with half
-> their tests held out, and 30 for a test of autonomy.
->
-> Maninderjit will explain how CleanSweep stays safe.
+Timing: slide 4, 45 s · slide 5, 24 s = 69 s.
 
-### Maninderjit: safety and the audit (slides 5 and 6)
+> CleanSweep works on a copy and never changes the original project. A Manager leads ten agents
+> through eight steps: learn the project, run its tests three times, find candidates,
+> investigate each one, plan small work packages, then apply and check them one at a time. The
+> agents that propose an edit never approve it.
+>
+> The safety net is the Guard. After each package it runs the tests and differential probes: the
+> same calls on the code before and after the edit. Any difference rolls the package back, and a
+> failing batch is split in half until the bad edit is found.
+>
+> *(slide 5)* Tests and probes cannot see everything, so a different model audits every kept
+> edit, blind to the method. A test or a rule confirms some verdicts; the rest are readings,
+> judged by an LLM. Three LLM judges agree with the labels at kappa 0.455, so we label every
+> reading. Badri has the benchmark.
 
-> CleanSweep always works on a copy and never changes the original project.
->
-> A Manager leads ten agents through eight steps: learn the project, run its tests three times,
-> find candidates, investigate each one, plan small work packages, then apply and check them
-> one at a time. Every rollback becomes a lesson that the next decision must check.
->
-> The safety net is the Guard. After each package it runs the tests and differential probes:
-> small calls on the code before and after the edit. Any difference rolls the package back, and
-> a failing batch is split in half until the bad edit is found.
->
-> *(slide 6)* Tests and probes cannot see everything, so an independent model audits every kept
-> edit, blind to the method that made it. A test or a rule confirms some verdicts. The rest are
-> readings, judged by an LLM, and no human checked them. A panel of three LLM judges agrees with
-> the recorded labels at kappa 0.455, and is right on 11 of 18 confirmed verdicts. So we label
-> every reading. Simran has the results.
+### Badri: data and the benchmark (slide 6)
 
-### Simran: results (slides 7, 8 and 9)
+Timing: slide 6, 64 s = 64 s.
 
-> *(slide 7)* On 10 new benchmark projects, the team removed 72 percent of the planted slop and
-> no trap. The single agent deleted 3 traps, and Aider 4.
+> Our data has three parts. We mined 535 requests to remove code from 6,330 review comments on
+> agent-written Python, clustered them into 15 kinds and mined 64 association rules, which the
+> agents use as a knowledge base. We clean real projects: patches written by coding agents, and
+> AIDev repositories that run in Docker. And we built SlopBench, which plants seven kinds of
+> slop into a real project, two traps that look like slop but must stay, and a hidden test the
+> cleaner never sees.
 >
-> *(slide 8)* On 15 real projects with held-out tests, the team's kept edits were wrong far less
-> often than Aider's: 4 of 191 against 4 of 13. But Aider keeps almost nothing, and held-out
-> tests changed on 4 of 10 paired projects for the team, against none for Aider.
+> For Phase 3 we used only new projects whose license allows it. On 10 new benchmark projects
+> the team removed 72 percent of the planted slop, deleted no trap and changed no hidden test.
+> The single agent, which has the same tools but checks its own edits, deleted 3 traps, and
+> Aider 4. Simran has the real projects.
+
+### Simran: results (slides 7 and 8)
+
+Timing: slide 7, 23 s · slide 8, 43 s = 66 s.
+
+> On 15 real projects with half of their tests held out, the team's kept edits were wrong far
+> less often than Aider's: 4 of 191 against 4 of 13. But Aider keeps almost nothing, and
+> held-out tests changed on 4 of 10 paired projects for the team, against none for Aider.
 >
-> *(slide 9)* We registered four hypotheses before the runs. H1 is not supported, for that
-> reason. H2 is not supported, and tells us nothing: the resolver changed no decision, so both
-> arms replayed the same run. H3 holds only by a tie, so batching stays off by default. H4 holds
-> at the threshold: 27 of 30 repositories ran end to end.
+> *(slide 8)* We registered four hypotheses before the runs. H1 is not supported, for that
+> reason. H2 is not supported and tells us nothing: the resolver changed no decision, so both
+> versions replayed the same run. H3 holds only by a tie: 41 percent of the requests with the
+> same wrong edits, so batching stays off by default. H4 holds at the threshold: 27 of 30
+> repositories ran end to end.
 >
 > Three takeaways. Checking every edit makes cleanup much safer. What is left is code used by
 > name. And safer per edit is not safer overall. Thank you.
@@ -110,31 +103,30 @@ say.
 
 Each speaker ends with the next speaker's name and topic, as in the scripts. Hand over the
 clicker with that sentence, not after it. Simran's part has no outgoing line: it ends with
-"Thank you". If a speaker runs long, the next one cuts their second paragraph; nobody speeds up.
+"Thank you". If a speaker runs long, the next one cuts a sentence; nobody speeds up.
 
 ## Demo plan
 
-The demo is the live Studio Replay on slide 3, cued in the slide's notes; the 36.5 s clip on the
-same slide is the fallback. Both show the team, the probes catching `_round_money`, the rollback
-and the result. Studio Replay runs offline.
+The demo is the 36.5 s clip on slide 3. It shows the team, the probes catching `_round_money`,
+the rollback and the result, and it needs no network. Live Studio Replay is the backup (slide
+11): use it if the clip does not play, or in the Q&A if someone asks to see it live.
 
 **Before the talk (10 minutes):**
 
 1. The laptop on power, sleep off, notifications off, the screen at 1280×720 or mirrored.
 2. Check the clip plays from the deck.
-3. Start Studio: in the repository, with the environment active, run `cleansweep studio`. Leave
-   it on **Home**; **Try the demo** opens `20261102_demo_feature_agentic`.
+3. Have the backup ready: in the repository, with the environment active, run
+   `cleansweep studio` and leave it on **Home**.
 
-**Plan A: the live Studio Replay (the cue in the slide 3 notes).** Switch to Studio, press
-**Try the demo**, then **Next decision** (or Space in **Present**) until the `_round_money`
-rollback; narrate it with the slide 3 script; then press **Before / after** for the summary card.
-Replay calls no LLM and runs no tests, so it works with no network and no key.
+**Plan A: the clip on slide 3.** Narrate over it with the slide 3 script.
 
-**Plan B: the clip on slide 3**, if Studio is not ready. Narrate over it with the same script. It
-needs no network.
+**Plan B: live Studio Replay (backup slide 11).** Press **Try the demo** (it opens
+`20261102_demo_feature_agentic`), then **Next decision** (or Space in **Present**) until the
+`_round_money` rollback; then **Before / after** for the summary card. Replay calls no LLM and runs
+no tests, so it works with no network and no key.
 
-**Plan C, if neither plays:** the backup slide 11 with the screenshots
-`../images/studio/present.png` and `../images/studio/before_after_diff.png`. Say the same words.
+**Plan C, if neither plays:** the screenshots on slide 11 (`../images/studio/present.png` and
+`../images/studio/before_after_diff.png`). Say the same words.
 
 ## Q&A sheet
 
@@ -163,3 +155,5 @@ owner of each question is in [tasks.md](tasks.md#a2-everyone-prepare-the-qa).
 | 18 | What does the team still miss, and where does it fail? | Code that only something outside the tests reaches (a web handler, a build hook, a function used by name). It timed out on 4 of 15 real projects, and 27 of 30 repositories ran end to end (H4 at its threshold). | README "Known limitations" |
 | 19 | H3 is "supported": why is batching still off? | It holds only by a tie: 41% of the requests, 16 vs 16 wrong edits where both finished. Batching's other 36 wrong edits on real projects are on openbench, where the team's run hit the request budget, so they are not paired. We did not trust a tie, so batching stays off by default. | [results.md](../results.md) |
 | 20 | What would you do next? | Find code that is used by name at run time, since that is most of the remaining wrong edits; judge a cleaner per edit and in total, since Phase 3 shows the two can disagree; have a human check a sample of the labels; release SlopBench. | README "Known limitations" |
+| 21 | Where do the test projects come from? | Three kinds: SWE-bench patches written by coding agents, with their own tests; real AIDev repositories (of 666 qualifying Python repositories we sampled 120, and 21 installed and passed their tests in Docker); and SlopBench, our benchmark with planted slop, traps and a hidden test. Phase 3 used only new repositories whose license allows it: 10 for the benchmark, 15 real projects, 30 for autonomy. | backup slide 9; [slopbench.md](../slopbench.md) |
+| 22 | Can we see it live? | Yes, offline: backup slide 11. Studio Replay of the demo app, the same run as the clip: Try the demo, Next decision until the Guard rolls back `_round_money`, then Before / after. It needs no network, key or Docker. | [Demo plan](#demo-plan) |

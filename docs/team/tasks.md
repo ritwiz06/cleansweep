@@ -88,8 +88,8 @@ issues or pull requests.
 
 ### S4. Present the Methods part
 
-Due **Nov 20**. Your slot is slides 5 and 6 (how CleanSweep keeps edits safe, and the audit), 2:35 to 3:45. Learn the script in
-[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-5-and-6) and time it at about 70
+Due **Nov 20**. Your slot is slides 4 and 5 (how CleanSweep keeps edits safe, and the audit), 1:19 to 2:28. Learn the script in
+[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-4-and-5) and time it at about 70
 seconds. Take the Q&A questions on how it works (questions 3, 10 and 11).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
@@ -187,10 +187,10 @@ says what you checked.
 
 ### D3. Present the Data part
 
-Due **Nov 20**. Your slot is slide 4, 1:35 to 2:35. Learn the script in
-[presentation.md](presentation.md#badri-data-slide-4), say it aloud with a timer (about 60
-seconds), and change the wording until it sounds like you. Check slide 4 with Ritik. Take the
-Q&A questions on data (questions 12 and 13).
+Due **Nov 20**. Your slot is slide 6 (our data and the benchmark, out of sample), 2:28 to 3:32. Learn the
+script in [presentation.md](presentation.md#badri-data-and-the-benchmark-slide-6), say it aloud
+with a timer (about 65 seconds), and change the wording until it sounds like you. Check slide 6
+with Ritik. Take the Q&A questions on data and the benchmark (questions 4, 12, 13 and 21).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
 
@@ -232,9 +232,9 @@ each figure says which direction is better. Leave comments on Overleaf.
 
 ### E3. Present the Results part
 
-Due **Nov 20**. Your slot is slides 7, 8 and 9, 3:45 to 5:00. Learn the script in
-[presentation.md](presentation.md#simran-results-slides-7-8-and-9) and check its numbers against
-`hypotheses.csv`. Take the Q&A questions on results (questions 4, 5, 14, 15, 16, 17 and 18).
+Due **Nov 20**. Your slot is slides 7 and 8, 3:32 to 4:38. Learn the script in
+[presentation.md](presentation.md#simran-results-slides-7-and-8) and check its numbers against
+`hypotheses.csv`. Take the Q&A questions on results (questions 5, 14, 15, 16, 17 and 18).
 
 **Done when:** you have given the part in both rehearsals within 80 seconds.
 
@@ -249,9 +249,10 @@ the ASU Drive. Then update the release date in [handoff.md](handoff.md) and
 
 ### P3. Introduction, demo and slides
 
-Due **Nov 20**. The slide deck (slides 1 to 9 and the backup slides), shared with everyone before
-the first rehearsal; the introduction and the demo in [presentation.md](presentation.md#demo-plan),
-tested offline with Studio Replay at the first rehearsal.
+Due **Nov 20**. The slide deck (slides 1 to 8 and the three backup slides), shared with everyone
+before the first rehearsal; the introduction and the demo in
+[presentation.md](presentation.md#demo-plan): the clip on slide 3, and Studio Replay as the
+backup, tested offline at the first rehearsal.
 
 ### P2. Assemble and submit the final report
 
@@ -270,7 +271,7 @@ done.
 ### A2. Everyone: prepare the Q&A
 
 Due **Nov 20**. Read the [Q&A sheet](presentation.md#qa-sheet). Each of us takes the questions
-on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19 and 20) and practices a
+on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19, 20 and 22) and practices a
 one-sentence answer for each. Add questions you expect to the sheet by pull request.
 
 ### A3. Everyone: two timed rehearsals

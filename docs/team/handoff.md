@@ -41,9 +41,9 @@ More: [status.md](status.md).
 | Part | Owner | Backup |
 |---|---|---|
 | Talk: slides 1–3, introduction, progress and demo | Ritik | Maninderjit |
-| Talk: slide 4, data | Badri | Ritik |
-| Talk: slides 5–6, safety and the audit | Maninderjit | Simran |
-| Talk: slides 7–9, results | Simran | Ritik |
+| Talk: slides 4–5, safety and the audit | Maninderjit | Simran |
+| Talk: slide 6, data and the benchmark | Badri | Ritik |
+| Talk: slides 7–8, results | Simran | Ritik |
 | Report: Introduction and Discussion | Ritik | Simran |
 | Report: Data (review) | Badri | Maninderjit |
 | Report: Methods (review) | Maninderjit | Badri |
@@ -95,7 +95,8 @@ cleansweep studio --no-browser        # then open the printed address yourself
 ```
 
 On **Home**, press **Try the demo**; or open **Runs** and pick `20261102_demo_feature_agentic`.
-Press **Next decision** until the Guard rolls back `_round_money`, then **Before / after**. If
-Studio will not start, show the clip on slide 3, then backup slide 11 with the screenshots
-`docs/images/studio/present.png` and `docs/images/studio/before_after_diff.png`. If the install is
+Press **Next decision** until the Guard rolls back `_round_money`, then **Before / after**. The talk
+itself plays the clip on slide 3; this replay is its backup (slide 11). If Studio will not start,
+use the screenshots on slide 11 (`docs/images/studio/present.png` and
+`docs/images/studio/before_after_diff.png`). If the install is
 broken, see [setup.md](setup.md#troubleshooting). Details of the demo: [presentation.md](presentation.md#demo-plan).
