@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api, useApi } from "../api";
 import { DiffView, Md } from "../components/Code";
-import { Async, Badge, Card, Empty, PageHeader, StatsRow, Status, Tabs, seconds } from "../components/common";
+import { Async, Badge, Card, Empty, PageHeader, ShowMore, StatsRow, Status, Tabs } from "../components/common";
+import { formatNumber } from "../state/labels";
 import { RunOutcome } from "../components/RunOutcome";
 import { categoryLabel } from "../state/annotate";
 import { caseTitle, shortDuration } from "../state/names";
@@ -104,31 +105,104 @@ function DiffStats({ text }: { text: string }) {
   );
 }
 
+// A case study in one sentence: what the team removed and whether the tests still pass.
+function caseSentence(s: CaseDetail["summary"]): string {
+  const kept = s.packages?.kept ?? 0;
+  const back = s.packages?.rolled_back ? ` and rolled back ${s.packages.rolled_back}` : "";
+  const lines = typeof s.lines_removed === "number" ? `, removing ${formatNumber(s.lines_removed)} lines` : "";
+  const before = s.tests_before?.passed;
+  const after = s.tests_after?.passed;
+  const tests =
+    typeof before === "number" && typeof after === "number"
+      ? before === after
+        ? `; all ${formatNumber(before)} passing tests still pass`
+        : `; passing tests went from ${formatNumber(before)} to ${formatNumber(after)}`
+      : "";
+  return `The team kept ${kept} changes${back}${lines}${tests}.`;
+}
+
+function ReviewSheet({ review }: { review: CaseDetail["review"] }) {
+  const reviewed = review.rows.filter((r) => r.llm_decision);
+  const accepted = reviewed.filter((r) => r.llm_decision === "accept").length;
+  const decided = reviewed.filter((r) => r.llm_decision !== "unsure").length;
+  return (
+    <>
+      <p className="review-label">
+        <Badge tone="info">{REVIEW_LABEL}</Badge> — an LLM's judgment
+        {review.model ? ` (${review.model})` : ""}, not a human review. Three votes per row; the majority decides.
+      </p>
+      {reviewed.length > 0 && (
+        <p>
+          {REVIEW_LABEL}: <b>{decided ? `${Math.round((accepted / decided) * 100)}%` : "-"}</b> ({accepted} accepted of {decided} decided,{" "}
+          {reviewed.length - decided} unsure)
+        </p>
+      )}
+      <div className="table-wrap" style={{ maxHeight: 520 }} tabIndex={0}>
+        <table className="data" aria-label="Review sheet">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>mode</th>
+              <th>kind</th>
+              <th>item</th>
+              <th>category</th>
+              <th>what</th>
+              <th>outcome</th>
+              <th>{REVIEW_LABEL}</th>
+              <th>votes</th>
+              <th>reviewer's reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {review.rows.map((r) => (
+              <tr key={r.n}>
+                <td>{r.n}</td>
+                <td>{r.mode}</td>
+                <td>{r.kind}</td>
+                <td>
+                  <code>{r.item}</code>
+                </td>
+                <td>{r.category}</td>
+                <td className="wrap">{r.what}</td>
+                <td>
+                  <Status value={r.outcome} />
+                </td>
+                <td>{r.llm_decision ? <Status value={r.llm_decision} /> : <span className="muted">not reviewed</span>}</td>
+                <td>{(r.llm_votes || []).join(", ")}</td>
+                <td className="wrap">{r.llm_reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function CaseView({ name }: { name: string }) {
   const res = useApi<CaseDetail>(`case:${name}`, () => api(`/api/cases/${encodeURIComponent(name)}`));
-  const [tab, setTab] = useState<"health" | "report" | "review" | "diff">("health");
+  const [tab, setTab] = useState<"health" | "report" | "diff">("health");
   const diff = useApi<{ text: string }>(tab === "diff" ? `casediff:${name}` : null, () => api(`/api/cases/${encodeURIComponent(name)}/diff`));
   return (
     <Async res={res} what="Loading the case study">
       {(c) => {
         const s = c.summary;
-        const reviewed = c.review.rows.filter((r) => r.llm_decision);
-        const accepted = reviewed.filter((r) => r.llm_decision === "accept").length;
-        const decided = reviewed.filter((r) => r.llm_decision !== "unsure").length;
+        const extra = [
+          s.files_removed !== undefined && s.files_removed !== null && `${s.files_removed} files removed`,
+          s.candidates !== undefined && s.candidates !== null && `${formatNumber(s.candidates)} candidates`,
+          s.test_runs !== undefined && s.test_runs !== null && `${s.test_runs} test runs`,
+          s.seconds && `${shortDuration(s.seconds)}`,
+          c.brief.python_files && `${formatNumber(c.brief.python_files)} Python files`,
+          s.llm_requests && `${formatNumber(s.llm_requests)} LLM requests`,
+        ].filter(Boolean);
         return (
           <div>
-            <h3 title={c.name}>
-              {caseTitle(c.name, s.project)}{" "}
-              <RunOutcome verdict={s.verdict} kept={s.packages?.kept} rolledBack={s.packages?.rolled_back} lines={s.lines_removed} />
-            </h3>
-            <p className="muted one-line" title={s.project}>
-              {s.project}
-            </p>
+            <h3 title={`${c.name}\n${s.project}`}>{caseTitle(c.name, s.project)}</h3>
+            <p className="takeaway">{caseSentence(s)}</p>
             <Tabs
               tabs={[
-                { key: "health", label: "Health before / after" },
+                { key: "health", label: "Result" },
                 { key: "report", label: "Report" },
-                { key: "review", label: `Review sheet (${c.review.rows.length})` },
                 { key: "diff", label: "Diff" },
               ]}
               value={tab}
@@ -141,91 +215,40 @@ function CaseView({ name }: { name: string }) {
                   items={[
                     { label: "Tests passing, before → after", value: `${s.tests_before?.passed ?? "-"} → ${s.tests_after?.passed ?? "-"}`, lead: true },
                     { label: "Lines removed", value: s.lines_removed ?? "-" },
-                    { label: "Files removed", value: s.files_removed ?? "-" },
-                    { label: "Candidates", value: s.candidates ?? "-" },
-                    { label: "Test runs", value: s.test_runs ?? "-" },
-                    { label: "Time", value: shortDuration(s.seconds), hint: seconds(s.seconds) },
                   ]}
                 />
-                <p className="stats-note">
-                  {c.brief.python_files ?? "-"} Python files · {s.llm_requests ?? "-"} LLM requests
-                </p>
+                <p className="stats-note">{extra.join(" · ")}</p>
                 <Card title="Slop by category">
                   {Object.keys(s.by_category || {}).length ? <CategoryBars byCategory={s.by_category} /> : <Empty>No candidates by category in this record.</Empty>}
                 </Card>
-                {c.docs["diffstat.txt"] && (
-                  <Card title="Diff stats">
-                    <DiffStats text={c.docs["diffstat.txt"]} />
-                  </Card>
+              </>
+            )}
+            {tab === "report" && (
+              <>
+                {c.docs["CLEANUP_REPORT.md"] ? <Md text={c.docs["CLEANUP_REPORT.md"]} /> : <Empty>No CLEANUP_REPORT.md in this record.</Empty>}
+                {c.review.rows.length > 0 && (
+                  <ShowMore label={`Show the review sheet (${c.review.rows.length} rows, LLM-judged)`}>
+                    <ReviewSheet review={c.review} />
+                  </ShowMore>
                 )}
               </>
             )}
-            {tab === "report" &&
-              (c.docs["CLEANUP_REPORT.md"] ? <Md text={c.docs["CLEANUP_REPORT.md"]} /> : <Empty>No CLEANUP_REPORT.md in this record.</Empty>)}
-            {tab === "review" && (
-              <Card title="Review sheet">
-                <p className="review-label">
-                  <Badge tone="info">{REVIEW_LABEL}</Badge> — an LLM's judgment
-                  {c.review.model ? ` (${c.review.model})` : ""}, not a human review. Three votes per row; the majority decides.
-                </p>
-                {reviewed.length > 0 && (
-                  <p>
-                    {REVIEW_LABEL}: <b>{decided ? `${Math.round((accepted / decided) * 100)}%` : "-"}</b> ({accepted} accepted of {decided} decided,{" "}
-                    {reviewed.length - decided} unsure)
-                  </p>
+            {tab === "diff" && (
+              <>
+                {c.docs["diffstat.txt"] && (
+                  <ShowMore label="Show the changed files">
+                    <DiffStats text={c.docs["diffstat.txt"]} />
+                  </ShowMore>
                 )}
-                {!c.review.rows.length ? (
-                  <Empty>No review sheet for this case study.</Empty>
+                {c.has_final_diff ? (
+                  <Async res={diff} what="Loading the diff">
+                    {(d) => <DiffView text={d.text} maxHeight={640} />}
+                  </Async>
                 ) : (
-                  <div className="table-wrap" style={{ maxHeight: 520 }} tabIndex={0}>
-                    <table className="data" aria-label="Review sheet">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>mode</th>
-                          <th>kind</th>
-                          <th>item</th>
-                          <th>category</th>
-                          <th>what</th>
-                          <th>outcome</th>
-                          <th>{REVIEW_LABEL}</th>
-                          <th>votes</th>
-                          <th>reviewer's reason</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {c.review.rows.map((r) => (
-                          <tr key={r.n}>
-                            <td>{r.n}</td>
-                            <td>{r.mode}</td>
-                            <td>{r.kind}</td>
-                            <td>
-                              <code>{r.item}</code>
-                            </td>
-                            <td>{r.category}</td>
-                            <td className="wrap">{r.what}</td>
-                            <td>
-                              <Status value={r.outcome} />
-                            </td>
-                            <td>{r.llm_decision ? <Status value={r.llm_decision} /> : <span className="muted">not reviewed</span>}</td>
-                            <td>{(r.llm_votes || []).join(", ")}</td>
-                            <td className="wrap">{r.llm_reason}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Empty>This record has no final.diff (see the report and the changed files).</Empty>
                 )}
-              </Card>
+              </>
             )}
-            {tab === "diff" &&
-              (c.has_final_diff ? (
-                <Async res={diff} what="Loading the diff">
-                  {(d) => <DiffView text={d.text} maxHeight={640} />}
-                </Async>
-              ) : (
-                <Empty>This record has no final.diff (see the report and the diff stats).</Empty>
-              ))}
           </div>
         );
       }}
@@ -249,22 +272,13 @@ function CaseList({ rows, name, onPick }: { rows: CaseRow[]; name: string; onPic
       {rows.map((r) => (
         <button
           key={r.name}
-          title={r.name}
+          title={`${r.name}\n${r.project}`}
           aria-current={r.name === name ? "true" : undefined}
           className={`case-card ${r.name === name ? "active" : ""}`}
           onClick={() => onPick(r.name)}
         >
-          <span className="case-card-head">
-            <b>{caseTitle(r.name, r.project)}</b>
-            <RunOutcome verdict={r.verdict} kept={r.packages?.kept} rolledBack={r.packages?.rolled_back} lines={r.lines_removed} />
-          </span>
-          <span className="small muted one-line" title={r.project}>
-            {r.project}
-          </span>
-          <span className="small case-card-numbers">
-            tests {r.tests_before ?? "-"} → {r.tests_after ?? "-"}
-            {r.reviewed > 0 && ` · LLM reviewer: ${r.accepted} accept, ${r.rejected} reject`}
-          </span>
+          <b>{caseTitle(r.name, r.project)}</b>
+          <RunOutcome verdict={r.verdict} kept={r.packages?.kept} rolledBack={r.packages?.rolled_back} lines={r.lines_removed} />
         </button>
       ))}
     </div>

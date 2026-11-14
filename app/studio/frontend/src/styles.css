@@ -1907,22 +1907,10 @@ details summary {
   border-radius: var(--radius-lg);
 }
 
-.case-card-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0);
-  min-width: 0;
-}
-
-.case-card-head b {
+.case-card b {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.case-card-numbers {
-  font-variant-numeric: tabular-nums;
-  color: var(--text-2);
 }
 
 .case-card.active {

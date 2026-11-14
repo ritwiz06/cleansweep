@@ -4,8 +4,8 @@ import { Bar, BarChart, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
 import { api, useApi, type ReportView, type SavedReport, type Table } from "../api";
 import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
 import { CodeBlock, DiffView } from "../components/Code";
-import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, StatsRow, Status, Tabs } from "../components/common";
-import { isIsoDate, shortDate, valueLabel } from "../state/labels";
+import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, ShowMore, Status, Tabs } from "../components/common";
+import { isIsoDate, plural, shortDate, valueLabel } from "../state/labels";
 import { shortDay, targetName } from "../state/names";
 import { Figure } from "./Results";
 
@@ -355,56 +355,45 @@ function Report({ root, path }: { root: string; path: string }) {
           rows: r.items.map((i) => [status[i.item_id] || "-", i.lane, i.category, i.unit, i.action, i.safe_score, i.reason]),
         };
         const verdicts = r.results.filter((x) => x.status !== "skipped" && units[x.item_id]);
+        const rolledBack = r.stats.items_rolled_back || 0;
+        const meta = `${r.repo_id} · method ${r.method} · started ${isIsoDate(r.started_at) ? shortDate(r.started_at) : r.started_at}`;
         return (
           <>
-            <p className="muted small">
-              {r.repo_id} · method {r.method} · started <span title={r.started_at}>{isIsoDate(r.started_at) ? shortDate(r.started_at) : r.started_at}</span>
+            <p className="takeaway" title={meta}>
+              The sweep removed {cleaned} of {plural(r.items.length, "item")} found, {plural(r.stats.lines_removed || 0, "line")} in all
+              {rolledBack ? `; the Guard rolled back ${rolledBack}` : ""}, with {plural(r.stats.test_runs || 0, "test run")}.
             </p>
-            <StatsRow
-              label="Report numbers"
-              items={[
-                {
-                  label: `Slop cleaned (items), ${Math.max(r.items.length - cleaned, 0)} still open`,
-                  value: `${cleaned} / ${r.items.length}`,
-                  lead: true,
-                  share: cleaned / Math.max(r.items.length, 1),
-                },
-                { label: "Items found", value: r.stats.items_total ?? r.items.length },
-                { label: "Kept", value: (r.stats.items_kept || 0) + (r.stats.items_repaired || 0) },
-                { label: "Rolled back", value: r.stats.items_rolled_back || 0 },
-                { label: "Lines removed", value: r.stats.lines_removed || 0 },
-                { label: "Test runs", value: r.stats.test_runs || 0 },
-              ]}
-            />
             <Card title="Cleanup plan" actions={<Badge tone="info">reasons: LLM-judged</Badge>}>
               <DataTable table={plan} label="Cleanup plan" />
             </Card>
-            <Card title="Guard verdicts">
-              {verdicts.length ? (
-                verdicts.map((x) => {
-                  const item = units[x.item_id];
-                  const restore = restoreCommand(item.evidence || [], item.unit);
-                  return (
-                    <details key={x.item_id}>
-                      <summary>
-                        <Status value={x.status} /> {valueLabel(item.category)} · {item.unit}
-                      </summary>
-                      <p>{item.reason}</p>
-                      {x.tests && (
-                        <p className="small">
-                          tests: {x.tests.passed} passed, {x.tests.failed} failed
-                        </p>
-                      )}
-                      {x.notes && <pre className="log" tabIndex={0}>{x.notes}</pre>}
-                      {x.diff && <DiffView text={x.diff} />}
-                      {restore && <CodeBlock code={restore} language="bash" />}
-                    </details>
-                  );
-                })
-              ) : (
-                <Empty>The Guard checked nothing in this report.</Empty>
-              )}
-            </Card>
+            <ShowMore label={`Show the Guard's verdicts (${verdicts.length})`}>
+              <Card title="Guard verdicts">
+                {verdicts.length ? (
+                  verdicts.map((x) => {
+                    const item = units[x.item_id];
+                    const restore = restoreCommand(item.evidence || [], item.unit);
+                    return (
+                      <details key={x.item_id}>
+                        <summary>
+                          <Status value={x.status} /> {valueLabel(item.category)} · {item.unit}
+                        </summary>
+                        <p>{item.reason}</p>
+                        {x.tests && (
+                          <p className="small">
+                            tests: {x.tests.passed} passed, {x.tests.failed} failed
+                          </p>
+                        )}
+                        {x.notes && <pre className="log" tabIndex={0}>{x.notes}</pre>}
+                        {x.diff && <DiffView text={x.diff} />}
+                        {restore && <CodeBlock code={restore} language="bash" />}
+                      </details>
+                    );
+                  })
+                ) : (
+                  <Empty>The Guard checked nothing in this report.</Empty>
+                )}
+              </Card>
+            </ShowMore>
           </>
         );
       }}

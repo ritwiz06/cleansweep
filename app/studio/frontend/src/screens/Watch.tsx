@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { CartesianGrid, ComposedChart, LabelList, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type Table } from "../api";
 import { AXIS, SeriesKey, TOOLTIP } from "../components/Charts";
-import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, StatsRow, Status } from "../components/common";
+import { ANIMATE, Async, Card, DataTable, Empty, PageHeader, ShowMore, Status } from "../components/common";
+import { records } from "../state/evaluation";
+import { fileTitle } from "../state/names";
+import { watchTakeaway } from "../state/takeaways";
 import { isIsoDate, plural, shortDate } from "../state/labels";
 import { useRuns } from "./Runs";
 
@@ -107,6 +110,20 @@ function SlopChart({ data }: { data: Point[] }) {
   );
 }
 
+// A watch folder in one sentence: how often it cleaned, the slop now, and the test runs used.
+function watchSentence(entries: Entry[]): string {
+  const last = entries[entries.length - 1];
+  const cleans = entries.filter((e) => e.decision === "clean").length;
+  const now = `slop is now ${(last.slop.share * 100).toFixed(1)}% of the Python lines`;
+  const budget = last.budget_tests ? ` of ${last.budget_tests}` : "";
+  return `Watch cleaned ${plural(cleans, "time")} in ${plural(entries.length, "poll")}; ${now}, with ${last.test_runs_used}${budget} test runs used.`;
+}
+
+// "raw/watch_demo/watch" -> "Watch demo": the folder's own name, not its path.
+function folderTitle(path: string): string {
+  return fileTitle(path.split("/").filter((s) => s && s !== "raw" && s !== "watch").pop() || path);
+}
+
 function WatchView({ root, path, live }: { root: string; path: string; live: boolean }) {
   const res = useApi<WatchLog>(`watch:${root}/${path}`, () => api("/api/watch", { root, path }));
   useEffect(() => {
@@ -117,7 +134,6 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
   return (
     <Async res={res} what="Loading the watch log" empty={(w) => (w.entries.length ? null : "No polls logged yet.")} emptyAction={{ label: "Check again", onClick: res.reload }}>
       {(w) => {
-        const last = w.entries[w.entries.length - 1];
         const data = w.entries.map((e, i) => ({
           poll: i + 1,
           items: e.slop.items,
@@ -125,25 +141,11 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
           clean: e.decision === "clean" ? e.slop.items : null,
           label: `${e.commit.slice(0, 8)} ${e.subject}`,
         }));
-        const cleans = w.entries.filter((e) => e.decision === "clean").length;
         return (
-          <>
-            <StatsRow
-              label="Watch numbers"
-              items={[
-                { label: w.entries.length === 1 ? "Poll" : "Polls", value: w.entries.length },
-                { label: cleans === 1 ? "Clean" : "Cleans", value: cleans },
-                { label: "Open slop items", value: last.slop.items },
-                { label: "Slop share", value: `${(last.slop.share * 100).toFixed(1)}%` },
-                {
-                  label: "Test runs used",
-                  value: `${last.test_runs_used} / ${last.budget_tests || "∞"}`,
-                  share: last.budget_tests ? last.test_runs_used / last.budget_tests : undefined,
-                },
-              ]}
-            />
-            <Card title="Slop over time">{data.length < FEW_POLLS ? <PollTable entries={w.entries} /> : <SlopChart data={data} />}</Card>
-            <Card title="Commit stream and decisions">
+          <Card title="Slop over time">
+            <p className="takeaway">{watchSentence(w.entries)}</p>
+            {data.length < FEW_POLLS ? <PollTable entries={w.entries} /> : <SlopChart data={data} />}
+            <ShowMore label="Show each poll's reason">
               <ol className="commits" reversed>
                 {[...w.entries].reverse().map((e, i) => (
                   <li key={`${e.commit}-${i}`} className={`commit decision-${e.decision}`}>
@@ -166,8 +168,8 @@ function WatchView({ root, path, live }: { root: string; path: string; live: boo
                   </li>
                 ))}
               </ol>
-            </Card>
-          </>
+            </ShowMore>
+          </Card>
         );
       }}
     </Async>
@@ -206,8 +208,8 @@ export function Watch({ root, path, onPick }: { root: string; path: string; onPi
                 >
                   <option value="">pick one</option>
                   {folders.map((f) => (
-                    <option key={`${f.root}:${f.path}`} value={`${f.root}:${f.path}`}>
-                      {f.name} ({f.path})
+                    <option key={`${f.root}:${f.path}`} value={`${f.root}:${f.path}`} title={f.path}>
+                      {folderTitle(f.path)}
                     </option>
                   ))}
                 </select>
@@ -220,7 +222,20 @@ export function Watch({ root, path, onPick }: { root: string; path: string; onPi
       </Async>
       {root && path && <WatchView root={root} path={path} live={(runs.data || []).some((r) => r.root === root && r.path === path && r.live)} />}
       <Card title="Simulated watch over repository histories">
-        <Async res={replay}>{(d) => (d.table ? <DataTable table={d.table} label="Simulated watch" /> : <Empty>The simulated watch table is not there yet.</Empty>)}</Async>
+        <Async res={replay}>
+          {(d) =>
+            d.table ? (
+              <>
+                <p className="takeaway">{watchTakeaway(records(d.table))}</p>
+                <ShowMore label="Show the table">
+                  <DataTable table={d.table} label="Simulated watch" />
+                </ShowMore>
+              </>
+            ) : (
+              <Empty>The simulated watch table is not there yet.</Empty>
+            )
+          }
+        </Async>
       </Card>
     </div>
   );

@@ -71,7 +71,8 @@ export function watchTakeaway(rows: Row[]): string | null {
   const none = bars.find((b) => b.policy === "none");
   if (!watch) return null;
   const never = none ? `; never cleaning leaves ${none.debt}` : "";
-  return `Watch keeps the slop debt at ${watch.debt} per commit for ${watch.tests} test runs${never}.`;
+  const tests = Number.isInteger(watch.tests) ? `${watch.tests}` : `about ${Math.round(watch.tests)}`;
+  return `Watch keeps the slop debt at ${watch.debt} per commit for ${tests} test runs per repository${never}.`;
 }
 
 export function hypothesesTakeaway(rows: Row[]): string | null {

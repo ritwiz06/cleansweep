@@ -22,7 +22,7 @@ describe("evaluation takeaways", () => {
       "The LLM Manager got every run right in 1 of 1 scenarios, the rule-based one in 0.",
     );
     expect(watchTakeaway([{ policy: "watch", slop_debt_per_commit: 0.1, test_runs_est: 50 }, { policy: "none", slop_debt_per_commit: 14.56, test_runs_est: 0 }])).toBe(
-      "Watch keeps the slop debt at 0.1 per commit for 50 test runs; never cleaning leaves 14.56.",
+      "Watch keeps the slop debt at 0.1 per commit for 50 test runs per repository; never cleaning leaves 14.56.",
     );
     expect(hypothesesTakeaway([{ hypothesis: "H1", result: "supported" }, { hypothesis: "H2", result: "not supported" }])).toBe("H1 supported, H2 not supported.");
     expect(autonomyTakeaway([{ pass: 1, runs: 30, completed: 27, rate: 0.9 }])).toBe("With no help, 27 of 30 runs on diverse repositories ended with a cleanup verdict (90%).");

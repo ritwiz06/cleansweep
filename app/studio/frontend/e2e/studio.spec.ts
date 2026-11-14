@@ -294,7 +294,10 @@ test("case study with the LLM-reviewer label", async ({ page }) => {
   await open(page, "cases");
   await page.getByRole("button", { name: /^proj_a/ }).click();
   await expect(page.getByText("Tests passing, before → after")).toBeVisible();
-  await page.getByRole("tab", { name: /Review sheet/ }).click();
+  await expect(page.locator(".takeaway")).toContainText("The team kept");
+  // the review sheet sits under the report, LLM-judged
+  await page.getByRole("tab", { name: "Report" }).click();
+  await page.getByText(/^Show the review sheet/).click();
   await expect(page.getByLabel("Review sheet")).toContainText(REVIEW_LABEL);
   await expect(page.getByLabel("Review sheet")).toContainText("a string may call it");
   await page.getByRole("tab", { name: "Diff" }).click();
@@ -304,8 +307,11 @@ test("case study with the LLM-reviewer label", async ({ page }) => {
 test("watch folder: commits, slop over time, decisions", async ({ page }) => {
   await open(page, "watch");
   await page.getByLabel("Watch folder").selectOption("results:raw/watch_a");
+  await expect(page.locator(".takeaway").first()).toContainText(/^Watch cleaned/);
+  await page.getByText("Show each poll's reason").click();
   await expect(page.getByText("slop is 12.0% of the Python lines")).toBeVisible();
   await expect(page.getByText("Slop over time")).toBeVisible();
+  await page.getByText("Show the table").click();
   await expect(page.getByLabel("Simulated watch")).toBeVisible();
 });
 
@@ -347,8 +353,8 @@ test("dashboard parity: Phase 1 live sweep replay", async ({ page }) => {
 test("dashboard parity: a saved sweep report", async ({ page }) => {
   await open(page, "reports");
   await page.getByLabel("Sweep report").selectOption(`replay:${V1}/report.json`);
-  await expect(page.getByText("Lines removed")).toBeVisible();
-  await expect(page.locator(".stats-row")).toContainText("47");
+  await expect(page.locator(".takeaway")).toContainText("47 lines in all");
+  await page.getByText(/^Show the Guard/).click();
   await expect(page.getByLabel("Cleanup plan")).toContainText("leftover file");
   await page.locator("details summary").filter({ hasText: "leftover file" }).first().click();
   await expect(page.getByText(/^cp '\.cleansweep\/quarantine\//).first()).toBeVisible();

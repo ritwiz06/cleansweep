@@ -1,11 +1,11 @@
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, runHash, useApi, type RunDetail, type RunRow } from "../api";
 import { TOOLTIP } from "../components/Charts";
-import { ANIMATE, Async, Card, Empty, PageHeader, seconds } from "../components/common";
+import { ANIMATE, Async, Card, Empty, PageHeader, ShowMore, seconds } from "../components/common";
 import { RunOutcome } from "../components/RunOutcome";
 import { formatNumber } from "../state/labels";
 import { PHASES } from "../state/fold";
-import { runTitle } from "../state/names";
+import { runTitle, targetName } from "../state/names";
 import { useRuns } from "./Runs";
 
 const SERIES = ["var(--series-1)", "var(--series-2)"];
@@ -55,25 +55,65 @@ function show(key: string, value: string | number | null | undefined) {
   return typeof value === "number" ? formatNumber(value) : value;
 }
 
-// B minus A for a number both runs have, signed; nothing for text.
-// Which way is better for each number; the others (candidates, lessons) are neither.
-const MORE_IS_BETTER = new Set(["edits kept", "lines removed", "files removed", "packages kept"]);
-const LESS_IS_BETTER = new Set(["rolled back", "test runs", "LLM calls", "tokens", "time", "packages rolled back", "step backs"]);
+// The rows worth pointing at; "Show all the numbers" has the rest.
+const MAIN = ["result", "edits kept", "rolled back", "lines removed", "test runs", "LLM calls", "time"];
 
-// B minus A for a number both runs have, signed, with whether B is better or worse.
+// B minus A for a number both runs have, signed; nothing for text.
 function difference(key: string, a: unknown, b: unknown) {
   if (typeof a !== "number" || typeof b !== "number") return "";
   const d = b - a;
   if (d === 0) return <span className="muted">0</span>;
   const size = key === "time" ? seconds(Math.abs(d)) : formatNumber(Math.abs(d));
-  const text = `${d > 0 ? "+" : "−"}${size}`;
-  const better = MORE_IS_BETTER.has(key) ? d > 0 : LESS_IS_BETTER.has(key) ? d < 0 : null;
-  if (better === null) return text;
+  return `${d > 0 ? "+" : "−"}${size}`;
+}
+
+// The two runs in one sentence: what each removed and how long it took.
+function compareSentence(both: (RunDetail | null | undefined)[]): string | null {
+  const [a, b] = both;
+  if (!a || !b) return null;
+  const say = (d: RunDetail) => {
+    const s = d.report?.stats || {};
+    const lines = typeof s.lines_removed === "number" ? `${formatNumber(s.lines_removed)} lines` : "an unknown number of lines";
+    return { name: targetName(d.target) || d.name, lines, time: typeof s.wall_seconds === "number" ? seconds(s.wall_seconds) : null };
+  };
+  const [x, y] = [say(a), say(b)];
+  const time = (t: string | null) => (t ? ` in ${t}` : "");
+  return `B, ${y.name}, removed ${y.lines}${time(y.time)}; A, ${x.name}, removed ${x.lines}${time(x.time)}.`;
+}
+
+function CompareTable({ both, keys, label }: { both: (RunDetail | null | undefined)[]; keys?: string[]; label: string }) {
+  const rows = both.map((d) => (d ? numbers(d) : {}));
   return (
-    <span className={better ? "good-text" : "bad-text"}>
-      {text} <span aria-hidden>{better ? "▲" : "▼"}</span>
-      <span className="sr-only">{better ? " better" : " worse"}</span>
-    </span>
+    <div className="table-wrap" tabIndex={0}>
+      <table className="data compare" aria-label={label}>
+        <thead>
+          <tr>
+            <th />
+            {both.map((d, i) => (
+              <th key={i} className="num">
+                <RunTag which={i ? "B" : "A"} /> <span title={d?.name}>{d && runTitle(d)}</span> {d && <a href={runHash(d)}>replay</a>}
+              </th>
+            ))}
+            <th className="num">B − A</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(rows[0])
+            .filter((k) => !keys || keys.includes(k))
+            .map((k) => (
+              <tr key={k}>
+                <th>{k.charAt(0).toUpperCase() + k.slice(1)}</th>
+                {rows.map((r, i) => (
+                  <td key={i} className="num">
+                    {k === "result" ? <RunOutcome verdict={r[k] as string} /> : show(k, r[k])}
+                  </td>
+                ))}
+                <td className="num">{difference(k, rows[0][k], rows[1][k])}</td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -136,39 +176,15 @@ export function Compare({ a, b, onChange }: { a: string; b: string; onChange: (a
             <Async res={left}>
               {() => (
                 <Async res={right}>
-                  {() => {
-                    const rows = both.map((d) => (d ? numbers(d) : {}));
-                    return (
-                      <div className="table-wrap" tabIndex={0}>
-                        <table className="data compare" aria-label="Comparison">
-                          <thead>
-                            <tr>
-                              <th />
-                              {both.map((d, i) => (
-                                <th key={i} className="num">
-                                  <RunTag which={i ? "B" : "A"} /> <span title={d?.name}>{d && runTitle(d)}</span> {d && <a href={runHash(d)}>replay</a>}
-                                </th>
-                              ))}
-                              <th className="num">B − A</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Object.keys(rows[0]).map((k) => (
-                              <tr key={k}>
-                                <th>{k.charAt(0).toUpperCase() + k.slice(1)}</th>
-                                {rows.map((r, i) => (
-                                  <td key={i} className="num">
-                                    {k === "result" ? <RunOutcome verdict={r[k] as string} /> : show(k, r[k])}
-                                  </td>
-                                ))}
-                                <td className="num">{difference(k, rows[0][k], rows[1][k])}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  }}
+                  {() => (
+                    <>
+                      <p className="takeaway">{compareSentence(both)}</p>
+                      <CompareTable both={both} keys={MAIN} label="Comparison" />
+                      <ShowMore label="Show all the numbers">
+                        <CompareTable both={both} label="All the numbers" />
+                      </ShowMore>
+                    </>
+                  )}
                 </Async>
               )}
             </Async>
