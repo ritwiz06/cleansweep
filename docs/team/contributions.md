@@ -75,6 +75,8 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 14 | The v3.0 release: requirements R29–R30, the CHANGELOG, the fresh-clone rehearsal, the archive | [#226](https://github.com/ritwiz06/cleansweep/pull/226); issue [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
 | Ritik | Nov 13 – Nov 14 | Final report, talk deck and paper draft, with their number audits | offline: report sources on Overleaf |
 | Ritik | Nov 14 | The handoff bundle for the Drive folder (submission files, both Overleaf zips, the decision and run logs as PDFs, the archive tarball), and the shared locations and repository control in the handoff page | [#227](https://github.com/ritwiz06/cleansweep/pull/227); offline: the ASU Drive folder |
+| Ritik | Nov 14 | Course-facing wording in phases (docs, team pack, Studio labels, the Phase 3 figures' labels) and a talk with "Since the progress report" and a hypotheses scorecard; tag v3.0.1 | [#228](https://github.com/ritwiz06/cleansweep/pull/228) |
+| Ritik | Nov 14 | The Manager's stages called steps in course-facing text, and a talk that fits a hard 5-minute stop (8 slides, 599 words) | [#229](https://github.com/ritwiz06/cleansweep/pull/229) |
 
 ## Add your rows here
 
