@@ -50,7 +50,7 @@ where we plant slop and traps ourselves, and on real projects, with tests the cl
    until the Guard rolls back `_round_money`, a near-duplicate that every test passes but that
    rounds 0.125 differently. Then press **Before / after** in the header, and **Present** for
    the projector view. Replay calls no LLM and runs no tests, so it works offline.
-4. **Read the results (5 minutes).** The README's "v3 results" section (Phase 3, frozen on
+4. **Read the results (5 minutes).** The README's "Phase 3 results" section (Phase 3, frozen on
    Nov 13 at 12:00); [status.md](status.md) has the scorecard in plain words.
 
 ## Then read

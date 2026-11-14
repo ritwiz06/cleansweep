@@ -4,8 +4,8 @@ CleanSweep removes the code a coding agent left behind in a Python project (scra
 old copies, dead functions, duplicate helpers, unused imports and dependencies) and keeps an
 edit only if the project still behaves the same. This guide covers installing it, cleaning a
 project, reading and applying the result, per-project settings, watch mode, and Studio, the web
-UI. How it works inside is in [agentic_design.md](agentic_design.md) (the v2 agent team) and
-[architecture.md](architecture.md) (the v1 sweep).
+UI. How it works inside is in [agentic_design.md](agentic_design.md) (the agent team) and
+[architecture.md](architecture.md) (the Phase 1 pipeline).
 
 ## Install
 
@@ -193,7 +193,7 @@ commands (`cd app/studio/frontend && npm ci && npm run build`). Studio listens o
 It reads three folders: its runs folder (`results/raw/studio/`, or `--runs`), `results/` and
 `demo/replay/`. Hidden files, `.env` and other secret files are never served, and every text it
 sends goes through the same redactor the agents use. Everything except Launch works offline;
-`demo/replay/` ships four agent-team recordings beside v1's (the toy repo, the demo app with the
+`demo/replay/` ships four agent-team recordings beside the Phase 1 pipeline's (the toy repo, the demo app with the
 feature patch, a Manager step-back scenario and the Skill_Seekers case study; see the README).
 The theme button switches between light and dark, and the "?" beside each screen's title says
 in one line what the screen shows. [studio_design.md](studio_design.md) has the rules every
@@ -214,14 +214,14 @@ steps (the arrow keys move, Escape ends it), and "Try the demo" opens that recor
 
 ![Home: clean a folder, and the recent runs](images/studio/home.png)
 
-**Runs** lists every recorded run (agent-team cleanups, v1 sweeps, watch folders) by name
+**Runs** lists every recorded run (agent-team cleanups, Phase 1 sweeps, watch folders) by name
 ("Demo app · agent team · Nov 1"; the folder is in the tooltip) with its result. Open one in
 Replay, follow a live one, or send it to Compare.
 
 ![Runs: every recorded run, filtered by place and kind](images/studio/runs.png)
 
 **Launch** cleans a project with the agent team (mode, model, budgets, offline, dry run), sweeps
-it with a v1 method and judge mode, or watches a git repository (polls, interval, test budget).
+it with a Phase 1 pipeline method and judge mode, or watches a git repository (polls, interval, test budget).
 Targets: the toy repo, the demo app, the prepared demo, or any absolute path. The runs started
 in this session are listed with their status, output and a stop button.
 
@@ -240,7 +240,7 @@ current one bold (a Manager's step back is noted after them). Three tabs follow:
   checks. Click a node for its evidence chain (the verdict, the evidence, the Investigator's tool
   calls, the lessons it cited), its diff and the checks its work package passed. A run saves its
   file list (`project_files.json`), so the tree shows every file; for a recording made before
-  v2.1 the tree shows the files the events name (the file count's tooltip says so);
+  the Phase 2 Studio update the tree shows the files the events name (the file count's tooltip says so);
 - Agents: the Manager between the research and development squads, each agent by its icon and
   name (its steps, LLM calls and time in the tooltip), the agent at work marked, and the latest
   message as an arrow from its sender. "Show the Manager's decisions and the latest thoughts"
@@ -266,8 +266,8 @@ changed lines, the public names the cleanup removed, the slop found and left by 
 the result. One line says what no check can: behavior that nothing tests isn't covered. Click a
 changed file for its side-by-side diff; each change has a note pointing at it with its category,
 the decisions behind it (Auditor, Investigator, Planner, Engineer, Tester, Validator, Manager),
-the Investigator's evidence and the checks its package passed. A recording made before v2.1
-saved no file list, so its trees show the files its events and diff name, and its file count is
+the Investigator's evidence and the checks its package passed. A recording made before the Phase 2
+Studio update saved no file list, so its trees show the files its events and diff name, and its file count is
 "not recorded". "Export HTML report" saves the whole before / after as one HTML file (the
 numbers, both trees, every change with its decisions and checks, the suggestions left for a
 person, the candidate tree and the result) with its styles inside: it opens from disk with no
@@ -348,10 +348,10 @@ the sidebar, in large type, for a projector; the arrow keys move between the tab
 reports** shows any sweep report saved under `results/`, the runs folder or `demo/replay/`: one
 sentence with its numbers, its plan, and behind "Show the Guard's verdicts" each verdict with
 its diff and the command that restores a quarantined file. **Live sweep and replay** lists the
-v1 runs (stages, the Reviewer's plan, Guard checks, diffs, hidden checks, the answer-key score).
-**Scheduler**, **Baselines**, **Data** and **Guard** show the v1 result tables and figures.
+Phase 1 runs (stages, the Reviewer's plan, Guard checks, diffs, hidden checks, the answer-key score).
+**Scheduler**, **Baselines**, **Data** and **Guard** show the Phase 1 result tables and figures.
 
-![Saved reports: the v1 demo app sweep](images/studio/saved_report.png)
+![Saved reports: the Phase 1 demo app sweep](images/studio/saved_report.png)
 
 Studio's own checks run from `app/studio/frontend`: `npm run build`, `npx vitest run` and
 `npx playwright test` (Chromium), which includes `e2e/a11y.spec.ts`: axe-core on every screen
@@ -359,11 +359,11 @@ in both themes, failing on any serious or critical violation. The screenshots in
 come from `e2e/guide.spec.ts`, run against this repository's results (see the comment at its
 top); `REVIEW_SHOTS=<folder> npx playwright test review` saves every screen in both themes at
 1280×720 and 1920×1080 for a design review.
-Studio replaced the Streamlit dashboard in v2.0; git history keeps the dashboard.
+Studio replaced the Streamlit dashboard in Phase 2; git history keeps the dashboard.
 
-## The v1 sweep
+## The Phase 1 pipeline
 
-The v1 pipeline (`method=cleansweep`) is still there for the experiments and the demo:
+The Phase 1 pipeline (`method=cleansweep`) is still there for the experiments and the demo:
 
 ```bash
 cleansweep plan  --target path/to/project          # the plan, nothing applied, no LLM

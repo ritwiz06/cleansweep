@@ -8,7 +8,7 @@ breaks. The details are in the other pages of this folder, listed in [README.md]
 CleanSweep removes leftover AI-written code from a Python project with a team of ten LLM agents,
 and keeps an edit only if the project still behaves the same. Phase 1 (the pipeline) and Phase 2
 (the team and Studio) are released. **Phase 3, the pre-registered evaluation, is frozen** (Nov 13,
-12:00). **v3.0 is released** (Nov 14): the tag `v3.0` and its GitHub release.
+12:00). **The final release is out** (Nov 14): the git tag `v3.0` and its GitHub release.
 
 | | Result |
 |---|---|
@@ -40,10 +40,10 @@ More: [status.md](status.md).
 
 | Part | Owner | Backup |
 |---|---|---|
-| Talk: slides 1–2, introduction and demo | Ritik | Maninderjit |
-| Talk: slide 3, data | Badri | Ritik |
-| Talk: slides 4–5, safety and the audit | Maninderjit | Simran |
-| Talk: slides 6–8, results | Simran | Ritik |
+| Talk: slides 1–3, introduction, progress and demo | Ritik | Maninderjit |
+| Talk: slide 4, data | Badri | Ritik |
+| Talk: slides 5–6, safety and the audit | Maninderjit | Simran |
+| Talk: slides 7–9, results | Simran | Ritik |
 | Report: Introduction and Discussion | Ritik | Simran |
 | Report: Data (review) | Badri | Maninderjit |
 | Report: Methods (review) | Maninderjit | Badri |
@@ -59,7 +59,7 @@ knows the part well enough to give it if the owner cannot.
 
 | When | What |
 |---|---|
-| Nov 14 | v3.0 released |
+| Nov 14 | the final release |
 | Nov 15 | setup and checks done on your machine |
 | Nov 16 – Nov 20 | two timed rehearsals |
 | Nov 21 or Nov 28 | the presentation |
@@ -96,6 +96,6 @@ cleansweep studio --no-browser        # then open the printed address yourself
 
 On **Home**, press **Try the demo**; or open **Runs** and pick `20261102_demo_feature_agentic`.
 Press **Next decision** until the Guard rolls back `_round_money`, then **Before / after**. If
-Studio will not start, show the clip on slide 2, then the screenshots
-`docs/images/studio/replay.png` and `docs/images/studio/before_after_diff.png`. If the install is
+Studio will not start, show the clip on slide 3, then backup slide 11 with the screenshots
+`docs/images/studio/present.png` and `docs/images/studio/before_after_diff.png`. If the install is
 broken, see [setup.md](setup.md#troubleshooting). Details of the demo: [presentation.md](presentation.md#demo-plan).
