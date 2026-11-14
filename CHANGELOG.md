@@ -1,5 +1,47 @@
 # Changelog
 
+## v3.0 (2026-11-14)
+
+Phase 3: the pre-registered evaluation, frozen on 2026-11-13 at 12:00, a simpler Studio, and the
+team handoff. v1's and v2's tables are unchanged.
+
+### Results (`results/summary/v3/`, `docs/results.md`)
+- **H1, not supported.** On 15 real projects with held-out tests, the team's kept edits were
+  wrong far less often than Aider's: 4 of 191 against 4 of 13 confirmed, and 13 against 5
+  counting LLM-judged readings. But the team changed held-out tests on 4 of the 10 projects both
+  finished, and Aider, which kept almost nothing, on none.
+- **H2, not supported, and uninformative.** On 9 of the 10 benchmark repositories, the team with
+  and without the resolver produced byte-identical diffs, so the test had no power (#224).
+- **H3, supported by a tie.** Batching used 41% of the team's requests, with 16 vs 16 wrong edits
+  on the 20 projects both finished (#224). Batching stays off by default.
+- **H4, supported, at the threshold.** 27 of 30 repositories ran end to end.
+- **Labels:** no human checked them. A panel of three LLM judges agrees with the recorded labels
+  at κ = 0.455 (wrong vs not wrong) and is right on 11 of 18 confirmed verdicts (#199).
+- **Records:** nine dated deviations are in `docs/preregistration_v3.md` (#179, #191, #194, #196,
+  #198). The results came in #217, #221 and #224.
+
+### Evaluation tools
+- The runners, tables and figures for INJECT, REAL (with held-out tests), the second model, the
+  curve and AUTONOMY, and the audit-miss repeat on the v3 edits (#170–#197).
+- `exp_judge_panel.py`, which replaces the human-rating kappa (#199).
+
+### Studio
+- A design pass and then a simplification (#218): each screen has one sentence and one main view;
+  run screens have one control line, the steps in words and three tabs; the agent graph shows
+  names only; Evaluation shows one chart per tab, with the tables on request; Present mode shows
+  the caption, the picture and the progress line.
+- A short first-run tour and "Try the demo"; help on every screen; axe-clean, with Lighthouse at
+  91–100.
+- Every user-guide screenshot retaken.
+- Large responses are compressed.
+
+### Team
+- `docs/team/`: start here, setup, tour, status, tasks, contributions, presentation,
+  contributing, handoff and the handoff meeting (#200, #219, #225); one issue per task, and a
+  handoff checklist.
+- `scripts/tools/install_hooks.sh` installs the pre-push checks.
+- The README's toy cleanup runs without Docker (`--sandbox none`).
+
 ## v2.1.2 (2026-11-07)
 
 Fixes from AUTONOMY pass 1 of the v3 evaluation (27 of 30 repositories completed), and fixes to the

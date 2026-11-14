@@ -161,6 +161,12 @@ The command line overrides the file (`--budget` per item; `--exclude` folders ar
 file's), and `clean` prints which file it read. An unknown setting or a bad value stops the run
 with one line naming the file and the setting.
 
+Investigation batching is an option, off by default: `core.agents.investigate_batch: on` in
+`configs/base.yaml` lets up to five candidates with the same pattern share one Investigator
+request, each still checked on its own. In the Phase 3 evaluation it used 41% of the team's
+requests with the same number of wrong edits (16 against 16 over 20 projects), but that tie
+changed with almost every project, so the default stays off ([results](results.md)).
+
 ## Watch a repository
 
 ```bash
