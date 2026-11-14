@@ -72,8 +72,9 @@ From here on, each of us adds rows for our own work.
 | Ritik | Nov 13 | Requirements R17–R28 with the frozen results as evidence | [#220](https://github.com/ritwiz06/cleansweep/pull/220) |
 | Ritik | Nov 14 | Why H2's two arms are identical and what H3's tie pairs, in the results notes and the README | [#224](https://github.com/ritwiz06/cleansweep/pull/224) |
 | Ritik | Nov 14 | The team handoff: the handoff page, the handoff meeting, the Q&A, tasks with usernames, and the handoff checklist | [#225](https://github.com/ritwiz06/cleansweep/pull/225); issue [#223](https://github.com/ritwiz06/cleansweep/issues/223) |
-| Ritik | Nov 14 | The v3.0 release: requirements R29–R30, the CHANGELOG, the fresh-clone rehearsal, the archive | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
+| Ritik | Nov 14 | The v3.0 release: requirements R29–R30, the CHANGELOG, the fresh-clone rehearsal, the archive | [#226](https://github.com/ritwiz06/cleansweep/pull/226); issue [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
 | Ritik | Nov 13 – Nov 14 | Final report, talk deck and paper draft, with their number audits | offline: report sources on Overleaf |
+| Ritik | Nov 14 | The handoff bundle for the Drive folder (submission files, both Overleaf zips, the decision and run logs as PDFs, the archive tarball), and the shared locations and repository control in the handoff page | [#227](https://github.com/ritwiz06/cleansweep/pull/227); offline: the ASU Drive folder |
 
 ## Add your rows here
 
