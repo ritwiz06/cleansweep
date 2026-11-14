@@ -1,6 +1,6 @@
 # Project status
 
-Where the project stands on Nov 14: **v3.0 is released**, after the Phase 3 results freeze (Nov 13,
+Where the project stands on Nov 14: **the final release is out**, after the Phase 3 results freeze (Nov 13,
 12:00, Arizona time). This is the public summary of Ritik's local plan and decision log. The acceptance checklist with its
 evidence is [requirements.md](../requirements.md).
 
@@ -8,9 +8,9 @@ evidence is [requirements.md](../requirements.md).
 
 | Phase | Dates | What | State |
 |---|---|---|---|
-| Phase 1 | Oct 19 – Oct 30 | the pipeline: detect, judge, batch, check every edit with the Guard; tested on SWE-bench and AIDev | done: v1.0 on Oct 30, patches by Oct 31 |
-| Phase 2 | Oct 31 – Nov 5 | the team of ten agents (`cleansweep clean`), Studio, the SlopBench benchmark, the blinded diff audit | done: v2.0 on Nov 5, requirements R1–R16 met |
-| Phase 3 | Nov 6 – Nov 15 | the pre-registered final evaluation: four hypotheses, new projects, an outside agent (Aider) as baseline | done: runs finished Nov 9; results frozen Nov 13 at 12:00; v3.0 on Nov 14, requirements R17–R30 met |
+| Phase 1 | Oct 19 – Oct 30 | the pipeline: detect, judge, batch, check every edit with the Guard; tested on SWE-bench and AIDev | done: released Oct 30, fixes by Oct 31 |
+| Phase 2 | Oct 31 – Nov 6 | the team of ten agents (`cleansweep clean`), Studio, the SlopBench benchmark, the blinded diff audit | done: released Nov 5, the evaluation tools and fixes on Nov 6; requirements R1–R16 met |
+| Phase 3 | Nov 6 – Nov 14 | the pre-registered final evaluation: four hypotheses, new projects, an outside agent (Aider) as baseline | done: runs finished Nov 9; results frozen Nov 13 at 12:00; the final release on Nov 14, requirements R17–R30 met |
 
 Nothing is running. Every Phase 3 run finished by Nov 9 at 06:11, and no new run starts unless
 one turns out to be spoiled; none is.
@@ -19,7 +19,7 @@ one turns out to be spoiled; none is.
 
 Four hypotheses, written down on Nov 6 before any main run
 ([preregistration_v3.md](../preregistration_v3.md)). The numbers come from
-`results/summary/v3/hypotheses.csv`, the README's "v3 results" section and
+`results/summary/v3/hypotheses.csv`, the README's "Phase 3 results" section and
 [results.md](../results.md).
 
 | | The question | Result | In plain words |
@@ -76,7 +76,7 @@ human raters (Deviation 9). None changes H1–H4.
 
 | Item | Who | When |
 |---|---|---|
-| v3.0 release: requirements checked, fresh-clone rehearsal, archive tarball | Ritik | done Nov 14; the tarball goes to the ASU Drive |
+| The final release: requirements checked, fresh-clone rehearsal, archive tarball | Ritik | done Nov 14; the tarball goes to the ASU Drive |
 | Setup, offline checks and table reproduction on three more machines | Maninderjit, Badri, Simran | within 2 days of getting access ([tasks.md](tasks.md)) |
 | Two timed rehearsals of the talk | everyone | Nov 16 – Nov 20 |
 | The presentation (5 minutes, 4 speakers) | everyone | Nov 21 or Nov 28 |

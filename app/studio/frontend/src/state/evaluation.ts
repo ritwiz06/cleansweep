@@ -18,15 +18,15 @@ export const METHOD_NAMES: Record<string, string> = {
   "agentic-inline_artifacts": "inline artifacts",
   "agentic-no_lessons": "no lessons",
   "agentic-no_coverage": "no coverage",
-  cleansweep: "Phase 1",
-  "cleansweep-gatekeeper": "Phase 1",
+  cleansweep: "Phase 1 pipeline",
+  "cleansweep-gatekeeper": "Phase 1 pipeline",
   "agentic-no_resolver": "team, resolver off",
   "agentic-batch": "team, batching",
   "agentic-thorough": "team, thorough",
   "agentic-m2": "team, second model",
   "agentic-single_agent-m2": "single agent, second model",
   aider: "Aider",
-  "cleansweep-advisory": "Phase 1 (advisory)",
+  "cleansweep-advisory": "Phase 1 pipeline (advisory)",
   one_shot_llm: "one-shot",
 };
 

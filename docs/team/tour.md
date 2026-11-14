@@ -26,8 +26,8 @@ is the hard part. That is what CleanSweep is about.
 | Phase | Name in the code | Dates | What it is | Releases |
 |---|---|---|---|---|
 | Phase 1 | v1, `method=cleansweep` | Oct 19 – Oct 30 | the pipeline: detect, judge, batch, Guard | v1.0 (Oct 30), v1.0.1–v1.0.3 |
-| Phase 2 | v2, `cleansweep clean`, `method=agentic` | Oct 31 – Nov 5 | the agent team, and Studio, the web UI | v2.0 (Nov 5), v2.1 (Nov 6) |
-| Phase 3 | v3 | Nov 6 – Nov 15 | the pre-registered final evaluation, and the fixes it needed | v2.1.1, v2.1.2 (the code the runs used); v3.0 planned for Nov 15 |
+| Phase 2 | v2, `cleansweep clean`, `method=agentic` | Oct 31 – Nov 6 | the agent team, Studio (the web UI) and the evaluation tools | v2.0 (Nov 5), v2.1 (Nov 6), v2.1.1–v2.1.2 (the fixes the Phase 3 runs used) |
+| Phase 3 | v3 | Nov 6 – Nov 14 | the pre-registered final evaluation and the final release | v3.0 (Nov 14) |
 
 The repository uses the internal names in folder and method names (`results/summary/v2/`,
 `scripts/experiments/v3/`), so you will see both. In the report and the talk we say Phase 1,
@@ -220,7 +220,7 @@ with `bash scripts/reproduce_tables.sh`; the per-run files need raw runs, Docker
 
 | Folder | What | Written by |
 |---|---|---|
-| `results/data_summary/` | the AIDev funnel, the mined taxonomy and rules, the SWE-bench and tier counts, the v3 repository pool | `scripts/data/*.py` |
+| `results/data_summary/` | the AIDev funnel, the mined taxonomy and rules, the SWE-bench and tier counts, the Phase 3 repository pool | `scripts/data/*.py` |
 | `results/summary/v1/` | Phase 1: main table, paired tests, Guard strength, AIDev, Scheduler, ranker | per-run CSVs by `scripts/experiments/v1/exp_*.py`; the aggregates by `exp_tables.py` and `exp_scheduler_tradeoff.py` |
 | `results/figures/v1/` | Phase 1 figures | `exp_tables.py`, `exp_scheduler_tradeoff.py` |
 | `results/summary/v2/` | Phase 2: the team against Phase 1, SlopBench, ablations, the real-project ablation, the diff audit, probe strength | per-run CSVs by `exp_collect_v2.py`, `exp_inject.py table`, `exp_real_ablation.py collect`, `exp_diff_audit.py`; the aggregates by `exp_tables_v2.py` and `exp_real_ablation.py table` |

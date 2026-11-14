@@ -21,6 +21,15 @@ const WORDS: Record<string, string> = { llm: "LLM", ci: "CI", ui: "UI", api: "AP
 const SNAKE = /^[a-z][a-z0-9]*(_[a-z0-9]+)+$/;
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/;
 
+// Whole values that read better than a plain swap of the version token.
+const PHASE_VALUES: Record<string, string> = { "injected v3": "injection (Phase 3)", "real v3": "real projects (Phase 3)" };
+
+// "v1 (static detectors)" -> "Phase 1 (static detectors)": the screens speak of phases, not
+// versions. A token inside a name or path ("verifiers.v1", "results/summary/v2/") stays.
+export function phaseWords(text: string): string {
+  return PHASE_VALUES[text] ?? text.replace(/(?<![\w./-])v([123])(\.\d+)*(?![\w/-]|\.\w)/g, "Phase $1");
+}
+
 function words(text: string): string {
   return text
     .split(/[_\s]+/)
@@ -32,13 +41,13 @@ function words(text: string): string {
 // "safe_score" -> "Safe score", "lines removed (mean, 95% CI)" stays as it is but capitalized.
 export function headerLabel(column: string): string {
   if (column in HEADERS) return HEADERS[column];
-  const text = words(column);
+  const text = phaseWords(words(column));
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 // "leftover_file" -> "leftover file"; anything that is not a plain snake_case word stays.
 export function valueLabel(value: string): string {
-  return SNAKE.test(value) ? words(value) : value;
+  return SNAKE.test(value) ? words(value) : phaseWords(value);
 }
 
 export function isIsoDate(value: string): boolean {
