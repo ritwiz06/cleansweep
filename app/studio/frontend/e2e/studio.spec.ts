@@ -314,10 +314,12 @@ test("results: Phase 1 and Phase 2 tables and figures", async ({ page }) => {
   // Results opens on the latest phase
   await expect(page.getByRole("tab", { name: "Phase 3" })).toHaveAttribute("aria-selected", "true");
   await page.getByRole("tab", { name: "Phase 1" }).click();
+  // each phase opens on one figure and its sentence; the tables open on request
+  await expect(page.locator(".figure img").first()).toBeVisible();
+  await page.getByText(/^Show the tables/).click();
   await expect(page.getByLabel("main_table.csv")).toContainText("cleansweep-gatekeeper");
-  await expect(page.locator(".gallery img").first()).toBeVisible();
   await page.getByRole("tab", { name: "Phase 2" }).click();
-  await expect(page.getByText(/Tables/)).toBeVisible();
+  await expect(page.getByText(/^Show the tables/)).toBeVisible();
 });
 
 test("the Phase 1 screens sit behind one archive entry in the sidebar", async ({ page }) => {
@@ -406,6 +408,9 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   }
   await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: "Phase 2" }).click();
   await page.getByRole("tab", { name: "Probe strength" }).click();
+  // one sentence and one chart; the table opens on request
+  await expect(page.locator(".takeaway")).toContainText("the tests catch");
+  await page.getByText("Show the table").click();
   await expect(page.getByLabel("probe_strength.csv")).toContainText("swebench t1");
   await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Share of mutations and PatchDiff changes caught" })).toContainText("(higher is better)");
@@ -416,6 +421,7 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   await expect(page).toHaveURL(/tab=audit/);
   // the chart and the table name the methods alike
   await page.getByRole("tab", { name: "Injection benchmark" }).click();
+  await page.getByText("Show the tables").click();
   await expect(page.getByLabel("injection_seeds.csv")).toContainText("team");
   await expect(page.getByLabel("injection_seeds.csv")).not.toContainText("agentic");
   // presentation mode: one line instead of the tabs, the arrow keys move
@@ -428,8 +434,9 @@ test("evaluation: every tab loads, with the tiers and the LLM-judged labels", as
   // the judge panel replaces the human ratings; its table may not be built yet
   await page.getByRole("group", { name: "Phase" }).getByRole("button", { name: "Phase 3" }).click();
   await page.getByRole("tab", { name: "Audit", exact: true }).click();
-  const panel = page.locator("section.card", { has: page.getByRole("heading", { name: "LLM judge panel" }) });
-  await expect(panel).toContainText("no human checked these labels");
+  await page.getByText("Show the tables").click();
+  await expect(page.locator("main")).toContainText("LLM judge panel");
+  await expect(page.locator("main")).toContainText("no human checked these labels");
   await expect(page.locator("main")).not.toContainText(/human ratings|raters|human-validated/i);
 });
 

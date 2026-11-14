@@ -95,6 +95,13 @@ export function sources(rows: Row[], column = "source"): string[] {
   return [...new Set(rows.map((r) => String(r[column])))];
 }
 
+// real_ablation.csv's wrong kept code edits per method, all tiers: "4 of 20 (3)" -> 4.
+export function realAblationBars(rows: Row[]) {
+  const column = Object.keys(rows[0] ?? {}).find((c) => c.startsWith("wrong of kept code edits"));
+  if (!column) return [];
+  return rows.map((r) => ({ method: methodName(r.method), wrong: num(String(r[column]).match(/^\d+/)?.[0]) }));
+}
+
 // LLM requests and minutes per run of each method, for one target set of the ablations.
 export function costBars(rows: Row[], set: string) {
   return rows

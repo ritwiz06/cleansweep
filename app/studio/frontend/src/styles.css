@@ -1939,6 +1939,30 @@ details summary {
   width: 100%;
 }
 
+/* a screen's or a tab's answer in one sentence, above its chart */
+.takeaway {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+  max-width: 72ch;
+}
+
+.card .show-more {
+  margin-top: var(--space-3);
+}
+
+.table-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.show-more-body > h4 {
+  margin: var(--space-4) 0 var(--space-2);
+}
+
 .chart-title {
   margin: 0 0 var(--space-1) var(--space-2);
   font-size: var(--text-sm);
@@ -2110,6 +2134,12 @@ details summary {
 
 .figure {
   margin: var(--space-2) 0;
+}
+
+/* a phase's main figure at a reading size, not the card's full width */
+.main-figure img {
+  max-height: 440px;
+  width: auto;
 }
 
 .figure img {

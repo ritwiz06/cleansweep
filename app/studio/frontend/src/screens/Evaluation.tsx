@@ -2,7 +2,7 @@ import { useContext, useEffect, useState, type ReactNode } from "react";
 import { Bar, BarChart, Cell, ErrorBar, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, ApiError, useApi, type Table } from "../api";
 import { SeriesKey, TOOLTIP, nameOf, rowNamed, stackTotal, type LabelBox } from "../components/Charts";
-import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, Presenting, Tabs } from "../components/common";
+import { ANIMATE, Async, Badge, Card, DataTable, Empty, PageHeader, Presenting, ShowMore, Tabs } from "../components/common";
 import { formatNumber } from "../state/labels";
 import {
   auditBars,
@@ -12,6 +12,7 @@ import {
   kindBars,
   methodName,
   probeBars,
+  realAblationBars,
   records,
   reviewBars,
   scenarioBars,
@@ -20,6 +21,20 @@ import {
   watchBars,
   type Row,
 } from "../state/evaluation";
+import {
+  auditTakeaway,
+  autonomyTakeaway,
+  hypothesesTakeaway,
+  injectionTakeaway,
+  managerTakeaway,
+  probeTakeaway,
+  realAblationTakeaway,
+  realTakeaway,
+  reviewerTakeaway,
+  v3AuditTakeaway,
+  v3InjectionTakeaway,
+  watchTakeaway,
+} from "../state/takeaways";
 
 type TabKey =
   | "injection"
@@ -188,34 +203,38 @@ function Bars({
   );
 }
 
+// The tab's answer in one sentence, above its chart.
+function Takeaway({ text }: { text: string | null }) {
+  return text ? <p className="takeaway">{text}</p> : null;
+}
+
 function Injection() {
   return (
-    <>
-      <Card title="Planted slop removed and traps removed, per method">
-        <Loaded name="injection_seeds.csv">
-          {(t) => {
-            const bars = injectionBars(records(t));
-            return (
+    <Card title="Planted slop removed and traps removed, per method">
+      <Loaded name="injection_seeds.csv">
+        {(t) => {
+          const bars = injectionBars(records(t));
+          return (
+            <>
+              <Takeaway text={injectionTakeaway(bars)} />
               <div className="chart-pair">
                 <Bars data={bars} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed per run (mean, 95% CI)" better="higher" />
                 <Bars data={bars} x="method" series={[{ key: "traps", name: "traps removed" }]} title="Traps removed: each one changes behavior" better="fewer" />
               </div>
-            );
-          }}
-        </Loaded>
-        <p className="muted">All seeds pooled, with a bootstrap CI over project and seed. The table has each seed.</p>
-      </Card>
-      <Card title="By seed and pooled">
+            </>
+          );
+        }}
+      </Loaded>
+      <ShowMore label="Show the tables">
+        <p className="muted">All seeds pooled, with a bootstrap CI over project and seed. The first table has each seed.</p>
         <Loaded name="injection_seeds.csv">{(t) => <DataTable table={t} names={NAMES} label="injection_seeds.csv" maxHeight={320} />}</Loaded>
-      </Card>
-      <Card title="The team against the other methods, paired by project and seed">
+        <h4>The team against the other methods, paired by project and seed</h4>
         <Loaded name="injection_paired.csv">{(t) => <DataTable table={t} names={NAMES} label="injection_paired.csv" />}</Loaded>
-      </Card>
-      <Card title="The extended framework rule, re-scored (as run and with the rule)">
+        <h4>The extended framework rule, re-scored (as run and with the rule)</h4>
         <Loaded name="inject_rule.csv">{(t) => <DataTable table={t} names={NAMES} label="inject_rule.csv" />}</Loaded>
         <p className="muted">In-sample: the rule was extended after seeing these wrong edits and is re-scored on the same runs, so the drop is optimistic until fresh projects or seeds test it.</p>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
@@ -225,13 +244,14 @@ function AblationCost({ rows }: { rows: Row[] }) {
   const bars = costBars(rows, set);
   return (
     <>
-      <div className="card-actions">
+      <label className="card-actions">
+        Target set{" "}
         <select value={set} onChange={(e) => setSet(e.target.value)} aria-label="Ablation set">
           {sets.map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-      </div>
+      </label>
       <div className="chart-pair">
         <Bars data={bars} x="method" series={[{ key: "llm", name: "LLM requests" }]} title="LLM requests per run (mean)" better="fewer" />
         <Bars data={bars} x="method" series={[{ key: "minutes", name: "minutes" }]} title="Minutes per run (median)" better="fewer" />
@@ -242,18 +262,25 @@ function AblationCost({ rows }: { rows: Row[] }) {
 
 function Ablations() {
   return (
-    <>
-      <Card title="Real projects: the team, no research squad, a single agent">
+    <Card title={<>Real projects: the team, no research squad, a single agent {judged("reading tier: LLM-judged")}</>}>
+      <Loaded name="real_ablation.csv">
+        {(t) => (
+          <>
+            <Takeaway text={realAblationTakeaway(records(t))} />
+            <Bars data={realAblationBars(records(t))} x="method" series={[{ key: "wrong", name: "wrong edits" }]} title="Wrong kept code edits on five real projects, all tiers" better="fewer" />
+          </>
+        )}
+      </Loaded>
+      <ShowMore label="Show the tables and the cost">
         <Loaded name="real_ablation.csv">{(t) => <DataTable table={t} names={NAMES} label="real_ablation.csv" />}</Loaded>
-        <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged. The table scrolls sideways for the UI check, requests and minutes.</p>
+        <p className="muted">Wrong edits count all tiers, with those confirmed by a test, check or rule in brackets; the debatable edits and the LLM reviewer's acceptance are LLM-judged.</p>
         <p className="muted">Five projects, one run each, with every wrong edit in three of them: these differences suggest, but don't establish, that investigating each candidate pays off on real code. Fisher's exact test against the team:</p>
         <Loaded name="real_ablation_tests.csv">{(t) => <DataTable table={t} names={NAMES} label="real_ablation_tests.csv" />}</Loaded>
-      </Card>
-      <Card title="Ablations on the answer keys, SWE-bench, AIDev and the injected set">
+        <h4>Cost on the answer keys, SWE-bench, AIDev and the injected set</h4>
         <Loaded name="ablations.csv">{(t) => <AblationCost rows={records(t)} />}</Loaded>
         <Loaded name="ablations.csv">{(t) => <DataTable table={t} names={NAMES} label="ablations.csv" maxHeight={360} />}</Loaded>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
@@ -263,44 +290,46 @@ function AuditCharts({ audit, types }: { audit: Row[]; types: Row[] }) {
   const shown = audit.filter((r) => r.source === source);
   return (
     <>
-      <div className="card-actions">
+      <Takeaway text={auditTakeaway(audit, source)} />
+      <label className="card-actions">
+        Target set{" "}
         <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Target set">
           {all.map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-      </div>
-      <div className="chart-pair">
-        <Bars
-          data={auditBars(audit, source)}
-          x="method"
-          stacked
-          series={[
-            { key: "confirmed", name: "wrong, confirmed (test, UI check or rule)" },
-            { key: "reading", name: "wrong, reading (LLM-judged)" },
-          ]}
-          title="Wrong edits per 100 kept code edits, by tier"
-          better="fewer"
-        />
-        <Bars data={kindBars(types, source)} x="method" stacked series={KINDS.map((k, i) => ({ key: k, name: k, color: KIND_COLORS[i] }))} title="Wrong edits by kind (count)" better="fewer" />
-      </div>
-      <DataTable
-        table={{
-          columns: ["method", "kept code edits", "wrong (all tiers)", "confirmed", "reading (LLM-judged)", "debatable", "wrong rate [95% CI]", "missed by every check"],
-          rows: shown.map((r) => [methodName(r.method), r.kept_code_edits, r.wrong, r.wrong_confirmed, r.wrong_reading, r.debatable, `${r.wrong_rate} [${r.ci_low}, ${r.ci_high}]`, r.missed_by_every_check]),
-        }}
-        label="diff_audit.csv"
+      </label>
+      <Bars
+        data={auditBars(audit, source)}
+        x="method"
+        stacked
+        series={[
+          { key: "confirmed", name: "wrong, confirmed (test, UI check or rule)" },
+          { key: "reading", name: "wrong, reading (LLM-judged)" },
+        ]}
+        title="Wrong edits per 100 kept code edits, by tier"
+        better="fewer"
       />
+      <ShowMore label="Show the kinds and the table">
+        <p className="muted">
+          An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that its method labels cannot bias, though the share left unchecked differs by method.
+        </p>
+        <Bars data={kindBars(types, source)} x="method" stacked series={KINDS.map((k, i) => ({ key: k, name: k, color: KIND_COLORS[i] }))} title="Wrong edits by kind (count)" better="fewer" />
+        <DataTable
+          table={{
+            columns: ["method", "kept code edits", "wrong (all tiers)", "confirmed", "reading (LLM-judged)", "debatable", "wrong rate [95% CI]", "missed by every check"],
+            rows: shown.map((r) => [methodName(r.method), r.kept_code_edits, r.wrong, r.wrong_confirmed, r.wrong_reading, r.debatable, `${r.wrong_rate} [${r.ci_low}, ${r.ci_high}]`, r.missed_by_every_check]),
+          }}
+          label="diff_audit.csv"
+        />
+      </ShowMore>
     </>
   );
 }
 
 function Audit() {
   return (
-    <Card title={<>Diff audit: wrong edits by tier and kind {judged("reading tier: LLM-judged")}</>}>
-      <p className="muted">
-        An independent model flagged kept edits; each flag was then checked. Confirmed means a targeted test in the run's own environment, the UI check, or the injection key's or agent patch's rule; reading means the check is LLM-judged. The auditor never sees the method, so the counts are lower bounds (edits it does not flag stay unchecked) that its method labels cannot bias, though the share left unchecked differs by method.
-      </p>
+    <Card title={<>Diff audit: wrong edits by tier {judged("reading tier: LLM-judged")}</>}>
       <Loaded name="diff_audit.csv">{(audit) => <Loaded name="diff_audit_types.csv">{(types) => <AuditCharts audit={records(audit)} types={records(types)} />}</Loaded>}</Loaded>
     </Card>
   );
@@ -312,6 +341,7 @@ function Probes() {
       <Loaded name="probe_strength.csv">
         {(t) => (
           <>
+            <Takeaway text={probeTakeaway(records(t))} />
             <Bars
               data={probeBars(records(t))}
               x="label"
@@ -324,7 +354,9 @@ function Probes() {
               title="Share of mutations and PatchDiff changes caught"
               better="higher"
             />
-            <DataTable table={t} names={NAMES} label="probe_strength.csv" />
+            <ShowMore label="Show the table">
+              <DataTable table={t} names={NAMES} label="probe_strength.csv" />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -338,6 +370,7 @@ function Manager() {
       <Loaded name="manager_scenarios.csv">
         {(t) => (
           <>
+            <Takeaway text={managerTakeaway(records(t))} />
             <Bars
               data={scenarioBars(records(t))}
               x="scenario"
@@ -349,7 +382,9 @@ function Manager() {
               title="Runs where the Manager did what the scenario expects"
               better="higher"
             />
-            <DataTable table={t} names={NAMES} label="manager_scenarios.csv" />
+            <ShowMore label="Show the table">
+              <DataTable table={t} names={NAMES} label="manager_scenarios.csv" />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -360,12 +395,15 @@ function Manager() {
 function Reviewer() {
   return (
     <Card title={<>LLM-reviewer acceptance of the case studies' changes {judged()}</>}>
-      <p className="muted">An independent model, blinded to the method, judged each change; no person has checked these verdicts.</p>
       <Loaded name="llm_review_acceptance.csv">
         {(t) => (
           <>
+            <Takeaway text={reviewerTakeaway(records(t))} />
             <Bars data={reviewBars(records(t))} x="project" percent series={[{ key: "acceptance", name: "accepted" }]} title="Changes the LLM reviewer accepts, per project (LLM-judged)" better="higher" />
-            <DataTable table={t} names={NAMES} label="llm_review_acceptance.csv" maxHeight={320} />
+            <ShowMore label="Show the table">
+              <p className="muted">An independent model, blinded to the method, judged each change; no person has checked these verdicts.</p>
+              <DataTable table={t} names={NAMES} label="llm_review_acceptance.csv" maxHeight={320} />
+            </ShowMore>
           </>
         )}
       </Loaded>
@@ -381,11 +419,14 @@ function Watch() {
           const bars = watchBars(records(t));
           return (
             <>
+              <Takeaway text={watchTakeaway(records(t))} />
               <div className="chart-pair">
                 <Bars data={bars} x="policy" series={[{ key: "debt", name: "slop debt per commit" }]} title="Slop debt per commit (mean over repositories)" better="fewer" />
                 <Bars data={bars} x="policy" series={[{ key: "tests", name: "test runs" }]} title="Test runs spent (mean over repositories)" better="fewer" />
               </div>
-              <DataTable table={t} names={NAMES} label="watch_replay.csv" maxHeight={280} />
+              <ShowMore label="Show the table">
+                <DataTable table={t} names={NAMES} label="watch_replay.csv" maxHeight={280} />
+              </ShowMore>
             </>
           );
         }}
@@ -400,79 +441,89 @@ function V3Table({ name }: { name: string }) {
   return <Loaded name={name} version="v3">{(t) => <DataTable table={t} names={NAMES} label={name} maxHeight={360} />}</Loaded>;
 }
 
+// A Phase 3 tab: its sentence from one table, and the tables behind one "Show" line.
+function V3Answer({ name, say }: { name: string; say: (rows: Row[]) => string | null }) {
+  return <Loaded name={name} version="v3">{(t) => <Takeaway text={say(records(t))} />}</Loaded>;
+}
+
 function V3Hypotheses() {
   return (
     <Card title="H1–H4, as pre-registered">
-      <V3Table name="hypotheses.csv" />
-      <p className="muted">{V3_NOTE} Each is supported, not supported, or not run by the freeze.</p>
+      <V3Answer name="hypotheses.csv" say={hypothesesTakeaway} />
+      <ShowMore label="Show the evidence">
+        <V3Table name="hypotheses.csv" />
+        <p className="muted">{V3_NOTE} Each is supported, not supported, or not run by the freeze.</p>
+      </ShowMore>
     </Card>
   );
 }
 
 function V3Injection() {
   return (
-    <>
-      <Card title="INJECT, seed 4 (out of sample): planted slop removed">
-        <Loaded name="injection.csv" version="v3">
-          {(t) => <Bars data={v3RecallBars(records(t))} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed (95% interval over repositories)" better="higher" />}
-        </Loaded>
+    <Card title="INJECT, seed 4 (out of sample): planted slop removed">
+      <Loaded name="injection.csv" version="v3">
+        {(t) => (
+          <>
+            <Takeaway text={v3InjectionTakeaway(records(t))} />
+            <Bars data={v3RecallBars(records(t))} x="method" series={[{ key: "share", name: "planted slop removed" }]} percent error="ci" title="Planted slop removed (95% interval over repositories)" better="higher" />
+          </>
+        )}
+      </Loaded>
+      <ShowMore label="Show the table">
         <p className="muted">A run that hit the cap or the budget is timed out: it stays in the denominator and removes nothing. {V3_NOTE}</p>
-      </Card>
-      <Card title="Per method">
         <V3Table name="injection.csv" />
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Real() {
   return (
-    <>
-      <Card title="REAL, run 1: held-out real tests and visible breaks">
+    <Card title="REAL, run 1: held-out real tests and visible breaks">
+      <V3Answer name="real.csv" say={realTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="real.csv" />
         <p className="muted">Half of each project's own test modules are held out (seed 4); only tests that pass in all three baseline runs count. {V3_NOTE}</p>
-      </Card>
-      <Card title="Safety against yield">
+        <h4>Safety against yield</h4>
         <V3Table name="curve.csv" />
         <p className="muted">Wrong edits in all tiers include readings (LLM-judged); the confirmed tier rests on targeted tests, the UI check and rules.</p>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Audit() {
   return (
-    <>
-      <Card title="The blinded diff audit on the Phase 3 runs, two tiers">
+    <Card title={<>The blinded diff audit on the Phase 3 runs {judged("reading tier: LLM-judged")}</>}>
+      <V3Answer name="audit.csv" say={v3AuditTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="audit.csv" />
         <p className="muted">{judged("reading tier: LLM-judged")} Counts on finished runs; Fisher's exact test against the team.</p>
-      </Card>
-      <Card title="What the audit misses (estimate)">
+        <h4>What the audit misses (estimate)</h4>
         <V3Table name="audit_miss.csv" />
         <p className="muted">Targeted tests on a stratified sample of edits the auditor voted "no"; every number here is an estimate.</p>
-      </Card>
-      <Card title="LLM judge panel">
+        <h4>LLM judge panel</h4>
         <V3Table name="judge_panel.csv" />
         <p className="muted">
           Three LLM judges from other model families (gpt-oss-120b, llama4-maverick-17b, gemma4-31b-it) rate the blinded 100-item packet: their
           agreement, and their accuracy on test-confirmed verdicts. LLM-judged: no human checked these labels.
         </p>
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
 function V3Autonomy() {
   return (
-    <>
-      <Card title="AUTONOMY: clean on 30 diverse repositories, no human help">
+    <Card title="AUTONOMY: clean on 30 diverse repositories, no human help">
+      <V3Answer name="autonomy.csv" say={autonomyTakeaway} />
+      <ShowMore label="Show the tables">
         <V3Table name="autonomy.csv" />
         <p className="muted">Completed means a cleanup verdict; "stopped" is a valid ending but not completed. The raw rate decides H4 and R19; the rate without environment-impossible runs is shown beside it.</p>
-      </Card>
-      <Card title="Cost per finished run">
+        <h4>Cost per finished run</h4>
         <V3Table name="cost.csv" />
-      </Card>
-    </>
+      </ShowMore>
+    </Card>
   );
 }
 
