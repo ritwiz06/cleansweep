@@ -55,7 +55,7 @@ cleansweep/
 │   ├── tools/                            check_contracts.py, voyager_ping.py, core_make_samples.py,
 │   │                                     make_recording.py (Studio recordings), coverage.sh,
 │   │                                     housekeeping.py (see below), install_hooks.sh (the
-│   │                                     pre-push checks)
+│   │                                     pre-push checks), stitch_talk.sh (joins the recorded talk)
 │   └── reproduce_tables.sh               rebuilds the aggregate tables and figures offline
 ├── results/
 │   ├── summary/v1/                       committed v1 tables (CSV and Markdown)

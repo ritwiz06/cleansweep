@@ -23,7 +23,8 @@ and keeps an edit only if the project still behaves the same. Phase 1 (the pipel
 (the team and Studio) are released. **Phase 3, the pre-registered evaluation, is frozen** (Nov 13,
 12:00). **The final release is out** (Nov 14): the git tag `v3.0` and its GitHub release.
 **Final commit: v3.0.3** (the git tag `v3.0.3`: the course-facing wording, the shorter talk and
-this self-serve handoff, no result changes).
+this self-serve handoff, no result changes). Later merges change only these team pages and add
+`scripts/tools/stitch_talk.sh`, which joins the recorded talk.
 
 | | Result |
 |---|---|
@@ -88,6 +89,7 @@ transfer it. There are two ways to share control:
 | Report: Methods (review) | Maninderjit | Badri |
 | Report: Results (review) | Simran | Badri |
 | Final report assembly and submission | Ritik | Simran |
+| The talk video: joining the four parts and submitting it | Ritik | Simran |
 | Bug triage (issues labelled `team`) | Ritik | Maninderjit |
 | Peer evaluation | each of us, individually | none |
 
@@ -99,12 +101,15 @@ knows the part well enough to give it if the owner cannot.
 | When | What |
 |---|---|
 | Nov 14 | the final release |
-| Nov 15 | setup and checks done on your machine |
-| Nov 16 – Nov 20 | time your part; one full run-through on a call |
-| Nov 21 or Nov 28 | the presentation |
-| Nov 30 | section reviews and proofreading done |
-| Dec 4 (confirm on Canvas) | final report submission |
-| after the presentation | individual peer evaluation |
+| Sun Nov 15 | setup and checks done on your machine; the oral check video on Canvas (Badri prepares it, Ritik checks it; confirm the time) |
+| Sun Nov 22 | section reviews in Overleaf; your own Team Contributions line |
+| Mon Nov 23 | the AI-use statement approved |
+| Sat Nov 28 | your recorded talk part in the Drive folder `recordings/` ([presentation.md](presentation.md#record-your-part)) |
+| Nov 30 | proofreading done |
+| Tue Dec 1 | the joined talk video reviewed by all four |
+| Wed Dec 2 | the talk video submitted; the final report's PDF reviewed |
+| Thu Dec 3 | the final report submitted (the deadline is Fri Dec 4; confirm it on Canvas) |
+| after Dec 2 | individual peer evaluation |
 
 Everything left before the presentation and the report, with a box for each of us:
 ["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/cleansweep/issues/230).
@@ -125,7 +130,7 @@ its issue ([tasks.md](tasks.md)).
 - **Badri's collaborator invitation is still pending.** Until it is accepted, Badri cannot clone the
   private repository or be assigned issues.
 
-## If something breaks before the talk
+## If something breaks
 
 Studio Replay works offline, with no key, no Docker and no network. From the repository root:
 
@@ -138,7 +143,6 @@ cleansweep studio --no-browser        # then open the printed address yourself
 
 On **Home**, press **Try the demo**; or open **Runs** and pick `20261102_demo_feature_agentic`.
 Press **Next decision** until the Guard rolls back `_round_money`, then **Before / after**. The talk
-itself plays the clip on slide 3; this replay is its backup (slide 11). If Studio will not start,
-use the screenshots on slide 11 (`docs/images/studio/present.png` and
-`docs/images/studio/before_after_diff.png`). If the install is
+video shows the same run as the clip on slide 3. If Studio will not start, the screenshots
+`docs/images/studio/present.png` and `docs/images/studio/before_after_diff.png` show it. If the install is
 broken, see [setup.md](setup.md#troubleshooting). Details of the demo: [presentation.md](presentation.md#demo-plan).
