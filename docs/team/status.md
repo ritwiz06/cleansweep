@@ -78,9 +78,9 @@ human raters (Deviation 9). None changes H1–H4.
 |---|---|---|
 | The final release: requirements checked, fresh-clone rehearsal, archive tarball | Ritik | done Nov 14; the tarball goes to the ASU Drive |
 | Setup, offline checks and table reproduction on three more machines | Maninderjit, Badri, Simran | within 2 days of getting access ([tasks.md](tasks.md)) |
-| Each part timed, then one full run-through on a call | everyone | Nov 16 – Nov 20 |
-| The presentation (5 minutes, 4 speakers) | everyone | Nov 21 or Nov 28 |
-| Final report: section reviews, proofreading, submission | Ritik assembles; each owner reviews | Dec 4 (confirm on Canvas) |
-| Individual peer evaluation | each of us | after the presentation |
+| The oral check video | Badri prepares it; Ritik checks it | Nov 15 |
+| The talk, a 5-minute video: each part recorded, then joined and reviewed | each speaker; Ritik joins and submits | parts by Nov 28; submitted Dec 2 |
+| Final report: section reviews, proofreading, submission | Ritik assembles; each owner reviews | reviews Nov 22; submitted by Dec 3 (deadline Dec 4) |
+| Individual peer evaluation | each of us | after Dec 2 |
 
 Every task has an issue and a due date in [tasks.md](tasks.md).

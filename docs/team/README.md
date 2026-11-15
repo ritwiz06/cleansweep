@@ -77,6 +77,6 @@ If you set up without the assistant, or want to see the system first:
 - [status.md](status.md): the three phases, the scorecard, the limits, what is left.
 - [tasks.md](tasks.md): your tasks, each with a due date and a GitHub issue.
 - [contributing.md](contributing.md): branches, pull requests and the checks.
-- [presentation.md](presentation.md): the 5-minute talk, the script per speaker, the demo plan
-  and the Q&A sheet.
+- [presentation.md](presentation.md): the 5-minute talk, recorded: the script per speaker, how
+  to record your part, how the parts are joined, the demo plan and the Q&A sheet.
 - [contributions.md](contributions.md): who did what, from the repository history.

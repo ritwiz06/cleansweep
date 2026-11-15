@@ -5,10 +5,15 @@ Every task has a GitHub issue with the labels `team`, a role label (`data`, `sof
 
 - **Setup and checks:** within 2 days of getting access. Today that means **Nov 15**. Badri's
   collaborator invitation is still pending, so Badri's clock starts when it is accepted.
-- **Section reviews and proofreading:** before the final report is submitted. Our date is
-  **Nov 30**, which leaves four days before Dec 4 (confirm the date on Canvas).
-- **Talk parts, Q&A and rehearsals:** before the presentation. Our date is **Nov 20**; the
-  rehearsals are Nov 16 – Nov 20, and the talk is on Nov 21 or Nov 28.
+- **Oral check video:** due **Sun Nov 15** on Canvas (confirm the time). Badri prepares it and
+  Ritik checks it.
+- **Section reviews** in Overleaf, with your own Team Contributions line: **Sun Nov 22**. The
+  AI-use statement approved: **Mon Nov 23**. Proofreading: **Nov 30**.
+- **The talk is a video** (no live slot): your recorded part in the Drive folder `recordings/` by
+  **Sat Nov 28**; the joined video reviewed by all four by **Tue Dec 1** and submitted on
+  **Wed Dec 2** ([presentation.md](presentation.md#record-your-part)).
+- **The final report:** the PDF reviewed on **Wed Dec 2** and submitted by **Thu Dec 3** (the
+  deadline is Fri Dec 4; confirm it on Canvas).
 
 When you finish a task: comment on its issue with what you did and what you found, close it, and
 add a row to [contributions.md](contributions.md). Problems you find go into new issues with the
@@ -21,21 +26,21 @@ in ["Finalize the report and the talk" (#230)](https://github.com/ritwiz06/clean
 |---|---|---|---|---|
 | S1 | [Fresh-clone install and full offline test run](#s1-fresh-clone-install-and-full-offline-test-run) | Maninderjit (`msbhullar`) | Nov 15 | [#204](https://github.com/ritwiz06/cleansweep/issues/204) |
 | S3 | [Test Studio and file UI bugs](#s3-test-studio-and-file-ui-bugs) | Maninderjit | Nov 15 | [#206](https://github.com/ritwiz06/cleansweep/issues/206) |
-| S2 | [Review the Methods section](#s2-review-the-methods-section) | Maninderjit | Nov 30 | [#205](https://github.com/ritwiz06/cleansweep/issues/205) |
-| S4 | [Present the Methods part](#s4-present-the-methods-part) | Maninderjit | Nov 20 | [#207](https://github.com/ritwiz06/cleansweep/issues/207) |
+| S2 | [Review the Methods section](#s2-review-the-methods-section) | Maninderjit | Nov 22 | [#205](https://github.com/ritwiz06/cleansweep/issues/205) |
+| S4 | [Present the Methods part](#s4-present-the-methods-part) | Maninderjit | Nov 28 | [#207](https://github.com/ritwiz06/cleansweep/issues/207) |
 | D1 | [Rerun the offline data table builders](#d1-rerun-the-offline-data-table-builders) | Badri (`byeluri31`) | Nov 15 | [#201](https://github.com/ritwiz06/cleansweep/issues/201) |
-| D2 | [Review the Data section and the SlopBench data card](#d2-review-the-data-section-and-the-slopbench-data-card) | Badri | Nov 30 | [#202](https://github.com/ritwiz06/cleansweep/issues/202) |
-| D3 | [Present the Data part](#d3-present-the-data-part) | Badri | Nov 20 | [#203](https://github.com/ritwiz06/cleansweep/issues/203) |
+| D2 | [Review the Data section and the SlopBench data card](#d2-review-the-data-section-and-the-slopbench-data-card) | Badri | Nov 22 | [#202](https://github.com/ritwiz06/cleansweep/issues/202) |
+| D3 | [Present the Data part](#d3-present-the-data-part) | Badri | Nov 28 | [#203](https://github.com/ritwiz06/cleansweep/issues/203) |
 | E1 | [Reproduce the tables and check `hypotheses.csv`](#e1-reproduce-the-tables-and-check-hypothesescsv) | Simran (`SIMRANSHARMA2140`) | Nov 15 | [#208](https://github.com/ritwiz06/cleansweep/issues/208) |
-| E2 | [Review the Results section](#e2-review-the-results-section) | Simran | Nov 30 | [#209](https://github.com/ritwiz06/cleansweep/issues/209) |
-| E3 | [Present the Results part](#e3-present-the-results-part) | Simran | Nov 20 | [#210](https://github.com/ritwiz06/cleansweep/issues/210) |
+| E2 | [Review the Results section](#e2-review-the-results-section) | Simran | Nov 22 | [#209](https://github.com/ritwiz06/cleansweep/issues/209) |
+| E3 | [Present the Results part](#e3-present-the-results-part) | Simran | Nov 28 | [#210](https://github.com/ritwiz06/cleansweep/issues/210) |
 | P1 | [Integration and the final release](#p1-integration-and-the-final-release) | Ritik (`ritwiz06`) | Nov 15 | [#211](https://github.com/ritwiz06/cleansweep/issues/211) |
-| P3 | [Introduction, demo and slides](#p3-introduction-demo-and-slides) | Ritik | Nov 20 | [#213](https://github.com/ritwiz06/cleansweep/issues/213) |
-| P2 | [Assemble and submit the final report](#p2-assemble-and-submit-the-final-report) | Ritik | Dec 4 | [#212](https://github.com/ritwiz06/cleansweep/issues/212) |
+| P3 | [Introduction, demo and slides](#p3-introduction-demo-and-slides) | Ritik | Nov 28; Dec 2 | [#213](https://github.com/ritwiz06/cleansweep/issues/213) |
+| P2 | [Assemble and submit the final report](#p2-assemble-and-submit-the-final-report) | Ritik | Dec 3 | [#212](https://github.com/ritwiz06/cleansweep/issues/212) |
 | A1 | [Everyone: proofread the final report](#a1-everyone-proofread-the-final-report) | all four | Nov 30 | [#214](https://github.com/ritwiz06/cleansweep/issues/214) |
-| A2 | [Everyone: prepare the Q&A](#a2-everyone-prepare-the-qa) | all four | Nov 20 | [#215](https://github.com/ritwiz06/cleansweep/issues/215) |
-| A3 | [Everyone: time your part, then one run-through](#a3-everyone-time-your-part-then-one-run-through) | all four | Nov 20 | [#216](https://github.com/ritwiz06/cleansweep/issues/216), [#230](https://github.com/ritwiz06/cleansweep/issues/230) |
-| A4 | [Everyone: individual peer evaluation](#a4-everyone-individual-peer-evaluation) | each of us | after the talk | [#222](https://github.com/ritwiz06/cleansweep/issues/222) |
+| A2 | [Everyone: prepare the Q&A](#a2-everyone-prepare-the-qa) | all four | Nov 28 | [#215](https://github.com/ritwiz06/cleansweep/issues/215) |
+| A3 | [Everyone: record your part, then review the video](#a3-everyone-record-your-part-then-review-the-video) | all four | Nov 28; Dec 1 | [#216](https://github.com/ritwiz06/cleansweep/issues/216), [#230](https://github.com/ritwiz06/cleansweep/issues/230) |
+| A4 | [Everyone: individual peer evaluation](#a4-everyone-individual-peer-evaluation) | each of us | after Dec 2 | [#222](https://github.com/ritwiz06/cleansweep/issues/222) |
 
 ## Maninderjit (software architect), `@msbhullar`
 
@@ -77,7 +82,7 @@ you filed.
 
 ### S2. Review the Methods section
 
-Due **Nov 30**. Read the final report's Methods section on Overleaf, with
+Due **Nov 22**. Read the final report's Methods section on Overleaf, with
 [agentic_design.md](../agentic_design.md), [architecture.md](../architecture.md) (Pipeline, What
 the Guard checks, Lanes and policies) and the Phase 2 and Guard parts of [tour.md](tour.md). For
 every claim, check it against the code or the docs. Mark what a classmate would not follow.
@@ -89,11 +94,14 @@ issues or pull requests.
 
 ### S4. Present the Methods part
 
-Due **Nov 20**. Your slot is slides 4 and 5 (how CleanSweep keeps edits safe, and the audit), 1:19 to 2:28. Learn the script in
-[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-4-and-5) and time it at about 70
-seconds. Take the Q&A questions on how it works (questions 3, 10 and 11).
+Due **Nov 28**. Your part is slides 4 and 5 (how CleanSweep keeps edits safe, and the audit),
+1:19 to 2:28 of the video: 69 seconds. Learn the script in
+[presentation.md](presentation.md#maninderjit-safety-and-the-audit-slides-4-and-5), time it, then
+record it as `04_maninderjit.mp4` ([Record your part](presentation.md#record-your-part)). Take
+the Q&A questions on how it works (questions 3, 10 and 11).
 
-**Done when:** you have given the part in both rehearsals within 80 seconds.
+**Done when:** `04_maninderjit.mp4` is in the Drive folder `recordings/` and lasts at most 69
+seconds.
 
 ## Badri (data architect), `@byeluri31`
 
@@ -177,7 +185,7 @@ or filed as its own issue, and contributions.md has your row.
 
 ### D2. Review the Data section and the SlopBench data card
 
-Due **Nov 30**. Read the final report's Data section on Overleaf and
+Due **Nov 22**. Read the final report's Data section on Overleaf and
 [slopbench.md](../slopbench.md). For every number, find its source (`results/data_summary/`,
 `results/summary/v3/slopbench_repos.csv`, `sets.csv`) and check that it matches. Check that a
 classmate would follow the text: plain words, Phase 1, 2 and 3, no unexplained terms. Leave
@@ -189,12 +197,14 @@ says what you checked.
 
 ### D3. Present the Data part
 
-Due **Nov 20**. Your slot is slide 6 (our data and the benchmark, out of sample), 2:28 to 3:32. Learn the
-script in [presentation.md](presentation.md#badri-data-and-the-benchmark-slide-6), say it aloud
-with a timer (about 65 seconds), and change the wording until it sounds like you. Check slide 6
-with Ritik. Take the Q&A questions on data and the benchmark (questions 4, 12, 13 and 21).
+Due **Nov 28**. Your part is slide 6 (our data and the benchmark, out of sample), 2:28 to 3:32
+of the video: 64 seconds. Learn the script in
+[presentation.md](presentation.md#badri-data-and-the-benchmark-slide-6), say it aloud with a
+timer, and change the wording until it sounds like you. Check slide 6 with Ritik. Then record it
+as `06_badri.mp4` ([Record your part](presentation.md#record-your-part)). Take the Q&A questions
+on data and the benchmark (questions 4, 12, 13 and 21).
 
-**Done when:** you have given the part in both rehearsals within 80 seconds.
+**Done when:** `06_badri.mp4` is in the Drive folder `recordings/` and lasts at most 64 seconds.
 
 ## Simran (experiment architect), `@SIMRANSHARMA2140`
 
@@ -224,7 +234,7 @@ is filed or explained.
 
 ### E2. Review the Results section
 
-Due **Nov 30**. Read the final report's Results section on Overleaf. For every number, find its
+Due **Nov 22**. Read the final report's Results section on Overleaf. For every number, find its
 source table in `results/summary/` and check that it matches; check that every audit number says
 its tier (confirmed, or reading, LLM-judged), that small samples say "suggests" rather than
 "shows", that H2 is described as uninformative (the two arms replayed the same run), and that
@@ -234,11 +244,13 @@ each figure says which direction is better. Leave comments on Overleaf.
 
 ### E3. Present the Results part
 
-Due **Nov 20**. Your slot is slides 7 and 8, 3:32 to 4:38. Learn the script in
-[presentation.md](presentation.md#simran-results-slides-7-and-8) and check its numbers against
-`hypotheses.csv`. Take the Q&A questions on results (questions 5, 14, 15, 16, 17 and 18).
+Due **Nov 28**. Your part is slides 7 and 8, 3:32 to 4:38 of the video: 66 seconds. Learn the
+script in [presentation.md](presentation.md#simran-results-slides-7-and-8) and check its numbers
+against `hypotheses.csv`. Then record it as `07_simran.mp4`
+([Record your part](presentation.md#record-your-part)). Take the Q&A questions on results
+(questions 5, 14, 15, 16, 17 and 18).
 
-**Done when:** you have given the part in both rehearsals within 80 seconds.
+**Done when:** `07_simran.mp4` is in the Drive folder `recordings/` and lasts at most 66 seconds.
 
 ## Ritik (project manager and UI lead), `@ritwiz06`
 
@@ -251,16 +263,18 @@ the ASU Drive. Then update the release date in [handoff.md](handoff.md) and
 
 ### P3. Introduction, demo and slides
 
-Due **Nov 20**. The slide deck (slides 1 to 8 and the three backup slides), shared with everyone
-before the first rehearsal; the introduction and the demo in
-[presentation.md](presentation.md#demo-plan): the clip on slide 3, and Studio Replay as the
-backup, tested offline at the first rehearsal.
+Due **Nov 28** for your part, **Dec 2** for the video. Record slides 1 to 3 as `01_ritik.mp4`
+(79 seconds), with the clip playing on slide 3 ([demo plan](presentation.md#demo-plan)). After
+Nov 28, join the four parts with `scripts/tools/stitch_talk.sh`
+([Join the parts](presentation.md#join-the-parts)) and upload `talk_final.mp4`; once all four
+have reviewed it (Dec 1), submit it on Canvas by Dec 2. Backup: Simran.
 
 ### P2. Assemble and submit the final report
 
-Due **Dec 4** (confirm on Canvas). Take in the section reviews (S2, D2, E2) and the proofreading
-(A1), run the number audit, write the AI-use statement, write the Team Contributions paragraph
-from [contributions.md](contributions.md) only, and confirm it with the team. Submit.
+Due **Dec 3** (the deadline is Dec 4; confirm it on Canvas). Take in the section reviews (S2, D2,
+E2) and the proofreading (A1), run the number audit, write the AI-use statement, write the Team
+Contributions paragraph from [contributions.md](contributions.md) only, and confirm it with the
+team. All four review the PDF on Dec 2; submit it by Dec 3.
 
 ## Everyone
 
@@ -272,18 +286,20 @@ done.
 
 ### A2. Everyone: prepare the Q&A
 
-Due **Nov 20**. Read the [Q&A sheet](presentation.md#qa-sheet). Each of us takes the questions
+Due **Nov 28**. A recorded talk has no live Q&A, so the [Q&A sheet](presentation.md#qa-sheet)
+is for questions the TAs may ask about the video or the report. Each of us takes the questions
 on our part (named in D3, S4 and E3; Ritik takes 1, 2, 6, 7, 8, 9, 19, 20 and 22) and practices a
 one-sentence answer for each. Add questions you expect to the sheet by pull request.
 
-### A3. Everyone: time your part, then one run-through
+### A3. Everyone: record your part, then review the video
 
-Between **Nov 16 and Nov 20**. Time your part with a stopwatch against its seconds in
-[presentation.md](presentation.md#plan), and cut until it fits. Then the four of us do one full
-run-through on a call before the presentation, with the slides and the clip. The plan is 4:38
-and the stop at 5:00 is hard; fix what ran long in [presentation.md](presentation.md).
+By **Sat Nov 28**, record your part within its seconds and upload it to the Drive folder
+`recordings/` ([Record your part](presentation.md#record-your-part)); cut a sentence rather than
+speed up. By **Tue Dec 1**, watch the joined video (`talk_final.mp4` in `recordings/`) and
+comment on [#230](https://github.com/ritwiz06/cleansweep/issues/230) that it is fine, or what to
+fix. The plan is 4:38; the joined video must stay under 4:50, and 5:00 is a hard stop.
 
 ### A4. Everyone: individual peer evaluation
 
-**After the presentation.** Each of us fills in the course's individual peer evaluation on our
+**After the video is submitted (Dec 2).** Each of us fills in the course's individual peer evaluation on our
 own, from what [contributions.md](contributions.md) and the issues show.

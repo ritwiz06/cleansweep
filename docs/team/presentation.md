@@ -1,8 +1,14 @@
 # The presentation
 
-Five minutes, a hard stop: four speakers, eight slides and three backups, planned for 4:38 so
-that 20 seconds are left for the handovers. Time your part with a stopwatch,
-then we do one full run-through on a call (Nov 16 – Nov 20); the talk is on Nov 21 or Nov 28.
+The presentation is a video: there is no live slot. Each of us records only our own slides, and
+the four parts are joined into one video. Five minutes is a hard stop: eight slides, planned at
+4:38 (the target is 4:40). The three backup slides are not recorded.
+
+| When | What |
+|---|---|
+| Sat Nov 28 | each part uploaded to the Drive folder `recordings/` ([Record your part](#record-your-part)) |
+| Tue Dec 1 | the joined video reviewed by all four ([Join the parts](#join-the-parts)) |
+| Wed Dec 2 | the video submitted on Canvas |
 
 The Phase 3 numbers are final since the results freeze (Nov 13, 12:00). They come from
 `results/summary/v3/hypotheses.csv`, the README's "Phase 3 results" section and
@@ -20,10 +26,54 @@ The Phase 3 numbers are final since the results freeze (Nov 13, 12:00). They com
 | 2:28 – 3:32 | 64 | Badri | 6. Our data and the benchmark, out of sample | the mined requests, the projects, SlopBench; 10 new projects: the team, the single agent, Aider |
 | 3:32 – 3:55 | 23 | Simran | 7. Real projects with held-out tests | far fewer wrong edits than Aider, but held-out tests changed |
 | 3:55 – 4:38 | 43 | Simran | 8. Hypotheses scorecard | H1–H4, each with its evidence, and three takeaways |
-| after | – | everyone | 9–11. Backup slides | our data in full; the Phase 2 benchmark; live Studio Replay |
+| not recorded | – | – | 9–11. Backup slides | our data in full; the Phase 2 benchmark; Studio Replay |
 
 The scripts are 599 words: Ritik 156, Maninderjit 154, Badri 142, Simran 147. At about 135 words a
 minute that is the time above. Read yours aloud with a timer and cut, rather than speed up.
+
+## Record your part
+
+Due **Sat Nov 28**. Record only your own slides, within your seconds:
+
+| Speaker | Slides | Seconds | File name |
+|---|---|---|---|
+| Ritik | 1–3 | 79 | `01_ritik.mp4` |
+| Maninderjit | 4–5 | 69 | `04_maninderjit.mp4` |
+| Badri | 6 | 64 | `06_badri.mp4` |
+| Simran | 7–8 | 66 | `07_simran.mp4` |
+
+1. Download `CSE572_Group30_Slides.pptx` from the Drive folder's `final/`. Save a copy and delete
+   every slide but yours.
+2. Record it with PowerPoint's **Record Slide Show**, reading your script below. Use a headset or
+   a quiet room; turn the camera on only if the course asks for it. Zoom works too: share the
+   slide show and record to your computer, which saves an MP4.
+3. Start speaking right away and stop the recording after your last word: the parts are joined as
+   they are, with nothing trimmed.
+4. Export an MP4 (PowerPoint: File > Export, or Create a Video on Windows, with the recorded
+   timings and narration). Watch it once: your voice is clear, every slide shows, and it lasts
+   no longer than your seconds.
+5. Name it as in the table (`NN` is your first slide) and upload it to the Drive folder
+   `CleanSweep – Final/recordings/`.
+
+## Join the parts
+
+Ritik (backup: Simran), after Nov 28. Download the Drive folder `recordings/` (for example into
+`~/CleanSweep/handoff/recordings/`), then, from the repository:
+
+```bash
+bash scripts/tools/stitch_talk.sh ~/CleanSweep/handoff/recordings
+```
+
+It joins the `NN_name.mp4` files in slide order, makes each part 1920×1080 at 30 fps, and
+normalizes each part's loudness (to -16 LUFS), so that the four voices sound equally loud. It
+prints each part's length and writes `talk_final.mp4` into the same folder. If the parts total
+more than 4:50, it stops without writing anything: the part that runs past its seconds is
+recorded again. The 12 seconds between 4:38 and 4:50 are for the pauses at the ends of the parts.
+It needs ffmpeg (`brew install ffmpeg`, or `sudo apt install ffmpeg`).
+
+Upload `talk_final.mp4` to `recordings/`. All four watch it by **Tue Dec 1** and comment on
+[#230](https://github.com/ritwiz06/cleansweep/issues/230) that it is fine, or what to fix. Ritik
+(backup: Simran) submits it on Canvas by **Wed Dec 2**.
 
 ## Scripts
 
@@ -101,37 +151,27 @@ Timing: slide 7, 23 s · slide 8, 43 s = 66 s.
 
 ## Transitions
 
-Each speaker ends with the next speaker's name and topic, as in the scripts. Hand over the
-clicker with that sentence, not after it. Simran's part has no outgoing line: it ends with
-"Thank you". If a speaker runs long, the next one cuts a sentence; nobody speeds up.
+Each speaker ends with the next speaker's name and topic, as in the scripts, so that the joined
+video flows from one part to the next. Simran's part has no outgoing line: it ends with "Thank
+you". If your part runs long, cut a sentence and record it again; never speed up.
 
 ## Demo plan
 
-The demo is the 36.5 s clip on slide 3. It shows the team, the probes catching `_round_money`,
-the rollback and the result, and it needs no network. Live Studio Replay is the backup (slide
-11): use it if the clip does not play, or in the Q&A if someone asks to see it live.
+The demo is the 36.5 s clip on slide 3, in Ritik's part. It shows the team, the probes catching
+`_round_money`, the rollback and the result. Slide 3 lasts 37 s, so talk over the clip with the
+slide 3 script.
 
-**Before the talk (10 minutes):**
+**Plan A: the clip in the slide show recording.** Start the clip on slide 3 (click it if it does
+not start by itself), and check in the exported MP4 that it plays.
 
-1. The laptop on power, sleep off, notifications off, the screen at 1280×720 or mirrored.
-2. Check the clip plays from the deck.
-3. Have the backup ready: in the repository, with the environment active, run
-   `cleansweep studio` and leave it on **Home**.
-
-**Plan A: the clip on slide 3.** Narrate over it with the slide 3 script.
-
-**Plan B: live Studio Replay (backup slide 11).** Press **Try the demo** (it opens
-`20261102_demo_feature_agentic`), then **Next decision** (or Space in **Present**) until the
-`_round_money` rollback; then **Before / after** for the summary card. Replay calls no LLM and runs
-no tests, so it works with no network and no key.
-
-**Plan C, if neither plays:** the screenshots on slide 11 (`../images/studio/present.png` and
-`../images/studio/before_after_diff.png`). Say the same words.
+**Plan B: if the export does not show the clip,** record slides 1–3 in Zoom instead (share the
+slide show and record to your computer), so that the recording shows the clip as it plays.
 
 ## Q&A sheet
 
-Short answers, then where the number comes from. Answer in one or two sentences, then stop. The
-owner of each question is in [tasks.md](tasks.md#a2-everyone-prepare-the-qa).
+Short answers, then where the number comes from. Answer in one or two sentences, then stop. A
+recorded talk has no live Q&A: the sheet is for questions the TAs may ask about the video or the
+report. The owner of each question is in [tasks.md](tasks.md#a2-everyone-prepare-the-qa).
 
 | # | Question | Short answer | Source |
 |---|---|---|---|
@@ -156,4 +196,4 @@ owner of each question is in [tasks.md](tasks.md#a2-everyone-prepare-the-qa).
 | 19 | H3 is "supported": why is batching still off? | It holds only by a tie: 41% of the requests, 16 vs 16 wrong edits where both finished. Batching's other 36 wrong edits on real projects are on openbench, where the team's run hit the request budget, so they are not paired. We did not trust a tie, so batching stays off by default. | [results.md](../results.md) |
 | 20 | What would you do next? | Find code that is used by name at run time, since that is most of the remaining wrong edits; judge a cleaner per edit and in total, since Phase 3 shows the two can disagree; have a human check a sample of the labels; release SlopBench. | README "Known limitations" |
 | 21 | Where do the test projects come from? | Three kinds: SWE-bench patches written by coding agents, with their own tests; real AIDev repositories (of 666 qualifying Python repositories we sampled 120, and 21 installed and passed their tests in Docker); and SlopBench, our benchmark with planted slop, traps and a hidden test. Phase 3 used only new repositories whose license allows it: 10 for the benchmark, 15 real projects, 30 for autonomy. | backup slide 9; [slopbench.md](../slopbench.md) |
-| 22 | Can we see it live? | Yes, offline: backup slide 11. Studio Replay of the demo app, the same run as the clip: Try the demo, Next decision until the Guard rolls back `_round_money`, then Before / after. It needs no network, key or Docker. | [Demo plan](#demo-plan) |
+| 22 | Can we see it live? | Yes, offline: Studio Replay of the demo app, the same run as the clip: Try the demo, Next decision until the Guard rolls back `_round_money`, then Before / after. It needs no network, key or Docker. | [handoff.md](handoff.md#if-something-breaks) |
