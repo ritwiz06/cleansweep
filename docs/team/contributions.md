@@ -83,3 +83,9 @@ From here on, each of us adds rows for our own work.
 
 | Person | Date | What | Link |
 |---|---|---|---|
+## Add your rows here
+
+| Person | Date | What | Link |
+|---|---|---|---|
+| Maninderjit | Nov 14 | Fresh-clone install, offline tests, toy cleanup, pipeline, table reproduction, Studio and Docker checks on a new machine (S1); noted that setup.md's toy-cleanup numbers (9 edits) differ from the 7 edits seen in three identical runs | issue [#204](https://github.com/ritwiz06/cleansweep/issues/204) |
+| Maninderjit | Nov 14 | Studio UI testing: every screen checked in light and dark themes, Replay, Before/after, Compare and the HTML export; no bugs found (S3) | issue [#206](https://github.com/ritwiz06/cleansweep/issues/206) |
