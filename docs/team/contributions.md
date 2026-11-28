@@ -89,3 +89,4 @@ From here on, each of us adds rows for our own work.
 |---|---|---|---|
 | Maninderjit | Nov 14 | Fresh-clone install, offline tests, toy cleanup, pipeline, table reproduction, Studio and Docker checks on a new machine (S1); noted that setup.md's toy-cleanup numbers (9 edits) differ from the 7 edits seen in three identical runs | issue [#204](https://github.com/ritwiz06/cleansweep/issues/204) |
 | Maninderjit | Nov 14 | Studio UI testing: every screen checked in light and dark themes, Replay, Before/after, Compare and the HTML export; no bugs found (S3) | issue [#206](https://github.com/ritwiz06/cleansweep/issues/206) |
+| Maninderjit | Nov 27 | Recorded my part of the final talk, slides 4–5 (how CleanSweep keeps edits safe; the audit and its limits), 67 seconds, and uploaded it as 04_maninderjit.mp4 to the team's Drive recordings folder (S4) | issue [#207](https://github.com/ritwiz06/cleansweep/issues/207); offline: Drive folder CleanSweep - Final |
